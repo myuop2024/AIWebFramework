@@ -799,7 +799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Form Template Management Routes
   
   // Middleware to check admin role
-  const requireAdmin = (req, res, next) => {
+  const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!req.session?.userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -808,6 +808,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+  
+  // Admin dashboard statistics
+  app.get('/api/admin/system-stats', requireAdmin, async (req, res) => {
+    try {
+      // Get stats from database
+      const totalUsers = await storage.getTotalUserCount();
+      const activeObservers = await storage.getActiveObserverCount();
+      const pendingReports = await storage.getReportsByStatus('pending').then(reports => reports.length);
+      const totalPollingStations = await storage.getAllPollingStations().then(stations => stations.length);
+      const usersByRole = await storage.getUserCountByRole();
+      const reportCountByType = await storage.getReportCountByType();
+      const reportCountByStatus = await storage.getReportCountByStatus();
+      const activeAssignmentsCount = await storage.getActiveAssignmentsCount();
+      
+      // Risk assessment for polling stations
+      const stationsWithIssues = await storage.getStationsWithIssueReports();
+      
+      // Group stations by risk level based on issue count
+      const stationRiskAssessment = {
+        highRisk: stationsWithIssues.filter(station => station.issueCount > 5).length,
+        mediumRisk: stationsWithIssues.filter(station => station.issueCount > 2 && station.issueCount <= 5).length,
+        lowRisk: stationsWithIssues.filter(station => station.issueCount > 0 && station.issueCount <= 2).length,
+        noRisk: totalPollingStations - stationsWithIssues.length
+      };
+      
+      // Create statistics response
+      const stats = {
+        users: {
+          total: totalUsers,
+          activeObservers,
+          byRole: usersByRole
+        },
+        reports: {
+          pending: pendingReports,
+          byType: reportCountByType,
+          byStatus: reportCountByStatus
+        },
+        pollingStations: {
+          total: totalPollingStations,
+          riskAssessment: stationRiskAssessment
+        },
+        assignments: {
+          active: activeAssignmentsCount
+        },
+        system: {
+          databaseUsage: 68, // percentage - mock data, replace with actual metrics in production
+          mediaStorageUsage: 42, // percentage - mock data, replace with actual metrics in production
+          systemMemoryUsage: 54, // percentage - mock data, replace with actual metrics in production
+          apiRequestsLast24h: 14382, // mock data, replace with actual metrics
+          activeSessions: 87, // mock data, replace with actual metrics
+          systemUptime: 99.8, // percentage - mock data, replace with actual metrics
+        }
+      };
+      
+      res.status(200).json(stats);
+    } catch (error) {
+      console.error('Error fetching system statistics:', error);
+      res.status(500).json({ message: 'Error fetching system statistics' });
+    }
+  });
   
   // Get all form templates
   app.get('/api/form-templates', requireAuth, async (req, res) => {
