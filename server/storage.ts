@@ -401,18 +401,57 @@ export class MemStorage implements IStorage {
   async getReportsByUserId(userId: number): Promise<Report[]> {
     return Array.from(this.reports.values())
       .filter((report) => report.userId === userId)
-      .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
+      .sort((a, b) => {
+        // Handle null values in sorting
+        if (!a.submittedAt) return 1;
+        if (!b.submittedAt) return -1;
+        return b.submittedAt.getTime() - a.submittedAt.getTime();
+      });
+  }
+  
+  async getReportsByStationId(stationId: number): Promise<Report[]> {
+    return Array.from(this.reports.values())
+      .filter((report) => report.stationId === stationId)
+      .sort((a, b) => {
+        // Handle null values in sorting
+        if (!a.submittedAt) return 1;
+        if (!b.submittedAt) return -1;
+        return b.submittedAt.getTime() - a.submittedAt.getTime();
+      });
+  }
+  
+  async getReportsByStatus(status: string): Promise<Report[]> {
+    return Array.from(this.reports.values())
+      .filter((report) => report.status === status)
+      .sort((a, b) => {
+        // Handle null values in sorting
+        if (!a.submittedAt) return 1;
+        if (!b.submittedAt) return -1;
+        return b.submittedAt.getTime() - a.submittedAt.getTime();
+      });
   }
 
   async createReport(report: InsertReport): Promise<Report> {
     const id = this.reportIdCounter++;
     const now = new Date();
+    
+    // Generate content hash for security verification
+    const contentHash = this.generateContentHash(report.content);
+    
     const newReport: Report = { 
       ...report, 
       id, 
       status: "submitted",
       submittedAt: now,
-      reviewedAt: null
+      reviewedAt: null,
+      contentHash,
+      reviewedBy: null,
+      encryptedData: false,
+      locationLat: null,
+      locationLng: null,
+      mileageTraveled: null,
+      checkinTime: null,
+      checkoutTime: null
     };
     this.reports.set(id, newReport);
     return newReport;
@@ -449,7 +488,10 @@ export class MemStorage implements IStorage {
     const newAttachment: ReportAttachment = {
       ...attachment,
       id,
-      uploadedAt: now
+      uploadedAt: now,
+      ocrText: null,
+      ocrProcessed: false,
+      encryptionIv: null
     };
     this.reportAttachments.set(id, newAttachment);
     return newAttachment;
@@ -501,7 +543,8 @@ export class MemStorage implements IStorage {
       ...template,
       id,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      isActive: true
     };
     this.formTemplates.set(id, newTemplate);
     return newTemplate;
