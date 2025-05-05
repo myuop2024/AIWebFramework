@@ -149,12 +149,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
-      // Set session (simplified - in real app would use JWT or session)
-      req.session = {
-        userId: user.id,
-        observerId: user.observerId,
-        role: user.role
-      };
+      // Set session data
+      req.session.userId = user.id;
+      req.session.observerId = user.observerId;
+      req.session.role = user.role;
       
       // Remove password from response
       const { password: _, ...userWithoutPassword } = user;
@@ -169,8 +167,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post('/api/auth/logout', (req, res) => {
-    req.session = null;
-    res.status(200).json({ message: 'Logged out successfully' });
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Failed to logout' });
+      }
+      res.status(200).json({ message: 'Logged out successfully' });
+    });
   });
   
   // Middleware to check authentication
