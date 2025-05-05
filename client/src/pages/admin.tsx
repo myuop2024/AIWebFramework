@@ -151,29 +151,327 @@ export default function Admin() {
           <ul class="space-y-4">
             <li class="p-3 border rounded">
               <div class="flex justify-between mb-2">
-                <div class="font-medium">Robert Brown</div>
-                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending</div>
+                <div class="font-medium">John Smith</div>
+                <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
               </div>
-              <div class="text-sm mb-2">ID Verification submitted on May 1, 2025</div>
+              <div class="text-sm text-gray-500 mb-2">Observer ID: OBS001</div>
               <div class="flex gap-2">
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Documents</button>
+                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
               </div>
             </li>
             <li class="p-3 border rounded">
               <div class="flex justify-between mb-2">
-                <div class="font-medium">Jennifer Davis</div>
-                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending</div>
+                <div class="font-medium">Sarah Wilson</div>
+                <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
               </div>
-              <div class="text-sm mb-2">ID Verification submitted on May 2, 2025</div>
+              <div class="text-sm text-gray-500 mb-2">Observer ID: OBS002</div>
               <div class="flex gap-2">
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Documents</button>
+                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
               </div>
             </li>
           </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for editing roles
+  const handleEditRoles = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Edit User Roles", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">User Roles Management</h3>
+          <div class="space-y-4">
+            <div class="p-3 bg-gray-50 rounded border">
+              <h4 class="font-medium mb-2">Administrator</h4>
+              <p class="text-sm text-gray-600 mb-2">Full access to all system functions and settings</p>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
+                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border">
+              <h4 class="font-medium mb-2">Observer</h4>
+              <p class="text-sm text-gray-600 mb-2">Can submit reports and view assigned polling stations</p>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
+                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border">
+              <h4 class="font-medium mb-2">Supervisor</h4>
+              <p class="text-sm text-gray-600 mb-2">Can review reports and manage observers</p>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
+                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border">
+              <h4 class="font-medium mb-2">Analyst</h4>
+              <p class="text-sm text-gray-600 mb-2">View-only access to reports and analytics</p>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
+                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
+              </div>
+            </div>
+            
+            <button class="w-full mt-4 px-4 py-2 bg-primary text-white rounded">Add New Role</button>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for managing stations
+  const handleManageStations = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Polling Station Management", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">All Polling Stations (124)</h3>
+          <div class="mb-4">
+            <input type="text" placeholder="Search stations..." class="w-full p-2 border rounded mb-4" />
+            <div class="flex gap-2 mb-4">
+              <button class="px-3 py-1 bg-primary text-white rounded text-sm">Add Station</button>
+              <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Import</button>
+              <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Export</button>
+            </div>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
+              <div>
+                <div class="font-medium">Central High School</div>
+                <div class="text-sm text-gray-500">Station Code: STA001</div>
+                <div class="text-xs text-gray-500">City: Springfield, Cap: 1200</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
+              <div>
+                <div class="font-medium">Town Hall</div>
+                <div class="text-sm text-gray-500">Station Code: STA002</div>
+                <div class="text-xs text-gray-500">City: Springfield, Cap: 800</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
+              <div>
+                <div class="font-medium">Community Center</div>
+                <div class="text-sm text-gray-500">Station Code: STA003</div>
+                <div class="text-xs text-gray-500">City: Riverside, Cap: 650</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between">
+            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
+            <span class="text-sm">Page 1 of 12</span>
+            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for managing assignments
+  const handleManageAssignments = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Station Assignments", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">Observer Assignments</h3>
+          <div class="mb-4">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <select class="p-2 border rounded">
+                <option>All Stations</option>
+                <option>Central High School</option>
+                <option>Town Hall</option>
+                <option>Community Center</option>
+              </select>
+              <select class="p-2 border rounded">
+                <option>All Statuses</option>
+                <option>Assigned</option>
+                <option>Check-in Complete</option>
+                <option>Check-out Complete</option>
+              </select>
+            </div>
+            <button class="w-full px-3 py-2 bg-primary text-white rounded text-sm mb-4">Create New Assignment</button>
+          </div>
+          
+          <div class="space-y-3">
+            <div class="p-3 bg-gray-50 rounded border">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Central High School</div>
+                <div class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Active</div>
+              </div>
+              <div class="text-sm text-gray-500 mb-1">Observer: John Smith (OBS001)</div>
+              <div class="text-sm text-gray-500 mb-1">May 6, 2025 08:00 - 20:00</div>
+              <div class="flex gap-2 mt-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
+                <button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Town Hall</div>
+                <div class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Active</div>
+              </div>
+              <div class="text-sm text-gray-500 mb-1">Observer: Sarah Wilson (OBS002)</div>
+              <div class="text-sm text-gray-500 mb-1">May 6, 2025 08:00 - 16:00</div>
+              <div class="flex gap-2 mt-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
+                <button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-gray-50 rounded border">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Community Center</div>
+                <div class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Scheduled</div>
+              </div>
+              <div class="text-sm text-gray-500 mb-1">Observer: Michael Johnson (OBS003)</div>
+              <div class="text-sm text-gray-500 mb-1">May 7, 2025 08:00 - 20:00</div>
+              <div class="flex gap-2 mt-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between">
+            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
+            <span class="text-sm">Page 1 of 8</span>
+            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for viewing station analytics
+  const handleViewStationAnalytics = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Station Analytics", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">Polling Station Analytics</h3>
+          
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="p-3 bg-gray-50 rounded border text-center">
+              <div class="text-2xl font-bold text-red-600">14</div>
+              <div class="text-sm">High Risk Stations</div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded border text-center">
+              <div class="text-2xl font-bold text-amber-600">32</div>
+              <div class="text-sm">Medium Risk Stations</div>
+            </div>
+            <div class="p-3 bg-gray-50 rounded border text-center">
+              <div class="text-2xl font-bold text-green-600">78</div>
+              <div class="text-sm">Low Risk Stations</div>
+            </div>
+          </div>
+          
+          <div class="space-y-3 mb-6">
+            <h4 class="font-medium">Station Coverage</h4>
+            <div class="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-primary" style="width: 82%"></div>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span>0%</span>
+              <span>82% Coverage</span>
+              <span>100%</span>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <h4 class="font-medium">High Risk Stations</h4>
+            
+            <div class="p-3 bg-red-50 rounded border">
+              <div class="flex justify-between items-center">
+                <div>
+                  <div class="font-medium">Central High School</div>
+                  <div class="text-sm text-gray-500">Risk Score: 8.7/10</div>
+                </div>
+                <div>
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-red-50 rounded border">
+              <div class="flex justify-between items-center">
+                <div>
+                  <div class="font-medium">West Side Elementary</div>
+                  <div class="text-sm text-gray-500">Risk Score: 8.2/10</div>
+                </div>
+                <div>
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="p-3 bg-red-50 rounded border">
+              <div class="flex justify-between items-center">
+                <div>
+                  <div class="font-medium">Memorial Stadium</div>
+                  <div class="text-sm text-gray-500">Risk Score: 7.9/10</div>
+                </div>
+                <div>
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
+                </div>
+              </div>
+            </div>
+            
+            <button class="w-full mt-2 px-4 py-2 bg-gray-100 text-gray-800 rounded">View All High Risk Stations</button>
+          </div>
         </div>
         `
       );
@@ -195,182 +493,55 @@ export default function Admin() {
     }, 800);
   };
   
-  // Handler for editing roles
-  const handleEditRoles = () => {
+  // Let's restart from a clean function definition
+  const handleManageEvents = () => {
     setIsLoading(true);
     
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
       openModal(
-        "Role Management", 
+        "Event Management", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">Edit Roles & Permissions</h3>
-          <ul class="space-y-4">
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Administrator</div>
-                <div class="text-sm text-primary bg-primary-light/20 px-2 py-0.5 rounded">Full Access</div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-3">
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="admin-users" />
-                  <label for="admin-users" class="text-sm">User Management</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="admin-reports" />
-                  <label for="admin-reports" class="text-sm">Reports Access</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="admin-templates" />
-                  <label for="admin-templates" class="text-sm">Template Management</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="admin-stations" />
-                  <label for="admin-stations" class="text-sm">Polling Stations</label>
-                </div>
-              </div>
-            </li>
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Coordinator</div>
-                <div class="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Limited Access</div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-3">
-                <div class="flex items-center">
-                  <input type="checkbox" class="mr-2" id="coord-users" />
-                  <label for="coord-users" class="text-sm">User Management</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="coord-reports" />
-                  <label for="coord-reports" class="text-sm">Reports Access</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" class="mr-2" id="coord-templates" />
-                  <label for="coord-templates" class="text-sm">Template Management</label>
-                </div>
-                <div class="flex items-center">
-                  <input type="checkbox" checked class="mr-2" id="coord-stations" />
-                  <label for="coord-stations" class="text-sm">Polling Stations</label>
-                </div>
-              </div>
-            </li>
-          </ul>
-          <div class="flex justify-end mt-4">
-            <button class="px-4 py-2 bg-primary text-white rounded">Save Changes</button>
-          </div>
-        </div>
-        `
-      );
-    }, 800);
-  };
-  
-  // Handler for managing stations
-  const handleManageStations = () => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      openModal(
-        "Polling Stations", 
-        `
-        <div>
-          <div class="flex justify-between mb-4">
-            <h3 class="text-lg font-medium">All Polling Stations (124)</h3>
-            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Add New Station</button>
-          </div>
-          <ul class="space-y-3">
-            <li class="p-3 border rounded">
+          <h3 class="text-lg font-medium mb-4">Upcoming Events</h3>
+            
+          <div class="space-y-3">
+            <div class="p-3 border rounded">
               <div class="flex justify-between mb-1">
-                <div class="font-medium">Main City Hall</div>
+                <div class="font-medium">Election Day</div>
                 <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
               </div>
-              <div class="text-sm text-gray-500 mb-2">123 Downtown Ave, Kingston</div>
+              <div class="text-sm text-gray-500 mb-2">May 5, 2025</div>
               <div class="flex gap-2">
                 <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
                 <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Assignments</button>
                 <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Reports</button>
               </div>
-            </li>
-            <li class="p-3 border rounded">
+            </div>
+            
+            <div class="p-3 border rounded">
               <div class="flex justify-between mb-1">
-                <div class="font-medium">Central Community Center</div>
-                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+                <div class="font-medium">Observer Training Session</div>
+                <div class="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Upcoming</div>
               </div>
-              <div class="text-sm text-gray-500 mb-2">45 Park Street, Kingston</div>
+              <div class="text-sm text-gray-500 mb-2">April 20, 2025</div>
               <div class="flex gap-2">
                 <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Assignments</button>
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Reports</button>
+                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Participants</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
               </div>
-            </li>
-          </ul>
-        </div>
-        `
-      );
-    }, 800);
-  };
-  
-  // Handler for managing assignments
-  const handleManageAssignments = () => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      openModal(
-        "Station Assignments", 
-        `
-        <div>
-          <div class="flex justify-between mb-4">
-            <h3 class="text-lg font-medium">Current Assignments</h3>
-            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create Assignment</button>
+            </div>
           </div>
-          <ul class="space-y-3">
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Main City Hall</div>
-                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">In Progress</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Observer:</span> John Smith
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Schedule:</span> May 5, 2025 (8:00 AM - 4:00 PM)
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Details</button>
-              </div>
-            </li>
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Central Community Center</div>
-                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Scheduled</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Observer:</span> Sarah Wilson
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Schedule:</span> May 6, 2025 (9:00 AM - 5:00 PM)
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Details</button>
-              </div>
-            </li>
-          </ul>
+            
+          <button class="w-full px-3 py-2 bg-primary text-white rounded text-sm mt-4">Add New Event</button>
         </div>
         `
       );
     }, 800);
   };
   
-  // Handler for station analytics
+  // Handler for analytics
   const handleViewAnalytics = () => {
     setIsLoading(true);
     
@@ -378,55 +549,36 @@ export default function Admin() {
     setTimeout(() => {
       setIsLoading(false);
       openModal(
-        "Station Analytics", 
+        "Analytics Dashboard", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">Station Risk Assessment</h3>
-          <div class="space-y-4">
-            <div>
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">High Risk Stations (14)</div>
-                <button class="text-xs text-blue-600">View All</button>
-              </div>
-              <ul class="space-y-2">
-                <li class="flex justify-between p-2 bg-red-50 rounded">
-                  <div>Eastern District #7</div>
-                  <div class="text-sm text-red-600">87% Risk Score</div>
-                </li>
-                <li class="flex justify-between p-2 bg-red-50 rounded">
-                  <div>Northern Zone #12</div>
-                  <div class="text-sm text-red-600">82% Risk Score</div>
-                </li>
-              </ul>
+          <h3 class="text-lg font-medium mb-4">Risk Assessment Analytics</h3>
+          <div>
+            <div class="flex justify-between mb-1">
+              <div class="font-medium">Medium Risk Stations (32)</div>
+              <button class="text-xs text-blue-600">View All</button>
             </div>
-            
-            <div>
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Medium Risk Stations (32)</div>
-                <button class="text-xs text-blue-600">View All</button>
-              </div>
-              <ul class="space-y-2">
-                <li class="flex justify-between p-2 bg-amber-50 rounded">
-                  <div>Central District #4</div>
-                  <div class="text-sm text-amber-600">56% Risk Score</div>
-                </li>
-                <li class="flex justify-between p-2 bg-amber-50 rounded">
-                  <div>Southern Zone #9</div>
-                  <div class="text-sm text-amber-600">48% Risk Score</div>
-                </li>
-              </ul>
-            </div>
-            
-            <div class="mt-4 p-3 border rounded bg-gray-50">
-              <div class="font-medium mb-2">Risk Assessment Criteria</div>
-              <ul class="list-disc pl-5 text-sm space-y-1">
-                <li>Previous incidents reported</li>
-                <li>Observer coverage gaps</li>
-                <li>Accessibility issues</li>
-                <li>Historical voter turnout</li>
-                <li>Security concerns</li>
-              </ul>
-            </div>
+            <ul class="space-y-2">
+              <li class="flex justify-between p-2 bg-amber-50 rounded">
+                <div>Central District #4</div>
+                <div class="text-sm text-amber-600">56% Risk Score</div>
+              </li>
+              <li class="flex justify-between p-2 bg-amber-50 rounded">
+                <div>Southern Zone #9</div>
+                <div class="text-sm text-amber-600">48% Risk Score</div>
+              </li>
+            </ul>
+          </div>
+          
+          <div class="mt-4 p-3 border rounded bg-gray-50">
+            <div class="font-medium mb-2">Risk Assessment Criteria</div>
+            <ul class="list-disc pl-5 text-sm space-y-1">
+              <li>Previous incidents reported</li>
+              <li>Observer coverage gaps</li>
+              <li>Accessibility issues</li>
+              <li>Historical voter turnout</li>
+              <li>Security concerns</li>
+            </ul>
           </div>
         </div>
         `
@@ -504,70 +656,7 @@ export default function Admin() {
     }, 800);
   };
   
-  // Handler for managing events
-  const handleManageEvents = () => {
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      openModal(
-        "Event Management", 
-        `
-        <div>
-          <div class="flex justify-between mb-4">
-            <h3 class="text-lg font-medium">All Events</h3>
-            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create New Event</button>
-          </div>
-          <ul class="space-y-3">
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Observer Training Workshop</div>
-                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Upcoming</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Date:</span> May 10, 2025 (9:00 AM - 4:00 PM)
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Location:</span> Kingston Conference Center
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Attendees:</span> 43 confirmed
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Send Reminder</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">Manage Attendees</button>
-              </div>
-            </li>
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Election Day Briefing</div>
-                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Upcoming</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Date:</span> May 15, 2025 (10:00 AM - 12:00 PM)
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Location:</span> Virtual (Zoom)
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Attendees:</span> 132 confirmed
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Send Reminder</button>
-                <button class="px-3 py-1 bg-gray-200 rounded text-sm">Manage Attendees</button>
-              </div>
-            </li>
-          </ul>
-        </div>
-        `
-      );
-    }, 800);
-  };
+  // Note: handleManageEvents function is already defined above
   
   // Handler for sending event notification
   const handleSendEventNotification = () => {
@@ -1051,7 +1140,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Manage Assignments</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleManageAssignments}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Manage Assignments"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -1084,7 +1180,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">View Analytics</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleViewStationAnalytics}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "View Analytics"}
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -1120,7 +1223,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Review Reports</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default" 
+                  onClick={handleReviewReports}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Review Reports"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -1186,7 +1296,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">View Analytics</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default" 
+                  onClick={handleViewAnalytics}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "View Analytics"}
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -1222,7 +1339,59 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Manage Events</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={() => {
+                    setIsLoading(true);
+                    setTimeout(() => {
+                      setIsLoading(false);
+                      openModal(
+                        "Event Management",
+                        `
+                        <div>
+                          <div class="flex justify-between mb-4">
+                            <h3 class="text-lg font-medium">Upcoming Events</h3>
+                            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create Event</button>
+                          </div>
+                          <ul class="space-y-3">
+                            <li class="p-3 border rounded">
+                              <div class="flex justify-between mb-1">
+                                <div class="font-medium">Observer Training Workshop</div>
+                                <div class="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Upcoming</div>
+                              </div>
+                              <div class="text-sm text-gray-500 mb-2">May 10, 2025 (9:00 AM - 2:00 PM)</div>
+                              <div class="text-sm text-gray-500 mb-2">Central Community Center</div>
+                              <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Attendance</button>
+                                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                              </div>
+                            </li>
+                            
+                            <li class="p-3 border rounded">
+                              <div class="flex justify-between mb-1">
+                                <div class="font-medium">Election Day Briefing</div>
+                                <div class="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Upcoming</div>
+                              </div>
+                              <div class="text-sm text-gray-500 mb-2">May 15, 2025 (6:00 PM - 8:00 PM)</div>
+                              <div class="text-sm text-gray-500 mb-2">Virtual (Zoom)</div>
+                              <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Attendance</button>
+                                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                        `
+                      );
+                    }, 800);
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Manage Events"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -1251,7 +1420,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Send Event Notification</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default" 
+                  onClick={handleSendNotification}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Sending..." : "Send Event Notification"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -1284,7 +1460,88 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Manage Training</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={() => {
+                    setIsLoading(true);
+                    setTimeout(() => {
+                      setIsLoading(false);
+                      openModal(
+                        "Training Management",
+                        `
+                        <div>
+                          <div class="flex justify-between mb-4">
+                            <h3 class="text-lg font-medium">Training Modules</h3>
+                            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create Module</button>
+                          </div>
+                          <ul class="space-y-3">
+                            <li class="p-3 border rounded">
+                              <div class="flex justify-between mb-1">
+                                <div class="font-medium">Election Observation Basics</div>
+                                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+                              </div>
+                              <div class="text-sm text-gray-500 mb-2">Required for all observers</div>
+                              <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Completion Rate:</span>
+                                <span class="text-sm font-medium">95%</span>
+                              </div>
+                              <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                                <div class="h-full bg-green-500" style={{width: "95%"}}></div>
+                              </div>
+                              <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">View Results</button>
+                              </div>
+                            </li>
+                            
+                            <li class="p-3 border rounded">
+                              <div class="flex justify-between mb-1">
+                                <div class="font-medium">Reporting & Documentation</div>
+                                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+                              </div>
+                              <div class="text-sm text-gray-500 mb-2">Required for all observers</div>
+                              <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Completion Rate:</span>
+                                <span class="text-sm font-medium">87%</span>
+                              </div>
+                              <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                                <div class="h-full bg-green-500" style={{width: "87%"}}></div>
+                              </div>
+                              <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">View Results</button>
+                              </div>
+                            </li>
+                            
+                            <li class="p-3 border rounded">
+                              <div class="flex justify-between mb-1">
+                                <div class="font-medium">Conflict Resolution</div>
+                                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Optional</div>
+                              </div>
+                              <div class="text-sm text-gray-500 mb-2">Recommended for supervisors</div>
+                              <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm">Completion Rate:</span>
+                                <span class="text-sm font-medium">62%</span>
+                              </div>
+                              <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                                <div class="h-full bg-amber-500" style={{width: "62%"}}></div>
+                              </div>
+                              <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">View Results</button>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                        `
+                      );
+                    }, 800);
+                  }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Manage Training"}
+                </Button>
               </CardFooter>
             </Card>
           </div>
