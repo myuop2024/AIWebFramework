@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -58,6 +58,10 @@ export const pollingStations = pgTable("polling_stations", {
   zipCode: text("zip_code").notNull(),
   coordinates: text("coordinates"),
   stationCode: text("station_code").notNull().unique(),
+  latitude: doublePrecision("latitude"),
+  longitude: doublePrecision("longitude"),
+  capacity: integer("capacity").default(5), // Max number of observers that can be assigned
+  status: text("status").default("active").notNull(), // active, closed, pending
 });
 
 // User-polling station assignments
@@ -67,6 +71,15 @@ export const assignments = pgTable("assignments", {
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
   isPrimary: boolean("is_primary").default(false),
   assignedAt: timestamp("assigned_at").defaultNow(),
+  startDate: timestamp("start_date").notNull(), // When the assignment begins
+  endDate: timestamp("end_date").notNull(),     // When the assignment ends
+  status: text("status").default("scheduled").notNull(), // scheduled, active, completed, cancelled
+  notes: text("notes"),                          // Any special instructions
+  checkInRequired: boolean("check_in_required").default(true), // Whether observer needs to check in
+  lastCheckIn: timestamp("last_check_in"),       // Last time observer checked in
+  lastCheckOut: timestamp("last_check_out"),     // Last time observer checked out
+  role: text("role").default("observer").notNull(), // Role at polling station: observer, supervisor, etc.
+  priority: integer("priority").default(1),      // Assignment priority
 });
 
 // Form templates for customizable reports

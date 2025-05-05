@@ -337,7 +337,8 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(events)
       .where(
-        events.startTime > now
+        // Use gt() from drizzle-orm for proper comparison
+        gt(events.startTime, now)
       )
       .orderBy(events.startTime);
   }
