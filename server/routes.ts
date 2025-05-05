@@ -819,6 +819,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
+  // Admin endpoints - get all users
+  app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    try {
+      // Get all users from the database
+      const allUsers = await storage.getAllUsers();
+      
+      // Map users to proper format
+      const formattedUsers = allUsers.map(user => {
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          username: user.username,
+          role: user.role || 'observer',
+          observerId: user.observerId,
+          phoneNumber: user.phoneNumber,
+          verificationStatus: user.verificationStatus,
+          trainingStatus: user.trainingStatus || 'not_started',
+          createdAt: user.createdAt
+        };
+      });
+      
+      return res.json(formattedUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ message: 'Failed to fetch users' });
+    }
+  });
+  
+  // Endpoint for approving or rejecting user verification
+  app.post('/api/admin/users/:userId/verify', requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { verificationStatus } = req.body;
+      
+      if (!userId || !verificationStatus) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      if (verificationStatus !== 'verified' && verificationStatus !== 'rejected' && verificationStatus !== 'pending') {
+        return res.status(400).json({ message: 'Invalid verification status' });
+      }
+      
+      // Update the user's verification status
+      const updatedUser = await storage.updateUser(userId, { verificationStatus });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      return res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user verification:', error);
+      res.status(500).json({ message: 'Failed to update user verification' });
+    }
+  });
+  
   // Observer verification queue
   app.get('/api/admin/verification-queue', requireAdmin, async (req, res) => {
     try {
