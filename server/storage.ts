@@ -38,7 +38,15 @@ export interface IStorage {
   
   // Assignment operations
   getAssignmentsByUserId(userId: number): Promise<Assignment[]>;
+  getAssignmentsByStationId(stationId: number): Promise<Assignment[]>;
+  getAssignment(id: number): Promise<Assignment | undefined>;
+  getActiveAssignments(userId: number): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
+  updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined>;
+  checkSchedulingConflicts(userId: number, startDate: Date, endDate: Date, excludeAssignmentId?: number): Promise<Assignment[]>;
+  getActiveAssignmentsForStation(stationId: number, startDate: Date, endDate: Date): Promise<Assignment[]>;
+  checkInObserver(assignmentId: number): Promise<Assignment | undefined>;
+  checkOutObserver(assignmentId: number): Promise<Assignment | undefined>;
   
   // Form template operations
   getFormTemplate(id: number): Promise<FormTemplate | undefined>;
@@ -386,12 +394,195 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getAssignmentsByStationId(stationId: number): Promise<Assignment[]> {
+    return Array.from(this.assignments.values())
+      .filter(assignment => assignment.stationId === stationId)
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  }
+
+  async getAssignment(id: number): Promise<Assignment | undefined> {
+    return this.assignments.get(id);
+  }
+
+  async getActiveAssignments(userId: number): Promise<Assignment[]> {
+    const now = new Date();
+    return Array.from(this.assignments.values())
+      .filter(assignment => 
+        assignment.userId === userId && 
+        (assignment.status === 'active' || assignment.status === 'scheduled') &&
+        assignment.endDate > now
+      )
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+  }
+
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
+    // Check for scheduling conflicts
+    const conflicts = await this.checkSchedulingConflicts(
+      assignment.userId,
+      assignment.startDate,
+      assignment.endDate
+    );
+
+    if (conflicts.length > 0) {
+      throw new Error(`Schedule conflict detected with ${conflicts.length} existing assignments`);
+    }
+
+    // Check station capacity
+    const existingAssignments = await this.getActiveAssignmentsForStation(
+      assignment.stationId,
+      assignment.startDate,
+      assignment.endDate
+    );
+
+    const station = await this.getPollingStation(assignment.stationId);
+    if (!station) {
+      throw new Error('Polling station not found');
+    }
+
+    const stationCapacity = station.capacity || 5;
+    if (existingAssignments.length >= stationCapacity) {
+      throw new Error(`Polling station capacity (${stationCapacity}) exceeded`);
+    }
+
+    // Create the assignment with default values
     const id = this.assignmentIdCounter++;
     const now = new Date();
-    const newAssignment: Assignment = { ...assignment, id, assignedAt: now };
+    const newAssignment: Assignment = { 
+      ...assignment, 
+      id, 
+      assignedAt: now,
+      role: assignment.role || 'observer',
+      status: assignment.status || 'scheduled',
+      isPrimary: assignment.isPrimary || false,
+      checkInRequired: assignment.checkInRequired !== undefined ? assignment.checkInRequired : true,
+      priority: assignment.priority || 1,
+      notes: assignment.notes || null,
+      lastCheckIn: null,
+      lastCheckOut: null
+    };
+
     this.assignments.set(id, newAssignment);
     return newAssignment;
+  }
+
+  async updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined> {
+    const assignment = await this.getAssignment(id);
+    if (!assignment) return undefined;
+
+    // If dates are being updated, check for conflicts
+    if (data.startDate || data.endDate) {
+      const startDate = data.startDate || assignment.startDate;
+      const endDate = data.endDate || assignment.endDate;
+
+      const conflicts = await this.checkSchedulingConflicts(
+        assignment.userId,
+        startDate,
+        endDate,
+        id // Exclude current assignment
+      );
+
+      if (conflicts.length > 0) {
+        throw new Error(`Schedule conflict detected with ${conflicts.length} existing assignments`);
+      }
+    }
+
+    const updatedAssignment = { ...assignment, ...data };
+    this.assignments.set(id, updatedAssignment);
+    return updatedAssignment;
+  }
+
+  async checkSchedulingConflicts(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+    excludeAssignmentId?: number
+  ): Promise<Assignment[]> {
+    return Array.from(this.assignments.values())
+      .filter(assignment => {
+        // Exclude the current assignment if updating
+        if (excludeAssignmentId && assignment.id === excludeAssignmentId) {
+          return false;
+        }
+
+        // Only check assignments for this user
+        if (assignment.userId !== userId) {
+          return false;
+        }
+
+        // Only consider active or scheduled assignments
+        if (assignment.status !== 'active' && assignment.status !== 'scheduled') {
+          return false;
+        }
+
+        // Check for time conflicts
+        return (
+          // Start date falls within existing assignment
+          (startDate >= assignment.startDate && startDate <= assignment.endDate) ||
+          // End date falls within existing assignment
+          (endDate >= assignment.startDate && endDate <= assignment.endDate) ||
+          // Assignment encompasses an existing assignment
+          (startDate <= assignment.startDate && endDate >= assignment.endDate)
+        );
+      });
+  }
+
+  async getActiveAssignmentsForStation(
+    stationId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Assignment[]> {
+    return Array.from(this.assignments.values())
+      .filter(assignment => {
+        // Only check assignments for this station
+        if (assignment.stationId !== stationId) {
+          return false;
+        }
+
+        // Only consider active or scheduled assignments
+        if (assignment.status !== 'active' && assignment.status !== 'scheduled') {
+          return false;
+        }
+
+        // Check for time overlap
+        return (
+          // Start date falls within existing assignment
+          (startDate >= assignment.startDate && startDate <= assignment.endDate) ||
+          // End date falls within existing assignment
+          (endDate >= assignment.startDate && endDate <= assignment.endDate) ||
+          // Assignment encompasses an existing assignment
+          (startDate <= assignment.startDate && endDate >= assignment.endDate)
+        );
+      });
+  }
+
+  async checkInObserver(assignmentId: number): Promise<Assignment | undefined> {
+    const assignment = await this.getAssignment(assignmentId);
+    if (!assignment) return undefined;
+    
+    const now = new Date();
+    const updatedAssignment = { 
+      ...assignment, 
+      lastCheckIn: now,
+      status: 'active'
+    };
+    
+    this.assignments.set(assignmentId, updatedAssignment);
+    return updatedAssignment;
+  }
+
+  async checkOutObserver(assignmentId: number): Promise<Assignment | undefined> {
+    const assignment = await this.getAssignment(assignmentId);
+    if (!assignment) return undefined;
+    
+    const now = new Date();
+    const updatedAssignment = { 
+      ...assignment, 
+      lastCheckOut: now,
+      status: 'completed'
+    };
+    
+    this.assignments.set(assignmentId, updatedAssignment);
+    return updatedAssignment;
   }
 
   // Report operations

@@ -1,4 +1,4 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gt, lt, or, between, sql } from "drizzle-orm";
 import { IStorage } from "./storage";
 import { db } from "./db";
 import {
@@ -152,12 +152,206 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(assignments).where(eq(assignments.userId, userId));
   }
 
+  async getAssignmentsByStationId(stationId: number): Promise<Assignment[]> {
+    return db.select()
+      .from(assignments)
+      .where(eq(assignments.stationId, stationId))
+      .orderBy(assignments.startDate);
+  }
+
+  async getAssignment(id: number): Promise<Assignment | undefined> {
+    const result = await db.select().from(assignments).where(eq(assignments.id, id));
+    return result[0];
+  }
+
+  async getActiveAssignments(userId: number): Promise<Assignment[]> {
+    const now = new Date();
+    return db.select()
+      .from(assignments)
+      .where(
+        and(
+          eq(assignments.userId, userId),
+          or(
+            eq(assignments.status, 'active'),
+            eq(assignments.status, 'scheduled')
+          ),
+          // Assignment end date is in the future
+          gt(assignments.endDate, now)
+        )
+      )
+      .orderBy(assignments.startDate);
+  }
+
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
+    // Check if this would create a scheduling conflict
+    const conflicts = await this.checkSchedulingConflicts(
+      assignment.userId,
+      assignment.startDate,
+      assignment.endDate,
+      undefined // No assignment ID since it's a new assignment
+    );
+
+    if (conflicts.length > 0) {
+      throw new Error(`Schedule conflict detected with ${conflicts.length} existing assignments`);
+    }
+
+    // Check if the polling station has capacity
+    const existingAssignments = await this.getActiveAssignmentsForStation(
+      assignment.stationId,
+      assignment.startDate,
+      assignment.endDate
+    );
+
+    const station = await this.getPollingStation(assignment.stationId);
+    if (!station) {
+      throw new Error('Polling station not found');
+    }
+
+    // Check if adding this assignment would exceed the station's capacity
+    if (existingAssignments.length >= (station.capacity || 5)) {
+      throw new Error(`Polling station capacity (${station.capacity}) exceeded`);
+    }
+
+    // Defaults for assignment
+    const role = assignment.role || 'observer';
+    const status = assignment.status || 'scheduled';
+    const isPrimary = assignment.isPrimary || false;
+    const checkInRequired = assignment.checkInRequired !== undefined ? assignment.checkInRequired : true;
+    const priority = assignment.priority || 1;
+
     const result = await db.insert(assignments)
       .values({
         ...assignment,
-        assignedAt: new Date()
+        assignedAt: new Date(),
+        role,
+        status,
+        isPrimary,
+        checkInRequired,
+        priority
       })
+      .returning();
+    return result[0];
+  }
+
+  async updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined> {
+    // If dates are being updated, check for scheduling conflicts
+    if (data.startDate || data.endDate) {
+      const currentAssignment = await this.getAssignment(id);
+      if (!currentAssignment) {
+        throw new Error('Assignment not found');
+      }
+
+      const startDate = data.startDate || currentAssignment.startDate;
+      const endDate = data.endDate || currentAssignment.endDate;
+
+      const conflicts = await this.checkSchedulingConflicts(
+        currentAssignment.userId,
+        startDate,
+        endDate,
+        id // Exclude the current assignment from conflict checks
+      );
+
+      if (conflicts.length > 0) {
+        throw new Error(`Schedule conflict detected with ${conflicts.length} existing assignments`);
+      }
+    }
+
+    const result = await db.update(assignments)
+      .set(data)
+      .where(eq(assignments.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Check if an assignment would conflict with existing assignments
+  async checkSchedulingConflicts(
+    userId: number,
+    startDate: Date,
+    endDate: Date,
+    excludeAssignmentId?: number
+  ): Promise<Assignment[]> {
+    let query = db.select()
+      .from(assignments)
+      .where(
+        and(
+          eq(assignments.userId, userId),
+          or(
+            // Case 1: Start date falls within existing assignment
+            between(startDate, assignments.startDate, assignments.endDate),
+            // Case 2: End date falls within existing assignment
+            between(endDate, assignments.startDate, assignments.endDate),
+            // Case 3: Assignment encompasses an existing assignment
+            and(
+              lt(startDate, assignments.startDate),
+              gt(endDate, assignments.endDate)
+            )
+          ),
+          // Only consider active or scheduled assignments
+          or(
+            eq(assignments.status, 'active'),
+            eq(assignments.status, 'scheduled')
+          )
+        )
+      );
+
+    // Exclude the current assignment if we're checking for conflicts during an update
+    if (excludeAssignmentId) {
+      query = query.where(sql`${assignments.id} != ${excludeAssignmentId}`);
+    }
+
+    return query;
+  }
+
+  // Get active assignments for a polling station during a specified time period
+  async getActiveAssignmentsForStation(
+    stationId: number,
+    startDate: Date,
+    endDate: Date
+  ): Promise<Assignment[]> {
+    return db.select()
+      .from(assignments)
+      .where(
+        and(
+          eq(assignments.stationId, stationId),
+          or(
+            eq(assignments.status, 'active'),
+            eq(assignments.status, 'scheduled')
+          ),
+          or(
+            // Assignments that overlap with the requested period
+            between(startDate, assignments.startDate, assignments.endDate),
+            between(endDate, assignments.startDate, assignments.endDate),
+            and(
+              lt(startDate, assignments.startDate),
+              gt(endDate, assignments.endDate)
+            )
+          )
+        )
+      );
+  }
+
+  // Check in an observer at a polling station
+  async checkInObserver(assignmentId: number): Promise<Assignment | undefined> {
+    const now = new Date();
+    const result = await db.update(assignments)
+      .set({
+        lastCheckIn: now,
+        status: 'active'
+      })
+      .where(eq(assignments.id, assignmentId))
+      .returning();
+    return result[0];
+  }
+
+  // Check out an observer from a polling station
+  async checkOutObserver(assignmentId: number): Promise<Assignment | undefined> {
+    const now = new Date();
+    const result = await db.update(assignments)
+      .set({
+        lastCheckOut: now,
+        status: 'completed'
+      })
+      .where(eq(assignments.id, assignmentId))
       .returning();
     return result[0];
   }
