@@ -22,27 +22,19 @@ export default function AssignmentsPage() {
   const [showScheduler, setShowScheduler] = useState(false);
 
   // Fetch all assignments
-  const { data: assignments, isLoading: assignmentsLoading } = useQuery({
-    queryKey: ['/api/users/assignments'],
-    queryFn: async (): Promise<(Assignment & { station?: PollingStation })[]> => {
-      const response = await apiRequest('/api/users/assignments');
-      return response;
-    }
+  const { data: assignments, isLoading: assignmentsLoading } = useQuery<(Assignment & { station?: PollingStation })[]>({
+    queryKey: ['/api/users/assignments']
   });
 
   // Fetch active assignments
-  const { data: activeAssignments, isLoading: activeAssignmentsLoading } = useQuery({
-    queryKey: ['/api/users/assignments/active'],
-    queryFn: async (): Promise<(Assignment & { station?: PollingStation })[]> => {
-      const response = await apiRequest('/api/users/assignments/active');
-      return response;
-    }
+  const { data: activeAssignments, isLoading: activeAssignmentsLoading } = useQuery<(Assignment & { station?: PollingStation })[]>({
+    queryKey: ['/api/users/assignments/active']
   });
 
   // Check-in mutation
   const checkIn = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return await apiRequest(`/api/assignments/${assignmentId}/check-in`, {
+      return await apiRequest<{ success: boolean }>(`/api/assignments/${assignmentId}/check-in`, {
         method: 'POST'
       });
     },
@@ -70,7 +62,7 @@ export default function AssignmentsPage() {
   // Check-out mutation
   const checkOut = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return await apiRequest(`/api/assignments/${assignmentId}/check-out`, {
+      return await apiRequest<{ success: boolean }>(`/api/assignments/${assignmentId}/check-out`, {
         method: 'POST'
       });
     },
