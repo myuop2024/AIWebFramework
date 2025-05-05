@@ -1,0 +1,230 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { Clock, CheckCircle, FileText, MapPin } from "lucide-react";
+
+interface VerificationStatus {
+  status: "pending" | "in-progress" | "completed";
+  stepsCompleted: number;
+  totalSteps: number;
+}
+
+interface TrainingStatus {
+  status: "pending" | "in-progress" | "completed";
+  modulesCompleted: number;
+  totalModules: number;
+}
+
+interface ReportStatus {
+  count: number;
+  lastSubmitted: Date | null;
+  nextDue: Date | null;
+}
+
+interface PollingStationStatus {
+  count: number;
+  primary: string | null;
+}
+
+export default function StatusCards() {
+  // Fetch user profile data
+  const { data: profileData, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['/api/users/profile'],
+  });
+
+  // Fetch reports data
+  const { data: reportsData, isLoading: isReportsLoading } = useQuery({
+    queryKey: ['/api/reports'],
+  });
+
+  // Fetch assignments data
+  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery({
+    queryKey: ['/api/users/assignments'],
+  });
+
+  // Calculate verification status
+  const verificationStatus: VerificationStatus = {
+    status: profileData?.user?.verificationStatus || "pending",
+    stepsCompleted: 0,
+    totalSteps: 3
+  };
+
+  if (profileData?.profile) {
+    verificationStatus.stepsCompleted++;
+  }
+  
+  if (profileData?.documents?.length > 0) {
+    verificationStatus.stepsCompleted++;
+  }
+
+  if (profileData?.user?.verificationStatus === "completed") {
+    verificationStatus.stepsCompleted = 3;
+  }
+
+  // Calculate training status
+  const trainingStatus: TrainingStatus = {
+    status: profileData?.user?.trainingStatus || "pending",
+    modulesCompleted: 3, // Mock data - would be calculated from actual user training progress
+    totalModules: 3
+  };
+
+  // Calculate report status
+  const reportStatus: ReportStatus = {
+    count: reportsData?.length || 0,
+    lastSubmitted: reportsData?.length > 0 ? new Date(reportsData[0].submittedAt) : null,
+    nextDue: new Date() // Today's date as mock data
+  };
+
+  // Calculate polling station status
+  const pollingStationStatus: PollingStationStatus = {
+    count: assignmentsData?.length || 0,
+    primary: assignmentsData?.find(a => a.isPrimary)?.station?.name || null
+  };
+
+  // Loading skeleton
+  if (isProfileLoading || isReportsLoading || isAssignmentsLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[...Array(4)].map((_, index) => (
+          <div key={index} className="bg-white rounded-lg shadow p-5 animate-pulse">
+            <div className="flex justify-between">
+              <div>
+                <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+                <div className="h-6 bg-gray-200 rounded w-32"></div>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+            </div>
+            <div className="mt-3">
+              <div className="w-full bg-gray-200 rounded-full h-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-40 mt-2"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Verification Status Card */}
+      <div className="bg-white rounded-lg shadow p-5">
+        <div className="flex justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Verification Status</p>
+            <p className="text-lg font-medium text-gray-900">
+              {verificationStatus.status === "pending" && "Pending"}
+              {verificationStatus.status === "in-progress" && "In Progress"}
+              {verificationStatus.status === "completed" && "Completed"}
+            </p>
+          </div>
+          <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+            {verificationStatus.status === "completed" ? (
+              <CheckCircle className="h-6 w-6 text-success" />
+            ) : (
+              <Clock className="h-6 w-6 text-warning" />
+            )}
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`${
+                verificationStatus.status === "completed"
+                  ? "bg-success"
+                  : "bg-warning"
+              } h-2 rounded-full`}
+              style={{ width: `${(verificationStatus.stepsCompleted / verificationStatus.totalSteps) * 100}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {verificationStatus.stepsCompleted} of {verificationStatus.totalSteps} steps completed
+          </p>
+        </div>
+      </div>
+      
+      {/* Training Status Card */}
+      <div className="bg-white rounded-lg shadow p-5">
+        <div className="flex justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Training Status</p>
+            <p className="text-lg font-medium text-gray-900">
+              {trainingStatus.status === "pending" && "Pending"}
+              {trainingStatus.status === "in-progress" && "In Progress"}
+              {trainingStatus.status === "completed" && "Completed"}
+            </p>
+          </div>
+          <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+            <CheckCircle className="h-6 w-6 text-success" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-success h-2 rounded-full" 
+              style={{ width: `${(trainingStatus.modulesCompleted / trainingStatus.totalModules) * 100}%` }}
+            ></div>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {trainingStatus.modulesCompleted} of {trainingStatus.totalModules} modules completed
+          </p>
+        </div>
+      </div>
+      
+      {/* Reports Submitted Card */}
+      <div className="bg-white rounded-lg shadow p-5">
+        <div className="flex justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Reports Submitted</p>
+            <p className="text-lg font-medium text-gray-900">{reportStatus.count}</p>
+          </div>
+          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <FileText className="h-6 w-6 text-primary" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs text-gray-500">
+            Last submitted:{" "}
+            <span className="font-medium">
+              {reportStatus.lastSubmitted
+                ? new Date(reportStatus.lastSubmitted).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : "None"}
+            </span>
+          </p>
+          <p className="text-xs text-gray-500">
+            Next report due:{" "}
+            <span className="font-medium text-primary">Today</span>
+          </p>
+        </div>
+      </div>
+      
+      {/* Assigned Polling Stations Card */}
+      <div className="bg-white rounded-lg shadow p-5">
+        <div className="flex justify-between">
+          <div>
+            <p className="text-sm text-gray-500 mb-1">Assigned Polling Stations</p>
+            <p className="text-lg font-medium text-gray-900">{pollingStationStatus.count}</p>
+          </div>
+          <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+            <MapPin className="h-6 w-6 text-purple-600" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <p className="text-xs text-gray-500">
+            Primary:{" "}
+            <span className="font-medium">
+              {pollingStationStatus.primary || "Not assigned"}
+            </span>
+          </p>
+          <Link href="/polling-stations">
+            <span className="text-xs text-primary font-medium mt-1 inline-block cursor-pointer">
+              View all stations
+            </span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
