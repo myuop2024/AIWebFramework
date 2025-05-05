@@ -34,9 +34,8 @@ export default function AssignmentsPage() {
   // Check-in mutation
   const checkIn = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return await apiRequest<{ success: boolean }>(`/api/assignments/${assignmentId}/check-in`, {
-        method: 'POST'
-      });
+      const res = await apiRequest('POST', `/api/assignments/${assignmentId}/check-in`, {});
+      return await res.json();
     },
     onSuccess: () => {
       // Invalidate relevant queries
@@ -62,9 +61,8 @@ export default function AssignmentsPage() {
   // Check-out mutation
   const checkOut = useMutation({
     mutationFn: async (assignmentId: number) => {
-      return await apiRequest<{ success: boolean }>(`/api/assignments/${assignmentId}/check-out`, {
-        method: 'POST'
-      });
+      const res = await apiRequest('POST', `/api/assignments/${assignmentId}/check-out`, {});
+      return await res.json();
     },
     onSuccess: () => {
       // Invalidate relevant queries
