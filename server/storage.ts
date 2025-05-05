@@ -1,12 +1,14 @@
 import {
-  users, userProfiles, documents, pollingStations, assignments, reports,
+  users, userProfiles, documents, pollingStations, assignments, formTemplates, reports, reportAttachments,
   events, eventParticipation, faqEntries, newsEntries, messages,
   type User, type InsertUser, type UserProfile, type InsertUserProfile,
   type Document, type InsertDocument, type PollingStation, type InsertPollingStation,
-  type Assignment, type InsertAssignment, type Report, type InsertReport,
+  type Assignment, type InsertAssignment, type FormTemplate, type InsertFormTemplate,
+  type Report, type InsertReport, type ReportAttachment, type InsertReportAttachment,
   type Event, type InsertEvent, type EventParticipation, type InsertEventParticipation,
   type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage
 } from "@shared/schema";
+import crypto from 'crypto';
 
 // Interface for storage operations
 export interface IStorage {
@@ -38,11 +40,30 @@ export interface IStorage {
   getAssignmentsByUserId(userId: number): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   
+  // Form template operations
+  getFormTemplate(id: number): Promise<FormTemplate | undefined>;
+  getAllFormTemplates(): Promise<FormTemplate[]>;
+  getFormTemplatesByCategory(category: string): Promise<FormTemplate[]>;
+  getActiveFormTemplates(): Promise<FormTemplate[]>;
+  createFormTemplate(template: InsertFormTemplate): Promise<FormTemplate>;
+  updateFormTemplate(id: number, data: Partial<FormTemplate>): Promise<FormTemplate | undefined>;
+  deleteFormTemplate(id: number): Promise<boolean>;
+  
   // Report operations
   getReport(id: number): Promise<Report | undefined>;
   getReportsByUserId(userId: number): Promise<Report[]>;
+  getReportsByStationId(stationId: number): Promise<Report[]>;
+  getReportsByStatus(status: string): Promise<Report[]>;
   createReport(report: InsertReport): Promise<Report>;
   updateReport(id: number, data: Partial<Report>): Promise<Report | undefined>;
+  generateContentHash(reportContent: any): string;
+  
+  // Report attachment operations
+  getReportAttachment(id: number): Promise<ReportAttachment | undefined>;
+  getAttachmentsByReportId(reportId: number): Promise<ReportAttachment[]>;
+  createReportAttachment(attachment: InsertReportAttachment): Promise<ReportAttachment>;
+  updateReportAttachment(id: number, data: Partial<ReportAttachment>): Promise<ReportAttachment | undefined>;
+  deleteReportAttachment(id: number): Promise<boolean>;
   
   // Event operations
   getEvent(id: number): Promise<Event | undefined>;
@@ -88,7 +109,9 @@ export class MemStorage implements IStorage {
   private documents: Map<number, Document>;
   private pollingStations: Map<number, PollingStation>;
   private assignments: Map<number, Assignment>;
+  private formTemplates: Map<number, FormTemplate>;
   private reports: Map<number, Report>;
+  private reportAttachments: Map<number, ReportAttachment>;
   private events: Map<number, Event>;
   private eventParticipations: Map<number, EventParticipation>;
   private faqs: Map<number, Faq>;
@@ -100,7 +123,9 @@ export class MemStorage implements IStorage {
   private documentIdCounter: number;
   private stationIdCounter: number;
   private assignmentIdCounter: number;
+  private formTemplateIdCounter: number;
   private reportIdCounter: number;
+  private reportAttachmentIdCounter: number;
   private eventIdCounter: number;
   private participationIdCounter: number;
   private faqIdCounter: number;
@@ -113,7 +138,9 @@ export class MemStorage implements IStorage {
     this.documents = new Map();
     this.pollingStations = new Map();
     this.assignments = new Map();
+    this.formTemplates = new Map();
     this.reports = new Map();
+    this.reportAttachments = new Map();
     this.events = new Map();
     this.eventParticipations = new Map();
     this.faqs = new Map();
@@ -125,7 +152,9 @@ export class MemStorage implements IStorage {
     this.documentIdCounter = 1;
     this.stationIdCounter = 1;
     this.assignmentIdCounter = 1;
+    this.formTemplateIdCounter = 1;
     this.reportIdCounter = 1;
+    this.reportAttachmentIdCounter = 1;
     this.eventIdCounter = 1;
     this.participationIdCounter = 1;
     this.faqIdCounter = 1;
@@ -396,6 +425,105 @@ export class MemStorage implements IStorage {
     const updatedReport = { ...report, ...data };
     this.reports.set(id, updatedReport);
     return updatedReport;
+  }
+  
+  // Generate a content hash for a report
+  generateContentHash(reportContent: any): string {
+    return crypto.createHash('sha256').update(JSON.stringify(reportContent)).digest('hex');
+  }
+  
+  // Report attachment operations
+  async getReportAttachment(id: number): Promise<ReportAttachment | undefined> {
+    return this.reportAttachments.get(id);
+  }
+  
+  async getAttachmentsByReportId(reportId: number): Promise<ReportAttachment[]> {
+    return Array.from(this.reportAttachments.values()).filter(
+      (attachment) => attachment.reportId === reportId
+    );
+  }
+  
+  async createReportAttachment(attachment: InsertReportAttachment): Promise<ReportAttachment> {
+    const id = this.reportAttachmentIdCounter++;
+    const now = new Date();
+    const newAttachment: ReportAttachment = {
+      ...attachment,
+      id,
+      uploadedAt: now
+    };
+    this.reportAttachments.set(id, newAttachment);
+    return newAttachment;
+  }
+  
+  async updateReportAttachment(id: number, data: Partial<ReportAttachment>): Promise<ReportAttachment | undefined> {
+    const attachment = await this.getReportAttachment(id);
+    if (!attachment) return undefined;
+    
+    const updatedAttachment = { ...attachment, ...data };
+    this.reportAttachments.set(id, updatedAttachment);
+    return updatedAttachment;
+  }
+  
+  async deleteReportAttachment(id: number): Promise<boolean> {
+    const exists = this.reportAttachments.has(id);
+    if (exists) {
+      this.reportAttachments.delete(id);
+      return true;
+    }
+    return false;
+  }
+  
+  // Form template operations
+  async getFormTemplate(id: number): Promise<FormTemplate | undefined> {
+    return this.formTemplates.get(id);
+  }
+  
+  async getAllFormTemplates(): Promise<FormTemplate[]> {
+    return Array.from(this.formTemplates.values());
+  }
+  
+  async getFormTemplatesByCategory(category: string): Promise<FormTemplate[]> {
+    return Array.from(this.formTemplates.values()).filter(
+      (template) => template.category === category
+    );
+  }
+  
+  async getActiveFormTemplates(): Promise<FormTemplate[]> {
+    return Array.from(this.formTemplates.values()).filter(
+      (template) => template.isActive === true
+    );
+  }
+  
+  async createFormTemplate(template: InsertFormTemplate): Promise<FormTemplate> {
+    const id = this.formTemplateIdCounter++;
+    const now = new Date();
+    const newTemplate: FormTemplate = {
+      ...template,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.formTemplates.set(id, newTemplate);
+    return newTemplate;
+  }
+  
+  async updateFormTemplate(id: number, data: Partial<FormTemplate>): Promise<FormTemplate | undefined> {
+    const template = await this.getFormTemplate(id);
+    if (!template) return undefined;
+    
+    const now = new Date();
+    const updatedTemplate = { ...template, ...data, updatedAt: now };
+    this.formTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+  
+  async deleteFormTemplate(id: number): Promise<boolean> {
+    const exists = this.formTemplates.has(id);
+    if (exists) {
+      this.formTemplates.delete(id);
+      return true;
+    }
+    return false;
   }
 
   // Event operations
