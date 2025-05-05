@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import AdminModal from "@/components/admin/admin-modal";
 import { 
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
   FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server
@@ -39,22 +40,664 @@ export default function Admin() {
     enabled: !!user && user.role === 'admin',
   });
 
+  // State for managing user data
+  const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [selectedStation, setSelectedStation] = useState<number | null>(null);
+  const [selectedReport, setSelectedReport] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<string>('');
+  const [modalTitle, setModalTitle] = useState<string>('');
+
+  // Function to open a modal with specific content
+  const openModal = (title: string, content: string) => {
+    setModalTitle(title);
+    setModalContent(content);
+    setIsModalOpen(true);
+  };
+
   // Handler for saving settings
   const handleSaveSettings = (section: string) => {
-    toast({
-      title: "Settings Updated",
-      description: `${section} settings have been saved successfully.`,
-      variant: "default",
-    });
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Settings Updated",
+        description: `${section} settings have been saved successfully.`,
+        variant: "default",
+      });
+    }, 800);
   };
 
   // Handler for toggling maintenance mode
   const handleToggleMaintenance = () => {
-    toast({
-      title: "Maintenance Mode Toggled",
-      description: "System maintenance mode has been updated.",
-      variant: "default",
-    });
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Maintenance Mode Toggled",
+        description: "System maintenance mode has been updated.",
+        variant: "default",
+      });
+    }, 800);
+  };
+  
+  // Handler for user management
+  const handleManageUsers = () => {
+    setIsLoading(true);
+    
+    // Simulate API call to get users
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "User Management", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">All Users (234)</h3>
+          <ul class="space-y-2">
+            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div>
+                <div class="font-medium">John Smith</div>
+                <div class="text-sm text-gray-500">Observer ID: OBS001</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
+              </div>
+            </li>
+            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div>
+                <div class="font-medium">Sarah Wilson</div>
+                <div class="text-sm text-gray-500">Observer ID: OBS002</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
+              </div>
+            </li>
+            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div>
+                <div class="font-medium">Michael Johnson</div>
+                <div class="text-sm text-gray-500">Observer ID: OBS003</div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for processing verifications
+  const handleProcessVerifications = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "User Verification", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">Pending Verifications (18)</h3>
+          <ul class="space-y-4">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Robert Brown</div>
+                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending</div>
+              </div>
+              <div class="text-sm mb-2">ID Verification submitted on May 1, 2025</div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Documents</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Jennifer Davis</div>
+                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending</div>
+              </div>
+              <div class="text-sm mb-2">ID Verification submitted on May 2, 2025</div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Documents</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for sending notification
+  const handleSendNotification = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Notification Sent",
+        description: "Your notification has been sent to all relevant users.",
+        variant: "default",
+      });
+    }, 800);
+  };
+  
+  // Handler for editing roles
+  const handleEditRoles = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Role Management", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">Edit Roles & Permissions</h3>
+          <ul class="space-y-4">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Administrator</div>
+                <div class="text-sm text-primary bg-primary-light/20 px-2 py-0.5 rounded">Full Access</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="admin-users" />
+                  <label for="admin-users" class="text-sm">User Management</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="admin-reports" />
+                  <label for="admin-reports" class="text-sm">Reports Access</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="admin-templates" />
+                  <label for="admin-templates" class="text-sm">Template Management</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="admin-stations" />
+                  <label for="admin-stations" class="text-sm">Polling Stations</label>
+                </div>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-2">
+                <div class="font-medium">Coordinator</div>
+                <div class="text-sm text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Limited Access</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-3">
+                <div class="flex items-center">
+                  <input type="checkbox" class="mr-2" id="coord-users" />
+                  <label for="coord-users" class="text-sm">User Management</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="coord-reports" />
+                  <label for="coord-reports" class="text-sm">Reports Access</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" class="mr-2" id="coord-templates" />
+                  <label for="coord-templates" class="text-sm">Template Management</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="checkbox" checked class="mr-2" id="coord-stations" />
+                  <label for="coord-stations" class="text-sm">Polling Stations</label>
+                </div>
+              </div>
+            </li>
+          </ul>
+          <div class="flex justify-end mt-4">
+            <button class="px-4 py-2 bg-primary text-white rounded">Save Changes</button>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for managing stations
+  const handleManageStations = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Polling Stations", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">All Polling Stations (124)</h3>
+            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Add New Station</button>
+          </div>
+          <ul class="space-y-3">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Main City Hall</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+              </div>
+              <div class="text-sm text-gray-500 mb-2">123 Downtown Ave, Kingston</div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Assignments</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Reports</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Central Community Center</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+              </div>
+              <div class="text-sm text-gray-500 mb-2">45 Park Street, Kingston</div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-amber-600 text-white rounded text-sm">Assignments</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Reports</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for managing assignments
+  const handleManageAssignments = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Station Assignments", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">Current Assignments</h3>
+            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create Assignment</button>
+          </div>
+          <ul class="space-y-3">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Main City Hall</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">In Progress</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Observer:</span> John Smith
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Schedule:</span> May 5, 2025 (8:00 AM - 4:00 PM)
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Details</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Central Community Center</div>
+                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Scheduled</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Observer:</span> Sarah Wilson
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Schedule:</span> May 6, 2025 (9:00 AM - 5:00 PM)
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">View Details</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for station analytics
+  const handleViewAnalytics = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Station Analytics", 
+        `
+        <div>
+          <h3 class="text-lg font-medium mb-4">Station Risk Assessment</h3>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">High Risk Stations (14)</div>
+                <button class="text-xs text-blue-600">View All</button>
+              </div>
+              <ul class="space-y-2">
+                <li class="flex justify-between p-2 bg-red-50 rounded">
+                  <div>Eastern District #7</div>
+                  <div class="text-sm text-red-600">87% Risk Score</div>
+                </li>
+                <li class="flex justify-between p-2 bg-red-50 rounded">
+                  <div>Northern Zone #12</div>
+                  <div class="text-sm text-red-600">82% Risk Score</div>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Medium Risk Stations (32)</div>
+                <button class="text-xs text-blue-600">View All</button>
+              </div>
+              <ul class="space-y-2">
+                <li class="flex justify-between p-2 bg-amber-50 rounded">
+                  <div>Central District #4</div>
+                  <div class="text-sm text-amber-600">56% Risk Score</div>
+                </li>
+                <li class="flex justify-between p-2 bg-amber-50 rounded">
+                  <div>Southern Zone #9</div>
+                  <div class="text-sm text-amber-600">48% Risk Score</div>
+                </li>
+              </ul>
+            </div>
+            
+            <div class="mt-4 p-3 border rounded bg-gray-50">
+              <div class="font-medium mb-2">Risk Assessment Criteria</div>
+              <ul class="list-disc pl-5 text-sm space-y-1">
+                <li>Previous incidents reported</li>
+                <li>Observer coverage gaps</li>
+                <li>Accessibility issues</li>
+                <li>Historical voter turnout</li>
+                <li>Security concerns</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for review reports
+  const handleReviewReports = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Report Management", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">Reports Requiring Review (18)</h3>
+            <div>
+              <select class="text-sm border rounded p-1">
+                <option>All Reports</option>
+                <option>Pending Review</option>
+                <option>Flagged Issues</option>
+                <option>Approved</option>
+              </select>
+            </div>
+          </div>
+          <ul class="space-y-3">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Incident Report #143</div>
+                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending Review</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Station:</span> Main City Hall
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Submitted by:</span> John Smith
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Date:</span> May 4, 2025 (2:34 PM)
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Review Details</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Observer Report #144</div>
+                <div class="text-sm text-red-600 bg-red-50 px-2 py-0.5 rounded">Flagged</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Station:</span> Central Community Center
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Submitted by:</span> Sarah Wilson
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Date:</span> May 4, 2025 (3:15 PM)
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Review Details</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for managing events
+  const handleManageEvents = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Event Management", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">All Events</h3>
+            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Create New Event</button>
+          </div>
+          <ul class="space-y-3">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Observer Training Workshop</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Upcoming</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Date:</span> May 10, 2025 (9:00 AM - 4:00 PM)
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Location:</span> Kingston Conference Center
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Attendees:</span> 43 confirmed
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Send Reminder</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">Manage Attendees</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Election Day Briefing</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Upcoming</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Date:</span> May 15, 2025 (10:00 AM - 12:00 PM)
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Location:</span> Virtual (Zoom)
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Attendees:</span> 132 confirmed
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Cancel</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Send Reminder</button>
+                <button class="px-3 py-1 bg-gray-200 rounded text-sm">Manage Attendees</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for sending event notification
+  const handleSendEventNotification = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Event Notification Sent",
+        description: "Your event notification has been sent to all participants.",
+        variant: "default",
+      });
+    }, 800);
+  };
+  
+  // Handler for managing training
+  const handleManageTraining = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "Training Management", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">Training Modules</h3>
+            <button class="px-3 py-1 bg-primary text-white rounded text-sm">Add New Module</button>
+          </div>
+          <ul class="space-y-3">
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Observer Fundamentals</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Completion rate:</span> 87%
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Last updated:</span> April 15, 2025
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-gray-600 text-white rounded text-sm">Disable</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Completions</button>
+              </div>
+            </li>
+            <li class="p-3 border rounded">
+              <div class="flex justify-between mb-1">
+                <div class="font-medium">Reporting Procedures</div>
+                <div class="text-sm text-green-600 bg-green-50 px-2 py-0.5 rounded">Active</div>
+              </div>
+              <div class="text-sm mb-1">
+                <span class="font-medium">Completion rate:</span> 76%
+              </div>
+              <div class="text-sm mb-2">
+                <span class="font-medium">Last updated:</span> April 20, 2025
+              </div>
+              <div class="flex gap-2">
+                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Edit</button>
+                <button class="px-3 py-1 bg-gray-600 text-white rounded text-sm">Disable</button>
+                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">View Completions</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for viewing system logs
+  const handleViewLogs = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      openModal(
+        "System Logs", 
+        `
+        <div>
+          <div class="flex justify-between mb-4">
+            <h3 class="text-lg font-medium">System Logs</h3>
+            <div>
+              <select class="text-sm border rounded p-1">
+                <option>All Logs</option>
+                <option>Error Logs</option>
+                <option>Authentication Logs</option>
+                <option>API Requests</option>
+              </select>
+            </div>
+          </div>
+          <div class="bg-gray-900 text-green-400 p-3 rounded font-mono text-sm h-64 overflow-y-auto">
+            <div>[2025-05-05 08:24:32] INFO: System startup completed</div>
+            <div>[2025-05-05 08:25:47] INFO: User login successful: admin</div>
+            <div>[2025-05-05 08:26:13] INFO: Database connection pool initialized</div>
+            <div>[2025-05-05 08:30:21] INFO: API request: GET /api/polling-stations</div>
+            <div>[2025-05-05 08:31:05] INFO: User login successful: observer1</div>
+            <div>[2025-05-05 08:32:17] INFO: New report submitted: id=145</div>
+            <div>[2025-05-05 08:33:42] WARN: Rate limit reached for IP: 192.168.1.42</div>
+            <div>[2025-05-05 08:35:19] INFO: API request: POST /api/users/profile</div>
+            <div>[2025-05-05 08:37:45] ERROR: Database query error: timeout</div>
+            <div>[2025-05-05 08:38:12] INFO: Database connection reestablished</div>
+            <div>[2025-05-05 08:40:27] INFO: User login successful: coordinator2</div>
+            <div>[2025-05-05 08:41:53] INFO: Assignment updated: id=87</div>
+            <div>[2025-05-05 08:45:11] INFO: API request: GET /api/reports?status=pending</div>
+            <div>[2025-05-05 08:47:32] INFO: Report status updated: id=142, status=approved</div>
+          </div>
+        </div>
+        `
+      );
+    }, 800);
+  };
+  
+  // Handler for running backup
+  const handleRunBackup = () => {
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      toast({
+        title: "Backup Initiated",
+        description: "System backup process has started. You'll be notified when complete.",
+        variant: "default",
+      });
+    }, 800);
   };
 
   if (loading || !user) {
@@ -744,13 +1387,25 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter className="flex gap-2">
-                <Button variant="outline" className="flex-1">Run Backup</Button>
-                <Button variant="default" className="flex-1">System Logs</Button>
+                <Button variant="outline" className="flex-1" onClick={handleRunBackup} disabled={isLoading}>
+                  {isLoading ? "Processing..." : "Run Backup"}
+                </Button>
+                <Button variant="default" className="flex-1" onClick={handleViewLogs} disabled={isLoading}>
+                  {isLoading ? "Loading..." : "System Logs"}
+                </Button>
               </CardFooter>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modal for displaying content */}
+      <AdminModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={modalTitle}
+        content={modalContent}
+      />
     </div>
   );
 }
