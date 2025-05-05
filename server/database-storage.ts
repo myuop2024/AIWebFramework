@@ -672,4 +672,142 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+  
+  // Statistics operations for admin dashboard
+  async getTotalUserCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+    return result[0].count;
+  }
+  
+  async getActiveObserverCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'observer'),
+          eq(users.verificationStatus, 'verified'),
+          eq(users.trainingStatus, 'completed')
+        )
+      );
+    return result[0].count;
+  }
+  
+  async getUserCountByRole(): Promise<Record<string, number>> {
+    const result = await db
+      .select({
+        role: users.role,
+        count: sql<number>`count(*)`
+      })
+      .from(users)
+      .groupBy(users.role);
+    
+    const roleMap: Record<string, number> = {};
+    result.forEach(r => {
+      const role = r.role || 'unassigned';
+      roleMap[role] = r.count;
+    });
+    
+    return roleMap;
+  }
+  
+  async getReportCountByType(): Promise<Record<string, number>> {
+    const result = await db
+      .select({
+        type: reports.reportType,
+        count: sql<number>`count(*)`
+      })
+      .from(reports)
+      .groupBy(reports.reportType);
+    
+    const typeMap: Record<string, number> = {};
+    result.forEach(r => {
+      typeMap[r.type] = r.count;
+    });
+    
+    return typeMap;
+  }
+  
+  async getReportCountByStatus(): Promise<Record<string, number>> {
+    const result = await db
+      .select({
+        status: reports.status,
+        count: sql<number>`count(*)`
+      })
+      .from(reports)
+      .groupBy(reports.status);
+    
+    const statusMap: Record<string, number> = {};
+    result.forEach(r => {
+      statusMap[r.status] = r.count;
+    });
+    
+    return statusMap;
+  }
+  
+  async getActiveAssignmentsCount(): Promise<number> {
+    const now = new Date();
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(assignments)
+      .where(
+        and(
+          or(
+            eq(assignments.status, 'active'),
+            eq(assignments.status, 'scheduled')
+          ),
+          gt(assignments.endDate, now)
+        )
+      );
+    return result[0].count;
+  }
+  
+  async getStationsWithIssueReports(): Promise<{id: number, name: string, issueCount: number}[]> {
+    // Get counts of issue reports by station
+    const reportCounts = await db
+      .select({
+        stationId: reports.stationId,
+        count: sql<number>`count(*)`
+      })
+      .from(reports)
+      .where(
+        or(
+          eq(reports.reportType, 'issue'),
+          eq(reports.reportType, 'incident')
+        )
+      )
+      .groupBy(reports.stationId);
+    
+    // Get station details for stations with issues
+    const stationIds = reportCounts.map(r => r.stationId);
+    
+    if (stationIds.length === 0) {
+      return [];
+    }
+    
+    const stationDetails = await db
+      .select({
+        id: pollingStations.id,
+        name: pollingStations.name
+      })
+      .from(pollingStations)
+      .where(
+        sql`${pollingStations.id} IN (${stationIds.join(', ')})`
+      );
+    
+    // Map station details with issue counts
+    const stationsWithIssues = stationDetails.map(station => {
+      const reportData = reportCounts.find(r => r.stationId === station.id);
+      return {
+        id: station.id,
+        name: station.name,
+        issueCount: reportData?.count || 0
+      };
+    });
+    
+    // Sort by issue count (highest first)
+    return stationsWithIssues.sort((a, b) => b.issueCount - a.issueCount);
+  }
 }

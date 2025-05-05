@@ -101,6 +101,15 @@ export interface IStorage {
   getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<Message | undefined>;
+  
+  // Statistics operations for admin dashboard
+  getTotalUserCount(): Promise<number>;
+  getActiveObserverCount(): Promise<number>;
+  getUserCountByRole(): Promise<Record<string, number>>;
+  getReportCountByType(): Promise<Record<string, number>>;
+  getReportCountByStatus(): Promise<Record<string, number>>;
+  getActiveAssignmentsCount(): Promise<number>;
+  getStationsWithIssueReports(): Promise<{id: number, name: string, issueCount: number}[]>;
 }
 
 // Generate a unique observer ID in the format "JM+6-digit-number"
@@ -905,6 +914,92 @@ export class MemStorage implements IStorage {
     const updatedMessage = { ...message, isRead: true };
     this.messages.set(id, updatedMessage);
     return updatedMessage;
+  }
+  
+  // Statistics operations for admin dashboard
+  async getTotalUserCount(): Promise<number> {
+    return this.users.size;
+  }
+  
+  async getActiveObserverCount(): Promise<number> {
+    return Array.from(this.users.values())
+      .filter(user => 
+        user.role === 'observer' && 
+        user.verificationStatus === 'verified' && 
+        user.trainingStatus === 'completed'
+      ).length;
+  }
+  
+  async getUserCountByRole(): Promise<Record<string, number>> {
+    const roles: Record<string, number> = {};
+    
+    Array.from(this.users.values()).forEach(user => {
+      const role = user.role || 'unassigned';
+      roles[role] = (roles[role] || 0) + 1;
+    });
+    
+    return roles;
+  }
+  
+  async getReportCountByType(): Promise<Record<string, number>> {
+    const types: Record<string, number> = {};
+    
+    Array.from(this.reports.values()).forEach(report => {
+      const type = report.reportType;
+      types[type] = (types[type] || 0) + 1;
+    });
+    
+    return types;
+  }
+  
+  async getReportCountByStatus(): Promise<Record<string, number>> {
+    const statuses: Record<string, number> = {};
+    
+    Array.from(this.reports.values()).forEach(report => {
+      const status = report.status;
+      statuses[status] = (statuses[status] || 0) + 1;
+    });
+    
+    return statuses;
+  }
+  
+  async getActiveAssignmentsCount(): Promise<number> {
+    const now = new Date();
+    return Array.from(this.assignments.values())
+      .filter(assignment => 
+        (assignment.status === 'active' || assignment.status === 'scheduled') &&
+        assignment.endDate > now
+      ).length;
+  }
+  
+  async getStationsWithIssueReports(): Promise<{id: number, name: string, issueCount: number}[]> {
+    // Get all reports grouped by station
+    const stationReports = new Map<number, number>();
+    
+    // Count number of issue reports per station
+    Array.from(this.reports.values())
+      .filter(report => report.reportType === 'issue' || report.reportType === 'incident')
+      .forEach(report => {
+        const count = stationReports.get(report.stationId) || 0;
+        stationReports.set(report.stationId, count + 1);
+      });
+    
+    // Create result array with station details and issue counts
+    const result: {id: number, name: string, issueCount: number}[] = [];
+    
+    for (const [stationId, issueCount] of stationReports.entries()) {
+      const station = await this.getPollingStation(stationId);
+      if (station) {
+        result.push({
+          id: stationId,
+          name: station.name,
+          issueCount
+        });
+      }
+    }
+    
+    // Sort by issue count (highest first)
+    return result.sort((a, b) => b.issueCount - a.issueCount);
   }
 }
 
