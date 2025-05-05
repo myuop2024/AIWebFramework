@@ -141,7 +141,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
         isEncrypted: false,
       };
   
-  function getInitialSections(): FormSection[] {
+  function getInitialSections(): SchemaFormSection[] {
     if (!initialData || !initialData.fields || typeof initialData.fields !== 'object') {
       return [];
     }
@@ -197,7 +197,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
   const handleAddField = (sectionIndex: number, fieldType: string) => {
     const fields = form.getValues(`sections.${sectionIndex}.fields`) || [];
     
-    const newField: FormField = {
+    const newField: SchemaFormField = {
       id: uuidv4(),
       type: fieldType as any,
       label: `New ${fieldType} field`,
@@ -231,7 +231,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
     const fields = form.getValues(`sections.${sectionIndex}.fields`);
     const fieldToDuplicate = fields[fieldIndex];
     
-    const duplicatedField: FormField = {
+    const duplicatedField: SchemaFormField = {
       ...fieldToDuplicate,
       id: uuidv4(),
       label: `${fieldToDuplicate.label} (Copy)`,
