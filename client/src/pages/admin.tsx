@@ -785,7 +785,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Manage Users</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleManageUsers}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Manage Users"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -816,7 +823,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Process Verifications</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleProcessVerifications}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Process Verifications"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -845,7 +859,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Send Notification</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleSendNotification}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Sending..." : "Send Notification"}
+                </Button>
               </CardFooter>
             </Card>
           </div>
@@ -885,7 +906,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Edit Roles</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleEditRoles}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Edit Roles"}
+                </Button>
               </CardFooter>
             </Card>
 
@@ -985,7 +1013,14 @@ export default function Admin() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant="default">Manage Stations</Button>
+                <Button 
+                  className="w-full" 
+                  variant="default"
+                  onClick={handleManageStations}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Manage Stations"}
+                </Button>
               </CardFooter>
             </Card>
 
