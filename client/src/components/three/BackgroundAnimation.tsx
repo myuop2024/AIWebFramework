@@ -3,139 +3,159 @@ import * as THREE from 'three';
 
 interface BackgroundAnimationProps {
   color?: string;
+  intensity?: number;
+  speed?: number;
+  count?: number;
 }
 
-export function BackgroundAnimation({ color = '#4F46E5' }: BackgroundAnimationProps) {
+export function BackgroundAnimation({
+  color = '#4F46E5',
+  intensity = 0.2,
+  speed = 0.5,
+  count = 50
+}: BackgroundAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
   const frameIdRef = useRef<number | null>(null);
 
-  // Convert hex color to Three.js color
-  const threeColor = new THREE.Color(color);
-  
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Initialize scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
+    // Convert hex color to THREE.Color
+    const threeColor = new THREE.Color(color);
     
-    // Initialize camera
+    // Setup
+    const scene = new THREE.Scene();
+    
+    // Create a camera with a wider field of view
     const camera = new THREE.PerspectiveCamera(
-      75,
+      60,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.z = 5;
-    cameraRef.current = camera;
+    camera.position.z = 20;
     
-    // Initialize renderer
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    // Setup renderer with transparency
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0); // transparent background
+    renderer.setClearColor(0x000000, 0); // Transparent background
+    
+    // Add canvas to container
     containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
     
-    // Create particle geometry
+    // Create particles
     const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 1500;
-    
-    const posArray = new Float32Array(particlesCount * 3);
-    const scaleArray = new Float32Array(particlesCount);
-    
-    // Fill arrays with random values
-    for (let i = 0; i < particlesCount * 3; i++) {
-      // Position: random position from -5 to 5
-      posArray[i] = (Math.random() - 0.5) * 10;
-    }
-    
-    for (let i = 0; i < particlesCount; i++) {
-      // Scale: random size for the particles
-      scaleArray[i] = Math.random();
-    }
-    
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    particlesGeometry.setAttribute('scale', new THREE.BufferAttribute(scaleArray, 1));
-    
-    // Material with custom shader for better control
     const particlesMaterial = new THREE.PointsMaterial({
-      size: 0.025,
-      transparent: true,
       color: threeColor,
-      blending: THREE.AdditiveBlending,
-      sizeAttenuation: true,
+      size: 0.1,
+      transparent: true,
+      opacity: intensity,
+      sizeAttenuation: true
     });
     
-    // Create particle system
+    // Create particle positions
+    const particleCount = count;
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount; i++) {
+      // Spread particles across the scene
+      const i3 = i * 3;
+      positions[i3] = (Math.random() - 0.5) * 50; // x
+      positions[i3 + 1] = (Math.random() - 0.5) * 50; // y
+      positions[i3 + 2] = (Math.random() - 0.5) * 50; // z
+      
+      // Set random velocities
+      velocities[i3] = (Math.random() - 0.5) * 0.05 * speed;
+      velocities[i3 + 1] = (Math.random() - 0.5) * 0.05 * speed;
+      velocities[i3 + 2] = (Math.random() - 0.5) * 0.05 * speed;
+    }
+    
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particlesGeometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+    
+    // Create the particle system
     const particles = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particles);
+    
+    // Store references
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+    rendererRef.current = renderer;
     particlesRef.current = particles;
     
     // Animation function
     const animate = () => {
-      if (particles) {
-        particles.rotation.x += 0.0005;
-        particles.rotation.y += 0.0005;
+      if (!particlesRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) {
+        return;
       }
       
-      renderer.render(scene, camera);
+      const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
+      const velocities = particlesRef.current.geometry.attributes.velocity.array as Float32Array;
+      
+      for (let i = 0; i < positions.length; i += 3) {
+        // Update position based on velocity
+        positions[i] += velocities[i];
+        positions[i + 1] += velocities[i + 1];
+        positions[i + 2] += velocities[i + 2];
+        
+        // Boundary check and reverse direction if needed
+        if (Math.abs(positions[i]) > 25) velocities[i] *= -1;
+        if (Math.abs(positions[i + 1]) > 25) velocities[i + 1] *= -1;
+        if (Math.abs(positions[i + 2]) > 25) velocities[i + 2] *= -1;
+      }
+      
+      // Flag the positions for update
+      particlesRef.current.geometry.attributes.position.needsUpdate = true;
+      
+      // Rotate the entire particle system slightly
+      particlesRef.current.rotation.x += 0.001;
+      particlesRef.current.rotation.y += 0.001;
+      
+      // Render the scene
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      
+      // Continue the animation loop
       frameIdRef.current = requestAnimationFrame(animate);
     };
     
+    animate();
+    
     // Handle window resize
     const handleResize = () => {
-      if (!camera || !renderer) return;
+      if (!cameraRef.current || !rendererRef.current) return;
       
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+      cameraRef.current.updateProjectionMatrix();
+      
+      rendererRef.current.setSize(window.innerWidth, window.innerHeight);
     };
     
     window.addEventListener('resize', handleResize);
     
-    // Start animation
-    animate();
-    
-    // Cleanup
+    // Cleanup on unmount
     return () => {
-      if (frameIdRef.current) {
+      if (frameIdRef.current !== null) {
         cancelAnimationFrame(frameIdRef.current);
       }
       
+      if (rendererRef.current && containerRef.current) {
+        containerRef.current.removeChild(rendererRef.current.domElement);
+      }
+      
       window.removeEventListener('resize', handleResize);
-      
-      if (rendererRef.current) {
-        if (containerRef.current) {
-          containerRef.current.removeChild(rendererRef.current.domElement);
-        }
-        rendererRef.current.dispose();
-      }
-      
-      if (particlesRef.current) {
-        if (particlesRef.current.geometry) {
-          particlesRef.current.geometry.dispose();
-        }
-        if (particlesRef.current.material) {
-          (particlesRef.current.material as THREE.Material).dispose();
-        }
-        sceneRef.current?.remove(particlesRef.current);
-      }
     };
-  }, [color]);
-  
-  // Update color if prop changes
-  useEffect(() => {
-    if (particlesRef.current) {
-      (particlesRef.current.material as THREE.PointsMaterial).color = threeColor;
-    }
-  }, [color, threeColor]);
-  
+  }, [color, intensity, speed, count]);
+
   return (
-    <div 
+    <div
       ref={containerRef}
       style={{
         position: 'absolute',
@@ -144,8 +164,7 @@ export function BackgroundAnimation({ color = '#4F46E5' }: BackgroundAnimationPr
         width: '100%',
         height: '100%',
         zIndex: -1,
-        opacity: 0.4,
-        overflow: 'hidden'
+        pointerEvents: 'none'
       }}
     />
   );

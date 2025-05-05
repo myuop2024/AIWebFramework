@@ -1,205 +1,356 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
-interface StationData {
+// Polling station data type
+interface PollingStation {
   id: number;
   name: string;
   coordinates: {
     lat: number;
     lng: number;
   };
-  status: string;
+  status: 'active' | 'issue' | 'closed';
   issueCount: number;
 }
 
 interface ElectoralMapViewerProps {
-  stationData?: StationData[];
-  height?: number;
+  stationData: PollingStation[];
   width?: number;
+  height?: number;
+  onStationSelect?: (station: PollingStation) => void;
 }
 
 export function ElectoralMapViewer({ 
-  stationData = [], 
-  height = 300, 
-  width = 600 
+  stationData, 
+  width = 600, 
+  height = 400,
+  onStationSelect
 }: ElectoralMapViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const frameIdRef = useRef<number | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const mapRef = useRef<THREE.Mesh | null>(null);
-  const markersRef = useRef<THREE.Group | null>(null);
-
+  const markersRef = useRef<Map<number, THREE.Mesh>>(new Map());
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const frameIdRef = useRef<number | null>(null);
+  const [hoveredStation, setHoveredStation] = useState<PollingStation | null>(null);
+  
+  // Jamaica map bounds (approximate)
+  const mapBounds = {
+    north: 18.5,
+    south: 17.7,
+    east: -76.2,
+    west: -78.4
+  };
+  
+  const mapWidth = mapBounds.east - mapBounds.west;
+  const mapHeight = mapBounds.north - mapBounds.south;
+  const mapAspect = mapWidth / mapHeight;
+  
+  // Setup scene
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Initialize scene
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
+    // Initialize scene if it doesn't exist
+    if (!sceneRef.current) {
+      // Create Three.js scene
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0f8ff);
+      
+      // Create perspective camera
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.set(0, 8, 10);
+      
+      // Create renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      renderer.shadowMap.enabled = true;
+      containerRef.current.appendChild(renderer.domElement);
+      
+      // Create orbit controls for interactive view
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.minDistance = 5;
+      controls.maxDistance = 20;
+      controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent seeing below ground
+      controls.target.set(0, 0, 0);
+      
+      // Add lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 10, 7);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
+      
+      // Create base map (simplified for demo)
+      const mapGeometry = new THREE.PlaneGeometry(10 * mapAspect, 10);
+      const mapTexture = createMapTexture();
+      const mapMaterial = new THREE.MeshLambertMaterial({ 
+        map: mapTexture,
+        side: THREE.DoubleSide
+      });
+      const map = new THREE.Mesh(mapGeometry, mapMaterial);
+      map.rotation.x = -Math.PI / 2;
+      map.receiveShadow = true;
+      scene.add(map);
+      
+      // Store references
+      sceneRef.current = scene;
+      cameraRef.current = camera;
+      rendererRef.current = renderer;
+      mapRef.current = map;
+      controlsRef.current = controls;
+      
+      // Add mouse event listeners
+      renderer.domElement.addEventListener('mousemove', handleMouseMove);
+      renderer.domElement.addEventListener('click', handleMouseClick);
+    }
     
-    // Add ambient light
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-    
-    // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 5, 5);
-    scene.add(directionalLight);
-    
-    // Initialize camera
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      width / height,
-      0.1,
-      1000
-    );
-    camera.position.set(0, 4, 5);
-    camera.lookAt(0, 0, 0);
-    cameraRef.current = camera;
-    
-    // Initialize renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setClearColor(0x000000, 0);
-    containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
-    
-    // Create base map (simplified model of a country/region)
-    const mapGeometry = new THREE.PlaneGeometry(5, 3);
-    const mapMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x1e293b,
-      side: THREE.DoubleSide,
-      metalness: 0.2,
-      roughness: 0.8
+    // Clear existing markers
+    markersRef.current.forEach((marker) => {
+      if (sceneRef.current) {
+        sceneRef.current.remove(marker);
+      }
     });
-    const map = new THREE.Mesh(mapGeometry, mapMaterial);
-    map.rotation.x = -Math.PI / 2; // Lay flat
-    scene.add(map);
-    mapRef.current = map;
+    markersRef.current.clear();
     
-    // Create a group to hold all markers
-    const markersGroup = new THREE.Group();
-    scene.add(markersGroup);
-    markersRef.current = markersGroup;
+    // Add polling station markers
+    if (sceneRef.current && mapRef.current) {
+      stationData.forEach(station => {
+        // Convert geo coordinates to the scene coordinates
+        const markerPos = geoToSceneCoords(station.coordinates.lat, station.coordinates.lng);
+        
+        // Create marker with color based on status
+        const markerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.5, 16);
+        const markerColor = getMarkerColor(station.status, station.issueCount);
+        const markerMaterial = new THREE.MeshStandardMaterial({ color: markerColor, metalness: 0.3, roughness: 0.4 });
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        
+        // Position marker
+        marker.position.set(markerPos.x, 0.25, markerPos.z); // y is half height of cylinder
+        marker.userData = { stationId: station.id };
+        marker.castShadow = true;
+        
+        // Add to scene and keep reference
+        sceneRef.current.add(marker);
+        markersRef.current.set(station.id, marker);
+      });
+    }
     
-    // Animation function
+    // Animation loop to render the scene
     const animate = () => {
-      // Slowly rotate the map
-      if (mapRef.current) {
-        mapRef.current.rotation.z += 0.002;
+      if (!rendererRef.current || !sceneRef.current || !cameraRef.current || !controlsRef.current) {
+        return;
       }
       
-      // Render the scene
-      renderer.render(scene, camera);
+      controlsRef.current.update();
+      
+      // Make markers pulse/rotate on hover
+      markersRef.current.forEach((marker, stationId) => {
+        if (hoveredStation && hoveredStation.id === stationId) {
+          marker.rotation.y += 0.03;
+          
+          // Pulse effect
+          const scale = 1 + 0.1 * Math.sin(Date.now() * 0.005);
+          marker.scale.set(scale, 1, scale);
+        } else {
+          // Reset rotation and scale
+          marker.rotation.y = 0;
+          marker.scale.set(1, 1, 1);
+        }
+      });
+      
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
       frameIdRef.current = requestAnimationFrame(animate);
     };
     
-    // Handle window resize
-    const handleResize = () => {
-      if (!camera || !renderer) return;
-      
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    // Start animation
     animate();
     
-    // Cleanup
     return () => {
-      if (frameIdRef.current) {
+      if (frameIdRef.current !== null) {
         cancelAnimationFrame(frameIdRef.current);
       }
       
-      window.removeEventListener('resize', handleResize);
-      
-      if (rendererRef.current) {
-        if (containerRef.current) {
-          containerRef.current.removeChild(rendererRef.current.domElement);
-        }
-        rendererRef.current.dispose();
-      }
-      
-      if (mapRef.current) {
-        if (mapRef.current.geometry) {
-          mapRef.current.geometry.dispose();
-        }
-        if (mapRef.current.material) {
-          (mapRef.current.material as THREE.Material).dispose();
-        }
-        sceneRef.current?.remove(mapRef.current);
+      if (rendererRef.current && rendererRef.current.domElement) {
+        rendererRef.current.domElement.removeEventListener('mousemove', handleMouseMove);
+        rendererRef.current.domElement.removeEventListener('click', handleMouseClick);
       }
     };
-  }, [height, width]);
+  }, [stationData, width, height, mapAspect, onStationSelect]);
   
-  // Update markers when station data changes
+  // Handle window resize
   useEffect(() => {
-    if (!markersRef.current || !sceneRef.current) return;
+    const handleResize = () => {
+      if (!rendererRef.current || !cameraRef.current) return;
+      
+      rendererRef.current.setSize(width, height);
+      cameraRef.current.aspect = width / height;
+      cameraRef.current.updateProjectionMatrix();
+    };
     
-    // Clear existing markers
-    while (markersRef.current.children.length > 0) {
-      const marker = markersRef.current.children[0];
-      if (marker.geometry) {
-        (marker as any).geometry.dispose();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [width, height]);
+  
+  // Mouse move handler for hover effects
+  const handleMouseMove = (event: MouseEvent) => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current) return;
+    
+    // Calculate mouse position in normalized device coordinates (-1 to +1)
+    const rect = rendererRef.current.domElement.getBoundingClientRect();
+    mouseRef.current.x = ((event.clientX - rect.left) / width) * 2 - 1;
+    mouseRef.current.y = -((event.clientY - rect.top) / height) * 2 + 1;
+    
+    // Find intersections
+    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+    const intersects = raycasterRef.current.intersectObjects(Array.from(markersRef.current.values()), false);
+    
+    // Update hover state
+    if (intersects.length > 0) {
+      const stationId = intersects[0].object.userData.stationId;
+      const station = stationData.find(s => s.id === stationId) || null;
+      setHoveredStation(station);
+      
+      // Change cursor
+      if (rendererRef.current.domElement) {
+        rendererRef.current.domElement.style.cursor = 'pointer';
       }
-      if (marker.material) {
-        ((marker as any).material as THREE.Material).dispose();
+    } else {
+      setHoveredStation(null);
+      
+      // Reset cursor
+      if (rendererRef.current?.domElement) {
+        rendererRef.current.domElement.style.cursor = 'auto';
       }
-      markersRef.current.remove(marker);
+    }
+  };
+  
+  // Mouse click handler
+  const handleMouseClick = (event: MouseEvent) => {
+    if (!onStationSelect || !hoveredStation) return;
+    onStationSelect(hoveredStation);
+  };
+  
+  // Convert geographic coordinates to scene coordinates
+  const geoToSceneCoords = (lat: number, lng: number) => {
+    // Normalize coordinates to scene space
+    const normalizedLng = (lng - mapBounds.west) / mapWidth - 0.5;
+    const normalizedLat = (lat - mapBounds.south) / mapHeight - 0.5;
+    
+    // Scale to map size and flip z-axis (north is negative z)
+    const x = normalizedLng * 10 * mapAspect;
+    const z = -normalizedLat * 10;
+    
+    return { x, z };
+  };
+  
+  // Get marker color based on status
+  const getMarkerColor = (status: string, issueCount: number) => {
+    switch (status) {
+      case 'issue':
+        // Color intensity based on issue count
+        return issueCount > 3 ? 0xff0000 : 0xff7700; // Red or orange
+      case 'closed':
+        return 0x888888; // Gray
+      case 'active':
+      default:
+        return 0x00cc00; // Green
+    }
+  };
+  
+  // Create a simple map texture
+  const createMapTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      // Background
+      ctx.fillStyle = '#e0f0ff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Simplified Jamaica outline (very basic approximation)
+      ctx.fillStyle = '#74c278';
+      ctx.beginPath();
+      
+      // Draw simplified shape
+      const points = [
+        [122, 170], [150, 150], [200, 150], [280, 170],
+        [380, 200], [420, 240], [400, 300], [350, 330],
+        [250, 350], [180, 330], [130, 280], [110, 220]
+      ];
+      
+      ctx.moveTo(points[0][0], points[0][1]);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0], points[i][1]);
+      }
+      ctx.closePath();
+      ctx.fill();
+      
+      // Add some detail lines (rivers, roads)
+      ctx.strokeStyle = '#3080b0';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(200, 200);
+      ctx.lineTo(280, 250);
+      ctx.lineTo(320, 290);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(150, 200);
+      ctx.lineTo(230, 220);
+      ctx.lineTo(320, 250);
+      ctx.stroke();
     }
     
-    // Add markers for each station
-    stationData.forEach((station) => {
-      // Simplified coordinate conversion to fit our map
-      // In a real implementation, this would use proper geo projection
-      const x = (station.coordinates.lng / 180) * 2.5;
-      const z = (station.coordinates.lat / 90) * 1.5;
-      
-      // Determine color based on status/issues
-      let color;
-      if (station.status === "issue" || station.issueCount > 0) {
-        color = 0xff3a30; // Red for stations with issues
-      } else if (station.status === "active") {
-        color = 0x34c759; // Green for active stations
-      } else {
-        color = 0x8e8e93; // Gray for inactive stations
-      }
-      
-      // Create marker geometry (sphere)
-      const markerGeometry = new THREE.SphereGeometry(
-        0.05 + (station.issueCount * 0.01), // Size based on issues
-        16,
-        16
-      );
-      const markerMaterial = new THREE.MeshBasicMaterial({ color });
-      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-      
-      // Position the marker
-      marker.position.set(x, 0.1, z);
-      
-      // Add to markers group
-      markersRef.current.add(marker);
-      
-      // Add station label (not implemented here, would require text sprites)
-    });
-    
-  }, [stationData]);
+    const texture = new THREE.CanvasTexture(canvas);
+    return texture;
+  };
   
   return (
-    <div 
-      ref={containerRef}
-      style={{
-        width: `${width}px`,
-        height: `${height}px`,
-        margin: '0 auto',
-        position: 'relative',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}
-    />
+    <div className="relative">
+      <div ref={containerRef} style={{ width, height }} />
+      
+      {/* Hover info display */}
+      {hoveredStation && (
+        <div 
+          className="absolute top-0 left-0 bg-white/90 border rounded shadow-md p-3"
+          style={{ 
+            maxWidth: '40%',
+            pointerEvents: 'none'
+          }}
+        >
+          <h3 className="font-bold text-sm">{hoveredStation.name}</h3>
+          <div className="text-xs flex space-x-2 mt-1">
+            <span className={`px-2 py-0.5 rounded-full ${
+              hoveredStation.status === 'issue' 
+                ? 'bg-red-100 text-red-700' 
+                : hoveredStation.status === 'active'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-700'
+            }`}>
+              {hoveredStation.status === 'issue' 
+                ? `${hoveredStation.issueCount} Issue${hoveredStation.issueCount !== 1 ? 's' : ''}` 
+                : hoveredStation.status.charAt(0).toUpperCase() + hoveredStation.status.slice(1)}
+            </span>
+            <span className="text-gray-500">
+              ({hoveredStation.coordinates.lat.toFixed(4)}, {hoveredStation.coordinates.lng.toFixed(4)})
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

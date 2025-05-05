@@ -1,171 +1,112 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
-import { Search, Shield, UserRound, CheckCircle, XCircle, Clock, Mail, Phone, Edit, Eye } from "lucide-react";
-import { ThreeBarChart } from "../three/ThreeBarChart";
+import { apiRequest } from "@/lib/queryClient";
+import { 
+  CheckCircle2, XCircle, UserCheck, UserX, Search, AlertTriangle, Filter, RefreshCw
+} from "lucide-react";
 
-interface UserProfile {
+// Types
+interface User {
   id: number;
   firstName: string;
   lastName: string;
   email: string;
   username: string;
-  role: string;
   observerId: string;
-  phoneNumber: string | null;
+  role: string;
   verificationStatus: string;
-  profilePhoto?: string;
   trainingStatus: string;
+  phoneNumber?: string;
   createdAt: string;
 }
 
 export function UserManagement() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
-  const [userDetailsOpen, setUserDetailsOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch all users
-  const { data: users, isLoading: isUsersLoading } = useQuery({
-    queryKey: ['/api/admin/users'],
+  const { data: users = [], isLoading, refetch } = useQuery<User[]>({
+    queryKey: ['/api/admin/users']
   });
 
-  // Approve verification mutation
-  const approveVerificationMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      return fetch(`/api/admin/users/${userId}/verify`, {
+  // Update user verification status
+  const updateVerification = useMutation({
+    mutationFn: async ({ userId, status }: { userId: number, status: string }) => {
+      return apiRequest(`/api/admin/users/${userId}/verify`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ verificationStatus: 'verified' }),
-      }).then(res => res.json());
+        data: { verificationStatus: status }
+      });
     },
     onSuccess: () => {
-      toast({
-        title: "Verification approved",
-        description: "The user's verification has been approved.",
-      });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "User status updated",
+        description: "The verification status has been updated successfully.",
+      });
     },
     onError: () => {
       toast({
-        title: "Error approving verification",
-        description: "There was an error approving the user's verification.",
+        title: "Failed to update status",
+        description: "There was an error updating the verification status.",
         variant: "destructive",
       });
-    },
+    }
   });
 
-  // Reject verification mutation
-  const rejectVerificationMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      return fetch(`/api/admin/users/${userId}/verify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ verificationStatus: 'rejected' }),
-      }).then(res => res.json());
-    },
-    onSuccess: () => {
-      toast({
-        title: "Verification rejected",
-        description: "The user's verification has been rejected.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
-    },
-    onError: () => {
-      toast({
-        title: "Error rejecting verification",
-        description: "There was an error rejecting the user's verification.",
-        variant: "destructive",
-      });
-    },
+  // Filter and search functionality
+  const filteredUsers = users.filter(user => {
+    // Search term filter
+    const searchMatch = searchTerm === "" || 
+      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.observerId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Role filter
+    const roleMatch = filterRole === "all" || user.role === filterRole;
+    
+    // Status filter
+    const statusMatch = filterStatus === "all" || user.verificationStatus === filterStatus;
+    
+    // Tab filter
+    const tabMatch = 
+      activeTab === "all" || 
+      (activeTab === "pending" && user.verificationStatus === "pending") ||
+      (activeTab === "verified" && user.verificationStatus === "verified") ||
+      (activeTab === "rejected" && user.verificationStatus === "rejected");
+    
+    return searchMatch && roleMatch && statusMatch && tabMatch;
   });
 
-  // Filter users based on search query and active tab
-  const filteredUsers = users ? users.filter((user: UserProfile) => {
-    const matchesSearch = searchQuery === "" ||
-      user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.observerId.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    if (activeTab === "all") return matchesSearch;
-    if (activeTab === "verified") return matchesSearch && user.verificationStatus === "verified";
-    if (activeTab === "pending") return matchesSearch && user.verificationStatus === "pending";
-    if (activeTab === "rejected") return matchesSearch && user.verificationStatus === "rejected";
-    if (activeTab === "admin") return matchesSearch && user.role === "admin";
-    
-    return matchesSearch;
-  }) : [];
-
-  // User role counts for the 3D chart
-  const userRoleCounts = users ? Array.from(
-    users.reduce((acc: Map<string, number>, user: UserProfile) => {
-      const role = user.role || 'Unknown';
-      acc.set(role, (acc.get(role) || 0) + 1);
-      return acc;
-    }, new Map<string, number>())
-  ).map(([role, count]) => ({
-    label: role.charAt(0).toUpperCase() + role.slice(1),
-    value: count,
-    color: role === 'admin' ? '#8B5CF6' : role === 'supervisor' ? '#3B82F6' : '#10B981'
-  })) : [];
-
-  // Verification status counts for the 3D chart
-  const verificationStatusCounts = users ? Array.from(
-    users.reduce((acc: Map<string, number>, user: UserProfile) => {
-      const status = user.verificationStatus || 'Unknown';
-      acc.set(status, (acc.get(status) || 0) + 1);
-      return acc;
-    }, new Map<string, number>())
-  ).map(([status, count]) => ({
-    label: status.charAt(0).toUpperCase() + status.slice(1),
-    value: count,
-    color: status === 'verified' ? '#10B981' : status === 'pending' ? '#F59E0B' : '#EF4444'
-  })) : [];
-
-  // View user details
-  const handleViewUserDetails = (user: UserProfile) => {
-    setSelectedUser(user);
-    setUserDetailsOpen(true);
-  };
-
-  // Approve user verification
-  const handleApproveVerification = (userId: number) => {
-    approveVerificationMutation.mutate(userId);
-  };
-
-  // Reject user verification
-  const handleRejectVerification = (userId: number) => {
-    rejectVerificationMutation.mutate(userId);
+  // Handle verification status change
+  const handleVerifyUser = (userId: number, status: string) => {
+    updateVerification.mutate({ userId, status });
   };
 
   // Get verification status badge
-  const getVerificationBadge = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "verified":
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Verified</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Pending</Badge>;
+        return <Badge className="bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Verified</Badge>;
       case "rejected":
-        return <Badge variant="outline" className="bg-red-50 text-red-700">Rejected</Badge>;
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" /> Rejected</Badge>;
+      case "pending":
+        return <Badge variant="outline" className="text-amber-600 border-amber-600"><AlertTriangle className="h-3 w-3 mr-1" /> Pending</Badge>;
       default:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700">Unknown</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -173,283 +114,172 @@ export function UserManagement() {
   const getTrainingBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Completed</Badge>;
+        return <Badge className="bg-green-600">Completed</Badge>;
       case "in_progress":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">In Progress</Badge>;
+        return <Badge className="bg-blue-600">In Progress</Badge>;
       case "not_started":
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700">Not Started</Badge>;
+        return <Badge variant="outline">Not Started</Badge>;
       default:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700">Unknown</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  // Get role badge
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700">Admin</Badge>;
-      case "supervisor":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700">Supervisor</Badge>;
-      case "observer":
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Observer</Badge>;
-      default:
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700">{role}</Badge>;
-    }
-  };
-
-  if (isUsersLoading) {
-    return (
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>User Management</CardTitle>
-          <CardDescription>View and manage all registered users</CardDescription>
+          <CardDescription>
+            View and manage all users in the election observer system
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>View and manage all registered users</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Search and filter controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search users..."
-              className="pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex-shrink-0">
-            <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="verified">Verified</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="admin">Admin</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-        
-        {/* 3D Stats visualization */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="col-span-1">
-            <ThreeBarChart 
-              data={userRoleCounts} 
-              height={250}
-              width={400}
-              title="Users by Role"
-            />
-          </div>
-          <div className="col-span-1">
-            <ThreeBarChart 
-              data={verificationStatusCounts} 
-              height={250}
-              width={400}
-              title="Users by Verification Status"
-            />
-          </div>
-        </div>
-        
-        {/* Users table */}
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Observer ID</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Verification</TableHead>
-                <TableHead>Training</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No users found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user: UserProfile) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={user.profilePhoto} alt={`${user.firstName} ${user.lastName}`} />
-                          <AvatarFallback>{user.firstName.charAt(0)}{user.lastName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">{user.firstName} {user.lastName}</div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.observerId}</TableCell>
-                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                    <TableCell>{getVerificationBadge(user.verificationStatus)}</TableCell>
-                    <TableCell>{getTrainingBadge(user.trainingStatus)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end items-center space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => handleViewUserDetails(user)}>
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                        
-                        {user.verificationStatus === "pending" && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-green-600 hover:text-green-700"
-                              onClick={() => handleApproveVerification(user.id)}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                              <span className="sr-only">Approve</span>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => handleRejectVerification(user.id)}
-                            >
-                              <XCircle className="h-4 w-4" />
-                              <span className="sr-only">Reject</span>
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
-        {/* User details dialog */}
-        <Dialog open={userDetailsOpen} onOpenChange={setUserDetailsOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>User Details</DialogTitle>
-              <DialogDescription>
-                Detailed information about the selected user.
-              </DialogDescription>
-            </DialogHeader>
+          <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+            <div className="relative flex-grow max-w-md">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="Search users..."
+                className="pl-8 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             
-            {selectedUser && (
-              <div className="space-y-4">
-                <div className="flex flex-col items-center">
-                  <Avatar className="h-20 w-20 mb-2">
-                    <AvatarImage src={selectedUser.profilePhoto} alt={`${selectedUser.firstName} ${selectedUser.lastName}`} />
-                    <AvatarFallback className="text-lg">{selectedUser.firstName.charAt(0)}{selectedUser.lastName.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <h3 className="text-xl font-medium">{selectedUser.firstName} {selectedUser.lastName}</h3>
-                  <div className="flex items-center text-gray-500 text-sm">
-                    <UserRound className="h-3.5 w-3.5 mr-1" />
-                    <span>{selectedUser.username}</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Observer ID</div>
-                    <div className="flex items-center">
-                      <Shield className="h-4 w-4 mr-1.5 text-primary" />
-                      <span>{selectedUser.observerId}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Role</div>
-                    <div>{getRoleBadge(selectedUser.role)}</div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Email</div>
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 mr-1.5 text-primary" />
-                      <span>{selectedUser.email}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Phone</div>
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 mr-1.5 text-primary" />
-                      <span>{selectedUser.phoneNumber || "Not provided"}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Verification</div>
-                    <div>{getVerificationBadge(selectedUser.verificationStatus)}</div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium text-gray-500">Training</div>
-                    <div>{getTrainingBadge(selectedUser.trainingStatus)}</div>
-                  </div>
-                  
-                  <div className="space-y-1 col-span-2">
-                    <div className="text-sm font-medium text-gray-500">Registered On</div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1.5 text-primary" />
-                      <span>{new Date(selectedUser.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between pt-4">
-                  <Button variant="outline" onClick={() => setUserDetailsOpen(false)}>Close</Button>
-                  
-                  {selectedUser.verificationStatus === "pending" && (
-                    <div className="space-x-2">
-                      <Button 
-                        variant="outline" 
-                        className="text-green-600 hover:text-green-700"
-                        onClick={() => {
-                          handleApproveVerification(selectedUser.id);
-                          setUserDetailsOpen(false);
-                        }}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1.5" />
-                        Approve
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          handleRejectVerification(selectedUser.id);
-                          setUserDetailsOpen(false);
-                        }}
-                      >
-                        <XCircle className="h-4 w-4 mr-1.5" />
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center gap-2">
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger className="w-[140px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admins</SelectItem>
+                  <SelectItem value="supervisor">Supervisors</SelectItem>
+                  <SelectItem value="observer">Observers</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending Verification</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button variant="outline" size="icon" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="all">All Users</TabsTrigger>
+              <TabsTrigger value="pending">Pending Verification</TabsTrigger>
+              <TabsTrigger value="verified">Verified</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value={activeTab}>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Observer ID</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Verification</TableHead>
+                      <TableHead>Training</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10">
+                          <div className="flex flex-col items-center justify-center">
+                            <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
+                            <p className="text-gray-500">Loading users...</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10">
+                          <p className="text-gray-500">No users found matching your criteria.</p>
+                          {searchTerm && <p className="text-gray-400 text-sm mt-1">Try a different search term.</p>}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {user.firstName} {user.lastName}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{user.observerId}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize">{user.role}</Badge>
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{getStatusBadge(user.verificationStatus)}</TableCell>
+                          <TableCell>{getTrainingBadge(user.trainingStatus)}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              {user.verificationStatus !== "verified" && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleVerifyUser(user.id, "verified")}
+                                >
+                                  <UserCheck className="h-4 w-4 mr-1 text-green-600" />
+                                  Verify
+                                </Button>
+                              )}
+                              
+                              {user.verificationStatus !== "rejected" && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleVerifyUser(user.id, "rejected")}
+                                >
+                                  <UserX className="h-4 w-4 mr-1 text-red-600" />
+                                  Reject
+                                </Button>
+                              )}
+                              
+                              {user.verificationStatus !== "pending" && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleVerifyUser(user.id, "pending")}
+                                >
+                                  Reset
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-gray-500">
+            Showing {filteredUsers.length} of {users.length} users
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
