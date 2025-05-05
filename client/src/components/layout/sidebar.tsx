@@ -13,7 +13,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, logout } = useAuth();
   
   // Close sidebar when clicking outside on mobile
@@ -59,6 +59,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const handleLogout = async () => {
     try {
       await logout();
+      navigate("/login"); // Redirect to login page after successful logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
