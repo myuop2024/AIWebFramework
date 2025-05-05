@@ -95,11 +95,12 @@ export interface IStorage {
   markMessageAsRead(id: number): Promise<Message | undefined>;
 }
 
-// Generate a unique 6-digit observer ID
+// Generate a unique observer ID in the format "JM+6-digit-number"
 function generateObserverId(): string {
   const min = 100000; // Minimum 6-digit number
   const max = 999999; // Maximum 6-digit number
-  return Math.floor(min + Math.random() * (max - min + 1)).toString();
+  const randomDigits = Math.floor(min + Math.random() * (max - min + 1)).toString();
+  return `JM${randomDigits}`;
 }
 
 // In-memory storage implementation

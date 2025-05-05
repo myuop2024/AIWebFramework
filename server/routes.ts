@@ -332,21 +332,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/reports', requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      
       const reports = await storage.getReportsByUserId(userId);
       
-      // Get station information for each report
+      // Get station information for each report with error handling
       const reportsWithStations = await Promise.all(
         reports.map(async (report) => {
-          const station = await storage.getPollingStation(report.stationId);
-          return {
-            ...report,
-            station
-          };
+          try {
+            // Make sure stationId is defined
+            if (report.stationId) {
+              const station = await storage.getPollingStation(report.stationId);
+              return {
+                ...report,
+                station: station || { name: "Unknown Station" }
+              };
+            } else {
+              // Handle case where stationId is undefined
+              return {
+                ...report,
+                station: { name: "Unknown Station" }
+              };
+            }
+          } catch (err) {
+            console.error('Error getting station for report:', err);
+            // Return the report with a placeholder station on error
+            return {
+              ...report,
+              station: { name: "Error Loading Station" }
+            };
+          }
         })
       );
       
       res.status(200).json(reportsWithStations);
     } catch (error) {
+      console.error('Error fetching reports:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

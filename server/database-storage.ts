@@ -18,9 +18,12 @@ import {
 } from "@shared/schema";
 import crypto from "crypto";
 
-// Generate a random observer ID
+// Generate a unique observer ID in the format "JM+6-digit-number"
 function generateObserverId(): string {
-  return crypto.randomBytes(8).toString('hex').toUpperCase();
+  const min = 100000; // Minimum 6-digit number
+  const max = 999999; // Maximum 6-digit number
+  const randomDigits = Math.floor(min + Math.random() * (max - min + 1)).toString();
+  return `JM${randomDigits}`;
 }
 
 export class DatabaseStorage implements IStorage {
