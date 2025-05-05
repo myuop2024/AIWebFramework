@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { 
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
-  FileEdit, ClipboardList, Settings
+  FileEdit, ClipboardList, Settings, BarChart
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,7 +48,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   
   // Admin links (only shown to users with admin role)
   const adminLinks = user?.role === 'admin' ? [
-    { path: "/admin", label: "Admin Dashboard", icon: <Settings className="h-5 w-5 mr-3" /> },
+    { path: "/admin", label: "Admin Panel", icon: <Settings className="h-5 w-5 mr-3" /> },
+    { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
   ] : [];
 
