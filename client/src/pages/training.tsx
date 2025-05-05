@@ -1,32 +1,13 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { useQuery } from "@tanstack/react-query";
 import MainLayout from "@/components/layout/main-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
+import { TrainingModule } from "@/components/training/training-module";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  BookOpen, 
-  Play, 
-  CheckCircle,
-  Award,
-  Clock,
-  Calendar,
-  Download,
-  FileText,
-  Video,
-  ExternalLink
-} from "lucide-react";
 
 export default function Training() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
-  const [progress, setProgress] = useState(75); // Sample progress value
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -35,36 +16,7 @@ export default function Training() {
     }
   }, [user, loading, navigate]);
 
-  // Fetch training data
-  const { data: events, isLoading: isEventsLoading } = useQuery({
-    queryKey: ['/api/events'],
-  });
-
-  // Filter training events
-  const trainingEvents = events?.filter((event: any) => 
-    event.eventType.toLowerCase() === 'training'
-  );
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Format time
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  if (loading || isEventsLoading) {
+  if (loading) {
     return (
       <MainLayout>
         <div className="animate-pulse space-y-6">
@@ -74,54 +26,6 @@ export default function Training() {
       </MainLayout>
     );
   }
-
-  // Mock training modules data
-  const trainingModules = [
-    {
-      id: 1,
-      title: "Observer Orientation",
-      description: "Introduction to the role and responsibilities of election observers",
-      duration: "45 min",
-      status: "completed",
-      progress: 100,
-      lessons: [
-        { id: 101, title: "Introduction to Election Observation", status: "completed", duration: "15 min" },
-        { id: 102, title: "Observer Code of Conduct", status: "completed", duration: "15 min" },
-        { id: 103, title: "Legal Framework", status: "completed", duration: "15 min" }
-      ]
-    },
-    {
-      id: 2,
-      title: "Election Procedures",
-      description: "Detailed review of election day procedures and protocols",
-      duration: "60 min",
-      status: "completed",
-      progress: 100,
-      lessons: [
-        { id: 201, title: "Opening Procedures", status: "completed", duration: "20 min" },
-        { id: 202, title: "Voting Procedures", status: "completed", duration: "20 min" },
-        { id: 203, title: "Closing and Counting", status: "completed", duration: "20 min" }
-      ]
-    },
-    {
-      id: 3,
-      title: "Reporting and Documentation",
-      description: "Learn how to document observations and submit reports",
-      duration: "30 min",
-      status: "in-progress",
-      progress: 33,
-      lessons: [
-        { id: 301, title: "Observation Forms", status: "completed", duration: "10 min" },
-        { id: 302, title: "Incident Reporting", status: "in-progress", duration: "10 min" },
-        { id: 303, title: "Final Report Writing", status: "not-started", duration: "10 min" }
-      ]
-    }
-  ];
-
-  // Calculate overall progress
-  const overallProgress = Math.round(
-    trainingModules.reduce((sum, module) => sum + module.progress, 0) / trainingModules.length
-  );
 
   return (
     <MainLayout>
