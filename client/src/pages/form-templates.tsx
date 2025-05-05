@@ -89,16 +89,14 @@ export default function FormTemplatesPage() {
   // Create a new template
   const createTemplateMutation = useMutation({
     mutationFn: async (templateData: FormTemplateExtended) => {
-      return apiRequest('/api/form-templates', {
-        method: 'POST',
-        data: {
-          name: templateData.name,
-          description: templateData.description,
-          category: templateData.category,
-          fields: { sections: templateData.sections },
-          isActive: true,
-        }
+      const res = await apiRequest('POST', '/api/form-templates', {
+        name: templateData.name,
+        description: templateData.description,
+        category: templateData.category,
+        fields: { sections: templateData.sections },
+        isActive: true,
       });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -120,15 +118,13 @@ export default function FormTemplatesPage() {
   // Update an existing template
   const updateTemplateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: FormTemplateExtended }) => {
-      return apiRequest(`/api/form-templates/${id}`, {
-        method: 'PATCH',
-        data: {
-          name: data.name,
-          description: data.description,
-          category: data.category,
-          fields: { sections: data.sections },
-        }
+      const res = await apiRequest('PATCH', `/api/form-templates/${id}`, {
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        fields: { sections: data.sections },
       });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -151,12 +147,10 @@ export default function FormTemplatesPage() {
   // Toggle template active status
   const toggleStatusMutation = useMutation({
     mutationFn: async (template: FormTemplate) => {
-      return apiRequest(`/api/form-templates/${template.id}/status`, {
-        method: 'PATCH',
-        data: {
-          isActive: !template.isActive
-        }
+      const res = await apiRequest('PATCH', `/api/form-templates/${template.id}/status`, {
+        isActive: !template.isActive
       });
+      return await res.json();
     },
     onSuccess: () => {
       toast({
@@ -177,9 +171,8 @@ export default function FormTemplatesPage() {
   // Delete a template
   const deleteTemplateMutation = useMutation({
     mutationFn: async (template: FormTemplate) => {
-      return apiRequest(`/api/form-templates/${template.id}`, {
-        method: 'DELETE',
-      });
+      const res = await apiRequest('DELETE', `/api/form-templates/${template.id}`, {});
+      return await res.json();
     },
     onSuccess: () => {
       toast({
