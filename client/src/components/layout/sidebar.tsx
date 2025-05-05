@@ -4,7 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { 
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
-  FileEdit, ClipboardList, Settings, BarChart
+  FileEdit, ClipboardList, Settings, BarChart,
+  UserCheck
 } from "lucide-react";
 
 interface SidebarProps {
@@ -51,6 +52,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/admin", label: "Admin Panel", icon: <Settings className="h-5 w-5 mr-3" /> },
     { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
+    { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
   ] : [];
 
   const supportLinks = [

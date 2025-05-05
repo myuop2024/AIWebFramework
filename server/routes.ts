@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { storage, IStorage } from "./storage";
 import { 
   loginUserSchema, 
   insertUserSchema, 
@@ -11,6 +11,16 @@ import {
   insertFormTemplateSchema,
   formTemplateExtendedSchema
 } from "@shared/schema";
+
+// Import the DatabaseStorage class if it exists
+let DatabaseStorage: any;
+try {
+  // Dynamic import to avoid circular dependencies
+  DatabaseStorage = require('./database-storage').DatabaseStorage;
+} catch (error) {
+  // If DatabaseStorage doesn't exist, create a placeholder
+  DatabaseStorage = class {};
+}
 import express from "express";
 import { z } from "zod";
 import { ZodError } from "zod";
