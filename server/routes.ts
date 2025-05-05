@@ -809,6 +809,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
   
+  // Observer verification queue
+  app.get('/api/admin/verification-queue', requireAdmin, async (req, res) => {
+    try {
+      // If using DatabaseStorage, we need to query the database differently
+      if (storage instanceof DatabaseStorage) {
+        // This would use methods defined in DatabaseStorage
+        const users = await storage.getAllUsers();
+        
+        // Filter to only get observers
+        const observers = await Promise.all(
+          users
+            .filter(user => user.role === 'observer')
+            .map(async (user) => {
+              // Get user profile data
+              const profile = await storage.getUserProfile(user.id);
+              
+              return {
+                id: user.id,
+                observerId: user.observerId || '',
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.email,
+                phoneNumber: user.phoneNumber,
+                verificationStatus: user.verificationStatus || 'pending',
+                submittedAt: (user.createdAt || new Date()).toISOString(),
+                profileData: profile ? {
+                  idPhotoUrl: profile.idPhotoUrl,
+                  address: profile.address,
+                  city: profile.city,
+                  state: profile.state,
+                  country: profile.country
+                } : undefined
+              };
+            })
+        );
+        
+        return res.status(200).json(observers);
+      } else {
+        // If using MemStorage or other storage with users collection
+        // Get all users with their verification status
+        const allUsers = Array.from(storage.users.values())
+          .filter(user => user.role === 'observer') // Only include observers
+          .map(async (user) => {
+            // Get user profile data
+            const profile = await storage.getUserProfile(user.id);
+            
+            return {
+              id: user.id,
+              observerId: user.observerId,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              phoneNumber: user.phoneNumber,
+              verificationStatus: user.verificationStatus,
+              submittedAt: user.createdAt.toISOString(),
+              profileData: profile ? {
+                idPhotoUrl: profile.idPhotoUrl,
+                address: profile.address,
+                city: profile.city,
+                state: profile.state,
+                country: profile.country
+              } : undefined
+            };
+          });
+        
+        const observers = await Promise.all(allUsers);
+        res.status(200).json(observers);
+      }
+    } catch (error) {
+      console.error('Error fetching verification queue:', error);
+      res.status(500).json({ message: 'Failed to fetch verification queue' });
+    }
+  });
+  
+  // Approve observer verification
+  app.post('/api/admin/verification/:id/approve', requireAdmin, async (req, res) => {
+    try {
+      const observerId = parseInt(req.params.id);
+      if (isNaN(observerId)) {
+        return res.status(400).json({ message: 'Invalid observer ID' });
+      }
+      
+      // Update user verification status
+      const updatedUser = await storage.updateUser(observerId, {
+        verificationStatus: 'approved'
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'Observer not found' });
+      }
+      
+      res.status(200).json({
+        message: 'Observer approved successfully',
+        observer: {
+          id: updatedUser.id,
+          observerId: updatedUser.observerId,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          verificationStatus: updatedUser.verificationStatus
+        }
+      });
+    } catch (error) {
+      console.error('Error approving observer:', error);
+      res.status(500).json({ message: 'Failed to approve observer' });
+    }
+  });
+  
+  // Reject observer verification
+  app.post('/api/admin/verification/:id/reject', requireAdmin, async (req, res) => {
+    try {
+      const observerId = parseInt(req.params.id);
+      if (isNaN(observerId)) {
+        return res.status(400).json({ message: 'Invalid observer ID' });
+      }
+      
+      // Validate request body to ensure reason is provided
+      const { reason } = z.object({
+        reason: z.string().min(1, 'Rejection reason is required')
+      }).parse(req.body);
+      
+      // Update user verification status
+      const updatedUser = await storage.updateUser(observerId, {
+        verificationStatus: 'rejected',
+        // In a real system, you might want to store the reason in a separate table
+        // For simplicity, we're not doing that here
+      });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'Observer not found' });
+      }
+      
+      res.status(200).json({
+        message: 'Observer rejected successfully',
+        observer: {
+          id: updatedUser.id,
+          observerId: updatedUser.observerId,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          verificationStatus: updatedUser.verificationStatus
+        }
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      console.error('Error rejecting observer:', error);
+      res.status(500).json({ message: 'Failed to reject observer' });
+    }
+  });
+  
   // Admin dashboard statistics
   app.get('/api/admin/system-stats', requireAdmin, async (req, res) => {
     try {
