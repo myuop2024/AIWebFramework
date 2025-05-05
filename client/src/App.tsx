@@ -19,6 +19,7 @@ import Training from "@/pages/training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
 import FormTemplates from "@/pages/form-templates";
+import Admin from "@/pages/admin";
 
 function Router() {
   return (
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/faq" component={Faq} />
       <Route path="/chat" component={Chat} />
       <Route path="/form-templates" component={FormTemplates} />
+      <Route path="/admin" component={Admin} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
