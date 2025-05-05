@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { 
   loginUserSchema, 
@@ -99,8 +99,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     socket.on('close', () => {
-      // Remove from connected clients
-      connectedClients = connectedClients.filter(client => client.socket !== socket);
+      // Remove from connected clients by identifying the correct client based on reference
+      const socketId = connectedClients.findIndex(client => 
+        client.socket === socket
+      );
+      if (socketId !== -1) {
+        connectedClients.splice(socketId, 1);
+      }
     });
   });
   
@@ -184,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Middleware to check authentication
-  const requireAuth = (req, res, next) => {
+  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (!req.session?.userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }

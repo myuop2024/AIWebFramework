@@ -27,7 +27,12 @@ const AdminModal: React.FC<AdminModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>{title}</DialogTitle>
+          <div>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Administrative action dialog
+            </DialogDescription>
+          </div>
           <Button
             variant="ghost"
             size="icon"
