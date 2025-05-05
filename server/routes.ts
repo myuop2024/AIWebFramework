@@ -2,7 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { loginUserSchema, insertUserSchema, insertUserProfileSchema, insertDocumentSchema, insertReportSchema } from "@shared/schema";
+import { 
+  loginUserSchema, 
+  insertUserSchema, 
+  insertUserProfileSchema, 
+  insertDocumentSchema, 
+  insertReportSchema,
+  insertFormTemplateSchema,
+  formTemplateExtendedSchema
+} from "@shared/schema";
 import express from "express";
 import { z } from "zod";
 import { ZodError } from "zod";
