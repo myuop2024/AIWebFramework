@@ -6,6 +6,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
+import { createWorker } from 'tesseract.js';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -43,7 +44,7 @@ const fileSchema = z.object({
   name: z.string(),
 });
 
-// Define the form schema
+// Define the form schema with enhanced validation
 const reportSchema = z.object({
   stationId: z.number({
     required_error: "Please select a polling station",
@@ -52,19 +53,66 @@ const reportSchema = z.object({
     required_error: "Please select a report type",
   }),
   content: z.object({
-    observationTime: z.string().min(1, "Observation time is required"),
-    voterTurnout: z.string().min(1, "Voter turnout is required"),
-    queueLength: z.string().min(1, "Queue length is required"),
-    stationAccessibility: z.string().min(1, "Accessibility rating is required"),
-    issuesObserved: z.array(z.string()).optional(),
-    otherIssuesDetails: z.string().optional(),
+    observationTime: z.string()
+      .min(1, "Observation time is required")
+      .refine(time => {
+        const date = new Date(time);
+        return !isNaN(date.getTime());
+      }, "Please enter a valid date and time"),
+    voterTurnout: z.string()
+      .min(1, "Voter turnout is required"),
+    queueLength: z.string()
+      .min(1, "Queue length is required"),
+    stationAccessibility: z.string()
+      .min(1, "Accessibility rating is required"),
+    issuesObserved: z.array(z.string())
+      .optional()
+      .refine(issues => {
+        // If "other" is selected, make sure otherIssuesDetails is provided
+        if (issues?.includes("other")) {
+          return true; // We'll check otherIssuesDetails separately
+        }
+        return true;
+      }),
+    otherIssuesDetails: z.string()
+      .optional()
+      .refine((details, ctx) => {
+        // If "other" is selected in issuesObserved, details must be provided
+        const issues = ctx.path[ctx.path.length - 2] === "content" 
+          ? (ctx.parent as any).issuesObserved 
+          : [];
+          
+        if (Array.isArray(issues) && issues.includes("other")) {
+          return details && details.trim().length > 0;
+        }
+        return true;
+      }, "Please provide details for 'Other' issues"),
     stationOpened: z.boolean(),
-    stationOpenedTime: z.string().optional(),
-    additionalNotes: z.string().optional(),
+    stationOpenedTime: z.string()
+      .optional()
+      .refine((time, ctx) => {
+        // Only validate if stationOpened is false
+        const stationOpened = ctx.path[ctx.path.length - 2] === "content" 
+          ? (ctx.parent as any).stationOpened 
+          : true;
+          
+        if (!stationOpened && (!time || time.trim().length === 0)) {
+          return false;
+        }
+        return true;
+      }, "Please specify the time when the station opened"),
+    additionalNotes: z.string()
+      .optional()
+      .transform(val => val || ""),
     locationLat: z.number().optional(),
     locationLng: z.number().optional(),
   }),
-  mileageTraveled: z.number().optional(),
+  mileageTraveled: z.number()
+    .optional()
+    .refine(value => {
+      // If provided, must be positive
+      return value === undefined || value === null || value >= 0;
+    }, "Mileage must be a positive number"),
 });
 
 type ReportFormValues = z.infer<typeof reportSchema>;
@@ -228,6 +276,85 @@ export default function ReportForm() {
   // Calculate the total size of all attachments
   const totalAttachmentSize = attachments.reduce((total, attachment) => total + attachment.size, 0);
   const totalSizeMB = (totalAttachmentSize / (1024 * 1024)).toFixed(2);
+  
+  // State for OCR processing
+  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
+  const [ocrResults, setOcrResults] = useState<{file: string, text: string}[]>([]);
+  
+  // Process image with OCR to extract text
+  const processImageWithOCR = async (imageFile: File, index: number) => {
+    if (!imageFile.type.startsWith('image/')) {
+      toast({
+        title: "OCR Error",
+        description: `Only image files can be processed for text extraction.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessingOcr(true);
+    
+    try {
+      toast({
+        title: "Processing Image",
+        description: "Extracting text from image...",
+        variant: "default",
+      });
+      
+      // Initialize Tesseract worker
+      const worker = await createWorker();
+      
+      // Set language to recognize english text
+      await worker.loadLanguage('eng');
+      await worker.initialize('eng');
+      
+      // Read the image file
+      const imageData = URL.createObjectURL(imageFile);
+      
+      // Process the image with tesseract OCR
+      const { data: { text } } = await worker.recognize(imageData);
+      
+      // Terminate the worker to free up resources
+      await worker.terminate();
+      
+      if (text && text.trim()) {
+        // Add OCR result
+        setOcrResults(prev => [...prev, { file: imageFile.name, text }]);
+        
+        // Append to additional notes if there is text found
+        const currentNotes = form.getValues('content.additionalNotes') || '';
+        const updatedNotes = currentNotes +
+          (currentNotes ? '\n\n' : '') +
+          `--- OCR Text from ${imageFile.name} ---\n${text.trim()}`;
+        
+        form.setValue('content.additionalNotes', updatedNotes, { shouldValidate: true });
+        
+        toast({
+          title: "Text Extracted",
+          description: `Successfully extracted text from ${imageFile.name}`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "No Text Found",
+          description: `No readable text found in ${imageFile.name}`,
+          variant: "default",
+        });
+      }
+      
+      // Clean up the object URL
+      URL.revokeObjectURL(imageData);
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      toast({
+        title: "OCR Failed",
+        description: `Error processing image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    }
+    
+    setIsProcessingOcr(false);
+  };
 
   const onSubmit = async (values: ReportFormValues) => {
     // Get current location if available
@@ -688,6 +815,132 @@ export default function ReportForm() {
                 </FormItem>
               )}
             />
+
+            {/* File Attachment Section */}
+            <div className="space-y-4 border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Attachments</h3>
+                <span className="text-sm text-gray-500">
+                  {attachments.length > 0 ? `${attachments.length} file(s) - ${totalSizeMB} MB total` : 'No files attached'}
+                </span>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.accept = '.jpg,.jpeg,.png,.pdf,.doc,.docx';
+                      fileInputRef.current.capture = '';
+                      fileInputRef.current.click();
+                    }
+                  }}
+                >
+                  <Paperclip className="mr-2 h-4 w-4" />
+                  Browse Files
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={captureImage}
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  Take Photo
+                </Button>
+                
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                  multiple
+                />
+              </div>
+              
+              {attachments.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                  {attachments.map((attachment, index) => (
+                    <div 
+                      key={index} 
+                      className="relative border rounded-md p-2 flex flex-col gap-2"
+                    >
+                      <div className="absolute top-2 right-2 z-10 flex space-x-1">
+                        {attachment.type.startsWith('image/') && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => processImageWithOCR(attachment.file, index)}
+                            disabled={isProcessingOcr}
+                            title="Extract text from image"
+                          >
+                            {isProcessingOcr ? (
+                              <Clock className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Upload className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="h-6 w-6 rounded-full"
+                          onClick={() => removeAttachment(index)}
+                          title="Remove attachment"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      
+                      {attachment.previewUrl ? (
+                        <div className="h-24 w-full flex items-center justify-center">
+                          <img 
+                            src={attachment.previewUrl} 
+                            alt={attachment.name} 
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-24 w-full flex items-center justify-center bg-gray-100 rounded">
+                          <FileText className="h-10 w-10 text-gray-400" />
+                        </div>
+                      )}
+                      
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium truncate" title={attachment.name}>
+                          {attachment.name}
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {attachment.type.split('/')[1].toUpperCase()}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+                        
+                        {/* Show if OCR has been applied to this image */}
+                        {ocrResults.some(result => result.file === attachment.name) && (
+                          <Badge variant="success" className="mt-1 text-xs">
+                            Text extracted
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <FormDescription>
+                Attach photos or documents to support your report. Images will be processed for text (OCR).
+              </FormDescription>
+            </div>
 
             <div className="flex items-center justify-end space-x-4 pt-4">
               <Button 
