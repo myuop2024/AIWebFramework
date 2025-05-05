@@ -32,7 +32,12 @@ export async function registerUser(
 }
 
 export async function logoutUser(): Promise<void> {
-  await apiRequest("POST", "/api/auth/logout");
+  try {
+    await apiRequest("POST", "/api/auth/logout", {});
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
 }
 
 export function useAuth() {

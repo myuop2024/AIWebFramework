@@ -14,31 +14,27 @@ interface ApiRequestOptions {
 }
 
 export async function apiRequest<T = any>(
+  method: string,
   url: string,
-  options?: ApiRequestOptions
-): Promise<T> {
-  const method = options?.method || 'GET';
-  const data = options?.data;
-  
+  data?: any,
+  headers?: Record<string, string>
+): Promise<Response> {
   const res = await fetch(url, {
     method,
     headers: {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(options?.headers || {})
+      ...(headers || {})
     },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
-  
-  // For empty responses (like from DELETE requests), don't try to parse JSON
-  if (res.headers.get('content-length') === '0') {
-    return {} as T;
+  if (!res.ok) {
+    const text = (await res.text()) || res.statusText;
+    throw new Error(`${res.status}: ${text}`);
   }
   
-  // For any other response, try to parse as JSON
-  return await res.json() as T;
+  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
