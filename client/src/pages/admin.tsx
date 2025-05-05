@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AdminModal from "@/components/admin/admin-modal";
+import AdminDashboard from "@/components/admin/admin-dashboard";
 import { 
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
   FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server

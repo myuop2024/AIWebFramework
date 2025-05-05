@@ -20,6 +20,7 @@ import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
+import AdminPage from "@/pages/admin-page";
 
 function Router() {
   return (
@@ -44,6 +45,7 @@ function Router() {
       <Route path="/chat" component={Chat} />
       <Route path="/form-templates" component={FormTemplates} />
       <Route path="/admin" component={Admin} />
+      <Route path="/admin-dashboard" component={AdminPage} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
