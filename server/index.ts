@@ -3,22 +3,36 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
-import { pool } from "./db";
+import { pool, checkDbConnection } from "./db";
+import MemoryStore from "memorystore";
 
-// Create PostgreSQL session store
-const PostgreSQLStore = pgSession(session);
+// Create session store
+const createSessionStore = () => {
+  try {
+    // Try to use PostgreSQL session store
+    const PostgreSQLStore = pgSession(session);
+    return new PostgreSQLStore({
+      pool,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+  } catch (error) {
+    // Fallback to memory store if PostgreSQL fails
+    console.error('Failed to create PostgreSQL session store, falling back to memory store:', error);
+    const MemorySessionStore = MemoryStore(session);
+    return new MemorySessionStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+  }
+};
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up session middleware with PostgreSQL store
+// Set up session middleware
 app.use(session({
-  store: new PostgreSQLStore({
-    pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }),
+  store: createSessionStore(),
   secret: process.env.SESSION_SECRET || 'observer-session-secret',
   resave: false,
   saveUninitialized: false,
@@ -59,34 +73,71 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    // Check database connection
+    await checkDbConnection();
+    
+    // Add health check endpoint
+    app.get('/api/health', async (req, res) => {
+      const dbConnected = await checkDbConnection();
+      res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        database: dbConnected ? 'connected' : 'disconnected',
+        environment: process.env.NODE_ENV || 'development'
+      });
+    });
+    
+    const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
-  });
+      res.status(status).json({ message });
+      console.error('Error caught by error handler:', err);
+    });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // ALWAYS serve the app on port 5000
+    // this serves both the API and the client.
+    // It is the only port that is not firewalled.
+    const port = 5000;
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Server initialization error:', error);
+    
+    // Still start the server even if DB connection fails 
+    // This ensures the UI can still load, even if backend APIs might fail
+    const server = await registerRoutes(app);
+    
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+    
+    const port = 5000;
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port} (limited functionality mode - database connection failed)`);
+    });
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
 })();

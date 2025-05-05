@@ -13,17 +13,37 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create connection pool with proper error handling
+// Create connection pool with proper error handling and conservative settings
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000 // 5 second timeout
+  connectionTimeoutMillis: 10000, // 10 second timeout
+  max: 5, // Reduce max connections to avoid overwhelming the server
+  idleTimeoutMillis: 30000, // 30 seconds before idle connections are closed
+  maxUses: 100, // Max number of times a client can be used before being recycled
 });
 
-// Test the database connection
+// Handle connection errors
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle database client', err);
-  process.exit(1);
+  console.error('Unexpected error on database client', err);
+  // Don't crash the server, just log the error
+  // process.exit(1);
 });
 
 // Initialize Drizzle ORM with the schema
 export const db = drizzle(pool, { schema });
+
+// Export a function to check db connectivity
+export async function checkDbConnection() {
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query('SELECT 1');
+    console.log('Database connection successful');
+    return true;
+  } catch (err) {
+    console.error('Database connection error:', err);
+    return false;
+  } finally {
+    if (client) client.release();
+  }
+}
