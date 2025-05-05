@@ -1,0 +1,74 @@
+✅ Step 1: Initialize Project & Core Framework
+Prompt:
+
+"Create a scalable, responsive, and secure web and mobile application using React for frontend, Node.js backend, and MySQL database. Include secure hosting and SSL encryption. Set up the core application structure clearly separating frontend, backend, and database."
+
+✅ Step 2: User Authentication & Unique ID Generation
+Prompt:
+
+"Implement a robust user authentication system (sign-up, login, logout, forgot password) with email verification. Each user upon signup must be automatically assigned a unique, permanent 6-digit numeric ID that never changes and can be displayed as their CAFFE Observer ID."
+
+✅ Step 3: User Profile & KYC Onboarding
+Prompt:
+
+"Add comprehensive user profile management and a KYC onboarding form. Users must securely upload and update identity verification documents (ID, photo), banking information, and personal details. Include secure storage with masking of sensitive fields like TRN, bank info, and ID numbers."
+
+✅ Step 4: AI Image Handling (Resizing & Background Removal)
+Prompt:
+
+"Integrate AI-powered image upload handling for automatic resizing, optimization, and background removal of user-uploaded images (such as profile photos or documents). Images must be securely stored and efficiently retrievable for validation."
+
+✅ Step 5: Document Uploads, Remote Camera Capture & OCR
+Prompt:
+
+"Add secure document-uploading capabilities with remote camera capture functionality (for mobile and web). Integrate AI-based OCR to transcribe or extract textual data from uploaded or captured documents for automatic processing and storage."
+
+✅ Step 6: SMS & Chat Integration for Communication
+Prompt:
+
+"Include SMS fallback and real-time live chat/live call features to ensure seamless communication between observers and the election center. SMS should automatically activate when data connectivity issues are detected."
+
+✅ Step 7: Polling Station & Roving Observer Portal with Google Maps
+Prompt:
+
+"Develop a detailed polling-station interface integrating Google Maps for roving observers. Pre-populate polling locations, allow observers to route and navigate easily, capture check-in/check-out timestamps, calculate mileage traveled automatically, and enable submission of real-time observer reports."
+
+✅ Step 8: FAQ Knowledge Base & News Management
+Prompt:
+
+"Implement a searchable FAQ knowledge base for observers to find answers quickly. Include a content management system (CMS) for the admin interface to easily update and publish news, notices, articles, and FAQs."
+
+✅ Step 9: Training & Certification
+Prompt:
+
+"Create an integrated remote-training portal supporting audiovisual materials via Moodle or Zoom. Include automated assessments. Automatically generate and distribute verifiable digital certificates upon successful completion of training modules. Ensure training status syncs automatically with user profiles and access permissions."
+
+✅ Step 10: Election Center Admin Interface & Data Analytics
+Prompt:
+
+"Set up a secure, admin-only Election Center Interface. Include BigQuery (or similar SQL tool) integration for advanced analytics and real-time dashboards to visualize observer reports and data. Admins must be able to manage observers, modify user access, verify observer IDs, and securely share data with EOJ and stakeholders."
+
+✅ Step 11: Push Notifications & QR Code Generation
+Prompt:
+
+"Implement push notification functionality for mobile and web to alert observers of new tasks, urgent notices, or updates. Generate a secure QR code containing observer data, usable for EOJ officials to scan and validate observers' CAFFE IDs directly."
+
+✅ Step 12: Security, Device Binding & Data Privacy
+Prompt:
+
+"Establish strict security policies including device-specific binding to restrict users to one authorized device (unless changed by admin). Ensure all sensitive user data is encrypted at rest and in transit. Provide an admin option to delete user data securely upon request."
+
+✅ Step 13: Form Editors & Customization Tools
+Prompt:
+
+"Incorporate intuitive drag-and-drop form editors within the admin interface to easily create, customize, and deploy dynamic forms and questionnaires for observers to fill out during elections. Ensure seamless submission, validation, and storage of collected data."
+
+✅ Step 14: Testing & QA
+Prompt:
+
+"Conduct comprehensive QA and user acceptance testing (UAT). Validate each feature, security measure, and integration. Ensure zero critical errors, smooth functionality across devices, and document all results thoroughly for review and approval."
+
+✅ Step 15: Deployment & Monitoring
+Prompt:
+
+"Deploy the completed application securely with full documentation. Include real-time monitoring tools for performance, user activity tracking, and error detection. Prepare for ongoing support, updates, and potential scalability."
