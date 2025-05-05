@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -69,19 +69,52 @@ export const assignments = pgTable("assignments", {
   assignedAt: timestamp("assigned_at").defaultNow(),
 });
 
+// Form templates for customizable reports
+export const formTemplates = pgTable("form_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  fields: jsonb("fields").notNull(), // Array of field definitions (type, label, required, etc)
+  isActive: boolean("is_active").default(true).notNull(),
+  category: text("category").notNull(), // e.g., "polling", "incident", "observation"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
 // Observer reports
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
+  templateId: integer("template_id").references(() => formTemplates.id),
   reportType: text("report_type").notNull(),
   content: jsonb("content").notNull(),
+  contentHash: text("content_hash"), // For data integrity verification
   status: text("status").notNull().default("submitted"),
   submittedAt: timestamp("submitted_at").defaultNow(),
   reviewedAt: timestamp("reviewed_at"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
   checkinTime: timestamp("checkin_time"),
   checkoutTime: timestamp("checkout_time"),
   mileageTraveled: integer("mileage_traveled"),
+  locationLat: real("location_lat"),
+  locationLng: real("location_lng"),
+  encryptedData: boolean("encrypted_data").default(false),
+});
+
+// Report attachments with OCR support
+export const reportAttachments = pgTable("report_attachments", {
+  id: serial("id").primaryKey(),
+  reportId: integer("report_id").notNull().references(() => reports.id, { onDelete: 'cascade' }),
+  fileType: text("file_type").notNull(), // e.g., "image/jpeg", "application/pdf"
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  ocrProcessed: boolean("ocr_processed").default(false),
+  ocrText: text("ocr_text"),
+  encryptionIv: text("encryption_iv"), // Initialization vector for encryption
 });
 
 // Events and training
@@ -171,12 +204,32 @@ export const insertAssignmentSchema = createInsertSchema(assignments)
     assignedAt: true,
   });
 
+export const insertFormTemplateSchema = createInsertSchema(formTemplates)
+  .omit({
+    id: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 export const insertReportSchema = createInsertSchema(reports)
   .omit({
     id: true,
     status: true,
     submittedAt: true,
     reviewedAt: true,
+    reviewedBy: true,
+    contentHash: true,
+    encryptedData: true,
+  });
+
+export const insertReportAttachmentSchema = createInsertSchema(reportAttachments)
+  .omit({
+    id: true,
+    uploadedAt: true,
+    ocrProcessed: true,
+    ocrText: true,
+    encryptionIv: true,
   });
 
 export const insertEventSchema = createInsertSchema(events)
@@ -212,6 +265,63 @@ export const insertMessageSchema = createInsertSchema(messages)
     sentAt: true,
   });
 
+// Field definitions for form templates
+export const formFieldSchema = z.object({
+  id: z.string().uuid().optional(),
+  type: z.enum([
+    'text', 'textarea', 'number', 'email', 'tel', 'date', 'time', 'datetime',
+    'checkbox', 'radio', 'select', 'file', 'image', 'signature', 'location'
+  ]),
+  label: z.string().min(1, "Label is required"),
+  name: z.string().min(1, "Field name is required"),
+  required: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  helpText: z.string().optional(),
+  options: z.array(
+    z.object({
+      label: z.string(),
+      value: z.string(),
+    })
+  ).optional(),
+  validation: z.object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+    pattern: z.string().optional(),
+    customMessage: z.string().optional(),
+  }).optional(),
+  defaultValue: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(z.string()),
+    z.null()
+  ]).optional().nullable(),
+  isEncrypted: z.boolean().default(false),
+  isHidden: z.boolean().default(false),
+  order: z.number().optional(),
+  conditional: z.object({
+    field: z.string(),
+    value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])
+  }).optional(),
+});
+
+export const formSectionSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().min(1, "Section title is required"),
+  description: z.string().optional(),
+  order: z.number().optional(),
+  fields: z.array(formFieldSchema)
+});
+
+export const formTemplateExtendedSchema = z.object({
+  name: z.string().min(3, "Name is required and must be at least 3 characters"),
+  description: z.string().optional(),
+  category: z.string().min(1, "Category is required"),
+  sections: z.array(formSectionSchema),
+  isEncrypted: z.boolean().default(false),
+  createdBy: z.number().optional(),
+});
+
 export const loginUserSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
@@ -233,8 +343,14 @@ export type PollingStation = typeof pollingStations.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type Assignment = typeof assignments.$inferSelect;
 
+export type InsertFormTemplate = z.infer<typeof insertFormTemplateSchema>;
+export type FormTemplate = typeof formTemplates.$inferSelect;
+
 export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
+
+export type InsertReportAttachment = z.infer<typeof insertReportAttachmentSchema>;
+export type ReportAttachment = typeof reportAttachments.$inferSelect;
 
 export type InsertEvent = z.infer<typeof insertEventSchema>;
 export type Event = typeof events.$inferSelect;
@@ -252,3 +368,8 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
 export type LoginUser = z.infer<typeof loginUserSchema>;
+
+// Form field type definitions
+export type FormField = z.infer<typeof formFieldSchema>;
+export type FormSection = z.infer<typeof formSectionSchema>;
+export type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
