@@ -791,5 +791,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Form Template Management Routes
+  
+  // Middleware to check admin role
+  const requireAdmin = (req, res, next) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+    next();
+  };
+  
+  // Get all form templates
+  app.get('/api/form-templates', requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getAllFormTemplates();
+      res.status(200).json(templates);
+    } catch (error) {
+      console.error('Error fetching form templates:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Get active form templates
+  app.get('/api/form-templates/active', requireAuth, async (req, res) => {
+    try {
+      const templates = await storage.getActiveFormTemplates();
+      res.status(200).json(templates);
+    } catch (error) {
+      console.error('Error fetching active form templates:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Get form templates by category
+  app.get('/api/form-templates/category/:category', requireAuth, async (req, res) => {
+    try {
+      const { category } = req.params;
+      const templates = await storage.getFormTemplatesByCategory(category);
+      res.status(200).json(templates);
+    } catch (error) {
+      console.error('Error fetching form templates by category:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Get form template by ID
+  app.get('/api/form-templates/:id', requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid template ID' });
+      }
+      
+      const template = await storage.getFormTemplate(id);
+      if (!template) {
+        return res.status(404).json({ message: 'Form template not found' });
+      }
+      
+      res.status(200).json(template);
+    } catch (error) {
+      console.error('Error fetching form template:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Create form template (admin only)
+  app.post('/api/form-templates', requireAdmin, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      
+      // Parse and validate extended template
+      const extendedTemplate = formTemplateExtendedSchema.parse(req.body);
+      
+      // Convert from extended template format to fields JSON
+      const fields = {
+        sections: extendedTemplate.sections.map(section => ({
+          id: section.id,
+          title: section.title,
+          description: section.description,
+          order: section.order,
+          fields: section.fields
+        }))
+      };
+      
+      // Create template in storage
+      const template = await storage.createFormTemplate({
+        name: extendedTemplate.name,
+        description: extendedTemplate.description || null,
+        category: extendedTemplate.category,
+        fields: fields,
+        createdBy: userId
+      });
+      
+      res.status(201).json(template);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      console.error('Error creating form template:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Update form template (admin only)
+  app.put('/api/form-templates/:id', requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid template ID' });
+      }
+      
+      // Check if template exists
+      const existingTemplate = await storage.getFormTemplate(id);
+      if (!existingTemplate) {
+        return res.status(404).json({ message: 'Form template not found' });
+      }
+      
+      // Parse and validate extended template
+      const extendedTemplate = formTemplateExtendedSchema.parse(req.body);
+      
+      // Convert from extended template format to fields JSON
+      const fields = {
+        sections: extendedTemplate.sections.map(section => ({
+          id: section.id,
+          title: section.title,
+          description: section.description,
+          order: section.order,
+          fields: section.fields
+        }))
+      };
+      
+      // Update template in storage
+      const template = await storage.updateFormTemplate(id, {
+        name: extendedTemplate.name,
+        description: extendedTemplate.description || null,
+        category: extendedTemplate.category,
+        fields: fields,
+        updatedAt: new Date()
+      });
+      
+      res.status(200).json(template);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      console.error('Error updating form template:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Activate/deactivate form template (admin only)
+  app.patch('/api/form-templates/:id/status', requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid template ID' });
+      }
+      
+      // Validate request body
+      const { isActive } = z.object({
+        isActive: z.boolean()
+      }).parse(req.body);
+      
+      // Check if template exists
+      const existingTemplate = await storage.getFormTemplate(id);
+      if (!existingTemplate) {
+        return res.status(404).json({ message: 'Form template not found' });
+      }
+      
+      // Update template status
+      const template = await storage.updateFormTemplate(id, {
+        isActive,
+        updatedAt: new Date()
+      });
+      
+      res.status(200).json(template);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: fromZodError(error).message });
+      }
+      console.error('Error updating form template status:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Delete form template (admin only)
+  app.delete('/api/form-templates/:id', requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid template ID' });
+      }
+      
+      // Check if template exists
+      const existingTemplate = await storage.getFormTemplate(id);
+      if (!existingTemplate) {
+        return res.status(404).json({ message: 'Form template not found' });
+      }
+      
+      // Delete template
+      const success = await storage.deleteFormTemplate(id);
+      if (!success) {
+        return res.status(500).json({ message: 'Failed to delete form template' });
+      }
+      
+      res.status(204).end();
+    } catch (error) {
+      console.error('Error deleting form template:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
   return httpServer;
 }
