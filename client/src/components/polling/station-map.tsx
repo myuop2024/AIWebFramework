@@ -156,7 +156,25 @@ export default function StationMap({
             <TabsTrigger value="list">List View</TabsTrigger>
           </TabsList>
           <TabsContent value="map" className="relative">
-            <div ref={mapContainerRef} className="w-full h-[300px] relative bg-gray-100 rounded-md overflow-hidden" />
+            <div className="h-[300px] relative">
+              {stations?.length > 0 && (
+                <InteractiveMap
+                  locations={stations.map(station => ({
+                    id: station.id,
+                    lat: station.latitude || parseCoordinates(station.coordinates || "{}").lat || 0,
+                    lng: station.longitude || parseCoordinates(station.coordinates || "{}").lng || 0,
+                    label: station.name,
+                    // Determine risk level based on station status or criteria
+                    riskLevel: station.status === 'high_risk' ? 'high' :
+                              station.status === 'medium_risk' ? 'medium' :
+                              station.status === 'low_risk' ? 'low' : 'none'
+                  }))}
+                  onLocationSelect={(location) => onSelectStation?.(location.id as number)}
+                  showUserLocation={true}
+                  height="300px"
+                />
+              )}
+            </div>
           </TabsContent>
           <TabsContent value="list">
             <div className="divide-y divide-gray-200">
