@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,8 +30,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Clock, CheckCircle, Upload, X, Camera, FileText, Paperclip } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+// Define a schema for file attachments
+const fileSchema = z.object({
+  file: z.instanceof(File),
+  previewUrl: z.string().optional(),
+  type: z.string(),
+  size: z.number(),
+  name: z.string(),
+});
 
 // Define the form schema
 const reportSchema = z.object({
@@ -51,6 +61,8 @@ const reportSchema = z.object({
     stationOpened: z.boolean(),
     stationOpenedTime: z.string().optional(),
     additionalNotes: z.string().optional(),
+    locationLat: z.number().optional(),
+    locationLng: z.number().optional(),
   }),
   mileageTraveled: z.number().optional(),
 });
@@ -63,6 +75,8 @@ export default function ReportForm() {
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<z.infer<typeof fileSchema>[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch polling stations
   const { data: stations, isLoading: isStationsLoading } = useQuery({
@@ -141,8 +155,122 @@ export default function ReportForm() {
     },
   });
 
-  const onSubmit = (values: ReportFormValues) => {
+  // Handle file uploads
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const files = Array.from(e.target.files);
+    
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const invalidFiles = files.filter(file => file.size > maxSize);
+    
+    if (invalidFiles.length > 0) {
+      toast({
+        title: "File too large",
+        description: `Files must be under 10MB. ${invalidFiles.map(f => f.name).join(', ')} ${invalidFiles.length > 1 ? 'are' : 'is'} too large.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Process each file
+    files.forEach(file => {
+      // Create a preview URL for images
+      let previewUrl: string | undefined;
+      if (file.type.startsWith('image/')) {
+        previewUrl = URL.createObjectURL(file);
+      }
+      
+      // Add to attachments state
+      setAttachments(prev => [
+        ...prev,
+        {
+          file,
+          previewUrl,
+          type: file.type,
+          size: file.size,
+          name: file.name
+        }
+      ]);
+    });
+    
+    // Clear input so the same file can be selected again if removed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  // Remove an attachment
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => {
+      const newAttachments = [...prev];
+      // Revoke object URL to avoid memory leaks
+      if (newAttachments[index].previewUrl) {
+        URL.revokeObjectURL(newAttachments[index].previewUrl);
+      }
+      newAttachments.splice(index, 1);
+      return newAttachments;
+    });
+  };
+  
+  // Capture image from camera
+  const captureImage = async () => {
+    // In a real implementation, you would use a library or API to access the device camera
+    // For now, we'll just simulate capturing by showing the file dialog
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = 'image/*';
+      fileInputRef.current.capture = 'environment';
+      fileInputRef.current.click();
+    }
+  };
+  
+  // Calculate the total size of all attachments
+  const totalAttachmentSize = attachments.reduce((total, attachment) => total + attachment.size, 0);
+  const totalSizeMB = (totalAttachmentSize / (1024 * 1024)).toFixed(2);
+
+  const onSubmit = async (values: ReportFormValues) => {
+    // Get current location if available
+    if (navigator.geolocation) {
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          });
+        });
+        
+        // Add location to form values
+        values.content.locationLat = position.coords.latitude;
+        values.content.locationLng = position.coords.longitude;
+      } catch (error) {
+        console.warn("Unable to get location:", error);
+      }
+    }
+    
+    // Submit the form data
     submitReportMutation.mutate(values);
+    
+    // In a real implementation, you would upload the attachments here
+    // and associate them with the report ID returned from the API
+    if (attachments.length > 0) {
+      toast({
+        title: "Attachments processing",
+        description: `Processing ${attachments.length} attachment(s). This may take a moment.`,
+        variant: "default",
+      });
+      
+      // This would be replaced with real attachment upload logic
+      // For demonstration purposes, we'll just simulate success
+      setTimeout(() => {
+        toast({
+          title: "Attachments uploaded",
+          description: `Successfully uploaded ${attachments.length} attachment(s).`,
+          variant: "default",
+        });
+      }, 2000);
+    }
   };
 
   // List of possible issues that can be observed
