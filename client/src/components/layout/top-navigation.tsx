@@ -48,9 +48,12 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
     }
   }, [location]);
   
+  const [, navigate] = useLocation();
+  
   const handleLogout = async () => {
     try {
       await logout();
+      navigate("/login"); // Redirect to login page after successful logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
