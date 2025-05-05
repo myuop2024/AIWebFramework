@@ -69,8 +69,8 @@ import {
   formTemplateExtendedSchema,
   type FormTemplate,
   type FormTemplateExtended,
-  type FormField,
-  type FormSection
+  type FormField as SchemaFormField,
+  type FormSection as SchemaFormSection
 } from '@shared/schema';
 
 // Available field types with icons

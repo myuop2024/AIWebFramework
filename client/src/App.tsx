@@ -18,6 +18,7 @@ import Assignments from "@/pages/assignments";
 import Training from "@/pages/training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
+import FormTemplates from "@/pages/form-templates";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/training" component={Training} />
       <Route path="/faq" component={Faq} />
       <Route path="/chat" component={Chat} />
+      <Route path="/form-templates" component={FormTemplates} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

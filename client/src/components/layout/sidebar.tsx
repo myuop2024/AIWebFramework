@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { 
   Home, User, MapPin, FileText, BookOpen, 
-  HelpCircle, MessageSquare, LogOut 
+  HelpCircle, MessageSquare, LogOut, 
+  FileEdit, ClipboardList
 } from "lucide-react";
 
 interface SidebarProps {
@@ -44,6 +45,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
     { path: "/training", label: "Training", icon: <BookOpen className="h-5 w-5 mr-3" /> },
   ];
+  
+  // Admin links (only shown to users with admin role)
+  const adminLinks = user?.role === 'admin' ? [
+    { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
+  ] : [];
 
   const supportLinks = [
     { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5 mr-3" /> },
@@ -115,6 +121,27 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               {link.label}
             </Link>
           ))}
+          
+          {/* Admin section - only visible to admin users */}
+          {adminLinks.length > 0 && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Admin</p>
+              {adminLinks.map((link) => (
+                <Link 
+                  key={link.path} 
+                  href={link.path}
+                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
+                    location === link.path 
+                      ? 'bg-primary-light/10 text-primary' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {link.icon}
+                  {link.label}
+                </Link>
+              ))}
+            </>
+          )}
           
           <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Support</p>
           

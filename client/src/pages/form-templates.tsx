@@ -1,398 +1,490 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
+import { useAuth } from '@/lib/auth';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import { AuthGuard } from '@/components/auth/auth-guard';
-import { MainLayout } from '@/components/layouts/main-layout';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { 
-  FormBuilder 
-} from '@/components/forms/form-builder';
+import MainLayout from '@/components/layout/main-layout';
 import { FormTemplateEditor } from '@/components/forms/form-template-editor';
+import { FormBuilder } from '@/components/forms/form-builder';
+import { 
+  PageHeader, 
+  PageHeaderDescription, 
+  PageHeaderHeading 
+} from '@/components/ui/page-header';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  ArrowPathIcon,
-  PencilIcon, 
-  PlusIcon, 
-  TrashIcon, 
-  EyeIcon,
-  CheckCircleIcon,
-  XCircleIcon
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
+import { 
+  ClipboardEdit, 
+  Eye, 
+  MoreVertical, 
+  Plus, 
+  RefreshCw, 
+  Trash,
+  CheckCircle2, 
+  XCircle,
+  Filter
 } from 'lucide-react';
-import type { FormTemplate, FormTemplateExtended } from '@shared/schema';
+import { 
+  type FormTemplate,
+  type FormTemplateExtended
+} from '@shared/schema';
 
 export default function FormTemplatesPage() {
-  const [selectedTab, setSelectedTab] = useState<string>('all');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<FormTemplate | null>(null);
-  
+  const [, navigate] = useLocation();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
-  
-  // Fetch all templates
-  const { data: templates, isLoading } = useQuery<FormTemplate[]>({
+  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState<FormTemplate | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated or not admin
+  useEffect(() => {
+    if (!loading && (!user || user.role !== 'admin')) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access this page.",
+        variant: "destructive"
+      });
+      navigate("/dashboard");
+    }
+  }, [user, loading, navigate, toast]);
+
+  // Query to get all form templates
+  const { data: templates = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/form-templates'],
+    enabled: !!user && user.role === 'admin'
   });
-  
-  // Create template mutation
-  const createTemplate = useMutation({
+
+  // Create a new template
+  const createTemplateMutation = useMutation({
     mutationFn: async (templateData: FormTemplateExtended) => {
-      return await apiRequest<FormTemplate>('/api/form-templates', {
+      return apiRequest('/api/form-templates', {
         method: 'POST',
-        data: templateData
+        data: {
+          name: templateData.name,
+          description: templateData.description,
+          category: templateData.category,
+          fields: { sections: templateData.sections },
+          isActive: true,
+        }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
       toast({
-        title: 'Template created successfully',
-        variant: 'default',
+        title: "Template Created",
+        description: "Form template created successfully",
       });
-      setIsCreateDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
+      setIsCreating(false);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: 'Failed to create template',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
+        title: "Failed to Create Template",
+        description: `Error: ${error.toString()}`,
+        variant: "destructive"
       });
     }
   });
-  
-  // Update template mutation
-  const updateTemplate = useMutation({
+
+  // Update an existing template
+  const updateTemplateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: FormTemplateExtended }) => {
-      return await apiRequest<FormTemplate>(`/api/form-templates/${id}`, {
-        method: 'PUT',
-        data
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
-      toast({
-        title: 'Template updated successfully',
-        variant: 'default',
-      });
-      setIsEditDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Failed to update template',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
-      });
-    }
-  });
-  
-  // Toggle template status mutation
-  const toggleTemplateStatus = useMutation({
-    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      return await apiRequest<FormTemplate>(`/api/form-templates/${id}/status`, {
+      return apiRequest(`/api/form-templates/${id}`, {
         method: 'PATCH',
-        data: { isActive }
+        data: {
+          name: data.name,
+          description: data.description,
+          category: data.category,
+          fields: { sections: data.sections },
+        }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
       toast({
-        title: 'Template status updated',
-        variant: 'default',
+        title: "Template Updated",
+        description: "Form template updated successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
+      setIsEditing(false);
+      setActiveTemplate(null);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: 'Failed to update template status',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
+        title: "Failed to Update Template",
+        description: `Error: ${error.toString()}`,
+        variant: "destructive"
       });
     }
   });
-  
-  // Delete template mutation
-  const deleteTemplate = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest<void>(`/api/form-templates/${id}`, {
-        method: 'DELETE'
+
+  // Toggle template active status
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (template: FormTemplate) => {
+      return apiRequest(`/api/form-templates/${template.id}/status`, {
+        method: 'PATCH',
+        data: {
+          isActive: !template.isActive
+        }
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
       toast({
-        title: 'Template deleted successfully',
-        variant: 'default',
+        title: "Status Updated",
+        description: "Template status updated successfully",
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: 'Failed to delete template',
-        description: error.message || 'An error occurred',
-        variant: 'destructive',
+        title: "Failed to Update Status",
+        description: `Error: ${error.toString()}`,
+        variant: "destructive"
       });
     }
   });
-  
-  // Filter templates based on tab
-  const filteredTemplates = templates?.filter(template => {
-    if (selectedTab === 'all') return true;
-    if (selectedTab === 'active') return template.isActive;
-    if (selectedTab === 'inactive') return !template.isActive;
-    if (selectedTab === 'polling') return template.category === 'polling';
-    if (selectedTab === 'incident') return template.category === 'incident';
-    if (selectedTab === 'observation') return template.category === 'observation';
-    return true;
+
+  // Delete a template
+  const deleteTemplateMutation = useMutation({
+    mutationFn: async (template: FormTemplate) => {
+      return apiRequest(`/api/form-templates/${template.id}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Template Deleted",
+        description: "Form template deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/form-templates'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Delete Template",
+        description: `Error: ${error.toString()}`,
+        variant: "destructive"
+      });
+    }
   });
-  
+
+  // Event handlers
   const handleCreateTemplate = (templateData: FormTemplateExtended) => {
-    createTemplate.mutate(templateData);
+    createTemplateMutation.mutate(templateData);
   };
-  
+
   const handleUpdateTemplate = (templateData: FormTemplateExtended) => {
-    if (selectedTemplate) {
-      updateTemplate.mutate({ id: selectedTemplate.id, data: templateData });
-    }
+    if (!activeTemplate) return;
+    updateTemplateMutation.mutate({ id: activeTemplate.id, data: templateData });
   };
-  
+
   const handleToggleStatus = (template: FormTemplate) => {
-    toggleTemplateStatus.mutate({ 
-      id: template.id, 
-      isActive: !template.isActive 
-    });
+    toggleStatusMutation.mutate(template);
   };
-  
+
   const handleDeleteTemplate = (template: FormTemplate) => {
-    if (confirm(`Are you sure you want to delete "${template.name}"? This action cannot be undone.`)) {
-      deleteTemplate.mutate(template.id);
-    }
+    deleteTemplateMutation.mutate(template);
   };
-  
+
   const handleEditTemplate = (template: FormTemplate) => {
-    setSelectedTemplate(template);
-    setIsEditDialogOpen(true);
+    setActiveTemplate(template);
+    setIsEditing(true);
   };
-  
+
   const handlePreviewTemplate = (template: FormTemplate) => {
-    setSelectedTemplate(template);
-    setIsPreviewDialogOpen(true);
+    setActiveTemplate(template);
+    setIsPreviewing(true);
   };
-  
+
+  // Filter templates by category
+  const filteredTemplates = categoryFilter 
+    ? templates.filter((template: FormTemplate) => template.category === categoryFilter)
+    : templates;
+
+  // Get unique categories
+  const categories = Array.from(
+    new Set(templates.map((template: FormTemplate) => template.category))
+  );
+
   return (
-    <AuthGuard>
-      <MainLayout>
-        <div className="container mx-auto py-6 space-y-6">
-          <div className="flex justify-between items-center">
+    <MainLayout>
+      <div className="container mx-auto py-6">
+        <PageHeader className="pb-8">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Form Templates</h1>
-              <p className="text-muted-foreground">
-                Create and manage customizable form templates for observers
-              </p>
+              <PageHeaderHeading>Form Templates</PageHeaderHeading>
+              <PageHeaderDescription>
+                Create and manage form templates for various types of reports and observations
+              </PageHeaderDescription>
             </div>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <PlusIcon className="mr-2 h-4 w-4" />
+            <Button onClick={() => setIsCreating(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               New Template
             </Button>
           </div>
-          
-          <Tabs defaultValue="all" value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="inactive">Inactive</TabsTrigger>
-              <TabsTrigger value="polling">Polling</TabsTrigger>
-              <TabsTrigger value="incident">Incident</TabsTrigger>
-              <TabsTrigger value="observation">Observation</TabsTrigger>
-            </TabsList>
-            
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <ArrowPathIcon className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : filteredTemplates?.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No templates found</p>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Button
+              variant={categoryFilter === null ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setCategoryFilter(null)}
+            >
+              All
+            </Button>
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={categoryFilter === category ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setCategoryFilter(category)}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </PageHeader>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredTemplates.map((template: FormTemplate) => (
+              <Card key={template.id} className="overflow-hidden">
+                <CardHeader className="pb-3 flex flex-row justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">{template.name}</CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="capitalize">
+                        {template.category}
+                      </Badge>
+                      {template.isActive ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-200">
+                          <XCircle className="h-3 w-3 mr-1" /> Inactive
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handlePreviewTemplate(template)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEditTemplate(template)}>
+                        <ClipboardEdit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleStatus(template)}>
+                        {template.isActive ? (
+                          <>
+                            <XCircle className="h-4 w-4 mr-2" />
+                            Deactivate
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Activate
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Form Template</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete the "{template.name}" template? 
+                              This action cannot be undone and may affect existing reports.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTemplate(template)}
+                              className="bg-red-500 hover:bg-red-600"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500 line-clamp-2">
+                    {template.description || "No description provided"}
+                  </p>
+                  <div className="flex justify-between mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handlePreviewTemplate(template)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      size="sm"
+                      onClick={() => handleEditTemplate(template)}
+                    >
+                      <ClipboardEdit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+
+            {filteredTemplates.length === 0 && (
+              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+                <div className="rounded-full bg-gray-100 p-3 mb-3">
+                  <ClipboardEdit className="h-6 w-6 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium">No templates found</h3>
+                <p className="text-sm text-gray-500 max-w-md mt-1">
+                  {categoryFilter 
+                    ? `No templates found in the ${categoryFilter} category. Try another category or create a new template.`
+                    : "No form templates found. Click the 'New Template' button to create your first template."}
+                </p>
                 <Button 
                   variant="outline" 
                   className="mt-4"
-                  onClick={() => setIsCreateDialogOpen(true)}
+                  onClick={() => setIsCreating(true)}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  <Plus className="h-4 w-4 mr-2" />
                   Create Template
                 </Button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredTemplates?.map((template) => (
-                  <Card key={template.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl">{template.name}</CardTitle>
-                        <Badge variant={template.isActive ? "default" : "secondary"}>
-                          {template.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                      <CardDescription className="flex justify-between items-center">
-                        <span className="capitalize">{template.category}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Created {new Date(template.createdAt).toLocaleDateString()}
-                        </span>
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-2">
-                      <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {template.description || "No description provided"}
-                      </p>
-                      
-                      {/* Show fields count and section count */}
-                      <div className="flex gap-2 mt-2">
-                        {template.fields && typeof template.fields === 'object' && 'sections' in template.fields ? (
-                          <>
-                            <Badge variant="outline">
-                              {(template.fields as any).sections.length} section(s)
-                            </Badge>
-                            <Badge variant="outline">
-                              {(template.fields as any).sections.reduce(
-                                (count: number, section: any) => count + section.fields.length, 0
-                              )} field(s)
-                            </Badge>
-                          </>
-                        ) : (
-                          <Badge variant="outline">No fields defined</Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between pt-2">
-                      <Button variant="ghost" size="sm" onClick={() => handlePreviewTemplate(template)}>
-                        <EyeIcon className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
-                      
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleToggleStatus(template)}
-                        >
-                          {template.isActive ? (
-                            <XCircleIcon className="h-4 w-4 mr-1 text-red-500" />
-                          ) : (
-                            <CheckCircleIcon className="h-4 w-4 mr-1 text-green-500" />
-                          )}
-                          {template.isActive ? "Deactivate" : "Activate"}
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditTemplate(template)}
-                        >
-                          <PencilIcon className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => handleDeleteTemplate(template)}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
             )}
-          </Tabs>
-        </div>
-        
+          </div>
+        )}
+
         {/* Create Template Dialog */}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <Dialog open={isCreating} onOpenChange={setIsCreating}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Create Form Template</DialogTitle>
               <DialogDescription>
-                Design a new form template with custom fields and sections
+                Design a new form template for observers to submit reports
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="flex-grow overflow-auto pr-2">
-              <FormTemplateEditor onSubmit={handleCreateTemplate} />
-            </div>
+            <ScrollArea className="flex-1 px-1">
+              <div className="py-4">
+                <FormTemplateEditor onSubmit={handleCreateTemplate} />
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
-        
+
         {/* Edit Template Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Edit Form Template</DialogTitle>
               <DialogDescription>
-                Modify the template structure, fields, and properties
+                Modify the form template structure and fields
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="flex-grow overflow-auto pr-2">
-              {selectedTemplate && (
-                <FormTemplateEditor 
-                  initialData={selectedTemplate}
-                  onSubmit={handleUpdateTemplate} 
-                />
-              )}
-            </div>
+            <ScrollArea className="flex-1 px-1">
+              <div className="py-4">
+                {activeTemplate && (
+                  <FormTemplateEditor 
+                    initialData={activeTemplate} 
+                    onSubmit={handleUpdateTemplate} 
+                  />
+                )}
+              </div>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
-        
+
         {/* Preview Template Dialog */}
-        <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-          <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <Dialog open={isPreviewing} onOpenChange={setIsPreviewing}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
               <DialogTitle>Preview Form Template</DialogTitle>
               <DialogDescription>
                 This is how the form will appear to observers
               </DialogDescription>
             </DialogHeader>
-            
-            <div className="flex-grow overflow-auto pr-2">
-              {selectedTemplate && (
-                <FormBuilder template={selectedTemplate} readOnly />
-              )}
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsPreviewDialogOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
+            <Tabs defaultValue="preview" className="flex-1 flex flex-col">
+              <TabsList className="self-center mb-4">
+                <TabsTrigger value="preview">Form Preview</TabsTrigger>
+                <TabsTrigger value="data">Template Data</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="preview" className="flex-1 overflow-hidden flex flex-col">
+                <ScrollArea className="flex-1">
+                  <div className="py-4">
+                    {activeTemplate && (
+                      <FormBuilder 
+                        template={activeTemplate} 
+                        readOnly={true}
+                      />
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="data" className="flex-1 overflow-hidden flex flex-col">
+                <ScrollArea className="flex-1">
+                  <pre className="p-4 bg-gray-50 rounded-md text-sm overflow-auto">
+                    {activeTemplate ? JSON.stringify(activeTemplate, null, 2) : 'No template selected'}
+                  </pre>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
-      </MainLayout>
-    </AuthGuard>
+      </div>
+    </MainLayout>
   );
 }
