@@ -14,6 +14,7 @@ import PollingStations from "@/pages/polling-stations";
 import Reports from "@/pages/reports";
 import NewReport from "@/pages/reports/new";
 import ReportDetail from "@/pages/reports/[id]";
+import Assignments from "@/pages/assignments";
 import Training from "@/pages/training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/reports" component={Reports} />
       <Route path="/reports/new" component={NewReport} />
       <Route path="/reports/:id" component={ReportDetail} />
+      <Route path="/assignments" component={Assignments} />
       <Route path="/training" component={Training} />
       <Route path="/faq" component={Faq} />
       <Route path="/chat" component={Chat} />

@@ -7,20 +7,38 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
+interface ApiRequestOptions {
+  method?: string;
+  data?: unknown;
+  headers?: Record<string, string>;
+}
+
+export async function apiRequest<T = any>(
   url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
+  options?: ApiRequestOptions
+): Promise<T> {
+  const method = options?.method || 'GET';
+  const data = options?.data;
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(options?.headers || {})
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
 
   await throwIfResNotOk(res);
-  return res;
+  
+  // For empty responses (like from DELETE requests), don't try to parse JSON
+  if (res.headers.get('content-length') === '0') {
+    return {} as T;
+  }
+  
+  // For any other response, try to parse as JSON
+  return await res.json() as T;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

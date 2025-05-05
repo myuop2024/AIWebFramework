@@ -308,6 +308,317 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
+
+  app.get('/api/users/assignments/active', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const assignments = await storage.getActiveAssignments(userId);
+      
+      // Get full station data
+      const assignmentsWithStations = await Promise.all(
+        assignments.map(async (assignment) => {
+          const station = await storage.getPollingStation(assignment.stationId);
+          return {
+            ...assignment,
+            station
+          };
+        })
+      );
+      
+      res.status(200).json(assignmentsWithStations);
+    } catch (error) {
+      console.error('Error fetching active assignments:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/stations/:stationId/assignments', requireAuth, async (req, res) => {
+    try {
+      const stationId = parseInt(req.params.stationId);
+      if (isNaN(stationId)) {
+        return res.status(400).json({ message: 'Invalid station ID' });
+      }
+      
+      const assignments = await storage.getAssignmentsByStationId(stationId);
+      
+      // Add user information for each assignment
+      const assignmentsWithUsers = await Promise.all(
+        assignments.map(async (assignment) => {
+          const user = await storage.getUser(assignment.userId);
+          return {
+            ...assignment,
+            user: user ? {
+              id: user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              observerId: user.observerId,
+              role: user.role
+            } : null
+          };
+        })
+      );
+      
+      res.status(200).json(assignmentsWithUsers);
+    } catch (error) {
+      console.error('Error fetching station assignments:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.get('/api/assignments/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const userRole = req.session.userRole;
+      const assignmentId = parseInt(req.params.id);
+      
+      if (isNaN(assignmentId)) {
+        return res.status(400).json({ message: 'Invalid assignment ID' });
+      }
+      
+      const assignment = await storage.getAssignment(assignmentId);
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+      
+      // Security check - only allow users to view their own assignments 
+      // unless they're an admin
+      if (assignment.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized to access this assignment' });
+      }
+      
+      // Get station info
+      const station = await storage.getPollingStation(assignment.stationId);
+      
+      res.status(200).json({
+        ...assignment,
+        station
+      });
+    } catch (error) {
+      console.error('Error fetching assignment:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.post('/api/assignments', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const userRole = req.session.userRole;
+      
+      // Basic validation
+      if (!req.body.stationId || !req.body.startDate || !req.body.endDate) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: stationId, startDate, and endDate are required' 
+        });
+      }
+
+      // Parse dates
+      const startDate = new Date(req.body.startDate);
+      const endDate = new Date(req.body.endDate);
+      
+      // Validate dates
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid date format' });
+      }
+      
+      if (startDate >= endDate) {
+        return res.status(400).json({ message: 'End date must be after start date' });
+      }
+      
+      // Only allow admins to assign other users
+      const assignUserId = userRole === 'admin' && req.body.userId 
+        ? parseInt(req.body.userId) 
+        : userId;
+      
+      // Create assignment with parsed dates
+      const assignment = await storage.createAssignment({
+        ...req.body,
+        userId: assignUserId,
+        startDate,
+        endDate
+      });
+      
+      // Get station info
+      const station = await storage.getPollingStation(assignment.stationId);
+      
+      res.status(201).json({
+        ...assignment,
+        station
+      });
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      // Send user-friendly error message
+      if (error instanceof Error) {
+        if (error.message.includes('conflict')) {
+          return res.status(409).json({ message: error.message });
+        } else if (error.message.includes('capacity')) {
+          return res.status(409).json({ message: error.message });
+        } else if (error.message.includes('not found')) {
+          return res.status(404).json({ message: error.message });
+        }
+      }
+      res.status(500).json({ message: 'An error occurred while creating the assignment' });
+    }
+  });
+  
+  app.put('/api/assignments/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const userRole = req.session.userRole;
+      const assignmentId = parseInt(req.params.id);
+      
+      if (isNaN(assignmentId)) {
+        return res.status(400).json({ message: 'Invalid assignment ID' });
+      }
+      
+      // Get the current assignment
+      const currentAssignment = await storage.getAssignment(assignmentId);
+      if (!currentAssignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+      
+      // Check permissions - only allow users to update their own assignments
+      // or admins to update any
+      if (currentAssignment.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized to update this assignment' });
+      }
+      
+      // Parse dates if they're in the request
+      const data = { ...req.body };
+      if (req.body.startDate) {
+        const startDate = new Date(req.body.startDate);
+        if (isNaN(startDate.getTime())) {
+          return res.status(400).json({ message: 'Invalid start date format' });
+        }
+        data.startDate = startDate;
+      }
+      
+      if (req.body.endDate) {
+        const endDate = new Date(req.body.endDate);
+        if (isNaN(endDate.getTime())) {
+          return res.status(400).json({ message: 'Invalid end date format' });
+        }
+        data.endDate = endDate;
+      }
+      
+      // Validate dates
+      const finalStartDate = data.startDate || currentAssignment.startDate;
+      const finalEndDate = data.endDate || currentAssignment.endDate;
+      
+      if (finalStartDate >= finalEndDate) {
+        return res.status(400).json({ message: 'End date must be after start date' });
+      }
+      
+      // Update the assignment
+      const updatedAssignment = await storage.updateAssignment(assignmentId, data);
+      
+      // Get station info
+      const station = await storage.getPollingStation(updatedAssignment.stationId);
+      
+      res.status(200).json({
+        ...updatedAssignment,
+        station
+      });
+    } catch (error) {
+      console.error('Error updating assignment:', error);
+      // Send user-friendly error message
+      if (error instanceof Error) {
+        if (error.message.includes('conflict')) {
+          return res.status(409).json({ message: error.message });
+        }
+      }
+      res.status(500).json({ message: 'An error occurred while updating the assignment' });
+    }
+  });
+  
+  app.post('/api/assignments/:id/check-in', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const userRole = req.session.userRole;
+      const assignmentId = parseInt(req.params.id);
+      
+      if (isNaN(assignmentId)) {
+        return res.status(400).json({ message: 'Invalid assignment ID' });
+      }
+      
+      // Get the current assignment
+      const assignment = await storage.getAssignment(assignmentId);
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+      
+      // Check permissions - only allow users to check into their own assignments
+      // unless they're an admin
+      if (assignment.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized to check into this assignment' });
+      }
+      
+      // Check that the assignment is scheduled or can be checked into
+      if (assignment.status !== 'scheduled' && assignment.status !== 'active') {
+        return res.status(409).json({ 
+          message: `Cannot check into an assignment with status: ${assignment.status}` 
+        });
+      }
+      
+      // Perform check-in
+      const updatedAssignment = await storage.checkInObserver(assignmentId);
+      
+      // Get station info
+      const station = await storage.getPollingStation(updatedAssignment.stationId);
+      
+      res.status(200).json({
+        ...updatedAssignment,
+        station
+      });
+    } catch (error) {
+      console.error('Error checking in:', error);
+      res.status(500).json({ message: 'An error occurred while checking in' });
+    }
+  });
+  
+  app.post('/api/assignments/:id/check-out', requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      const userRole = req.session.userRole;
+      const assignmentId = parseInt(req.params.id);
+      
+      if (isNaN(assignmentId)) {
+        return res.status(400).json({ message: 'Invalid assignment ID' });
+      }
+      
+      // Get the current assignment
+      const assignment = await storage.getAssignment(assignmentId);
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+      
+      // Check permissions - only allow users to check out of their own assignments
+      // unless they're an admin
+      if (assignment.userId !== userId && userRole !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized to check out of this assignment' });
+      }
+      
+      // Check that the assignment is active and can be checked out
+      if (assignment.status !== 'active') {
+        return res.status(409).json({ 
+          message: `Cannot check out of an assignment with status: ${assignment.status}` 
+        });
+      }
+      
+      // Perform check-out
+      const updatedAssignment = await storage.checkOutObserver(assignmentId);
+      
+      // Get station info
+      const station = await storage.getPollingStation(updatedAssignment.stationId);
+      
+      res.status(200).json({
+        ...updatedAssignment,
+        station
+      });
+    } catch (error) {
+      console.error('Error checking out:', error);
+      res.status(500).json({ message: 'An error occurred while checking out' });
+    }
+  });
   
   // Report routes
   app.post('/api/reports', requireAuth, async (req, res) => {
