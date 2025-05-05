@@ -7,7 +7,9 @@ import {
   documents, Document, InsertDocument,
   pollingStations, PollingStation, InsertPollingStation,
   assignments, Assignment, InsertAssignment,
+  formTemplates, FormTemplate, InsertFormTemplate,
   reports, Report, InsertReport,
+  reportAttachments, ReportAttachment, InsertReportAttachment,
   events, Event, InsertEvent,
   eventParticipation, EventParticipation, InsertEventParticipation,
   faqEntries, Faq, InsertFaq,
@@ -170,23 +172,151 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reports.submittedAt));
   }
 
+  async getReportsByStationId(stationId: number): Promise<Report[]> {
+    return db.select()
+      .from(reports)
+      .where(eq(reports.stationId, stationId))
+      .orderBy(desc(reports.submittedAt));
+  }
+
+  async getReportsByStatus(status: string): Promise<Report[]> {
+    return db.select()
+      .from(reports)
+      .where(eq(reports.status, status))
+      .orderBy(desc(reports.submittedAt));
+  }
+
   async createReport(report: InsertReport): Promise<Report> {
+    // Generate content hash for data integrity verification
+    const contentHash = this.generateContentHash(report.content);
+    
     const result = await db.insert(reports)
       .values({
         ...report,
         submittedAt: new Date(),
-        status: 'submitted'
+        status: 'submitted',
+        contentHash,
+        encryptedData: false
       })
       .returning();
     return result[0];
   }
 
   async updateReport(id: number, data: Partial<Report>): Promise<Report | undefined> {
+    // If content is updated, regenerate the content hash
+    if (data.content) {
+      data.contentHash = this.generateContentHash(data.content);
+    }
+    
     const result = await db.update(reports)
       .set(data)
       .where(eq(reports.id, id))
       .returning();
     return result[0];
+  }
+  
+  // Generate a content hash for a report
+  generateContentHash(reportContent: any): string {
+    return crypto.createHash('sha256').update(JSON.stringify(reportContent)).digest('hex');
+  }
+  
+  // Report attachment operations
+  async getReportAttachment(id: number): Promise<ReportAttachment | undefined> {
+    const result = await db.select().from(reportAttachments).where(eq(reportAttachments.id, id));
+    return result[0];
+  }
+  
+  async getAttachmentsByReportId(reportId: number): Promise<ReportAttachment[]> {
+    return db.select()
+      .from(reportAttachments)
+      .where(eq(reportAttachments.reportId, reportId));
+  }
+  
+  async createReportAttachment(attachment: InsertReportAttachment): Promise<ReportAttachment> {
+    const result = await db.insert(reportAttachments)
+      .values({
+        ...attachment,
+        uploadedAt: new Date(),
+        ocrProcessed: false,
+        ocrText: null,
+        encryptionIv: null
+      })
+      .returning();
+    return result[0];
+  }
+  
+  async updateReportAttachment(id: number, data: Partial<ReportAttachment>): Promise<ReportAttachment | undefined> {
+    const result = await db.update(reportAttachments)
+      .set(data)
+      .where(eq(reportAttachments.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteReportAttachment(id: number): Promise<boolean> {
+    try {
+      await db.delete(reportAttachments).where(eq(reportAttachments.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting report attachment:', error);
+      return false;
+    }
+  }
+  
+  // Form template operations
+  async getFormTemplate(id: number): Promise<FormTemplate | undefined> {
+    const result = await db.select().from(formTemplates).where(eq(formTemplates.id, id));
+    return result[0];
+  }
+  
+  async getAllFormTemplates(): Promise<FormTemplate[]> {
+    return db.select().from(formTemplates);
+  }
+  
+  async getFormTemplatesByCategory(category: string): Promise<FormTemplate[]> {
+    return db.select()
+      .from(formTemplates)
+      .where(eq(formTemplates.category, category));
+  }
+  
+  async getActiveFormTemplates(): Promise<FormTemplate[]> {
+    return db.select()
+      .from(formTemplates)
+      .where(eq(formTemplates.isActive, true));
+  }
+  
+  async createFormTemplate(template: InsertFormTemplate): Promise<FormTemplate> {
+    const now = new Date();
+    const result = await db.insert(formTemplates)
+      .values({
+        ...template,
+        createdAt: now,
+        updatedAt: now,
+        isActive: true
+      })
+      .returning();
+    return result[0];
+  }
+  
+  async updateFormTemplate(id: number, data: Partial<FormTemplate>): Promise<FormTemplate | undefined> {
+    const now = new Date();
+    data.updatedAt = now;
+    
+    const result = await db.update(formTemplates)
+      .set(data)
+      .where(eq(formTemplates.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteFormTemplate(id: number): Promise<boolean> {
+    try {
+      await db.delete(formTemplates).where(eq(formTemplates.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting form template:', error);
+      return false;
+    }
   }
 
   // Event operations
