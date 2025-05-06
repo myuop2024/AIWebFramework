@@ -823,6 +823,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Middleware to check admin role
+  const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+    next();
+  };
+
+  // System settings routes
+  app.get('/api/system-settings', async (req, res) => {
+    try {
+      const settings = await storage.getAllSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error('Failed to fetch system settings:', error);
+      res.status(500).json({ message: 'Failed to fetch system settings' });
+    }
+  });
+
+  app.get('/api/system-settings/:key', async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getSystemSetting(key);
+      
+      if (!setting) {
+        return res.status(404).json({ message: `Setting with key ${key} not found` });
+      }
+      
+      res.json(setting);
+    } catch (error) {
+      console.error(`Failed to fetch system setting with key ${req.params.key}:`, error);
+      res.status(500).json({ message: 'Failed to fetch system setting' });
+    }
+  });
+
+  app.put('/api/system-settings/:key', requireAdmin, async (req, res) => {
+    try {
+      const { key } = req.params;
+      const { value } = req.body;
+      
+      if (!value) {
+        return res.status(400).json({ message: 'Setting value is required' });
+      }
+      
+      const existingSetting = await storage.getSystemSetting(key);
+      if (!existingSetting) {
+        return res.status(404).json({ message: `Setting with key ${key} not found` });
+      }
+      
+      const userId = req.session.userId;
+      const updatedSetting = await storage.updateSystemSetting(key, value, userId);
+      
+      res.json(updatedSetting);
+    } catch (error) {
+      console.error(`Failed to update system setting with key ${req.params.key}:`, error);
+      res.status(500).json({ message: 'Failed to update system setting' });
+    }
+  });
+
+  app.post('/api/system-settings', requireAdmin, async (req, res) => {
+    try {
+      const { settingKey, settingValue, description } = req.body;
+      
+      if (!settingKey || !settingValue) {
+        return res.status(400).json({ message: 'Setting key and value are required' });
+      }
+      
+      const existingSetting = await storage.getSystemSetting(settingKey);
+      if (existingSetting) {
+        return res.status(409).json({ message: `Setting with key ${settingKey} already exists` });
+      }
+      
+      const userId = req.session.userId;
+      
+      const newSetting = await storage.createSystemSetting({
+        settingKey,
+        settingValue,
+        description: description || null,
+        updatedBy: userId
+      });
+      
+      res.status(201).json(newSetting);
+    } catch (error) {
+      console.error('Failed to create system setting:', error);
+      res.status(500).json({ message: 'Failed to create system setting' });
+    }
+  });
+
   // FAQ routes
   app.get('/api/faqs', async (req, res) => {
     try {
@@ -903,17 +994,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Form Template Management Routes
-  
-  // Middleware to check admin role
-  const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (!req.session?.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    if (req.session.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden - Admin access required' });
-    }
-    next();
-  };
   
   // Admin endpoints - get all users
   app.get('/api/admin/users', requireAdmin, async (req, res) => {
@@ -1011,9 +1091,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return res.status(200).json(observers);
       } else {
-        // If using MemStorage or other storage with users collection
-        // Get all users with their verification status
-        const allUsers = Array.from(storage.users.values())
+        // For any storage type, use the getAllUsers method
+        const users = await storage.getAllUsers();
+        
+        // Filter to only get observers
+        const allUsers = users
           .filter(user => user.role === 'observer') // Only include observers
           .map(async (user) => {
             // Get user profile data
@@ -1021,13 +1103,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             return {
               id: user.id,
-              observerId: user.observerId,
-              firstName: user.firstName,
-              lastName: user.lastName,
+              observerId: user.observerId || '',
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
               email: user.email,
               phoneNumber: user.phoneNumber,
-              verificationStatus: user.verificationStatus,
-              submittedAt: user.createdAt.toISOString(),
+              verificationStatus: user.verificationStatus || 'pending',
+              submittedAt: (user.createdAt || new Date()).toISOString(),
               profileData: profile ? {
                 idPhotoUrl: profile.idPhotoUrl,
                 address: profile.address,
