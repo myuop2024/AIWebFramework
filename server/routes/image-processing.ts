@@ -89,7 +89,7 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
         // Get the setting for subsequent photo changes
         const photoPolicy = await storage.getSystemSetting('profile_photo_policy');
         
-        if (photoPolicy && photoPolicy.setting_value.requireApprovalAfterVerification) {
+        if (photoPolicy && photoPolicy.settingValue.requireApprovalAfterVerification) {
           autoUpdateProfile = false;
           
           // Create a pending photo approval entry

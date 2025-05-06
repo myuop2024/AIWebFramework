@@ -1115,12 +1115,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Mark the approval as completed
-      await storage.updatePhotoApproval(approvalId, {
-        status: 'approved',
-        approvedBy: req.session.userId,
-        processedAt: new Date()
-      });
+      // Mark the approval as completed using the dedicated approval method
+      await storage.approvePhotoApproval(approvalId, req.session.userId);
       
       res.status(200).json({ message: 'Photo approved successfully' });
     } catch (error) {
@@ -1143,12 +1139,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Pending approval not found' });
       }
       
-      // Mark the approval as rejected
-      await storage.updatePhotoApproval(approvalId, {
-        status: 'rejected',
-        approvedBy: req.session.userId,
-        processedAt: new Date()
-      });
+      // Mark the approval as rejected using the dedicated rejection method
+      await storage.rejectPhotoApproval(approvalId, req.session.userId);
       
       res.status(200).json({ message: 'Photo rejected successfully' });
     } catch (error) {
