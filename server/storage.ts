@@ -339,6 +339,9 @@ export class MemStorage implements IStorage {
       ...insertUser, 
       id, 
       observerId,
+      phoneNumber: insertUser.phoneNumber || null,
+      role: insertUser.role || 'observer',
+      deviceId: insertUser.deviceId || null,
       verificationStatus: "pending",
       trainingStatus: "pending",
       createdAt: now
@@ -1034,6 +1037,183 @@ export class MemStorage implements IStorage {
     
     // Sort by issue count (highest first)
     return result.sort((a, b) => b.issueCount - a.issueCount);
+  }
+  
+  // Registration form operations
+  async getRegistrationForm(id: number): Promise<RegistrationForm | undefined> {
+    return this.registrationForms.get(id);
+  }
+  
+  async getActiveRegistrationForm(): Promise<RegistrationForm | undefined> {
+    return Array.from(this.registrationForms.values())
+      .filter(form => form.isActive)
+      .sort((a, b) => b.version - a.version)[0];
+  }
+  
+  async getAllRegistrationForms(): Promise<RegistrationForm[]> {
+    return Array.from(this.registrationForms.values())
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+  
+  async createRegistrationForm(form: InsertRegistrationForm): Promise<RegistrationForm> {
+    const id = this.registrationFormIdCounter++;
+    const now = new Date();
+    
+    // Get the latest version of the form with the same name
+    const existingForms = Array.from(this.registrationForms.values())
+      .filter(existingForm => existingForm.name === form.name)
+      .sort((a, b) => b.version - a.version);
+    
+    // Increment version if form with same name exists
+    const version = existingForms.length > 0 ? existingForms[0].version + 1 : 1;
+    
+    // Ensure at least one field maps to a required user field
+    const requiredUserFields = ['username', 'email', 'password', 'firstName', 'lastName'];
+    const hasMappedRequiredFields = form.fields.some(field => 
+      requiredUserFields.includes(field.mapToUserField || ''));
+    
+    if (!hasMappedRequiredFields) {
+      throw new Error('Registration form must map to required user fields (username, email, password, firstName, lastName)');
+    }
+    
+    const registrationForm: RegistrationForm = {
+      ...form,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      version
+    };
+    
+    this.registrationForms.set(id, registrationForm);
+    return registrationForm;
+  }
+  
+  async updateRegistrationForm(id: number, data: Partial<RegistrationForm>): Promise<RegistrationForm | undefined> {
+    const form = await this.getRegistrationForm(id);
+    if (!form) return undefined;
+    
+    const now = new Date();
+    const updatedForm = { 
+      ...form, 
+      ...data, 
+      updatedAt: now
+    };
+    
+    this.registrationForms.set(id, updatedForm);
+    return updatedForm;
+  }
+  
+  async activateRegistrationForm(id: number): Promise<RegistrationForm | undefined> {
+    // Deactivate all forms first
+    for (const form of this.registrationForms.values()) {
+      if (form.isActive) {
+        form.isActive = false;
+        this.registrationForms.set(form.id, form);
+      }
+    }
+    
+    // Then activate the requested form
+    const form = await this.getRegistrationForm(id);
+    if (!form) return undefined;
+    
+    const now = new Date();
+    const activatedForm = {
+      ...form,
+      isActive: true,
+      updatedAt: now
+    };
+    
+    this.registrationForms.set(id, activatedForm);
+    return activatedForm;
+  }
+  
+  // User import operations
+  async createUserImportLog(log: InsertUserImportLog): Promise<UserImportLog> {
+    const id = this.userImportLogIdCounter++;
+    const now = new Date();
+    
+    const userImportLog: UserImportLog = {
+      ...log,
+      id,
+      importedAt: now
+    };
+    
+    this.userImportLogs.set(id, userImportLog);
+    return userImportLog;
+  }
+  
+  async getUserImportLog(id: number): Promise<UserImportLog | undefined> {
+    return this.userImportLogs.get(id);
+  }
+  
+  async getAllUserImportLogs(): Promise<UserImportLog[]> {
+    return Array.from(this.userImportLogs.values())
+      .sort((a, b) => new Date(b.importedAt).getTime() - new Date(a.importedAt).getTime());
+  }
+  
+  async updateUserImportLog(id: number, data: Partial<UserImportLog>): Promise<UserImportLog | undefined> {
+    const log = await this.getUserImportLog(id);
+    if (!log) return undefined;
+    
+    const updatedLog = { ...log, ...data };
+    this.userImportLogs.set(id, updatedLog);
+    return updatedLog;
+  }
+  
+  async bulkCreateUsers(userData: any[], options: {
+    verificationStatus?: string;
+    defaultRole?: string;
+    passwordHash?: (password: string) => string;
+  } = {}): Promise<{ success: User[], failures: any[] }> {
+    const success: User[] = [];
+    const failures: any[] = [];
+    
+    const verificationStatus = options.verificationStatus || 'pending';
+    const defaultRole = options.defaultRole || 'observer';
+    const passwordHash = options.passwordHash || ((pwd: string) => crypto.createHash('sha256').update(pwd).digest('hex'));
+    
+    for (const data of userData) {
+      try {
+        // Generate a password if not provided
+        if (!data.password) {
+          data.password = Math.random().toString(36).slice(-8);
+        }
+        
+        // Create the user
+        const user = await this.createUser({
+          username: data.username,
+          password: typeof data.password === 'string' ? passwordHash(data.password) : data.password,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phoneNumber: data.phoneNumber || null,
+          role: data.role || defaultRole,
+          deviceId: data.deviceId || null
+        });
+        
+        // If profile data is provided, create a profile
+        if (data.address || data.dateOfBirth || data.idNumber || data.emergencyContact) {
+          await this.createUserProfile({
+            userId: user.id,
+            address: data.address || null,
+            dateOfBirth: data.dateOfBirth || null,
+            idNumber: data.idNumber || null,
+            emergencyContact: data.emergencyContact || null,
+            bio: data.bio || null,
+            additionalFields: data.additionalFields || null
+          });
+        }
+        
+        success.push(user);
+      } catch (error) {
+        failures.push({
+          data,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+    
+    return { success, failures };
   }
 }
 
