@@ -16,6 +16,7 @@ import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
 import analyticsRoutes from './routes/analytics';
 import idCardRoutes from './routes/id-cards';
+import imageProcessingRoutes from './routes/image-processing';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
