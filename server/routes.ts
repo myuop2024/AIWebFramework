@@ -56,6 +56,14 @@ let connectedClients: ConnectedClient[] = [];
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
+  // Setup static file serving for uploads directory
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+  console.log(`Serving static files from: ${uploadsDir}`);
+  
   // Set up WebSocket server
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
