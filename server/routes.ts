@@ -143,11 +143,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = createHash('sha256').update(userData.password).digest('hex');
       
-      // Create user with hashed password
+      // Create user with hashed password and device ID (if provided)
       const user = await storage.createUser({
         ...userData,
-        password: hashedPassword
+        password: hashedPassword,
+        // Device ID is now passed from the client for binding
+        deviceId: userData.deviceId || null
       });
+      
+      // Set session data
+      req.session.userId = user.id;
+      req.session.observerId = user.observerId;
+      req.session.role = user.role;
       
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
@@ -163,7 +170,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { username, password } = loginUserSchema.parse(req.body);
+      // Parse login data including deviceId from client
+      const { username, password, deviceId } = req.body; 
       
       // Find user
       const user = await storage.getUserByUsername(username);
@@ -175,6 +183,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = createHash('sha256').update(password).digest('hex');
       if (user.password !== hashedPassword) {
         return res.status(401).json({ message: 'Invalid username or password' });
+      }
+      
+      // Device binding security check
+      // If the user has a registered device, verify it matches
+      if (user.deviceId && deviceId && user.deviceId !== deviceId) {
+        // For security reasons, don't be specific about the reason for failure
+        return res.status(401).json({ 
+          message: 'Authentication failed. This account may be locked to another device.',
+          errorCode: 'DEVICE_MISMATCH'
+        });
+      }
+      
+      // If user doesn't have a device ID yet but provided one, update the user
+      if (!user.deviceId && deviceId) {
+        await storage.updateUser(user.id, { deviceId });
+        // Update the local user object with the new deviceId
+        user.deviceId = deviceId;
       }
       
       // Set session data
@@ -190,6 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
+      console.error('Login error:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });

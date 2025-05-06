@@ -1,11 +1,21 @@
 import { apiRequest } from "./queryClient";
 import { User, insertUserSchema } from "@shared/schema";
 import { useState, useEffect } from "react";
+import { generateDeviceFingerprint, fingerprintsMatch } from "./device";
 
 export type AuthUser = Omit<User, "password">;
 
 export async function loginUser(username: string, password: string): Promise<AuthUser> {
-  const res = await apiRequest("POST", "/api/auth/login", { username, password });
+  // Generate device fingerprint for authentication
+  const deviceId = await generateDeviceFingerprint();
+  
+  // Send authentication request with device fingerprint
+  const res = await apiRequest("POST", "/api/auth/login", { 
+    username, 
+    password,
+    deviceId
+  });
+  
   return await res.json();
 }
 
@@ -17,6 +27,9 @@ export async function registerUser(
   lastName: string,
   phoneNumber?: string
 ): Promise<AuthUser> {
+  // Generate device fingerprint for registration
+  const deviceId = await generateDeviceFingerprint();
+  
   const userData = {
     username,
     password,
@@ -24,6 +37,7 @@ export async function registerUser(
     firstName,
     lastName,
     phoneNumber,
+    deviceId,  // Associate the device with the user account
     role: "observer"
   };
 

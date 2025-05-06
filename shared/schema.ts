@@ -408,6 +408,7 @@ export const formTemplateExtendedSchema = z.object({
 export const loginUserSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
+  deviceId: z.string().optional(), // Device fingerprint for security binding
 });
 
 // Define types
