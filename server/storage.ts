@@ -1,6 +1,7 @@
 import {
   users, userProfiles, documents, pollingStations, assignments, formTemplates, reports, reportAttachments,
   events, eventParticipation, faqEntries, newsEntries, messages, registrationForms, userImportLogs, systemSettings,
+  photoApprovals,
   type User, type InsertUser, type UserProfile, type InsertUserProfile,
   type Document, type InsertDocument, type PollingStation, type InsertPollingStation,
   type Assignment, type InsertAssignment, type FormTemplate, type InsertFormTemplate,
@@ -8,7 +9,8 @@ import {
   type Event, type InsertEvent, type EventParticipation, type InsertEventParticipation,
   type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage,
   type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
-  type BulkUserImport, type SystemSetting, type InsertSystemSetting
+  type BulkUserImport, type SystemSetting, type InsertSystemSetting,
+  type PhotoApproval, type InsertPhotoApproval
 } from "@shared/schema";
 import crypto from 'crypto';
 

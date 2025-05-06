@@ -1053,6 +1053,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Pending profile photo approvals
+  app.get('/api/admin/pending-photo-approvals', requireAdmin, async (req, res) => {
+    try {
+      const pendingPhotos = await storage.getPendingPhotoApprovals();
+      
+      // Enhance with user information
+      const pendingPhotosWithUserInfo = await Promise.all(
+        pendingPhotos.map(async (photo) => {
+          const user = await storage.getUser(photo.userId);
+          
+          return {
+            id: photo.id,
+            userId: photo.userId,
+            photoUrl: photo.photoUrl,
+            submittedAt: photo.createdAt.toISOString(),
+            username: user?.username || 'unknown',
+            fullName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Unknown User'
+          };
+        })
+      );
+      
+      res.status(200).json(pendingPhotosWithUserInfo);
+    } catch (error) {
+      console.error('Error fetching pending photo approvals:', error);
+      res.status(500).json({ message: 'Failed to fetch pending photo approvals' });
+    }
+  });
+  
+  // Approve a pending profile photo
+  app.post('/api/admin/pending-photo-approvals/:id/approve', requireAdmin, async (req, res) => {
+    try {
+      const approvalId = parseInt(req.params.id);
+      if (isNaN(approvalId)) {
+        return res.status(400).json({ message: 'Invalid approval ID' });
+      }
+      
+      // Get the pending approval
+      const pendingApproval = await storage.getPhotoApproval(approvalId);
+      if (!pendingApproval) {
+        return res.status(404).json({ message: 'Pending approval not found' });
+      }
+      
+      // Update the user's profile with the approved photo
+      const userId = pendingApproval.userId;
+      const photoUrl = pendingApproval.photoUrl;
+      
+      // Check if user has a profile
+      const profile = await storage.getUserProfile(userId);
+      
+      if (profile) {
+        // Update existing profile
+        await storage.updateUserProfile(userId, {
+          profilePhotoUrl: photoUrl
+        });
+      } else {
+        // Create new profile
+        await storage.createUserProfile({
+          userId: userId,
+          profilePhotoUrl: photoUrl
+        });
+      }
+      
+      // Mark the approval as completed
+      await storage.updatePhotoApproval(approvalId, {
+        status: 'approved',
+        approvedBy: req.session.userId,
+        processedAt: new Date()
+      });
+      
+      res.status(200).json({ message: 'Photo approved successfully' });
+    } catch (error) {
+      console.error('Error approving profile photo:', error);
+      res.status(500).json({ message: 'Failed to approve profile photo' });
+    }
+  });
+  
+  // Reject a pending profile photo
+  app.post('/api/admin/pending-photo-approvals/:id/reject', requireAdmin, async (req, res) => {
+    try {
+      const approvalId = parseInt(req.params.id);
+      if (isNaN(approvalId)) {
+        return res.status(400).json({ message: 'Invalid approval ID' });
+      }
+      
+      // Get the pending approval
+      const pendingApproval = await storage.getPhotoApproval(approvalId);
+      if (!pendingApproval) {
+        return res.status(404).json({ message: 'Pending approval not found' });
+      }
+      
+      // Mark the approval as rejected
+      await storage.updatePhotoApproval(approvalId, {
+        status: 'rejected',
+        approvedBy: req.session.userId,
+        processedAt: new Date()
+      });
+      
+      res.status(200).json({ message: 'Photo rejected successfully' });
+    } catch (error) {
+      console.error('Error rejecting profile photo:', error);
+      res.status(500).json({ message: 'Failed to reject profile photo' });
+    }
+  });
+
   // Observer verification queue
   app.get('/api/admin/verification-queue', requireAdmin, async (req, res) => {
     try {

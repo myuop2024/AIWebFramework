@@ -269,6 +269,18 @@ export const externalUserMappings = pgTable("external_user_mappings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Pending profile photo approvals
+export const photoApprovals = pgTable("photo_approvals", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  photoUrl: text("photo_url").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  approvedBy: integer("approved_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+  notes: text("notes"),
+});
+
 // Define insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .omit({
@@ -490,6 +502,15 @@ export const insertExternalUserMappingSchema = createInsertSchema(externalUserMa
     updatedAt: true,
   });
 
+export const insertPhotoApprovalSchema = createInsertSchema(photoApprovals)
+  .omit({
+    id: true,
+    status: true,
+    approvedBy: true,
+    createdAt: true,
+    processedAt: true,
+  });
+
 // Registration form schemas
 export const registrationFieldSchema = z.object({
   id: z.string().uuid().optional(),
@@ -632,6 +653,10 @@ export type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
 // ID card template types
 export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
 export type InsertIdCardTemplate = z.infer<typeof insertIdCardTemplateSchema>;
+
+// Photo approval types
+export type PhotoApproval = typeof photoApprovals.$inferSelect;
+export type InsertPhotoApproval = z.infer<typeof insertPhotoApprovalSchema>;
 
 // System setting types
 export type SystemSetting = typeof systemSettings.$inferSelect;
