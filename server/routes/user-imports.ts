@@ -9,7 +9,7 @@ import crypto from 'crypto';
 const router = Router();
 
 // Get all user import logs (admin only)
-router.get('/', requireAdmin, async (req, res) => {
+router.get('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const logs = await storage.getAllUserImportLogs();
     res.status(200).json(logs);
@@ -20,7 +20,7 @@ router.get('/', requireAdmin, async (req, res) => {
 });
 
 // Get specific user import log (admin only)
-router.get('/:id', requireAdmin, async (req, res) => {
+router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -40,7 +40,7 @@ router.get('/:id', requireAdmin, async (req, res) => {
 });
 
 // Bulk create users (admin only)
-router.post('/bulk', requireAdmin, async (req, res) => {
+router.post('/bulk', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = bulkUserImportSchema.safeParse(req.body);
     if (!result.success) {
