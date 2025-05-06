@@ -41,22 +41,31 @@ function ensureProcessedDirExists() {
  */
 router.post('/process-profile-photo', upload.single('profilePhoto'), async (req: Request, res: Response) => {
   try {
+    console.log('Profile photo upload requested');
     if (!req.file) {
+      console.log('No file provided in upload request');
       return res.status(400).json({ message: 'No image file provided' });
     }
 
+    console.log(`Received image upload. Original filename: ${req.file.originalname}, Size: ${req.file.size} bytes, Mime type: ${req.file.mimetype}`);
+
     if (!req.session.userId) {
+      console.log('User not authenticated for photo upload');
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
+    console.log(`Processing profile photo for user ID: ${req.session.userId}`);
+
     let result;
     try {
+      console.log('Starting AI image processing...');
       // Process the image using AI
       result = await imageProcessingService.processProfilePhoto(
         req.file.buffer,
         300, // Standard profile photo width
         300  // Standard profile photo height
       );
+      console.log(`AI processing completed. Face detected: ${result.hasFace}, Message: ${result.message || 'No message'}`);
     } catch (aiError) {
       console.error('AI processing error, using original image:', aiError);
       // If AI processing fails, just use the original image
@@ -65,6 +74,7 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
         hasFace: false,
         message: "AI processing failed. Using original image."
       };
+      console.log('Falling back to original image due to AI processing failure');
     }
 
     // Generate a unique filename and save the processed image
@@ -162,25 +172,40 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
  */
 router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, res: Response) => {
   try {
+    console.log('ID photo processing requested');
     if (!req.file) {
+      console.log('No file provided in ID photo upload request');
       return res.status(400).json({ message: 'No image file provided' });
     }
+
+    console.log(`Received ID photo upload. Original filename: ${req.file.originalname}, Size: ${req.file.size} bytes, Mime type: ${req.file.mimetype}`);
+    
+    if (!req.session.userId) {
+      console.log('User not authenticated for ID photo upload');
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    
+    console.log(`Processing ID photo for user ID: ${req.session.userId}`);
 
     let processedImageBuffer;
     let message = 'ID photo enhanced successfully';
     
     try {
+      console.log('Starting AI enhancement for ID photo...');
       // Use higher quality AI enhancement for ID photos
       processedImageBuffer = await imageProcessingService.applyAIEnhancement(req.file.buffer);
+      console.log('AI enhancement for ID photo completed successfully');
     } catch (aiError) {
       console.error('AI enhancement error for ID photo, using original image:', aiError);
       // If AI processing fails, just use the original image with basic resizing
+      console.log('Falling back to basic processing for ID photo');
       processedImageBuffer = await imageProcessingService.processProfilePhoto(
         req.file.buffer,
         400, // Larger size for ID photos
         600
       ).then(result => result.buffer);
       message = 'ID photo saved with basic processing';
+      console.log('Basic processing for ID photo completed');
     }
 
     // Generate a unique filename and save the processed image
