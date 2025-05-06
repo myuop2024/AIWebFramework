@@ -1,7 +1,6 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import ws from 'ws';
-import * as schema from '../shared/schema.js';
 
 neonConfig.webSocketConstructor = ws;
 
@@ -10,7 +9,7 @@ if (!process.env.DATABASE_URL) {
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle(pool, { schema });
+const db = drizzle(pool);
 
 async function migrateTables() {
   try {
@@ -192,6 +191,37 @@ async function migrateTables() {
         updated_at TIMESTAMP DEFAULT NOW(),
         created_by INTEGER REFERENCES users(id),
         version INTEGER NOT NULL DEFAULT 1
+      );
+
+      CREATE TABLE IF NOT EXISTS id_card_templates (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        template_data JSONB NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT false,
+        security_features JSONB NOT NULL DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS system_settings (
+        id SERIAL PRIMARY KEY,
+        setting_key TEXT NOT NULL UNIQUE,
+        setting_value JSONB NOT NULL,
+        description TEXT,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        updated_by INTEGER REFERENCES users(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS photo_approvals (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        photo_url TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        approved_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT NOW(),
+        processed_at TIMESTAMP,
+        notes TEXT
       );
     `);
 
