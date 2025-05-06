@@ -1,12 +1,14 @@
 import {
   users, userProfiles, documents, pollingStations, assignments, formTemplates, reports, reportAttachments,
-  events, eventParticipation, faqEntries, newsEntries, messages,
+  events, eventParticipation, faqEntries, newsEntries, messages, registrationForms, userImportLogs,
   type User, type InsertUser, type UserProfile, type InsertUserProfile,
   type Document, type InsertDocument, type PollingStation, type InsertPollingStation,
   type Assignment, type InsertAssignment, type FormTemplate, type InsertFormTemplate,
   type Report, type InsertReport, type ReportAttachment, type InsertReportAttachment,
   type Event, type InsertEvent, type EventParticipation, type InsertEventParticipation,
-  type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage
+  type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage,
+  type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
+  type BulkUserImport
 } from "@shared/schema";
 import crypto from 'crypto';
 
@@ -103,6 +105,25 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<Message | undefined>;
   
+  // Registration form operations
+  getRegistrationForm(id: number): Promise<RegistrationForm | undefined>;
+  getActiveRegistrationForm(): Promise<RegistrationForm | undefined>;
+  getAllRegistrationForms(): Promise<RegistrationForm[]>;
+  createRegistrationForm(form: InsertRegistrationForm): Promise<RegistrationForm>;
+  updateRegistrationForm(id: number, data: Partial<RegistrationForm>): Promise<RegistrationForm | undefined>;
+  activateRegistrationForm(id: number): Promise<RegistrationForm | undefined>;
+  
+  // User import operations
+  createUserImportLog(log: InsertUserImportLog): Promise<UserImportLog>;
+  getUserImportLog(id: number): Promise<UserImportLog | undefined>;
+  getAllUserImportLogs(): Promise<UserImportLog[]>;
+  updateUserImportLog(id: number, data: Partial<UserImportLog>): Promise<UserImportLog | undefined>;
+  bulkCreateUsers(userData: any[], options?: {
+    verificationStatus?: string;
+    defaultRole?: string;
+    passwordHash?: (password: string) => string;
+  }): Promise<{ success: User[], failures: any[] }>;
+  
   // Statistics operations for admin dashboard
   getTotalUserCount(): Promise<number>;
   getActiveObserverCount(): Promise<number>;
@@ -136,6 +157,8 @@ export class MemStorage implements IStorage {
   private faqs: Map<number, Faq>;
   private news: Map<number, News>;
   private messages: Map<number, Message>;
+  private registrationForms: Map<number, RegistrationForm>;
+  private userImportLogs: Map<number, UserImportLog>;
   
   private userIdCounter: number;
   private profileIdCounter: number;
@@ -150,6 +173,8 @@ export class MemStorage implements IStorage {
   private faqIdCounter: number;
   private newsIdCounter: number;
   private messageIdCounter: number;
+  private registrationFormIdCounter: number;
+  private userImportLogIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -165,6 +190,8 @@ export class MemStorage implements IStorage {
     this.faqs = new Map();
     this.news = new Map();
     this.messages = new Map();
+    this.registrationForms = new Map();
+    this.userImportLogs = new Map();
     
     this.userIdCounter = 1;
     this.profileIdCounter = 1;
@@ -179,6 +206,8 @@ export class MemStorage implements IStorage {
     this.faqIdCounter = 1;
     this.newsIdCounter = 1;
     this.messageIdCounter = 1;
+    this.registrationFormIdCounter = 1;
+    this.userImportLogIdCounter = 1;
     
     // Initialize with sample data
     this.initializeData();

@@ -467,6 +467,157 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  // Registration form operations
+  async getRegistrationForm(id: number): Promise<RegistrationForm | undefined> {
+    const result = await db.select().from(registrationForms).where(eq(registrationForms.id, id));
+    return result[0];
+  }
+  
+  async getActiveRegistrationForm(): Promise<RegistrationForm | undefined> {
+    const result = await db.select()
+      .from(registrationForms)
+      .where(eq(registrationForms.isActive, true))
+      .orderBy(desc(registrationForms.version))
+      .limit(1);
+    return result[0];
+  }
+  
+  async getAllRegistrationForms(): Promise<RegistrationForm[]> {
+    return db.select()
+      .from(registrationForms)
+      .orderBy(desc(registrationForms.createdAt));
+  }
+  
+  async createRegistrationForm(form: InsertRegistrationForm): Promise<RegistrationForm> {
+    const now = new Date();
+    
+    // Get the latest version of the form with the same name
+    const existingForms = await db.select()
+      .from(registrationForms)
+      .where(eq(registrationForms.name, form.name))
+      .orderBy(desc(registrationForms.version));
+    
+    // Increment version if form with same name exists
+    const version = existingForms.length > 0 ? existingForms[0].version + 1 : 1;
+    
+    // Ensure at least one field maps to a required user field
+    const requiredUserFields = ['username', 'email', 'password', 'firstName', 'lastName'];
+    const hasMappedRequiredFields = form.fields.some(field => 
+      requiredUserFields.includes(field.mapToUserField || ''));
+    
+    if (!hasMappedRequiredFields) {
+      throw new Error('Registration form must map to required user fields (username, email, password, firstName, lastName)');
+    }
+    
+    const result = await db.insert(registrationForms)
+      .values({
+        ...form,
+        createdAt: now,
+        updatedAt: now,
+        version
+      })
+      .returning();
+    return result[0];
+  }
+  
+  async updateRegistrationForm(id: number, data: Partial<RegistrationForm>): Promise<RegistrationForm | undefined> {
+    const now = new Date();
+    const result = await db.update(registrationForms)
+      .set({
+        ...data,
+        updatedAt: now
+      })
+      .where(eq(registrationForms.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async activateRegistrationForm(id: number): Promise<RegistrationForm | undefined> {
+    // Deactivate all other forms first
+    await db.update(registrationForms)
+      .set({ isActive: false })
+      .where(eq(registrationForms.isActive, true));
+    
+    // Then activate the requested form
+    const result = await db.update(registrationForms)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(eq(registrationForms.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  // User import operations
+  async createUserImportLog(log: InsertUserImportLog): Promise<UserImportLog> {
+    const result = await db.insert(userImportLogs)
+      .values({
+        ...log,
+        importedAt: new Date()
+      })
+      .returning();
+    return result[0];
+  }
+  
+  async getUserImportLog(id: number): Promise<UserImportLog | undefined> {
+    const result = await db.select().from(userImportLogs).where(eq(userImportLogs.id, id));
+    return result[0];
+  }
+  
+  async getAllUserImportLogs(): Promise<UserImportLog[]> {
+    return db.select()
+      .from(userImportLogs)
+      .orderBy(desc(userImportLogs.importedAt));
+  }
+  
+  async updateUserImportLog(id: number, data: Partial<UserImportLog>): Promise<UserImportLog | undefined> {
+    const result = await db.update(userImportLogs)
+      .set(data)
+      .where(eq(userImportLogs.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async bulkCreateUsers(userData: any[], options: {
+    verificationStatus?: string;
+    defaultRole?: string;
+    passwordHash?: (password: string) => string;
+  } = {}): Promise<{ success: User[], failures: any[] }> {
+    const success: User[] = [];
+    const failures: any[] = [];
+    
+    const verificationStatus = options.verificationStatus || 'pending';
+    const defaultRole = options.defaultRole || 'observer';
+    const passwordHash = options.passwordHash || ((pwd: string) => crypto.createHash('sha256').update(pwd).digest('hex'));
+    
+    for (const data of userData) {
+      try {
+        // Generate a temporary password if not provided
+        if (!data.password) {
+          data.password = Math.random().toString(36).slice(-8);
+        }
+        
+        // Hash the password
+        const hashedPassword = passwordHash(data.password);
+        
+        // Create user
+        const user = await this.createUser({
+          ...data,
+          password: hashedPassword,
+          role: data.role || defaultRole,
+          verificationStatus: data.verificationStatus || verificationStatus
+        });
+        
+        success.push(user);
+      } catch (error) {
+        failures.push({
+          data,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+    
+    return { success, failures };
+  }
+  
   // Form template operations
   async getFormTemplate(id: number): Promise<FormTemplate | undefined> {
     const result = await db.select().from(formTemplates).where(eq(formTemplates.id, id));
