@@ -5,6 +5,30 @@ import session from "express-session";
 import pgSession from "connect-pg-simple";
 import { pool, checkDbConnection } from "./db";
 import MemoryStore from "memorystore";
+import { IdCardService } from "./services/id-card-service";
+import { storage } from "./storage";
+
+/**
+ * Initialize default data in the database
+ * This ensures we have essential data like ID card templates
+ */
+async function initializeDefaultData() {
+  try {
+    // Initialize default ID card template
+    const idCardService = new IdCardService();
+    const templates = await storage.getAllIdCardTemplates();
+    
+    if (templates.length === 0) {
+      console.log('Creating default ID card template...');
+      await idCardService.createDefaultTemplate();
+      console.log('Default ID card template created successfully');
+    } else {
+      console.log(`Found ${templates.length} existing ID card templates`);
+    }
+  } catch (error) {
+    console.error('Error initializing default data:', error);
+  }
+}
 
 // Create session store
 const createSessionStore = () => {
@@ -76,6 +100,10 @@ app.use((req, res, next) => {
   try {
     // Check database connection
     await checkDbConnection();
+    console.log('Database connection successful');
+    
+    // Initialize default data
+    await initializeDefaultData();
     
     // Add health check endpoint
     app.get('/api/health', async (req, res) => {
