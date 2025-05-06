@@ -19,6 +19,7 @@ import {
   userImportLogs, UserImportLog, InsertUserImportLog,
   idCardTemplates, IdCardTemplate, InsertIdCardTemplate,
   photoApprovals, PhotoApproval, InsertPhotoApproval,
+  systemSettings, SystemSetting, InsertSystemSetting,
   BulkUserImport, RegistrationField
 } from "@shared/schema";
 import crypto from "crypto";
@@ -32,6 +33,60 @@ function generateObserverId(): string {
 }
 
 export class DatabaseStorage implements IStorage {
+  // System settings operations
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.settingKey, key));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching system setting:', error);
+      return undefined;
+    }
+  }
+
+  async getAllSystemSettings(): Promise<SystemSetting[]> {
+    try {
+      return await db.select().from(systemSettings);
+    } catch (error) {
+      console.error('Error fetching all system settings:', error);
+      return [];
+    }
+  }
+
+  async createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
+    try {
+      const result = await db
+        .insert(systemSettings)
+        .values(setting)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating system setting:', error);
+      throw error;
+    }
+  }
+
+  async updateSystemSetting(key: string, value: any, updatedBy?: number): Promise<SystemSetting | undefined> {
+    try {
+      const result = await db
+        .update(systemSettings)
+        .set({ 
+          settingValue: value, 
+          updatedAt: new Date(),
+          updatedBy: updatedBy
+        })
+        .where(eq(systemSettings.settingKey, key))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating system setting:', error);
+      return undefined;
+    }
+  }
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
