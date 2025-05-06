@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Clock, CheckCircle, FileText, MapPin } from "lucide-react";
+import { Clock, CheckCircle, FileText, MapPin, User } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 interface VerificationStatus {
   status: "pending" | "in-progress" | "completed";
