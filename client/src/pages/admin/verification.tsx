@@ -1,12 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import VerificationQueue from "@/components/admin/verification-queue";
+import { PendingPhotoApprovals } from "@/components/admin/pending-photo-approvals";
 import AdminLayout from "@/components/layouts/admin-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UserCheck, Image } from "lucide-react";
 
 export default function VerificationPage() {
   const [, navigate] = useLocation();
   const { user, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState("users");
   
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -26,9 +30,30 @@ export default function VerificationPage() {
   }
   
   return (
-    <AdminLayout>
+    <AdminLayout title="Verification Management">
       <div className="container py-8">
-        <VerificationQueue />
+        <h1 className="text-3xl font-bold mb-6">Verification Management</h1>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users" className="flex items-center">
+              <UserCheck className="h-4 w-4 mr-2" />
+              User Verification
+            </TabsTrigger>
+            <TabsTrigger value="photos" className="flex items-center">
+              <Image className="h-4 w-4 mr-2" />
+              Photo Approvals
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users" className="mt-6">
+            <VerificationQueue />
+          </TabsContent>
+          
+          <TabsContent value="photos" className="mt-6">
+            <PendingPhotoApprovals />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminLayout>
   );

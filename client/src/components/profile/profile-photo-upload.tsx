@@ -1,28 +1,54 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, RefreshCw, Check } from 'lucide-react';
+import { Loader2, Camera, RefreshCw, Check, AlertTriangle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { apiRequest } from '@/lib/queryClient';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useQuery } from "@tanstack/react-query";
 
 interface ProfilePhotoUploadProps {
   initialPhotoUrl?: string;
-  onPhotoProcessed: (photoUrl: string) => void;
+  onPhotoProcessed: (photoUrl: string, needsApproval?: boolean) => void;
+  isUserVerified?: boolean;
 }
 
-export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: ProfilePhotoUploadProps) {
+export function ProfilePhotoUpload({ 
+  initialPhotoUrl, 
+  onPhotoProcessed, 
+  isUserVerified = false 
+}: ProfilePhotoUploadProps) {
   const { toast } = useToast();
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(initialPhotoUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [hasFaceWarning, setHasFaceWarning] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
+  
+  // Fetch system settings for profile photo policy
+  const { data: settings } = useQuery({
+    queryKey: ['/api/system-settings/profile_photo_policy'],
+    enabled: isUserVerified, // Only fetch if the user is verified
+    refetchOnWindowFocus: false,
+  });
+
+  // Determine if the system requires approval based on settings
+  useEffect(() => {
+    if (settings && isUserVerified) {
+      setRequiresApproval(settings.settingValue?.requireApprovalAfterVerification || false);
+    } else {
+      setRequiresApproval(false);
+    }
+  }, [settings, isUserVerified]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+      setHasFaceWarning(false); // Reset warning when selecting a new file
       
       // Create a temporary preview
       const reader = new FileReader();
@@ -69,12 +95,26 @@ export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: Profil
         // Update state with the processed image URL
         setPhotoUrl(data.imageUrl);
         
-        // Notify parent component
-        onPhotoProcessed(data.imageUrl);
+        // Check for face detection warnings
+        if (data.hasFace === false) {
+          setHasFaceWarning(true);
+        }
+        
+        // Notify parent component with approval status
+        onPhotoProcessed(
+          data.imageUrl, 
+          // If auto-updated is false, it means it needs approval
+          !data.autoUpdated
+        );
+        
+        let photoMessage = "Your profile photo has been processed with AI";
+        if (!data.autoUpdated) {
+          photoMessage += " and is pending approval";
+        }
         
         toast({
           title: "Photo processed successfully",
-          description: "Your profile photo has been processed with AI",
+          description: photoMessage,
           variant: "default"
         });
       } else {
@@ -89,6 +129,7 @@ export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: Profil
       });
     } finally {
       setIsProcessing(false);
+      setSelectedFile(null); // Clear selected file after processing
     }
   };
 
@@ -117,7 +158,35 @@ export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: Profil
                 <span>AI is enhancing your photo...</span>
               </div>
             )}
+
+            {requiresApproval && photoUrl && !selectedFile && !isProcessing && (
+              <div className="flex items-center space-x-2 text-sm text-amber-600">
+                <Clock className="w-4 h-4" />
+                <span>Pending administrator approval</span>
+              </div>
+            )}
           </div>
+          
+          {/* Face detection warning */}
+          {hasFaceWarning && (
+            <Alert variant="warning" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>No face detected</AlertTitle>
+              <AlertDescription>
+                We couldn't detect a face in your photo. You may continue, but please ensure your face is clearly visible for ID card purposes.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Approval requirement notice */}
+          {isUserVerified && requiresApproval && !photoUrl && (
+            <Alert className="mb-4">
+              <AlertTitle>Approval Required</AlertTitle>
+              <AlertDescription>
+                Since your account has been verified, changes to your profile photo will require administrator approval.
+              </AlertDescription>
+            </Alert>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="photo" className="text-sm font-medium">
@@ -133,6 +202,7 @@ export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: Profil
             />
             <p className="text-xs text-muted-foreground">
               Upload a clear portrait photo. Our AI will automatically optimize it.
+              {isUserVerified && requiresApproval && " Changes will require approval."}
             </p>
           </div>
           
@@ -156,7 +226,7 @@ export function ProfilePhotoUpload({ initialPhotoUrl, onPhotoProcessed }: Profil
             </Button>
           )}
           
-          {photoUrl && !selectedFile && (
+          {photoUrl && !selectedFile && !requiresApproval && (
             <div className="flex items-center justify-center text-sm text-green-600 dark:text-green-500">
               <Check className="w-4 h-4 mr-1" />
               Photo ready for submission
