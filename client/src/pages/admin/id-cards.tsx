@@ -27,21 +27,47 @@ type IdCardTemplate = {
   id: number;
   name: string;
   description: string;
-  template: {
-    backgroundColor: string;
-    headerColor: string;
-    textColor: string;
-    accentColor: string;
+  templateData: {
+    background?: string;
     logo?: string;
-    showQrCode: boolean;
-    showWatermark: boolean;
-    showPhoto: boolean;
-    customText?: string;
-    footerText?: string;
+    elements: Array<{
+      type: string;
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      value?: string;
+      fieldName?: string;
+      style?: Record<string, string | number>;
+    }>;
+    dimensions: {
+      width: number;
+      height: number;
+    };
+  };
+  securityFeatures: {
+    watermark?: string;
+    hologram?: string;
+    qrEncryption?: boolean;
+    otherFeatures?: string[];
   };
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+// For backward compatibility and UI
+type TemplateUI = {
+  backgroundColor: string;
+  headerColor: string;
+  textColor: string;
+  accentColor: string;
+  logo?: string;
+  showQrCode: boolean;
+  showWatermark: boolean;
+  showPhoto: boolean;
+  customText?: string;
+  footerText?: string;
 };
 
 // Define zod schema for the form
