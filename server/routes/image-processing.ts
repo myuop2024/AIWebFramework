@@ -87,7 +87,7 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
       // Check if the user is already verified
       const user = await storage.getUser(req.session.userId);
       
-      if (user && user.verificationStatus === 'approved') {
+      if (user && user.verificationStatus === 'verified') {
         // Get the setting for subsequent photo changes
         const photoPolicy = await storage.getSystemSetting('profile_photo_policy');
         
