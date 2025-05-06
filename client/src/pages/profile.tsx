@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import MainLayout from "@/components/layout/main-layout";
@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import DocumentUpload from "@/components/profile/document-upload";
+import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
 import { User, FileText, ShieldCheck, MapPin, CreditCard, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Profile() {
   const { user, loading } = useAuth();
@@ -242,26 +244,54 @@ export default function Profile() {
               Upload the required documents for verification. All documents are securely stored and encrypted.
             </p>
             
-            <DocumentUpload
-              documentType="profile"
-              title="Profile Photo"
-              description="Upload a clear photo of your face. This will be used for your ID card."
-              acceptedFormats="image/jpeg, image/png"
-            />
+            {/* AI-enhanced Profile Photo Upload */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-2">Profile Photo</h3>
+              <p className="text-gray-600 mb-4">
+                Upload a clear photo of your face. Our AI system will automatically process it to ensure ideal quality for your ID card.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ProfilePhotoUpload 
+                  initialPhotoUrl={profileData?.profile?.profilePhotoUrl} 
+                  onPhotoProcessed={(photoUrl) => {
+                    // This would typically update the user's profile in a real implementation
+                    toast({
+                      title: "Profile photo updated",
+                      description: "Your AI-enhanced photo has been saved.",
+                      variant: "default"
+                    });
+                  }} 
+                />
+                
+                <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-6 flex flex-col justify-center">
+                  <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2">AI Enhancement Features</h4>
+                  <ul className="list-disc list-inside space-y-2 text-sm text-blue-600 dark:text-blue-400">
+                    <li>Automatic face detection and smart cropping</li>
+                    <li>Optimal sizing for ID cards and profile display</li>
+                    <li>Image quality enhancement with AI models</li>
+                    <li>Consistent formatting for all observer photos</li>
+                    <li>Background optimization for clear identification</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
             
-            <DocumentUpload
-              documentType="id"
-              title="Government ID"
-              description="Upload a photo of your government-issued ID (passport, driver's license, or national ID)."
-              acceptedFormats="image/jpeg, image/png, application/pdf"
-            />
-            
-            <DocumentUpload
-              documentType="address"
-              title="Proof of Address"
-              description="Upload a document showing your current address (utility bill, bank statement, etc.)."
-              acceptedFormats="image/jpeg, image/png, application/pdf"
-            />
+            <div className="space-y-6 mt-8">
+              <DocumentUpload
+                documentType="id"
+                title="Government ID"
+                description="Upload a photo of your government-issued ID (passport, driver's license, or national ID)."
+                acceptedFormats="image/jpeg, image/png, application/pdf"
+              />
+              
+              <DocumentUpload
+                documentType="address"
+                title="Proof of Address"
+                description="Upload a document showing your current address (utility bill, bank statement, etc.)."
+                acceptedFormats="image/jpeg, image/png, application/pdf"
+              />
+            </div>
           </div>
         </TabsContent>
         

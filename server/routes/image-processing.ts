@@ -1,56 +1,29 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { imageProcessingService } from '../services/image-processing-service';
 
-// Create router
-const router = Router();
+const router = express.Router();
 
-// Set up storage for uploaded files
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    const uploadDir = path.join(__dirname, '../../uploads');
-    
-    // Ensure the upload directory exists
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    // Create temporary directory for original uploads
-    const tempDir = path.join(uploadDir, 'temp');
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
-    
-    cb(null, tempDir);
-  },
-  filename: (_req, file, cb) => {
-    // Generate unique filename
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
-});
-
-// Create multer instance
+// Configure multer for file uploads
+const storage = multer.memoryStorage();
 const upload = multer({ 
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
+    fileSize: 5 * 1024 * 1024, // 5MB file size limit
   },
-  fileFilter: (_req, file, cb) => {
-    // Only accept images
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.mimetype)) {
-      const error = new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.');
-      return cb(error as any, false);
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
     }
-    cb(null, true);
   }
 });
 
-// Helper function to ensure processed upload directory exists
+// Ensure processed images directory exists
 function ensureProcessedDirExists() {
   const processedDir = path.join(__dirname, '../../uploads/processed');
   if (!fs.existsSync(processedDir)) {
@@ -66,42 +39,33 @@ function ensureProcessedDirExists() {
 router.post('/process-profile-photo', upload.single('profilePhoto'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No image file uploaded' });
+      return res.status(400).json({ message: 'No image file provided' });
     }
 
-    // Get the uploaded file
-    const originalFilePath = req.file.path;
-    const originalFileBuffer = fs.readFileSync(originalFilePath);
-    
-    // Process the image using our AI service
+    // Process the image using AI
     const processedImageBuffer = await imageProcessingService.processProfilePhoto(
-      originalFileBuffer
+      req.file.buffer,
+      300, // Standard profile photo width
+      300  // Standard profile photo height
     );
-    
-    // Save the processed image
+
+    // Generate a unique filename and save the processed image
+    const filename = imageProcessingService.generateFilename(req.file.originalname);
     const processedDir = ensureProcessedDirExists();
-    const processedFilename = imageProcessingService.generateFilename(req.file.originalname);
-    const processedFilePath = path.join(processedDir, processedFilename);
+    const filePath = path.join(processedDir, filename);
     
-    fs.writeFileSync(processedFilePath, processedImageBuffer);
+    fs.writeFileSync(filePath, processedImageBuffer);
+
+    // Return the URL path to the processed image
+    const imageUrl = `/uploads/processed/${filename}`;
     
-    // Clean up the original file to save space
-    fs.unlinkSync(originalFilePath);
-    
-    // Generate URL for client
-    const processedFileUrl = `/uploads/processed/${processedFilename}`;
-    
-    // Return success response with the new image URL
-    res.status(200).json({
+    res.status(200).json({ 
       message: 'Profile photo processed successfully',
-      originalSize: originalFileBuffer.length,
-      processedSize: processedImageBuffer.length,
-      reductionPercent: Math.round((1 - processedImageBuffer.length / originalFileBuffer.length) * 100),
-      url: processedFileUrl
+      imageUrl
     });
   } catch (error) {
     console.error('Error processing profile photo:', error);
-    res.status(500).json({ message: 'Error processing image', error: error.message });
+    res.status(500).json({ message: 'Error processing profile photo' });
   }
 });
 
@@ -111,44 +75,29 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
 router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No image file uploaded' });
+      return res.status(400).json({ message: 'No image file provided' });
     }
 
-    // Get the uploaded file
-    const originalFilePath = req.file.path;
-    const originalFileBuffer = fs.readFileSync(originalFilePath);
-    
-    // First apply standard processing
-    let processedImageBuffer = await imageProcessingService.processProfilePhoto(
-      originalFileBuffer,
-      300, // ID photo width
-      400  // ID photo height
-    );
-    
-    // Then apply AI enhancement for higher quality
-    processedImageBuffer = await imageProcessingService.applyAIEnhancement(processedImageBuffer);
-    
-    // Save the processed image
+    // Use higher quality AI enhancement for ID photos
+    const processedImageBuffer = await imageProcessingService.applyAIEnhancement(req.file.buffer);
+
+    // Generate a unique filename and save the processed image
+    const filename = imageProcessingService.generateFilename(req.file.originalname);
     const processedDir = ensureProcessedDirExists();
-    const processedFilename = imageProcessingService.generateFilename(req.file.originalname);
-    const processedFilePath = path.join(processedDir, processedFilename);
+    const filePath = path.join(processedDir, filename);
     
-    fs.writeFileSync(processedFilePath, processedImageBuffer);
+    fs.writeFileSync(filePath, processedImageBuffer);
+
+    // Return the URL path to the processed image
+    const imageUrl = `/uploads/processed/${filename}`;
     
-    // Clean up the original file
-    fs.unlinkSync(originalFilePath);
-    
-    // Generate URL for client
-    const processedFileUrl = `/uploads/processed/${processedFilename}`;
-    
-    // Return success response
-    res.status(200).json({
-      message: 'ID photo processed successfully',
-      url: processedFileUrl
+    res.status(200).json({ 
+      message: 'ID photo enhanced successfully',
+      imageUrl
     });
   } catch (error) {
-    console.error('Error processing ID photo:', error);
-    res.status(500).json({ message: 'Error processing image', error: error.message });
+    console.error('Error enhancing ID photo:', error);
+    res.status(500).json({ message: 'Error enhancing ID photo' });
   }
 });
 
@@ -158,37 +107,29 @@ router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, 
 router.post('/upscale-image', upload.single('image'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'No image file uploaded' });
+      return res.status(400).json({ message: 'No image file provided' });
     }
 
-    // Get the uploaded file
-    const originalFilePath = req.file.path;
-    const originalFileBuffer = fs.readFileSync(originalFilePath);
-    
-    // Apply AI upscaling
-    const upscaledImageBuffer = await imageProcessingService.upscaleImage(originalFileBuffer);
-    
-    // Save the processed image
+    // Upscale the low-resolution image
+    const upscaledImageBuffer = await imageProcessingService.upscaleImage(req.file.buffer);
+
+    // Generate a unique filename and save the processed image
+    const filename = imageProcessingService.generateFilename(req.file.originalname);
     const processedDir = ensureProcessedDirExists();
-    const processedFilename = imageProcessingService.generateFilename(req.file.originalname);
-    const processedFilePath = path.join(processedDir, processedFilename);
+    const filePath = path.join(processedDir, filename);
     
-    fs.writeFileSync(processedFilePath, upscaledImageBuffer);
+    fs.writeFileSync(filePath, upscaledImageBuffer);
+
+    // Return the URL path to the processed image
+    const imageUrl = `/uploads/processed/${filename}`;
     
-    // Clean up the original file
-    fs.unlinkSync(originalFilePath);
-    
-    // Generate URL for client
-    const processedFileUrl = `/uploads/processed/${processedFilename}`;
-    
-    // Return success response
-    res.status(200).json({
+    res.status(200).json({ 
       message: 'Image upscaled successfully',
-      url: processedFileUrl
+      imageUrl
     });
   } catch (error) {
     console.error('Error upscaling image:', error);
-    res.status(500).json({ message: 'Error processing image', error: error.message });
+    res.status(500).json({ message: 'Error upscaling image' });
   }
 });
 

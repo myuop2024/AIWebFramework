@@ -1,34 +1,10 @@
+import { createCanvas, loadImage, Image, Canvas } from 'canvas';
 import { HfInference } from '@huggingface/inference';
-import { Canvas, Image, createCanvas } from 'canvas';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
+import path from 'path';
 
-// Initialize Hugging Face with API key
+// Initialize Hugging Face client
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-
-// Config for image processing
-const IMAGE_CONFIG = {
-  profilePhotoSize: {
-    width: 400,
-    height: 400
-  },
-  idCardPhotoSize: {
-    width: 300,
-    height: 400
-  },
-  quality: 0.9 // JPEG quality
-};
-
-// Models for AI image processing
-const MODELS = {
-  // Smart portrait cropping model - focuses on faces
-  smartCropping: 'facebookresearch/detr-resnet-50',
-  // Image enhancement model
-  imageEnhancement: 'stabilityai/stable-diffusion-img2img',
-  // Image upscaling for low-res images
-  upscaling: 'nightmareai/real-esrgan'
-};
 
 /**
  * AI-powered image processing service for profile photos
@@ -43,27 +19,32 @@ export class ImageProcessingService {
    */
   async processProfilePhoto(
     imageBuffer: Buffer,
-    targetWidth = IMAGE_CONFIG.profilePhotoSize.width,
-    targetHeight = IMAGE_CONFIG.profilePhotoSize.height
+    targetWidth: number = 300,
+    targetHeight: number = 300
   ): Promise<Buffer> {
     try {
-      // Load image
-      const inputImage = await this.loadImage(imageBuffer);
-
-      // Step 1: Detect faces to determine smart crop area
-      const faceData = await this.detectFaces(imageBuffer);
+      // Load the image
+      const image = await this.loadImage(imageBuffer);
       
-      // Step 2: Crop image intelligently based on face detection
-      const croppedCanvas = this.smartCropImage(inputImage, faceData, targetWidth, targetHeight);
+      // Detect faces to determine the optimal crop area
+      const faceDetection = await this.detectFaces(imageBuffer);
       
-      // Step 3: Apply basic enhancements (contrast, sharpness)
+      // Smart crop the image (centered around detected faces if any)
+      const croppedCanvas = this.smartCropImage(
+        image, 
+        targetWidth, 
+        targetHeight, 
+        faceDetection
+      );
+      
+      // Apply basic image enhancements (contrast, brightness, etc.)
       const enhancedCanvas = await this.enhanceImage(croppedCanvas);
       
       // Convert to buffer and return
-      return this.canvasToBuffer(enhancedCanvas, 'image/jpeg', IMAGE_CONFIG.quality);
+      return this.canvasToBuffer(enhancedCanvas);
     } catch (error) {
-      console.error('Error processing profile photo:', error);
-      // Fallback to basic resize if AI processing fails
+      console.error('Error in AI profile photo processing:', error);
+      // Fallback to basic resizing if AI processing fails
       return this.basicResizeImage(imageBuffer, targetWidth, targetHeight);
     }
   }
@@ -73,25 +54,25 @@ export class ImageProcessingService {
    */
   private async detectFaces(imageBuffer: Buffer): Promise<any> {
     try {
-      // Convert buffer to base64 for the API
+      // Convert buffer to base64 string
       const base64Image = imageBuffer.toString('base64');
       
-      // Use object detection model to detect faces
-      const result = await hf.objectDetection({
+      // Call Hugging Face API for face detection
+      const response = await hf.objectDetection({
+        model: 'facebook/detr-resnet-50',
         data: Buffer.from(base64Image, 'base64'),
-        model: MODELS.smartCropping,
+        // We're only interested in faces
+        parameters: {
+          threshold: 0.5,
+          labels: ['person']
+        }
       });
       
-      // Filter results to only include face detections
-      const faceDetections = result.filter(obj => 
-        obj.label === 'person' && obj.score > 0.9
-      );
-      
-      return faceDetections;
+      return response;
     } catch (error) {
       console.error('Face detection error:', error);
-      // Return empty array to fall back to center crop
-      return [];
+      // Return empty array if detection fails - will default to center crop
+      return { labels: [] };
     }
   }
 
@@ -100,74 +81,100 @@ export class ImageProcessingService {
    */
   private smartCropImage(
     image: Image, 
-    faceData: any[], 
     targetWidth: number, 
-    targetHeight: number
+    targetHeight: number,
+    faceDetection: any
   ): Canvas {
     const canvas = createCanvas(targetWidth, targetHeight);
     const ctx = canvas.getContext('2d');
     
-    // Original image dimensions
-    const { width: imgWidth, height: imgHeight } = image;
+    // Original dimensions
+    const originalWidth = image.width;
+    const originalHeight = image.height;
     
-    // If no faces detected, fall back to center crop
-    if (faceData.length === 0) {
-      // Center crop logic
-      const aspectRatio = targetWidth / targetHeight;
-      const imgAspectRatio = imgWidth / imgHeight;
+    // Calculate aspect ratios
+    const targetRatio = targetWidth / targetHeight;
+    const imageRatio = originalWidth / originalHeight;
+    
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = originalWidth;
+    let sourceHeight = originalHeight;
+    
+    // Determine crop area
+    if (imageRatio > targetRatio) {
+      // Original image is wider
+      sourceWidth = originalHeight * targetRatio;
       
-      let sw, sh, sx, sy;
-      
-      if (imgAspectRatio > aspectRatio) {
-        // Image is wider than target aspect ratio, crop sides
-        sh = imgHeight;
-        sw = imgHeight * aspectRatio;
-        sy = 0;
-        sx = (imgWidth - sw) / 2;
+      // If faces detected, try to center crop around the faces
+      if (faceDetection.labels && faceDetection.labels.length > 0) {
+        // Find faces labeled as 'person'
+        const faces = faceDetection.labels.filter((label: any) => label.score > 0.5);
+        
+        if (faces.length > 0) {
+          // Calculate the center of all detected faces
+          const faceCenters = faces.map((face: any) => {
+            const box = face.box;
+            return {
+              x: box.xmin + (box.xmax - box.xmin) / 2,
+              y: box.ymin + (box.ymax - box.ymin) / 2
+            };
+          });
+          
+          // Calculate the average center point of all faces
+          const centerX = faceCenters.reduce((sum: number, face: any) => sum + face.x, 0) / faces.length;
+          
+          // Adjust source X to center on faces while keeping within image bounds
+          sourceX = Math.max(0, Math.min(originalWidth - sourceWidth, centerX - sourceWidth / 2));
+        } else {
+          // No faces found, center crop
+          sourceX = (originalWidth - sourceWidth) / 2;
+        }
       } else {
-        // Image is taller than target aspect ratio, crop top/bottom
-        sw = imgWidth;
-        sh = imgWidth / aspectRatio;
-        sx = 0;
-        sy = (imgHeight - sh) / 2;
+        // No face detection data, center crop
+        sourceX = (originalWidth - sourceWidth) / 2;
       }
-      
-      // Draw center-cropped image
-      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
-      return canvas;
-    }
-    
-    // Get the bounding box of the detected face
-    const face = faceData[0];
-    let [x, y, boxWidth, boxHeight] = face.box;
-    
-    // Add padding around the face (50% on each side)
-    const padX = boxWidth * 0.5;
-    const padY = boxHeight * 0.75; // More padding for top/bottom
-    
-    x = Math.max(0, x - padX);
-    y = Math.max(0, y - padY);
-    boxWidth = Math.min(imgWidth - x, boxWidth + padX * 2);
-    boxHeight = Math.min(imgHeight - y, boxHeight + padY * 2);
-    
-    // Adjust to maintain target aspect ratio
-    const targetAspectRatio = targetWidth / targetHeight;
-    const boxAspectRatio = boxWidth / boxHeight;
-    
-    if (boxAspectRatio > targetAspectRatio) {
-      // Face box is wider than target aspect ratio
-      const newBoxWidth = boxHeight * targetAspectRatio;
-      x = x + (boxWidth - newBoxWidth) / 2;
-      boxWidth = newBoxWidth;
     } else {
-      // Face box is taller than target aspect ratio
-      const newBoxHeight = boxWidth / targetAspectRatio;
-      y = y + (boxHeight - newBoxHeight) / 2;
-      boxHeight = newBoxHeight;
+      // Original image is taller
+      sourceHeight = originalWidth / targetRatio;
+      
+      // If faces detected, try to center crop around the faces
+      if (faceDetection.labels && faceDetection.labels.length > 0) {
+        // Find faces labeled as 'person'
+        const faces = faceDetection.labels.filter((label: any) => label.score > 0.5);
+        
+        if (faces.length > 0) {
+          // Calculate the center of all detected faces
+          const faceCenters = faces.map((face: any) => {
+            const box = face.box;
+            return {
+              x: box.xmin + (box.xmax - box.xmin) / 2,
+              y: box.ymin + (box.ymax - box.ymin) / 2
+            };
+          });
+          
+          // Calculate the average center point of all faces
+          const centerY = faceCenters.reduce((sum: number, face: any) => sum + face.y, 0) / faces.length;
+          
+          // Adjust source Y to center on faces while keeping within image bounds
+          sourceY = Math.max(0, Math.min(originalHeight - sourceHeight, centerY - sourceHeight / 2));
+        } else {
+          // No faces found, center crop
+          sourceY = (originalHeight - sourceHeight) / 2;
+        }
+      } else {
+        // No face detection data, center crop
+        sourceY = (originalHeight - sourceHeight) / 2;
+      }
     }
     
-    // Draw the cropped image
-    ctx.drawImage(image, x, y, boxWidth, boxHeight, 0, 0, targetWidth, targetHeight);
+    // Draw the image to the canvas with the calculated crop
+    ctx.drawImage(
+      image,
+      sourceX, sourceY, sourceWidth, sourceHeight,
+      0, 0, targetWidth, targetHeight
+    );
+    
     return canvas;
   }
 
@@ -175,29 +182,24 @@ export class ImageProcessingService {
    * Apply basic image enhancements
    */
   private async enhanceImage(canvas: Canvas): Promise<Canvas> {
-    try {
-      // For performance reasons, we use local enhancements instead of API for basic profiles
-      const ctx = canvas.getContext('2d');
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      // Simple contrast adjustment
-      const factor = 1.1; // Contrast factor
-      const intercept = 128 * (1 - factor);
-      
-      for (let i = 0; i < data.length; i += 4) {
-        // Adjust RGB channels
-        for (let j = 0; j < 3; j++) {
-          data[i + j] = factor * data[i + j] + intercept;
-        }
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-      return canvas;
-    } catch (error) {
-      console.error('Error enhancing image:', error);
-      return canvas; // Return original canvas on error
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Apply simple contrast enhancement
+    const factor = 1.1; // Contrast factor
+    const intercept = 128 * (1 - factor);
+    
+    for (let i = 0; i < data.length; i += 4) {
+      // Apply contrast adjustment to RGB channels
+      data[i] = factor * data[i] + intercept;     // R
+      data[i + 1] = factor * data[i + 1] + intercept; // G
+      data[i + 2] = factor * data[i + 2] + intercept; // B
+      // Alpha channel remains unchanged
     }
+    
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
   }
 
   /**
@@ -206,26 +208,29 @@ export class ImageProcessingService {
    */
   async applyAIEnhancement(imageBuffer: Buffer): Promise<Buffer> {
     try {
-      // Convert buffer to base64 for the API
+      // Convert buffer to base64 for Hugging Face API
       const base64Image = imageBuffer.toString('base64');
       
-      // Call the image enhancement model
-      const result = await hf.imageToImage({
-        model: MODELS.imageEnhancement,
-        inputs: Buffer.from(base64Image, 'base64'),
+      // Call Hugging Face API for image enhancement
+      // Using an image-to-image model for enhancement
+      const response = await hf.imageToImage({
+        model: "stabilityai/stable-diffusion-img2img",
+        data: Buffer.from(base64Image, 'base64'),
         parameters: {
-          prompt: "a professional, clear, high-quality portrait photo with good lighting",
-          negative_prompt: "blurry, dark, distorted, noisy",
+          prompt: "A high quality, professional portrait photograph, clear facial features, sharp details",
+          negative_prompt: "blurry, distorted, low quality, pixelated",
+          strength: 0.3, // Lower strength preserves more of the original image
           guidance_scale: 7.5
         }
       });
       
-      // Convert result to buffer
-      return Buffer.from(await result.arrayBuffer());
+      // Response is a blob containing the enhanced image
+      const enhancedImageBuffer = Buffer.from(await response.arrayBuffer());
+      return enhancedImageBuffer;
     } catch (error) {
       console.error('AI enhancement error:', error);
-      // Return original image on error
-      return imageBuffer;
+      // Fallback to basic processing
+      return this.processProfilePhoto(imageBuffer, 400, 600);
     }
   }
 
@@ -234,28 +239,34 @@ export class ImageProcessingService {
    */
   async upscaleImage(imageBuffer: Buffer): Promise<Buffer> {
     try {
-      // Check if image is low-resolution and needs upscaling
-      const image = await this.loadImage(imageBuffer);
-      if (image.width >= 400 && image.height >= 400) {
-        // Image is already high resolution
-        return imageBuffer;
-      }
-      
-      // Convert buffer to base64 for the API
+      // Convert buffer to base64 for Hugging Face API
       const base64Image = imageBuffer.toString('base64');
       
-      // Call the upscaling model
-      const result = await hf.imageToImage({
-        model: MODELS.upscaling,
-        inputs: Buffer.from(base64Image, 'base64'),
+      // Call Hugging Face API for image upscaling
+      const response = await hf.imageToImage({
+        model: "stabilityai/stable-diffusion-x4-upscaler",
+        data: Buffer.from(base64Image, 'base64'),
+        parameters: {
+          prompt: "High resolution, detailed image",
+          negative_prompt: "blurry, low quality",
+          guidance_scale: 7.5
+        }
       });
       
-      // Convert result to buffer
-      return Buffer.from(await result.arrayBuffer());
+      // Response is a blob containing the upscaled image
+      const upscaledImageBuffer = Buffer.from(await response.arrayBuffer());
+      return upscaledImageBuffer;
     } catch (error) {
-      console.error('Upscaling error:', error);
-      // Return original image on error
-      return imageBuffer;
+      console.error('Image upscaling error:', error);
+      // Fallback to basic resizing
+      const image = await this.loadImage(imageBuffer);
+      const canvas = createCanvas(image.width * 2, image.height * 2);
+      const ctx = canvas.getContext('2d');
+      
+      // Simple 2x upscaling
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      
+      return this.canvasToBuffer(canvas);
     }
   }
 
@@ -269,37 +280,35 @@ export class ImageProcessingService {
   ): Promise<Buffer> {
     try {
       const image = await this.loadImage(imageBuffer);
+      
+      // Calculate aspect ratios
+      const targetRatio = targetWidth / targetHeight;
+      const imageRatio = image.width / image.height;
+      
+      let dx = 0, dy = 0, dWidth = targetWidth, dHeight = targetHeight;
+      let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+      
+      // Maintain aspect ratio while fitting within target dimensions
+      if (imageRatio > targetRatio) {
+        // Original image is wider
+        sWidth = image.height * targetRatio;
+        sx = (image.width - sWidth) / 2;
+      } else {
+        // Original image is taller
+        sHeight = image.width / targetRatio;
+        sy = (image.height - sHeight) / 2;
+      }
+      
       const canvas = createCanvas(targetWidth, targetHeight);
       const ctx = canvas.getContext('2d');
       
-      // Calculate crop dimensions to preserve aspect ratio
-      const aspectRatio = targetWidth / targetHeight;
-      const imgAspectRatio = image.width / image.height;
+      // Draw the image to the canvas with the calculated crop
+      ctx.drawImage(image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
       
-      let sw, sh, sx, sy;
-      
-      if (imgAspectRatio > aspectRatio) {
-        // Image is wider than target aspect ratio
-        sh = image.height;
-        sw = image.height * aspectRatio;
-        sy = 0;
-        sx = (image.width - sw) / 2;
-      } else {
-        // Image is taller than target aspect ratio
-        sw = image.width;
-        sh = image.width / aspectRatio;
-        sx = 0;
-        sy = (image.height - sh) / 2;
-      }
-      
-      // Draw resized image
-      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
-      
-      // Convert to buffer
-      return this.canvasToBuffer(canvas, 'image/jpeg', IMAGE_CONFIG.quality);
+      return this.canvasToBuffer(canvas);
     } catch (error) {
       console.error('Basic resize error:', error);
-      // Return original image on error
+      // Return original buffer if all processing fails
       return imageBuffer;
     }
   }
@@ -308,12 +317,7 @@ export class ImageProcessingService {
    * Load image from buffer
    */
   private async loadImage(buffer: Buffer): Promise<Image> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = buffer;
-    });
+    return loadImage(buffer);
   }
 
   /**
@@ -327,12 +331,12 @@ export class ImageProcessingService {
    * Generate a unique filename for the processed image
    */
   generateFilename(originalFilename: string): string {
-    const ext = path.extname(originalFilename);
     const timestamp = Date.now();
     const randomString = crypto.randomBytes(8).toString('hex');
-    return `processed_${timestamp}_${randomString}${ext}`;
+    const extension = path.extname(originalFilename) || '.jpg';
+    
+    return `processed_${timestamp}_${randomString}${extension}`;
   }
 }
 
-// Export singleton instance
 export const imageProcessingService = new ImageProcessingService();

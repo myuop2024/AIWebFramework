@@ -1399,5 +1399,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);
   
+  // AI-powered image processing routes
+  app.use('/api/images', imageProcessingRoutes);
+  
   return httpServer;
 }
