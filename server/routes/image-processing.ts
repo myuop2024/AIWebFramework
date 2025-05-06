@@ -91,6 +91,15 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
         
         if (photoPolicy && photoPolicy.setting_value.requireApprovalAfterVerification) {
           autoUpdateProfile = false;
+          
+          // Create a pending photo approval entry
+          await storage.createPhotoApproval({
+            userId: req.session.userId,
+            photoUrl: imageUrl,
+            status: 'pending'
+          });
+          
+          console.log(`Created pending photo approval for user ${req.session.userId}`);
         }
       }
       
