@@ -155,6 +155,70 @@ export default function Profile() {
               )}
             </div>
           </div>
+          
+          {/* Observer ID Card Display */}
+          {user?.verificationStatus === "verified" && (
+            <div className="w-full mt-6 border rounded-lg overflow-hidden shadow-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+              <div className="flex flex-col md:flex-row p-4">
+                <div className="flex-shrink-0 mb-4 md:mb-0 md:mr-6">
+                  {profileData?.profile?.profilePhotoUrl ? (
+                    <img 
+                      src={profileData.profile.profilePhotoUrl} 
+                      alt="Profile" 
+                      className="w-32 h-40 object-cover border-4 border-white rounded"
+                    />
+                  ) : (
+                    <div className="w-32 h-40 bg-gray-200 border-4 border-white rounded flex items-center justify-center">
+                      <User className="h-16 w-16 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex-grow">
+                  <h3 className="text-xl font-bold text-white mb-1">OFFICIAL OBSERVER</h3>
+                  <h2 className="text-2xl font-bold text-white mb-3">{user?.firstName} {user?.lastName}</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-xs text-white/70">Observer ID</p>
+                      <p className="text-md font-bold">{user?.observerId}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/70">Verification Status</p>
+                      <p className="text-md font-bold capitalize">{user?.verificationStatus}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/70">Role</p>
+                      <p className="text-md font-bold capitalize">{user?.role}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-white/70">Valid Until</p>
+                      <p className="text-md font-bold">December 31, 2025</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-xs bg-white/20 px-2 py-1 rounded">
+                      GENERAL ELECTION DECEMBER 2025
+                    </div>
+                    <div className="text-xs bg-red-500 px-2 py-1 rounded font-bold">
+                      OFFICIAL
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white/10 p-3 flex justify-between items-center">
+                <div className="text-xs">Citizens Action for Free and Fair Elections</div>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="bg-white text-indigo-700 hover:bg-white/90 flex items-center gap-1"
+                  onClick={downloadIdCard}
+                >
+                  <Download className="h-3 w-3" />
+                  <span>Download Full ID</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
       

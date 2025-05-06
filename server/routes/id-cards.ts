@@ -151,6 +151,35 @@ router.get('/generate/:userId', requireAuth, async (req, res) => {
   }
 });
 
+// Download current user's ID card
+router.get('/download', requireAuth, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    
+    // First check if there's an active template, create a default one if not
+    let template = await storage.getActiveIdCardTemplate();
+    if (!template) {
+      template = await idCardService.createDefaultTemplate();
+    }
+    
+    const pdfBuffer = await idCardService.generateIdCard(userId);
+    
+    // Set response headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="observer-id-card.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    
+    // Send the PDF buffer
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('Error downloading ID card:', error);
+    res.status(500).json({ message: 'Failed to download ID card' });
+  }
+});
+
 // Preview ID card template (admin only)
 router.post('/preview-template', requireAuth, requireAdmin, async (req, res) => {
   try {

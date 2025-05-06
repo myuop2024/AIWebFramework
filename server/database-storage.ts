@@ -17,6 +17,7 @@ import {
   messages, Message, InsertMessage,
   registrationForms, RegistrationForm, InsertRegistrationForm,
   userImportLogs, UserImportLog, InsertUserImportLog,
+  idCardTemplates, IdCardTemplate, InsertIdCardTemplate,
   BulkUserImport, RegistrationField
 } from "@shared/schema";
 import crypto from "crypto";
