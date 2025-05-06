@@ -54,6 +54,9 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Make storage available to all routes via app.locals
+app.locals.storage = storage;
+
 // Set up session middleware
 app.use(session({
   store: createSessionStore(),

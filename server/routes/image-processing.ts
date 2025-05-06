@@ -3,6 +3,7 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { imageProcessingService } from '../services/image-processing-service';
+import { storage as globalStorage } from '../storage';
 
 const router = express.Router();
 
@@ -78,7 +79,8 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
     
     // Get system settings to check if we should automatically update the profile
     // or if admin approval is required for subsequent uploads
-    const storage = req.app.locals.storage;
+    // Use app.locals.storage if available, otherwise use the imported storage as fallback
+    const storage = req.app.locals.storage || globalStorage;
     let autoUpdateProfile = true;
     
     try {
