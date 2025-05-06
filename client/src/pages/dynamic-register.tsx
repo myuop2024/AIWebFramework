@@ -142,7 +142,7 @@ const DynamicRegister = () => {
           <div className="text-sm text-gray-500">
             Already have an account?{" "}
             <Link href="/login">
-              <a className="text-primary hover:underline">Log in</a>
+              <span className="text-primary hover:underline cursor-pointer">Log in</span>
             </Link>
           </div>
         </CardFooter>
