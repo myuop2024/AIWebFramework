@@ -140,6 +140,15 @@ export interface IStorage {
   getReportCountByStatus(): Promise<Record<string, number>>;
   getActiveAssignmentsCount(): Promise<number>;
   getStationsWithIssueReports(): Promise<{id: number, name: string, issueCount: number}[]>;
+  
+  // Photo approval operations
+  getPhotoApproval(id: number): Promise<PhotoApproval | undefined>;
+  getPendingPhotoApprovals(): Promise<PhotoApproval[]>;
+  getPhotoApprovalsByUserId(userId: number): Promise<PhotoApproval[]>;
+  createPhotoApproval(approval: InsertPhotoApproval): Promise<PhotoApproval>;
+  updatePhotoApproval(id: number, data: Partial<PhotoApproval>): Promise<PhotoApproval | undefined>;
+  approvePhotoApproval(id: number, approvedBy: number): Promise<PhotoApproval | undefined>;
+  rejectPhotoApproval(id: number, approvedBy: number, notes?: string): Promise<PhotoApproval | undefined>;
 }
 
 // Generate a unique observer ID in the format "JM+6-digit-number"
@@ -168,6 +177,7 @@ export class MemStorage implements IStorage {
   private registrationForms: Map<number, RegistrationForm>;
   private userImportLogs: Map<number, UserImportLog>;
   private systemSettings: Map<number, SystemSetting>;
+  private photoApprovals: Map<number, PhotoApproval>;
   
   private userIdCounter: number;
   private profileIdCounter: number;
@@ -185,6 +195,7 @@ export class MemStorage implements IStorage {
   private registrationFormIdCounter: number;
   private userImportLogIdCounter: number;
   private systemSettingIdCounter: number;
+  private photoApprovalIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -203,6 +214,7 @@ export class MemStorage implements IStorage {
     this.registrationForms = new Map();
     this.userImportLogs = new Map();
     this.systemSettings = new Map();
+    this.photoApprovals = new Map();
     
     this.userIdCounter = 1;
     this.profileIdCounter = 1;
@@ -220,6 +232,7 @@ export class MemStorage implements IStorage {
     this.registrationFormIdCounter = 1;
     this.userImportLogIdCounter = 1;
     this.systemSettingIdCounter = 1;
+    this.photoApprovalIdCounter = 1;
     
     // Initialize with sample data
     this.initializeData();
