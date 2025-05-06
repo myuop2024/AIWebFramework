@@ -7,6 +7,7 @@ import { pool, checkDbConnection } from "./db";
 import MemoryStore from "memorystore";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
+import path from "path";
 
 /**
  * Initialize default data in the database
@@ -53,6 +54,9 @@ const createSessionStore = () => {
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 
 // Make storage available to all routes via app.locals
 app.locals.storage = storage;
