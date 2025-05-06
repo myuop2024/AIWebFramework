@@ -306,7 +306,7 @@ export function AnalyticsDashboard() {
             >
               {isGeneratingReport ? (
                 <>
-                  <Spinner className="mr-2" />
+                  <Spinner size="sm" className="mr-2" />
                   Generating...
                 </>
               ) : (

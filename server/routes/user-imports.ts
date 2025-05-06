@@ -3,11 +3,10 @@ import { storage } from '../storage';
 import { bulkUserImportSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireAdmin } from '../middleware/auth';
 import crypto from 'crypto';
 
 const router = Router();
-const requireAdmin = requireAuth(['admin']);
 
 // Get all user import logs (admin only)
 router.get('/', requireAdmin, async (req, res) => {
@@ -59,7 +58,7 @@ router.post('/bulk', requireAdmin, async (req, res) => {
     // Create the import log
     const importLog = await storage.createUserImportLog({
       sourceType: 'manual', // Corrected from 'source' to 'sourceType'
-      importedBy: req.user.id,
+      importedBy: req.session?.userId || 0,
       totalRecords: users.length,
       successCount: 0,
       failureCount: 0,

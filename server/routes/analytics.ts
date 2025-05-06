@@ -1,144 +1,53 @@
 import { Router } from 'express';
 import { aiAnalyticsService } from '../services/ai-analytics-service';
-import { z } from 'zod';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-/**
- * Schema for date range validation
- */
-const dateRangeSchema = z.object({
-  startDate: z.string().transform(val => new Date(val)),
-  endDate: z.string().transform(val => new Date(val))
-});
-
-/**
- * Schema for report analysis request
- */
-const reportAnalysisSchema = z.object({
-  content: z.string().min(10, "Report content must be at least 10 characters")
-});
-
-/**
- * Schema for station prediction request
- */
-const stationPredictionSchema = z.object({
-  stationId: z.number().optional()
-});
-
-/**
- * GET /api/analytics/dashboard
- * Get the analytics dashboard data
- */
-router.get('/dashboard', requireAuth(['admin']), async (req, res) => {
+// Get analytics dashboard data
+router.get('/dashboard', requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Parse date range from query params if provided
-    let timeRange;
-    if (req.query.startDate && req.query.endDate) {
-      const result = dateRangeSchema.safeParse({
-        startDate: req.query.startDate,
-        endDate: req.query.endDate
-      });
-      
-      if (result.success) {
-        timeRange = {
-          start: result.data.startDate,
-          end: result.data.endDate
-        };
-      }
-    }
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
     
-    const analyticsData = await aiAnalyticsService.getDashboardAnalytics(timeRange);
-    res.json(analyticsData);
+    const data = await aiAnalyticsService.getDashboardData(startDate, endDate);
+    return res.json(data);
   } catch (error) {
     console.error('Error fetching analytics dashboard data:', error);
-    res.status(500).json({ 
-      message: 'Failed to fetch analytics data',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return res.status(500).json({ message: 'Failed to fetch analytics data' });
   }
 });
 
-/**
- * POST /api/analytics/analyze-report
- * Analyze a report using AI
- */
-router.post('/analyze-report', requireAuth(), async (req, res) => {
+// Predict potential issues
+router.post('/predict-issues', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const result = reportAnalysisSchema.safeParse(req.body);
-    
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: 'Invalid request data',
-        errors: result.error.format() 
-      });
-    }
-    
-    const analysis = await aiAnalyticsService.analyzeReport(result.data.content);
-    res.json(analysis);
-  } catch (error) {
-    console.error('Error analyzing report:', error);
-    res.status(500).json({ 
-      message: 'Failed to analyze report',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * POST /api/analytics/predict-issues
- * Predict potential issues
- */
-router.post('/predict-issues', requireAuth(['admin']), async (req, res) => {
-  try {
-    const result = stationPredictionSchema.safeParse(req.body);
-    
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: 'Invalid request data',
-        errors: result.error.format() 
-      });
-    }
-    
-    const predictions = await aiAnalyticsService.predictPotentialIssues(result.data.stationId);
-    res.json(predictions);
+    const { stationId } = req.body;
+    const predictions = await aiAnalyticsService.predictIssues(stationId);
+    return res.json(predictions);
   } catch (error) {
     console.error('Error predicting issues:', error);
-    res.status(500).json({ 
-      message: 'Failed to predict potential issues',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    return res.status(500).json({ message: 'Failed to predict issues' });
   }
 });
 
-/**
- * POST /api/analytics/generate-report
- * Generate a comprehensive report
- */
-router.post('/generate-report', requireAuth(['admin']), async (req, res) => {
+// Generate comprehensive report
+router.post('/generate-report', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const result = dateRangeSchema.safeParse(req.body);
+    const { startDate, endDate } = req.body;
     
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: 'Invalid date range',
-        errors: result.error.format() 
-      });
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'Start date and end date are required' });
     }
     
     const report = await aiAnalyticsService.generateComprehensiveReport(
-      result.data.startDate,
-      result.data.endDate
+      new Date(startDate), 
+      new Date(endDate)
     );
     
-    res.json({ report });
+    return res.json({ report });
   } catch (error) {
-    console.error('Error generating comprehensive report:', error);
-    res.status(500).json({ 
-      message: 'Failed to generate report',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    console.error('Error generating report:', error);
+    return res.status(500).json({ message: 'Failed to generate report' });
   }
 });
 

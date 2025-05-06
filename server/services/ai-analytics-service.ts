@@ -1,535 +1,862 @@
 import { HfInference } from '@huggingface/inference';
-import { db } from '../db';
-import { reports, assignments, users, pollingStations } from '@shared/schema';
-import { eq, and, gte, lte, desc, count } from 'drizzle-orm';
-import { Report } from '@shared/schema';
-import * as crypto from 'crypto';
+import { db } from '../db'; 
+import { reports, users, pollingStations } from '@shared/schema';
+import { eq, and, or, sql, desc, gte, lte } from 'drizzle-orm';
+import crypto from 'crypto';
+import type { Report } from '@shared/schema';
 
-// Initialize Hugging Face inference client with API key
+// Initialize Hugging Face client with API token
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-export interface ReportTrend {
-  category: string;
-  count: number;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  percentChange: number;
-}
+// Models to use for different analytics tasks
+const MODELS = {
+  textClassification: 'distilbert-base-uncased-finetuned-sst-2-english',
+  textGeneration: 'gpt2',
+  zeroShotClassification: 'facebook/bart-large-mnli',
+  summarization: 'facebook/bart-large-cnn',
+  questionAnswering: 'deepset/roberta-base-squad2',
+};
 
-export interface AiInsight {
+// Categories for reports classification
+const REPORT_CATEGORIES = [
+  'voter intimidation',
+  'ballot issues',
+  'polling station logistics',
+  'voter eligibility disputes',
+  'counting irregularities',
+  'technology issues',
+  'accessibility problems',
+  'observer rights violation',
+  'violence',
+  'general issues'
+];
+
+export interface AnalyticsInsight {
   insight: string;
   confidence: number;
   category: string;
   relatedReportIds: number[];
 }
 
-export interface AnalyticsData {
-  reportStats: {
-    totalReports: number;
-    pendingReports: number;
-    reviewedReports: number;
-    criticalReports: number;
-  };
-  recentTrends: ReportTrend[];
-  aiInsights: AiInsight[];
-  reportsByLocation: {
-    locationName: string;
-    count: number;
-    severity: 'low' | 'medium' | 'high';
-  }[];
-  topIssueCategories: {
-    category: string;
-    count: number;
-    percentage: number;
-  }[];
+export interface AnalyticsTrend {
+  category: string;
+  count: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  percentChange: number;
 }
 
-/**
- * AI Analytics Service for analyzing election observation reports
- */
-export class AiAnalyticsService {
-  /**
-   * Analyze a report content using AI to extract insights
-   * @param reportContent The content of the report to analyze
-   * @returns The analysis results
-   */
-  async analyzeReport(reportContent: string): Promise<{
-    severity: 'low' | 'medium' | 'high';
-    categories: string[];
-    summary: string;
-    sentiment: number;
-    actionRequired: boolean;
-  }> {
+export interface AnalyticsReportStats {
+  totalReports: number;
+  pendingReports: number;
+  reviewedReports: number;
+  criticalReports: number;
+}
+
+export interface LocationReport {
+  locationName: string;
+  count: number;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface CategoryStats {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
+export interface AnalyticsDashboardData {
+  reportStats: AnalyticsReportStats;
+  recentTrends: AnalyticsTrend[];
+  aiInsights: AnalyticsInsight[];
+  reportsByLocation: LocationReport[];
+  topIssueCategories: CategoryStats[];
+}
+
+export interface PredictedIssue {
+  issueType: string;
+  probability: number;
+  suggestedAction: string;
+}
+
+export class AIAnalyticsService {
+  // Main dashboard analytics data
+  async getDashboardData(startDate?: Date, endDate?: Date): Promise<AnalyticsDashboardData> {
     try {
-      // Use Hugging Face's text classification to categorize the report
-      const classificationPrompt = `
-      Categorize this election observation report into one or more of these categories: 
-      Ballot Issues, Voter Intimidation, Equipment Malfunction, Process Violation, Accessibility Issues, Staff Conduct, Security Concerns, Other.
+      // Apply date filters if provided
+      const dateFilter = this.buildDateFilter(startDate, endDate);
       
-      Also determine the severity (low, medium, high) and whether immediate action is required.
+      // Get report statistics
+      const reportStats = await this.getReportStats(dateFilter);
       
-      Report: ${reportContent}
+      // Get top issue categories
+      const topIssueCategories = await this.getTopIssueCategories(dateFilter);
       
-      Format your response as JSON with the following structure:
-      {
-        "severity": "low|medium|high",
-        "categories": ["category1", "category2"],
-        "summary": "brief summary of the key issues",
-        "sentiment": "score from -1 to 1 where -1 is very negative and 1 is very positive",
-        "actionRequired": true|false
-      }
-      `;
-
-      // Use a text generation model for sophisticated analysis
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: classificationPrompt,
-        parameters: {
-          max_new_tokens: 250,
-          temperature: 0.1,
-          return_full_text: false,
-        }
-      });
-
-      // Extract JSON from the response
-      const jsonMatch = response.generated_text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('AI response did not contain valid JSON');
-      }
-
-      const analysisResult = JSON.parse(jsonMatch[0]);
-      return analysisResult;
-    } catch (error) {
-      console.error('Error analyzing report with AI:', error);
-      // Return a fallback analysis if the AI service fails
+      // Get location-based report data
+      const reportsByLocation = await this.getReportsByLocation(dateFilter);
+      
+      // Get trend data over time periods
+      const recentTrends = await this.getRecentTrends(dateFilter);
+      
+      // Generate AI insights from report content
+      const aiInsights = await this.generateAIInsights(dateFilter);
+            
       return {
-        severity: 'medium', 
-        categories: ['Process Violation'],
-        summary: 'Unable to analyze report content automatically.',
-        sentiment: 0,
-        actionRequired: false
+        reportStats,
+        recentTrends,
+        aiInsights,
+        reportsByLocation,
+        topIssueCategories,
+      };
+    } catch (error) {
+      console.error('Error generating analytics dashboard data:', error);
+      throw new Error('Failed to generate analytics data');
+    }
+  }
+  
+  // Build date range filter for queries
+  private buildDateFilter(startDate?: Date, endDate?: Date) {
+    if (startDate && endDate) {
+      return and(
+        gte(reports.createdAt, startDate),
+        lte(reports.createdAt, endDate)
+      );
+    }
+    
+    if (startDate) {
+      return gte(reports.createdAt, startDate);
+    }
+    
+    if (endDate) {
+      return lte(reports.createdAt, endDate);
+    }
+    
+    return undefined;
+  }
+  
+  // Get overall report statistics
+  private async getReportStats(dateFilter?: any): Promise<AnalyticsReportStats> {
+    try {
+      // Get total reports
+      const totalReportsQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(dateFilter);
+      
+      // Get pending reports
+      const pendingReportsQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(and(
+          eq(reports.status, 'pending'),
+          dateFilter
+        ));
+      
+      // Get reviewed reports
+      const reviewedReportsQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(and(
+          eq(reports.status, 'reviewed'),
+          dateFilter
+        ));
+      
+      // Get critical reports
+      const criticalReportsQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(and(
+          eq(reports.severity, 'critical'),
+          dateFilter
+        ));
+      
+      const totalReports = totalReportsQuery[0]?.count || 0;
+      const pendingReports = pendingReportsQuery[0]?.count || 0;
+      const reviewedReports = reviewedReportsQuery[0]?.count || 0;
+      const criticalReports = criticalReportsQuery[0]?.count || 0;
+      
+      return {
+        totalReports,
+        pendingReports,
+        reviewedReports,
+        criticalReports,
+      };
+    } catch (error) {
+      console.error('Error fetching report stats:', error);
+      return {
+        totalReports: 0,
+        pendingReports: 0,
+        reviewedReports: 0,
+        criticalReports: 0
       };
     }
   }
-
-  /**
-   * Get comprehensive analytics data for the dashboard
-   * @param timeRange Optional time range for filtering the data
-   * @returns Analytics data for the dashboard
-   */
-  async getDashboardAnalytics(timeRange?: { 
-    start: Date, 
-    end: Date 
-  }): Promise<AnalyticsData> {
+  
+  // Get report data grouped by location
+  private async getReportsByLocation(dateFilter?: any): Promise<LocationReport[]> {
     try {
-      let reportsQuery = db.select().from(reports);
+      // Get reports grouped by polling station
+      const reportsByStationQuery = await db
+        .select({
+          stationId: reports.pollingStationId,
+          count: sql<number>`count(*)`,
+        })
+        .from(reports)
+        .where(dateFilter)
+        .groupBy(reports.pollingStationId)
+        .orderBy(sql`count(*) desc`)
+        .limit(10);
       
-      // Apply time range filter if provided
-      if (timeRange) {
-        reportsQuery = reportsQuery.where(
+      // Get station names and enrich data
+      const locationReports: LocationReport[] = [];
+      
+      for (const reportGroup of reportsByStationQuery) {
+        if (!reportGroup.stationId) continue;
+        
+        const station = await db
+          .select({
+            name: pollingStations.name,
+          })
+          .from(pollingStations)
+          .where(eq(pollingStations.id, reportGroup.stationId))
+          .limit(1);
+        
+        // Calculate severity based on count thresholds
+        let severity: 'low' | 'medium' | 'high' = 'low';
+        if (reportGroup.count > 10) {
+          severity = 'high';
+        } else if (reportGroup.count > 5) {
+          severity = 'medium';
+        }
+        
+        if (station[0]) {
+          locationReports.push({
+            locationName: station[0].name || `Station ID: ${reportGroup.stationId}`,
+            count: reportGroup.count,
+            severity,
+          });
+        }
+      }
+      
+      return locationReports;
+    } catch (error) {
+      console.error('Error fetching reports by location:', error);
+      return [];
+    }
+  }
+  
+  // Get top issue categories from reports
+  private async getTopIssueCategories(dateFilter?: any): Promise<CategoryStats[]> {
+    try {
+      // Get reports grouped by category
+      const categoryCounts: Record<string, number> = {};
+      const totalReportsQuery = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(reports)
+        .where(dateFilter);
+      
+      const totalReports = totalReportsQuery[0]?.count || 0;
+      
+      if (totalReports === 0) {
+        return [];
+      }
+      
+      // Get reports with category information
+      const reportData = await db
+        .select({
+          id: reports.id,
+          content: reports.content,
+          category: reports.category,
+        })
+        .from(reports)
+        .where(dateFilter);
+      
+      // Count reports by category
+      for (const report of reportData) {
+        const category = report.category || await this.classifyReportContent(report);
+        if (category) {
+          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        }
+      }
+      
+      // Convert to array and calculate percentages
+      const result = Object.entries(categoryCounts).map(([category, count]) => ({
+        category,
+        count,
+        percentage: Math.round((count / totalReports) * 100),
+      }));
+      
+      // Sort by count descending
+      return result.sort((a, b) => b.count - a.count);
+    } catch (error) {
+      console.error('Error fetching top issue categories:', error);
+      return [];
+    }
+  }
+  
+  // Analyze trends over time
+  private async getRecentTrends(dateFilter?: any): Promise<AnalyticsTrend[]> {
+    try {
+      // Get current period data
+      const currentPeriodReports = await db
+        .select({
+          id: reports.id,
+          content: reports.content,
+          category: reports.category,
+          createdAt: reports.createdAt,
+        })
+        .from(reports)
+        .where(dateFilter);
+      
+      // Calculate previous period dates
+      const now = new Date();
+      const currentPeriodStart = new Date();
+      currentPeriodStart.setMonth(currentPeriodStart.getMonth() - 1);
+      
+      const previousPeriodEnd = new Date(currentPeriodStart);
+      previousPeriodEnd.setDate(previousPeriodEnd.getDate() - 1);
+      
+      const previousPeriodStart = new Date(previousPeriodEnd);
+      previousPeriodStart.setMonth(previousPeriodStart.getMonth() - 1);
+      
+      // Get previous period data
+      const previousPeriodReports = await db
+        .select({
+          id: reports.id,
+          content: reports.content,
+          category: reports.category,
+          createdAt: reports.createdAt,
+        })
+        .from(reports)
+        .where(
           and(
-            gte(reports.submittedAt, timeRange.start),
-            lte(reports.submittedAt, timeRange.end)
+            gte(reports.createdAt, previousPeriodStart),
+            lte(reports.createdAt, previousPeriodEnd)
           )
         );
+      
+      // Categorize reports for both periods
+      const currentPeriodCategories: Record<string, number> = {};
+      const previousPeriodCategories: Record<string, number> = {};
+      
+      // Process current period
+      for (const report of currentPeriodReports) {
+        const category = report.category || await this.classifyReportContent(report);
+        if (category) {
+          currentPeriodCategories[category] = (currentPeriodCategories[category] || 0) + 1;
+        }
       }
-
-      const allReports = await reportsQuery;
       
-      // Generate report statistics
-      const reportStats = {
-        totalReports: allReports.length,
-        pendingReports: allReports.filter(r => r.status === 'pending').length,
-        reviewedReports: allReports.filter(r => r.status === 'reviewed').length,
-        criticalReports: allReports.filter(r => r.priority === 'high').length
-      };
-
-      // Get the polling station data for location analysis
-      const locationData = await db.select({
-        id: pollingStations.id,
-        name: pollingStations.name,
-        reportCount: count(reports.id)
-      })
-      .from(pollingStations)
-      .leftJoin(reports, eq(reports.stationId, pollingStations.id))
-      .groupBy(pollingStations.id, pollingStations.name);
-
-      // Generate location-based reporting insights
-      const reportsByLocation = await Promise.all(
-        locationData.map(async location => {
-          // Get reports for this location
-          const locationReports = allReports.filter(r => r.stationId === location.id);
-          
-          // Determine severity based on report count and priorities
-          const highPriorityCount = locationReports.filter(r => r.priority === 'high').length;
-          let severity: 'low' | 'medium' | 'high' = 'low';
-          
-          if (highPriorityCount > 2) {
-            severity = 'high';
-          } else if (highPriorityCount > 0 || locationReports.length > 5) {
-            severity = 'medium';
-          }
-          
-          return {
-            locationName: location.name,
-            count: location.reportCount || 0,
-            severity
-          };
-        })
-      );
-
-      // Generate trend data by comparing current week to previous week
-      const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      // Process previous period
+      for (const report of previousPeriodReports) {
+        const category = report.category || await this.classifyReportContent(report);
+        if (category) {
+          previousPeriodCategories[category] = (previousPeriodCategories[category] || 0) + 1;
+        }
+      }
       
-      const currentWeekReports = allReports.filter(r => 
-        new Date(r.submittedAt) >= oneWeekAgo && 
-        new Date(r.submittedAt) <= now
-      );
+      // Calculate trends
+      const trends: AnalyticsTrend[] = [];
       
-      const previousWeekReports = allReports.filter(r => 
-        new Date(r.submittedAt) >= twoWeeksAgo && 
-        new Date(r.submittedAt) < oneWeekAgo
-      );
-
-      // Get the top categories based on report content
-      // This would normally come from AI analysis of each report
-      // For now, we'll create synthetic categories based on report types
-      const reportCategories = allReports.map(report => report.type).filter(type => !!type);
-      const categoryMap: Record<string, number> = {};
-      
-      reportCategories.forEach(category => {
-        if (!category) return;
-        categoryMap[category] = (categoryMap[category] || 0) + 1;
-      });
-      
-      const topCategories = Object.entries(categoryMap)
-        .map(([category, count]) => ({
-          category,
-          count,
-          percentage: Math.round(count / reportCategories.length * 100)
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-
-      // Generate trends
-      const trends: ReportTrend[] = [];
-      const uniqueTypes = [...new Set(allReports.map(r => r.type))];
-      
-      uniqueTypes.forEach(type => {
-        if (!type) return;
-        
-        const currentWeekCount = currentWeekReports.filter(r => r.type === type).length;
-        const previousWeekCount = previousWeekReports.filter(r => r.type === type).length;
+      // Process all categories from current period
+      for (const category of Object.keys(currentPeriodCategories)) {
+        const currentCount = currentPeriodCategories[category] || 0;
+        const previousCount = previousPeriodCategories[category] || 0;
         
         let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
         let percentChange = 0;
         
-        if (previousWeekCount > 0) {
-          percentChange = Math.round((currentWeekCount - previousWeekCount) / previousWeekCount * 100);
-          
-          if (percentChange > 10) {
+        if (previousCount > 0) {
+          percentChange = Math.round(((currentCount - previousCount) / previousCount) * 100);
+          if (percentChange > 5) {
             trend = 'increasing';
-          } else if (percentChange < -10) {
+          } else if (percentChange < -5) {
             trend = 'decreasing';
           }
-        } else if (currentWeekCount > 0) {
-          // If there were no reports last week but there are this week
+        } else if (currentCount > 0) {
           trend = 'increasing';
-          percentChange = 100;
+          percentChange = 100; // New category
         }
         
         trends.push({
-          category: type,
-          count: currentWeekCount,
+          category,
+          count: currentCount,
           trend,
-          percentChange
+          percentChange,
         });
-      });
-
-      // Generate AI insights based on the reports
-      const aiInsights = await this.generateAiInsights(allReports);
-
-      return {
-        reportStats,
-        recentTrends: trends,
-        aiInsights,
-        reportsByLocation,
-        topIssueCategories: topCategories
-      };
+      }
+      
+      // Sort by count and then by percent change
+      return trends
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return Math.abs(b.percentChange) - Math.abs(a.percentChange);
+        })
+        .slice(0, 10);
     } catch (error) {
-      console.error('Error generating analytics data:', error);
-      throw new Error('Failed to generate analytics data');
-    }
-  }
-
-  /**
-   * Generate AI insights from a collection of reports
-   * @param reports The reports to analyze
-   * @returns Array of AI insights
-   */
-  private async generateAiInsights(reports: Report[]): Promise<AiInsight[]> {
-    if (reports.length === 0) {
+      console.error('Error calculating trends:', error);
       return [];
     }
-
+  }
+  
+  // Generate AI insights from report data
+  private async generateAIInsights(dateFilter?: any): Promise<AnalyticsInsight[]> {
     try {
-      // Get the 10 most recent reports
-      const recentReports = [...reports]
-        .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())
-        .slice(0, 10);
-
-      // Prepare the prompt for analysis
-      const reportSummaries = recentReports.map(r => 
-        `Report ID ${r.id}: Type: ${r.type || 'General'}, Priority: ${r.priority}, Status: ${r.status}, Content: ${r.content?.substring(0, 100)}...`
-      ).join('\n\n');
-
-      const analysisPrompt = `
-      Analyze these election observer reports and identify 3 key insights or patterns:
-
-      ${reportSummaries}
-
-      Format your response as a JSON array, with each item having the following structure:
-      {
-        "insight": "detailed description of the insight",
-        "confidence": "number between 0 and 1 indicating confidence level",
-        "category": "category of the insight (e.g., 'security', 'process', 'accessibility')",
-        "relatedReportIds": [list of report IDs that support this insight]
+      // Get reports for analysis
+      const reportData = await db
+        .select({
+          id: reports.id,
+          content: reports.content,
+          description: reports.description,
+          category: reports.category,
+          severity: reports.severity,
+          status: reports.status,
+        })
+        .from(reports)
+        .where(dateFilter)
+        .orderBy(desc(reports.createdAt))
+        .limit(100);
+      
+      if (reportData.length === 0) {
+        return [];
       }
-      `;
-
-      // Use a text generation model for sophisticated analysis
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: analysisPrompt,
-        parameters: {
-          max_new_tokens: 750,
-          temperature: 0.1,
-          return_full_text: false,
-        }
+      
+      // Prepare corpus for analysis
+      const reportCorpus = reportData.map(report => {
+        const content = typeof report.content === 'string' 
+          ? report.content 
+          : JSON.stringify(report.content);
+          
+        const description = report.description || '';
+        
+        return {
+          id: report.id,
+          text: `${description} ${content}`.trim(),
+          category: report.category,
+          severity: report.severity,
+          status: report.status,
+        };
       });
-
-      // Extract JSON from the response
-      const jsonMatch = response.generated_text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        throw new Error('AI response did not contain valid JSON array');
+      
+      // Group reports by category for pattern detection
+      const reportsByCategory: Record<string, typeof reportCorpus> = {};
+      
+      for (const report of reportCorpus) {
+        if (!report.category) continue;
+        
+        if (!reportsByCategory[report.category]) {
+          reportsByCategory[report.category] = [];
+        }
+        
+        reportsByCategory[report.category].push(report);
       }
-
-      const insights = JSON.parse(jsonMatch[0]);
+      
+      // Generate insights
+      const insights: AnalyticsInsight[] = [];
+      
+      // Category-based insights
+      for (const [category, categoryReports] of Object.entries(reportsByCategory)) {
+        if (categoryReports.length < 3) continue;
+        
+        // For categories with enough reports, identify patterns
+        const combinedText = categoryReports
+          .map(r => r.text)
+          .join(' ');
+          
+        // Use AI to extract patterns and generate insights
+        try {
+          const insight = await this.generateCategoryInsight(category, combinedText, categoryReports);
+          if (insight) {
+            insights.push(insight);
+          }
+        } catch (err) {
+          console.error(`Error generating insight for category ${category}:`, err);
+        }
+      }
+      
+      // Location-based insights
+      try {
+        const locationInsights = await this.generateLocationBasedInsights(reportCorpus);
+        insights.push(...locationInsights);
+      } catch (err) {
+        console.error('Error generating location-based insights:', err);
+      }
+      
+      // Time-based insights
+      try {
+        const timeInsights = await this.generateTimeBasedInsights(reportCorpus);
+        insights.push(...timeInsights);
+      } catch (err) {
+        console.error('Error generating time-based insights:', err);
+      }
+      
       return insights;
     } catch (error) {
       console.error('Error generating AI insights:', error);
-      
-      // Return a fallback insight if the AI service fails
-      return [{
-        insight: "Not enough report data to generate meaningful insights.",
-        confidence: 0.8,
-        category: "system",
-        relatedReportIds: []
-      }];
+      return [];
     }
   }
-
-  /**
-   * Predict potential issues based on historical patterns
-   * @param stationId Optional station ID to get predictions for a specific location
-   * @returns Predicted issues
-   */
-  async predictPotentialIssues(stationId?: number): Promise<{
-    issueType: string;
-    probability: number;
-    suggestedAction: string;
-  }[]> {
+  
+  // Generate category-specific insights
+  private async generateCategoryInsight(
+    category: string, 
+    text: string, 
+    reports: Array<{ id: number, text: string, category?: string, severity?: string, status?: string }>
+  ): Promise<AnalyticsInsight | null> {
     try {
-      // Get historical data
-      let reportsQuery = db.select().from(reports);
-      
-      if (stationId) {
-        reportsQuery = reportsQuery.where(eq(reports.stationId, stationId));
-      }
-      
-      const historicalReports = await reportsQuery;
-      
-      if (historicalReports.length < 5) {
-        return [{
-          issueType: 'Insufficient Data',
-          probability: 0,
-          suggestedAction: 'Collect more reports to enable predictions'
-        }];
-      }
-
-      // Get station information if a specific station is requested
-      let stationInfo = null;
-      if (stationId) {
-        const [station] = await db
-          .select()
-          .from(pollingStations)
-          .where(eq(pollingStations.id, stationId));
-        
-        stationInfo = station;
-      }
-
-      // Create a prompt for the AI to predict issues
-      const predictPrompt = `
-      Based on the following historical election reports${stationId ? ` for polling station "${stationInfo?.name}"` : ''}, 
-      predict the most likely issues that might occur and suggest preventative actions.
-      
-      Historical reports:
-      ${historicalReports.slice(0, 10).map(r => 
-        `- Type: ${r.type || 'General'}, Priority: ${r.priority}, Status: ${r.status}, Date: ${r.submittedAt}, Content: ${r.content?.substring(0, 100)}...`
-      ).join('\n')}
-      
-      Format your response as a JSON array with 3 items, each having this structure:
-      {
-        "issueType": "type of issue that might occur",
-        "probability": number between 0 and 1 indicating the likelihood,
-        "suggestedAction": "detailed suggestion to prevent or mitigate the issue"
-      }
+      // Generate prompt for the summarization model
+      const prompt = `
+        Analyze the following election observer reports about "${category}" issues:
+        ---
+        ${text.slice(0, 1000)} ${text.length > 1000 ? '...' : ''}
+        ---
+        Identify key patterns or insights that election administrators should know about.
+        Focus on actionable information that could improve election integrity.
       `;
-
-      // Use a text generation model for predictions
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: predictPrompt,
+      
+      // Generate insight using Hugging Face's summarization model
+      const result = await hf.summarization({
+        model: MODELS.summarization,
+        inputs: prompt,
         parameters: {
-          max_new_tokens: 750,
-          temperature: 0.2,
-          return_full_text: false,
+          max_length: 100,
+          min_length: 30,
         }
       });
-
-      // Extract JSON from the response
-      const jsonMatch = response.generated_text.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        throw new Error('AI response did not contain valid JSON array');
-      }
-
-      const predictions = JSON.parse(jsonMatch[0]);
-      return predictions;
-    } catch (error) {
-      console.error('Error predicting potential issues:', error);
       
-      // Return a fallback prediction if the AI service fails
-      return [{
-        issueType: 'General Process Violations',
-        probability: 0.5,
-        suggestedAction: 'Ensure all observers are properly trained on reporting procedures'
-      }];
+      if (!result || !result.summary_text) {
+        return null;
+      }
+      
+      // Extract related report IDs
+      const relatedReportIds = reports.map(r => r.id).slice(0, 5);
+      
+      // Calculate confidence based on number of reports and their severity
+      const criticalReports = reports.filter(r => r.severity === 'critical').length;
+      const confidence = Math.min(0.5 + (reports.length / 20) + (criticalReports / reports.length) * 0.3, 0.95);
+      
+      return {
+        insight: result.summary_text,
+        confidence,
+        category,
+        relatedReportIds,
+      };
+    } catch (error) {
+      console.error(`Error generating insight for category ${category}:`, error);
+      return null;
     }
   }
-
-  /**
-   * Generate a comprehensive report on election observation data
-   * @param startDate Start date for the report period
-   * @param endDate End date for the report period
-   * @returns HTML or markdown report content
-   */
+  
+  // Generate insights based on polling station patterns
+  private async generateLocationBasedInsights(
+    reports: Array<{ id: number, text: string, category?: string, severity?: string, status?: string }>
+  ): Promise<AnalyticsInsight[]> {
+    // This is a simplified implementation that would be expanded with actual location data
+    return [];
+  }
+  
+  // Generate insights based on temporal patterns
+  private async generateTimeBasedInsights(
+    reports: Array<{ id: number, text: string, category?: string, severity?: string, status?: string }>
+  ): Promise<AnalyticsInsight[]> {
+    // This is a simplified implementation that would be expanded with temporal analysis
+    return [];
+  }
+  
+  // Classify report content to determine category
+  private async classifyReportContent(report: { content?: any, id?: number }): Promise<string> {
+    try {
+      if (!report.content) return 'general issues';
+      
+      // Parse content if it's JSON
+      let textContent = '';
+      if (typeof report.content === 'string') {
+        textContent = report.content;
+      } else {
+        try {
+          // Extract text fields from JSON content
+          const contentObj = report.content;
+          textContent = Object.values(contentObj)
+            .filter(value => typeof value === 'string')
+            .join(' ');
+        } catch (err) {
+          textContent = JSON.stringify(report.content);
+        }
+      }
+      
+      if (!textContent || textContent.length < 10) {
+        return 'general issues';
+      }
+      
+      // Use zero-shot classification to categorize the report
+      const classification = await hf.zeroShotClassification({
+        model: MODELS.zeroShotClassification,
+        inputs: textContent.slice(0, 1000), // Limit length for performance
+        parameters: {
+          candidate_labels: REPORT_CATEGORIES,
+        }
+      });
+      
+      if (classification && classification.labels && classification.labels.length > 0) {
+        return classification.labels[0];
+      }
+      
+      return 'general issues';
+    } catch (error) {
+      console.error('Error classifying report content:', error);
+      return 'general issues';
+    }
+  }
+  
+  // Predict potential issues for a specific polling station
+  async predictIssues(stationId?: number): Promise<PredictedIssue[]> {
+    try {
+      // Get historical data for the station
+      let stationReports = [];
+      
+      if (stationId) {
+        stationReports = await db
+          .select({
+            id: reports.id,
+            content: reports.content,
+            description: reports.description,
+            category: reports.category,
+            severity: reports.severity,
+            status: reports.status,
+            createdAt: reports.createdAt,
+          })
+          .from(reports)
+          .where(eq(reports.pollingStationId, stationId))
+          .orderBy(desc(reports.createdAt));
+      } else {
+        // Get system-wide reports for general predictions
+        stationReports = await db
+          .select({
+            id: reports.id,
+            content: reports.content,
+            description: reports.description,
+            category: reports.category,
+            severity: reports.severity,
+            status: reports.status,
+            createdAt: reports.createdAt,
+          })
+          .from(reports)
+          .orderBy(desc(reports.createdAt))
+          .limit(100);
+      }
+      
+      if (stationReports.length === 0) {
+        return this.getGenericPredictions();
+      }
+      
+      // Analyze patterns in reports
+      const categoryCounts: Record<string, number> = {};
+      const severityCounts: Record<string, number> = {};
+      
+      for (const report of stationReports) {
+        const category = report.category || await this.classifyReportContent(report);
+        if (category) {
+          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+        }
+        
+        if (report.severity) {
+          severityCounts[report.severity] = (severityCounts[report.severity] || 0) + 1;
+        }
+      }
+      
+      // Find top categories
+      const sortedCategories = Object.entries(categoryCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([category]) => category);
+      
+      // Calculate severity trend
+      const hasCritical = (severityCounts['critical'] || 0) > 0;
+      const hasHigh = (severityCounts['high'] || 0) > 0;
+      
+      const predictions: PredictedIssue[] = [];
+      
+      // Generate predictions for top categories
+      for (const category of sortedCategories) {
+        const frequency = categoryCounts[category] / stationReports.length;
+        const hasCriticalInCategory = stationReports.some(
+          r => r.category === category && r.severity === 'critical'
+        );
+        
+        let probability = frequency;
+        if (hasCriticalInCategory) probability += 0.2;
+        if (hasHigh) probability += 0.1;
+        
+        // Cap probability at 0.95
+        probability = Math.min(probability, 0.95);
+        
+        const prediction: PredictedIssue = {
+          issueType: `${category.charAt(0).toUpperCase() + category.slice(1)}`,
+          probability,
+          suggestedAction: this.getSuggestedAction(category, probability),
+        };
+        
+        predictions.push(prediction);
+      }
+      
+      // If we don't have enough predictions, add generic ones
+      if (predictions.length < 3) {
+        const genericPredictions = this.getGenericPredictions()
+          .filter(p => !sortedCategories.includes(p.issueType.toLowerCase()));
+        
+        predictions.push(...genericPredictions.slice(0, 3 - predictions.length));
+      }
+      
+      return predictions.sort((a, b) => b.probability - a.probability);
+    } catch (error) {
+      console.error('Error predicting issues:', error);
+      return this.getGenericPredictions();
+    }
+  }
+  
+  // Generate fallback generic predictions
+  private getGenericPredictions(): PredictedIssue[] {
+    return [
+      {
+        issueType: 'Voter verification delays',
+        probability: 0.7,
+        suggestedAction: 'Ensure adequate staffing for voter ID verification and have backup procedures ready for high-volume periods.',
+      },
+      {
+        issueType: 'Ballot shortages',
+        probability: 0.5,
+        suggestedAction: 'Maintain higher ballot reserves and establish quick-response distribution system for emergency ballot deliveries.',
+      },
+      {
+        issueType: 'Technology failures',
+        probability: 0.4,
+        suggestedAction: 'Test all electronic systems 24 hours before election day and have paper backup systems ready to deploy.',
+      },
+    ];
+  }
+  
+  // Get suggested action based on issue type
+  private getSuggestedAction(category: string, probability: number): string {
+    const actions: Record<string, string> = {
+      'voter intimidation': 'Increase security presence and train poll workers on de-escalation techniques. Establish clear reporting protocols.',
+      'ballot issues': 'Verify ballot inventory and distribution processes. Ensure backup ballots are available and proper handling procedures are followed.',
+      'polling station logistics': 'Review station layout and staffing levels. Ensure adequate resources are allocated based on expected turnout.',
+      'voter eligibility disputes': 'Provide additional training on voter ID requirements and provisional ballot procedures. Have up-to-date voter rolls available.',
+      'counting irregularities': 'Implement double-verification procedures and ensure transparent counting processes with observer access.',
+      'technology issues': 'Test all systems prior to election day and have technical support staff on standby. Prepare paper backups for all electronic processes.',
+      'accessibility problems': 'Audit polling station for ADA compliance and provide additional accommodations for voters with disabilities.',
+      'observer rights violation': 'Retrain polling staff on observer rights and establish clear protocols for resolving disputes with observers.',
+      'violence': 'Coordinate with law enforcement for increased presence and develop emergency response procedures for polling stations.',
+      'general issues': 'Conduct comprehensive staff training and develop detailed contingency plans for common issues.',
+    };
+    
+    return actions[category] || 'Monitor the situation closely and ensure staff are prepared to address potential issues promptly.';
+  }
+  
+  // Generate a comprehensive report for a specific time period
   async generateComprehensiveReport(startDate: Date, endDate: Date): Promise<string> {
     try {
-      // Get all the relevant data for the time period
-      const reportData = await db
-        .select()
-        .from(reports)
-        .where(
-          and(
-            gte(reports.submittedAt, startDate),
-            lte(reports.submittedAt, endDate)
-          )
-        );
+      // Get analytics data for the time period
+      const analytics = await this.getDashboardData(startDate, endDate);
       
-      const assignmentData = await db
-        .select({
-          assignment: assignments,
-          user: users,
-          station: pollingStations
-        })
-        .from(assignments)
-        .leftJoin(users, eq(assignments.userId, users.id))
-        .leftJoin(pollingStations, eq(assignments.stationId, pollingStations.id))
-        .where(
-          and(
-            gte(assignments.startDate, startDate),
-            lte(assignments.endDate, endDate)
-          )
-        );
-
-      // Prepare the data summaries for the AI
-      const reportSummary = `
-      Reports Summary:
-      - Total Reports: ${reportData.length}
-      - Critical Reports: ${reportData.filter(r => r.priority === 'high').length}
-      - Medium Priority: ${reportData.filter(r => r.priority === 'medium').length}
-      - Low Priority: ${reportData.filter(r => r.priority === 'low').length}
-      - Resolved Reports: ${reportData.filter(r => r.status === 'resolved').length}
-      - Pending Reports: ${reportData.filter(r => r.status === 'pending').length}
+      // Format date range
+      const formatDate = (date: Date) => {
+        return date.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+      };
       
-      Top Report Types:
-      ${Object.entries(
-        reportData.reduce((acc, report) => {
-          const type = report.type || 'Unspecified';
-          acc[type] = (acc[type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      )
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([type, count]) => `- ${type}: ${count} reports`)
-        .join('\n')
+      const dateRange = `${formatDate(startDate)} to ${formatDate(endDate)}`;
+      
+      // Build report sections
+      const reportSections = [];
+      
+      // Introduction
+      reportSections.push(`# Election Observation Report\n**Period: ${dateRange}**\n`);
+      reportSections.push(`## Executive Summary\nThis report analyzes ${analytics.reportStats.totalReports} observation reports submitted during the reporting period. ${analytics.reportStats.criticalReports} critical issues were identified, representing ${Math.round((analytics.reportStats.criticalReports / analytics.reportStats.totalReports) * 100)}% of all reports.\n`);
+      
+      // Key statistics
+      reportSections.push(`## Key Statistics\n- Total Reports: ${analytics.reportStats.totalReports}\n- Critical Issues: ${analytics.reportStats.criticalReports}\n- Reports Reviewed: ${analytics.reportStats.reviewedReports}\n- Pending Review: ${analytics.reportStats.pendingReports}\n`);
+      
+      // Top issue categories
+      if (analytics.topIssueCategories.length > 0) {
+        reportSections.push(`## Top Issue Categories\n`);
+        analytics.topIssueCategories.forEach((category, index) => {
+          reportSections.push(`${index + 1}. **${category.category}**: ${category.count} reports (${category.percentage}%)`);
+        });
+        reportSections.push('');
       }
-      `;
-
-      const assignmentSummary = `
-      Assignments Summary:
-      - Total Assignments: ${assignmentData.length}
-      - Total Observers: ${new Set(assignmentData.map(a => a.user.id)).size}
-      - Total Polling Stations: ${new Set(assignmentData.map(a => a.station.id)).size}
-      - Completed Assignments: ${assignmentData.filter(a => a.assignment.status === 'completed').length}
-      - Active Assignments: ${assignmentData.filter(a => a.assignment.status === 'active').length}
-      `;
-
-      // Generate the comprehensive report using AI
-      const reportPrompt = `
-      Generate a comprehensive election observation report for the period from ${startDate.toDateString()} to ${endDate.toDateString()} 
-      based on the following data:
       
-      ${reportSummary}
+      // Critical locations
+      if (analytics.reportsByLocation.length > 0) {
+        reportSections.push(`## Locations of Concern\n`);
+        analytics.reportsByLocation
+          .filter(loc => loc.severity === 'high')
+          .forEach((location, index) => {
+            reportSections.push(`${index + 1}. **${location.locationName}**: ${location.count} reports (High Severity)`);
+          });
+        reportSections.push('');
+      }
       
-      ${assignmentSummary}
+      // Trends
+      if (analytics.recentTrends.length > 0) {
+        reportSections.push(`## Significant Trends\n`);
+        analytics.recentTrends
+          .filter(trend => trend.trend !== 'stable')
+          .forEach((trend, index) => {
+            const direction = trend.trend === 'increasing' ? 'Increase' : 'Decrease';
+            reportSections.push(`${index + 1}. **${trend.category}**: ${direction} of ${Math.abs(trend.percentChange)}% (${trend.count} reports)`);
+          });
+        reportSections.push('');
+      }
       
-      Your report should include:
-      1. An executive summary
-      2. Key findings and trends
-      3. Areas of concern
-      4. Recommendations for improvement
-      5. Conclusion
+      // AI insights
+      if (analytics.aiInsights.length > 0) {
+        reportSections.push(`## AI-Generated Insights\n`);
+        analytics.aiInsights.forEach((insight, index) => {
+          reportSections.push(`${index + 1}. **${insight.category}** (${Math.round(insight.confidence * 100)}% confidence):\n   ${insight.insight}\n`);
+        });
+      }
       
-      Format the report in Markdown, with proper headings, subheadings, and bullet points.
-      `;
-
-      // Use a text generation model for the report
-      const response = await hf.textGeneration({
-        model: 'mistralai/Mistral-7B-Instruct-v0.2',
-        inputs: reportPrompt,
-        parameters: {
-          max_new_tokens: 2000,
-          temperature: 0.2,
-          return_full_text: false,
+      // Recommendations
+      reportSections.push(`## Recommendations\n`);
+      
+      // Generate recommendations based on issues
+      const recommendations = [];
+      
+      if (analytics.reportStats.criticalReports > 0) {
+        recommendations.push('1. **Immediate Review**: Conduct thorough review of all critical issues and develop mitigation strategies for high-severity locations.');
+      }
+      
+      if (analytics.topIssueCategories.length > 0) {
+        const topCategory = analytics.topIssueCategories[0];
+        recommendations.push(`2. **${topCategory.category}**: Develop targeted interventions to address the most common issue category.`);
+      }
+      
+      if (analytics.recentTrends.filter(t => t.trend === 'increasing').length > 0) {
+        const increasingTrend = analytics.recentTrends.find(t => t.trend === 'increasing');
+        if (increasingTrend) {
+          recommendations.push(`3. **Trend Monitoring**: Closely monitor the increasing trend in ${increasingTrend.category} issues.`);
         }
-      });
-
-      return response.generated_text;
+      }
+      
+      recommendations.push('4. **Training Enhancement**: Provide additional training to observers on proper documentation and reporting procedures.');
+      recommendations.push('5. **Stakeholder Communication**: Share key findings with relevant election stakeholders to improve processes.');
+      
+      reportSections.push(recommendations.join('\n\n'));
+      
+      // Conclusion
+      reportSections.push(`\n## Conclusion\nThe data collected during this reporting period highlights both strengths and challenges in the election process. Continued vigilance and proactive measures are recommended to ensure the integrity and transparency of the election.`);
+      
+      return reportSections.join('\n\n');
     } catch (error) {
       console.error('Error generating comprehensive report:', error);
-      return `
-# Election Observation Report
-## Error Generating Report
-We encountered a technical issue while generating the comprehensive report. Please try again later or contact technical support.
-
-Error details: ${error instanceof Error ? error.message : 'Unknown error'}
-      `;
+      return 'Error generating report. Please try again later.';
     }
   }
 }
 
-// Create a singleton instance of the service
-export const aiAnalyticsService = new AiAnalyticsService();
+export const aiAnalyticsService = new AIAnalyticsService();

@@ -1,26 +1,25 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
 
-interface SpinnerProps {
+export interface SpinnerProps {
   className?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-export const Spinner = ({ className }: SpinnerProps) => {
+export function Spinner({ className, size = "md" }: SpinnerProps) {
+  const sizeClasses = {
+    sm: "w-4 h-4 border-2",
+    md: "w-8 h-8 border-2",
+    lg: "w-12 h-12 border-3",
+  };
+
   return (
-    <div className={cn("animate-spin", className)}>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-      </svg>
-    </div>
+    <div
+      className={cn(
+        "animate-spin rounded-full border-t-transparent border-primary",
+        sizeClasses[size],
+        className
+      )}
+    />
   );
-};
+}
