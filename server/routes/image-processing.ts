@@ -91,17 +91,28 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
         // Get the setting for subsequent photo changes
         const photoPolicy = await storage.getSystemSetting('profile_photo_policy');
         
-        if (photoPolicy && photoPolicy.settingValue.requireApprovalAfterVerification) {
+        console.log('User verification status:', user.verificationStatus);
+        console.log('Photo policy setting:', photoPolicy);
+        
+        // If no policy exists or it doesn't require approval, we'll auto-update
+        if (photoPolicy && photoPolicy.settingValue && photoPolicy.settingValue.requireApprovalAfterVerification) {
+          console.log('Approval required for this profile photo');
           autoUpdateProfile = false;
           
-          // Create a pending photo approval entry
-          await storage.createPhotoApproval({
-            userId: req.session.userId,
-            photoUrl: imageUrl,
-            status: 'pending'
-          });
-          
-          console.log(`Created pending photo approval for user ${req.session.userId}`);
+          try {
+            // Create a pending photo approval entry
+            const photoApproval = await storage.createPhotoApproval({
+              userId: req.session.userId,
+              photoUrl: imageUrl,
+              status: 'pending'
+            });
+            
+            console.log(`Created pending photo approval for user ${req.session.userId}:`, photoApproval);
+          } catch (approvalError) {
+            console.error('Error creating photo approval entry:', approvalError);
+          }
+        } else {
+          console.log('No approval required by policy, auto-updating profile');
         }
       }
       
