@@ -12,6 +12,8 @@ import {
   formTemplateExtendedSchema
 } from "@shared/schema";
 import trainingIntegrationRoutes from './routes/training-integration-routes';
+import registrationFormRoutes from './routes/registration-forms';
+import userImportRoutes from './routes/user-imports';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
@@ -1288,6 +1290,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
+  
+  // Registration form routes
+  app.use('/api/registration-forms', registrationFormRoutes);
+  
+  // User import routes
+  app.use('/api/user-imports', userImportRoutes);
   
   // Training integrations (Moodle, Zoom)
   app.use('/api/training', trainingIntegrationRoutes);
