@@ -98,10 +98,13 @@ const defaultTemplate: TemplateFormValues = {
     backgroundColor: "#FFFFFF",
     headerColor: "#4F46E5",
     textColor: "#000000",
-    accentColor: "#9333EA",
+    accentColor: "#FFBD00", // Jamaican flag gold color
+    logo: "/assets/caffe-logo.png", // CAFFE logo from assets
     showQrCode: true,
     showWatermark: true,
     showPhoto: true,
+    customText: "GENERAL ELECTION DECEMBER 2025",
+    footerText: "Citizens Action for Free and Fair Elections"
   }
 };
 
@@ -564,11 +567,68 @@ export default function IdCardManagement() {
 
   // Handle template edit
   const handleEdit = (template: IdCardTemplate) => {
+    // Convert the complex database template to our simplified UI template
+    const uiTemplate: TemplateUI = {
+      backgroundColor: "#FFFFFF",
+      headerColor: "#4F46E5",
+      textColor: "#000000",
+      accentColor: "#FFBD00",
+      logo: "/assets/caffe-logo.png",
+      showQrCode: true,
+      showWatermark: true,
+      showPhoto: true,
+      customText: "GENERAL ELECTION DECEMBER 2025",
+      footerText: "Citizens Action for Free and Fair Elections"
+    };
+    
+    // Try to extract values from the database template if they exist
+    if (template.templateData) {
+      // Background color
+      if (template.templateData.background) {
+        uiTemplate.backgroundColor = template.templateData.background;
+      }
+      
+      // Logo
+      if (template.templateData.logo) {
+        uiTemplate.logo = template.templateData.logo;
+      }
+      
+      // Extract colors and text from elements if available
+      template.templateData.elements?.forEach(element => {
+        if (element.type === 'header' && element.style?.backgroundColor) {
+          uiTemplate.headerColor = element.style.backgroundColor as string;
+        }
+        
+        if (element.type === 'text' && element.style?.color) {
+          uiTemplate.textColor = element.style.color as string;
+        }
+        
+        if (element.type === 'badge' && element.style?.backgroundColor) {
+          uiTemplate.accentColor = element.style.backgroundColor as string;
+        }
+        
+        if (element.type === 'customText' && element.value) {
+          uiTemplate.customText = element.value;
+        }
+        
+        if (element.type === 'footer' && element.value) {
+          uiTemplate.footerText = element.value;
+        }
+      });
+    }
+    
+    // Security features
+    if (template.securityFeatures) {
+      uiTemplate.showWatermark = !!template.securityFeatures.watermark;
+      uiTemplate.showQrCode = !!template.securityFeatures.qrEncryption;
+    }
+    
     const formattedTemplate: TemplateFormValues = {
       name: template.name,
       description: template.description,
-      template: template.template
+      template: uiTemplate
     };
+    
     setSelectedTemplate(template);
     setIsEditing(true);
     setPreviewTemplate(formattedTemplate);
@@ -576,10 +636,148 @@ export default function IdCardManagement() {
 
   // Handle template save
   const handleSave = (data: TemplateFormValues) => {
+    // Convert the UI template to the database template format
+    const convertTemplateForDB = (templateUI: TemplateUI) => {
+      // Create the database template structure
+      const dbTemplate: {
+        templateData: IdCardTemplate['templateData'],
+        securityFeatures: IdCardTemplate['securityFeatures']
+      } = {
+        templateData: {
+          background: templateUI.backgroundColor,
+          logo: templateUI.logo,
+          elements: [
+            {
+              type: 'header',
+              x: 0,
+              y: 0,
+              style: {
+                backgroundColor: templateUI.headerColor,
+                color: templateUI.textColor,
+                width: '100%',
+                height: '60px'
+              }
+            },
+            {
+              type: 'text',
+              x: 20,
+              y: 80,
+              value: 'Observer ID: CAF123456',
+              style: {
+                color: templateUI.textColor,
+                fontSize: '16px',
+                fontWeight: 'bold'
+              }
+            },
+            {
+              type: 'text',
+              x: 20,
+              y: 110,
+              value: 'Name: {observer.name}',
+              style: {
+                color: templateUI.textColor,
+                fontSize: '16px'
+              }
+            },
+            {
+              type: 'badge',
+              x: 20,
+              y: 140,
+              value: 'VERIFIED',
+              style: {
+                backgroundColor: templateUI.accentColor,
+                color: '#FFFFFF',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px'
+              }
+            }
+          ],
+          dimensions: {
+            width: 425,
+            height: 270
+          }
+        },
+        securityFeatures: {
+          watermark: templateUI.showWatermark ? 'CAFFE OFFICIAL' : undefined,
+          qrEncryption: templateUI.showQrCode,
+          otherFeatures: ['holographic seal', 'microprint']
+        }
+      };
+      
+      // Add optional elements
+      if (templateUI.customText) {
+        dbTemplate.templateData.elements.push({
+          type: 'customText',
+          x: 20,
+          y: 180,
+          value: templateUI.customText,
+          style: {
+            color: templateUI.textColor,
+            fontSize: '14px',
+            opacity: 0.8
+          }
+        });
+      }
+      
+      if (templateUI.footerText) {
+        dbTemplate.templateData.elements.push({
+          type: 'footer',
+          x: 0,
+          y: 240,
+          value: templateUI.footerText,
+          style: {
+            color: templateUI.textColor,
+            fontSize: '12px',
+            textAlign: 'center',
+            width: '100%'
+          }
+        });
+      }
+      
+      if (templateUI.showPhoto) {
+        dbTemplate.templateData.elements.push({
+          type: 'photo',
+          x: 320,
+          y: 80,
+          width: 80,
+          height: 80,
+          style: {
+            borderRadius: '50%',
+            border: `2px solid ${templateUI.accentColor}`
+          }
+        });
+      }
+      
+      if (templateUI.showQrCode) {
+        dbTemplate.templateData.elements.push({
+          type: 'qrCode',
+          x: 320,
+          y: 170,
+          width: 80,
+          height: 80,
+          value: '{observer.id}',
+          style: {
+            backgroundColor: '#FFFFFF',
+            padding: '4px'
+          }
+        });
+      }
+      
+      return dbTemplate;
+    };
+    
+    // Create the data to send to the API
+    const apiData = {
+      name: data.name,
+      description: data.description,
+      ...convertTemplateForDB(data.template)
+    };
+    
     if (selectedTemplate) {
-      updateTemplateMutation.mutate({ id: selectedTemplate.id, data });
+      updateTemplateMutation.mutate({ id: selectedTemplate.id, data: apiData });
     } else {
-      createTemplateMutation.mutate(data);
+      createTemplateMutation.mutate(apiData);
     }
   };
 
@@ -706,10 +904,62 @@ export default function IdCardManagement() {
                               variant="outline"
                               size="icon"
                               onClick={() => {
+                                // Use the same conversion function as handleEdit
+                                const uiTemplate: TemplateUI = {
+                                  backgroundColor: "#FFFFFF",
+                                  headerColor: "#4F46E5",
+                                  textColor: "#000000",
+                                  accentColor: "#FFBD00",
+                                  logo: "/assets/caffe-logo.png",
+                                  showQrCode: true,
+                                  showWatermark: true,
+                                  showPhoto: true,
+                                  customText: "GENERAL ELECTION DECEMBER 2025",
+                                  footerText: "Citizens Action for Free and Fair Elections"
+                                };
+                                
+                                // Try to extract values from the database template if they exist
+                                if (template.templateData) {
+                                  if (template.templateData.background) {
+                                    uiTemplate.backgroundColor = template.templateData.background;
+                                  }
+                                  
+                                  if (template.templateData.logo) {
+                                    uiTemplate.logo = template.templateData.logo;
+                                  }
+                                  
+                                  template.templateData.elements?.forEach(element => {
+                                    if (element.type === 'header' && element.style?.backgroundColor) {
+                                      uiTemplate.headerColor = element.style.backgroundColor as string;
+                                    }
+                                    
+                                    if (element.type === 'text' && element.style?.color) {
+                                      uiTemplate.textColor = element.style.color as string;
+                                    }
+                                    
+                                    if (element.type === 'badge' && element.style?.backgroundColor) {
+                                      uiTemplate.accentColor = element.style.backgroundColor as string;
+                                    }
+                                    
+                                    if (element.type === 'customText' && element.value) {
+                                      uiTemplate.customText = element.value;
+                                    }
+                                    
+                                    if (element.type === 'footer' && element.value) {
+                                      uiTemplate.footerText = element.value;
+                                    }
+                                  });
+                                }
+                                
+                                if (template.securityFeatures) {
+                                  uiTemplate.showWatermark = !!template.securityFeatures.watermark;
+                                  uiTemplate.showQrCode = !!template.securityFeatures.qrEncryption;
+                                }
+                                
                                 setPreviewTemplate({
                                   name: template.name,
                                   description: template.description,
-                                  template: template.template
+                                  template: uiTemplate
                                 });
                                 setIsPreviewOpen(true);
                               }}
@@ -767,7 +1017,61 @@ export default function IdCardManagement() {
                 template={selectedTemplate ? {
                   name: selectedTemplate.name,
                   description: selectedTemplate.description,
-                  template: selectedTemplate.template
+                  template: (() => {
+                    // Convert the complex database template to our simplified UI template
+                    const uiTemplate: TemplateUI = {
+                      backgroundColor: "#FFFFFF",
+                      headerColor: "#4F46E5",
+                      textColor: "#000000",
+                      accentColor: "#FFBD00",
+                      logo: "/assets/caffe-logo.png",
+                      showQrCode: true,
+                      showWatermark: true,
+                      showPhoto: true,
+                      customText: "GENERAL ELECTION DECEMBER 2025",
+                      footerText: "Citizens Action for Free and Fair Elections"
+                    };
+                    
+                    // Try to extract values from the database template if they exist
+                    if (selectedTemplate.templateData) {
+                      if (selectedTemplate.templateData.background) {
+                        uiTemplate.backgroundColor = selectedTemplate.templateData.background;
+                      }
+                      
+                      if (selectedTemplate.templateData.logo) {
+                        uiTemplate.logo = selectedTemplate.templateData.logo;
+                      }
+                      
+                      selectedTemplate.templateData.elements?.forEach(element => {
+                        if (element.type === 'header' && element.style?.backgroundColor) {
+                          uiTemplate.headerColor = element.style.backgroundColor as string;
+                        }
+                        
+                        if (element.type === 'text' && element.style?.color) {
+                          uiTemplate.textColor = element.style.color as string;
+                        }
+                        
+                        if (element.type === 'badge' && element.style?.backgroundColor) {
+                          uiTemplate.accentColor = element.style.backgroundColor as string;
+                        }
+                        
+                        if (element.type === 'customText' && element.value) {
+                          uiTemplate.customText = element.value;
+                        }
+                        
+                        if (element.type === 'footer' && element.value) {
+                          uiTemplate.footerText = element.value;
+                        }
+                      });
+                    }
+                    
+                    if (selectedTemplate.securityFeatures) {
+                      uiTemplate.showWatermark = !!selectedTemplate.securityFeatures.watermark;
+                      uiTemplate.showQrCode = !!selectedTemplate.securityFeatures.qrEncryption;
+                    }
+                    
+                    return uiTemplate;
+                  })()
                 } : undefined}
                 onSave={handleSave}
                 onPreview={handlePreview}
