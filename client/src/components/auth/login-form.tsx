@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Link } from "wouter";
+import { DeviceBindingAlert } from "./device-binding-alert";
+import { apiRequest } from "@/lib/queryClient";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -30,6 +32,12 @@ export default function LoginForm() {
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // New state for device binding error handling
+  const [deviceBindingFailed, setDeviceBindingFailed] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | undefined>();
+  const [observerId, setObserverId] = useState<string | undefined>();
+  const [requestingReset, setRequestingReset] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,19 +47,56 @@ export default function LoginForm() {
     },
   });
 
+  // Handle device reset request
+  const handleDeviceResetRequest = async () => {
+    try {
+      setRequestingReset(true);
+      // Send device reset request to server
+      await apiRequest("POST", "/api/auth/device-reset-request", {
+        username: form.getValues().username,
+        email: userEmail
+      });
+      
+      // Show success message
+      setDeviceBindingFailed(false);
+      setError("Device reset request submitted. Please check your email for further instructions.");
+    } catch (err) {
+      setError("Failed to request device reset. Please contact the CAFFE administration directly.");
+    } finally {
+      setRequestingReset(false);
+    }
+  };
+
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setIsSubmitting(true);
       setError(null);
+      setDeviceBindingFailed(false);
       
       await login(values.username, values.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err instanceof Error 
-          ? err.message 
-          : "Login failed. Please check your credentials and try again."
-      );
+      // Check if it's a device binding error
+      if (err instanceof Error && err.message.includes('DEVICE_MISMATCH')) {
+        setDeviceBindingFailed(true);
+        
+        // Try to get user metadata for the device binding alert
+        try {
+          const userRes = await apiRequest("GET", `/api/users/metadata?username=${encodeURIComponent(values.username)}`, null);
+          const userData = await userRes.json();
+          setUserEmail(userData.email);
+          setObserverId(userData.observerId);
+        } catch (metadataErr) {
+          // Silently fail, we'll show the alert without user details
+          console.error("Failed to fetch user metadata", metadataErr);
+        }
+      } else {
+        setError(
+          err instanceof Error 
+            ? err.message 
+            : "Login failed. Please check your credentials and try again."
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -64,6 +109,15 @@ export default function LoginForm() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+      
+      {deviceBindingFailed && (
+        <DeviceBindingAlert
+          onRequestReset={handleDeviceResetRequest}
+          isLoading={requestingReset}
+          userEmail={userEmail}
+          observerId={observerId}
+        />
       )}
       
       <Form {...form}>

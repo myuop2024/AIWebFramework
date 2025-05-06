@@ -124,6 +124,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
+  // User metadata route for device binding UI (limited information)
+  app.get('/api/users/metadata', async (req, res) => {
+    try {
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: 'Username is required' });
+      }
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Return limited info for security purposes
+      res.status(200).json({
+        observerId: user.observerId,
+        email: user.email
+      });
+    } catch (error) {
+      console.error('Error fetching user metadata:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  // Device reset request route
+  app.post('/api/auth/device-reset-request', async (req, res) => {
+    try {
+      const { username, email } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ message: 'Username is required' });
+      }
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        // For security, don't reveal if user exists or not
+        return res.status(200).json({ message: 'If the account exists, a reset request has been submitted' });
+      }
+      
+      // Verify email matches
+      if (email && user.email !== email) {
+        // For security, don't reveal the mismatch
+        return res.status(200).json({ message: 'If the account exists, a reset request has been submitted' });
+      }
+      
+      // In a real implementation, send email to admin or user
+      // For now, just log the request and clear the device ID
+      console.log(`Device reset requested for user: ${username}, observer ID: ${user.observerId}`);
+      
+      // Clear the device ID binding to allow login from a new device
+      // In a production app, this might require admin approval
+      await storage.updateUser(user.id, { deviceId: null });
+      
+      // Return success
+      res.status(200).json({ message: 'Device reset request has been submitted' });
+    } catch (error) {
+      console.error('Error processing device reset request:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {
