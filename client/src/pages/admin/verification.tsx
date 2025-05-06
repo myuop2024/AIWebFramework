@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import VerificationQueue from "@/components/admin/verification-queue";
+import AdminLayout from "@/components/layouts/admin-layout";
 
 export default function VerificationPage() {
   const [, navigate] = useLocation();
@@ -25,8 +26,10 @@ export default function VerificationPage() {
   }
   
   return (
-    <div className="container py-8">
-      <VerificationQueue />
-    </div>
+    <AdminLayout>
+      <div className="container py-8">
+        <VerificationQueue />
+      </div>
+    </AdminLayout>
   );
 }
