@@ -72,9 +72,7 @@ const RegistrationFormsAdmin = () => {
   // Create mutation for activating a form
   const activateFormMutation = useMutation({
     mutationFn: async (formId: number) => {
-      return apiRequest(`/api/registration-forms/${formId}/activate`, {
-        method: 'POST',
-      });
+      return apiRequest('POST', `/api/registration-forms/${formId}/activate`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/registration-forms'] });
@@ -90,13 +88,7 @@ const RegistrationFormsAdmin = () => {
   // Update form mutation
   const updateFormMutation = useMutation({
     mutationFn: async (form: Partial<RegistrationForm> & { id: number }) => {
-      return apiRequest(`/api/registration-forms/${form.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(form),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return apiRequest('PATCH', `/api/registration-forms/${form.id}`, form);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/registration-forms'] });

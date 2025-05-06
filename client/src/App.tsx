@@ -25,6 +25,7 @@ import Admin from "@/pages/admin";
 import AdminPage from "@/pages/admin-page";
 import VerificationPage from "@/pages/admin/verification";
 import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
+import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
 
 function Router() {
   return (
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/admin-dashboard" component={AdminPage} />
       <Route path="/admin/verification" component={VerificationPage} />
       <Route path="/admin/training-integrations" component={TrainingIntegrationsAdmin} />
+      <Route path="/admin/registration-forms" component={RegistrationFormsAdmin} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
