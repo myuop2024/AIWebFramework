@@ -12,13 +12,14 @@ import {
   PageHeaderDescription, 
   PageHeaderHeading 
 } from '@/components/ui/page-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -41,6 +42,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Spinner } from '@/components/ui/spinner';
+import { Label } from '@/components/ui/label';
+import { FormField } from '@/components/registration/dynamic-form';
 
 import { 
   ClipboardEdit, 
@@ -51,7 +68,13 @@ import {
   Trash,
   CheckCircle2, 
   XCircle,
-  Filter
+  Filter,
+  Edit,
+  PlusCircle,
+  Save,
+  Trash2,
+  AlertCircle,
+  UserPlus
 } from 'lucide-react';
 import { 
   type FormTemplate,
@@ -67,6 +90,13 @@ export default function FormTemplatesPage() {
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<FormTemplate | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  
+  // Registration Form States
+  const [selectedForm, setSelectedForm] = useState(null);
+  const [showFieldEditor, setShowFieldEditor] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -83,6 +113,15 @@ export default function FormTemplatesPage() {
   // Query to get all form templates
   const { data: templates = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/form-templates'],
+    enabled: !!user && user.role === 'admin'
+  });
+  
+  // Query to get all registration forms
+  const { 
+    data: registrationForms = [], 
+    isLoading: isLoadingForms 
+  } = useQuery({
+    queryKey: ['/api/registration-forms'],
     enabled: !!user && user.role === 'admin'
   });
 
@@ -189,6 +228,39 @@ export default function FormTemplatesPage() {
       });
     }
   });
+  
+  // Registration Form Mutations
+  const updateFormMutation = useMutation({
+    mutationFn: async ({ id, formData }) => {
+      const res = await apiRequest('PATCH', `/api/registration-forms/${id}`, formData);
+      return await res.json();
+    },
+    onSuccess: () => {
+      setSuccess("Registration form updated successfully");
+      setTimeout(() => setSuccess(''), 3000);
+      queryClient.invalidateQueries({ queryKey: ['/api/registration-forms'] });
+    },
+    onError: (error) => {
+      setError(`Failed to update form: ${error.toString()}`);
+      setTimeout(() => setError(''), 3000);
+    }
+  });
+  
+  const activateFormMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await apiRequest('POST', `/api/registration-forms/${id}/activate`, {});
+      return await res.json();
+    },
+    onSuccess: () => {
+      setSuccess("Registration form activated successfully");
+      setTimeout(() => setSuccess(''), 3000);
+      queryClient.invalidateQueries({ queryKey: ['/api/registration-forms'] });
+    },
+    onError: (error) => {
+      setError(`Failed to activate form: ${error.toString()}`);
+      setTimeout(() => setError(''), 3000);
+    }
+  });
 
   // Event handlers
   const handleCreateTemplate = (templateData: FormTemplateExtended) => {
@@ -217,6 +289,127 @@ export default function FormTemplatesPage() {
     setActiveTemplate(template);
     setIsPreviewing(true);
   };
+  
+  // Registration Form Handlers
+  const handleActivateForm = (id) => {
+    activateFormMutation.mutate(id);
+  };
+  
+  const handleAddField = () => {
+    if (!selectedForm) return;
+    
+    setEditingField({
+      id: `new-${Date.now()}`,
+      name: '',
+      type: 'text',
+      label: '',
+      placeholder: '',
+      order: selectedForm.fields.length + 1,
+      required: false,
+      isAdminOnly: false,
+      isUserEditable: true
+    });
+    setShowFieldEditor(true);
+  };
+  
+  const handleEditField = (field) => {
+    setEditingField({...field});
+    setShowFieldEditor(true);
+  };
+  
+  const handleRemoveField = (fieldId) => {
+    if (!selectedForm) return;
+    
+    const updatedFields = selectedForm.fields.filter(f => f.id !== fieldId);
+    
+    // Reorder remaining fields
+    const reorderedFields = updatedFields.map((field, index) => ({
+      ...field,
+      order: index + 1
+    }));
+    
+    updateFormMutation.mutate({
+      id: selectedForm.id,
+      formData: {
+        fields: reorderedFields
+      }
+    });
+    
+    setSelectedForm({
+      ...selectedForm,
+      fields: reorderedFields
+    });
+  };
+  
+  const handleChangeFieldOrder = (fieldId, direction) => {
+    if (!selectedForm) return;
+    
+    const fields = [...selectedForm.fields];
+    const index = fields.findIndex(f => f.id === fieldId);
+    
+    if (index === -1) return;
+    
+    if (direction === 'up' && index > 0) {
+      // Swap with previous field
+      const temp = fields[index];
+      fields[index] = {...fields[index - 1], order: temp.order};
+      fields[index - 1] = {...temp, order: fields[index].order};
+    } else if (direction === 'down' && index < fields.length - 1) {
+      // Swap with next field
+      const temp = fields[index];
+      fields[index] = {...fields[index + 1], order: temp.order};
+      fields[index + 1] = {...temp, order: fields[index].order};
+    }
+    
+    updateFormMutation.mutate({
+      id: selectedForm.id,
+      formData: {
+        fields
+      }
+    });
+    
+    setSelectedForm({
+      ...selectedForm,
+      fields
+    });
+  };
+  
+  const handleSaveField = () => {
+    if (!selectedForm || !editingField) return;
+    
+    const fields = [...selectedForm.fields];
+    const isNew = editingField.id.startsWith('new');
+    
+    if (isNew) {
+      // Add new field with a proper id
+      const newField = {
+        ...editingField,
+        id: editingField.id.replace('new-', '')
+      };
+      fields.push(newField);
+    } else {
+      // Update existing field
+      const index = fields.findIndex(f => f.id === editingField.id);
+      if (index !== -1) {
+        fields[index] = editingField;
+      }
+    }
+    
+    updateFormMutation.mutate({
+      id: selectedForm.id,
+      formData: {
+        fields
+      }
+    });
+    
+    setSelectedForm({
+      ...selectedForm,
+      fields
+    });
+    
+    setShowFieldEditor(false);
+    setEditingField(null);
+  };
 
   // Filter templates by category
   const filteredTemplates = categoryFilter 
@@ -228,43 +421,213 @@ export default function FormTemplatesPage() {
     new Set(templates.map((template: FormTemplate) => template.category))
   );
 
+  const renderFieldEditor = () => {
+    if (!editingField) return null;
+    
+    return (
+      <div className="space-y-4 py-4">
+        <div className="space-y-2">
+          <Label htmlFor="field-name">Field Name</Label>
+          <Input
+            id="field-name"
+            value={editingField.name}
+            onChange={(e) => setEditingField({...editingField, name: e.target.value})}
+            placeholder="e.g. firstName, address, phoneNumber"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="field-label">Field Label</Label>
+          <Input
+            id="field-label"
+            value={editingField.label}
+            onChange={(e) => setEditingField({...editingField, label: e.target.value})}
+            placeholder="e.g. First Name, Home Address, Phone Number"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="field-placeholder">Placeholder</Label>
+          <Input
+            id="field-placeholder"
+            value={editingField.placeholder || ''}
+            onChange={(e) => setEditingField({...editingField, placeholder: e.target.value})}
+            placeholder="e.g. Enter your first name"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="field-type">Field Type</Label>
+          <Select
+            value={editingField.type}
+            onValueChange={(value) => setEditingField({...editingField, type: value})}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select field type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="password">Password</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="tel">Telephone</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="select">Dropdown</SelectItem>
+              <SelectItem value="textarea">Text Area</SelectItem>
+              <SelectItem value="checkbox">Checkbox</SelectItem>
+              <SelectItem value="radio">Radio Buttons</SelectItem>
+              <SelectItem value="file">File Upload</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {(editingField.type === 'select' || editingField.type === 'radio') && (
+          <div className="space-y-2">
+            <Label htmlFor="field-options">Options (comma separated)</Label>
+            <Textarea
+              id="field-options"
+              value={editingField.options?.join(', ') || ''}
+              onChange={(e) => setEditingField({
+                ...editingField, 
+                options: e.target.value.split(',').map(opt => opt.trim()).filter(Boolean)
+              })}
+              placeholder="e.g. Option 1, Option 2, Option 3"
+            />
+          </div>
+        )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="field-mapping">Map to User Field</Label>
+          <Select
+            value={editingField.mapToUserField || 'none'}
+            onValueChange={(value) => {
+              if (value === "none") {
+                const { mapToUserField, ...rest } = editingField;
+                setEditingField(rest);
+              } else {
+                setEditingField({...editingField, mapToUserField: value});
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Map to user field" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="firstName">First Name</SelectItem>
+              <SelectItem value="lastName">Last Name</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="phoneNumber">Phone Number</SelectItem>
+              <SelectItem value="username">Username</SelectItem>
+              <SelectItem value="password">Password</SelectItem>
+              <SelectItem value="role">Role</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="field-profile-mapping">Map to Profile Field</Label>
+          <Select
+            value={editingField.mapToProfileField || 'none'}
+            onValueChange={(value) => {
+              if (value === "none") {
+                const { mapToProfileField, ...rest } = editingField;
+                setEditingField(rest);
+              } else {
+                setEditingField({...editingField, mapToProfileField: value});
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Map to profile field" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="address">Address</SelectItem>
+              <SelectItem value="city">City</SelectItem>
+              <SelectItem value="state">State/Parish</SelectItem>
+              <SelectItem value="zipCode">Zip/Postal Code</SelectItem>
+              <SelectItem value="country">Country</SelectItem>
+              <SelectItem value="idType">ID Type</SelectItem>
+              <SelectItem value="idNumber">ID Number</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center space-x-2 mt-6">
+          <Checkbox 
+            id="field-required"
+            checked={editingField.required || false} 
+            onCheckedChange={(checked) => setEditingField({...editingField, required: checked === true})}
+          />
+          <Label htmlFor="field-required">Required Field</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="field-admin-only"
+            checked={editingField.isAdminOnly || false} 
+            onCheckedChange={(checked) => setEditingField({...editingField, isAdminOnly: checked === true})}
+          />
+          <Label htmlFor="field-admin-only">Admin-Only Field</Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="field-editable"
+            checked={editingField.isUserEditable !== false} 
+            onCheckedChange={(checked) => setEditingField({...editingField, isUserEditable: checked === true})}
+          />
+          <Label htmlFor="field-editable">User Can Edit</Label>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-6">
-        <PageHeader className="pb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <PageHeaderHeading>Form Templates</PageHeaderHeading>
-              <PageHeaderDescription>
-                Create and manage form templates for various types of reports and observations
-              </PageHeaderDescription>
-            </div>
-            <Button onClick={() => setIsCreating(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Template
-            </Button>
-          </div>
+        <Tabs defaultValue="templates" className="space-y-6">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2">
+            <TabsTrigger value="templates">Form Templates</TabsTrigger>
+            <TabsTrigger value="registration">Registration Forms</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="templates" className="space-y-6">
+            <PageHeader className="pb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <PageHeaderHeading>Form Templates</PageHeaderHeading>
+                  <PageHeaderDescription>
+                    Create and manage form templates for various types of reports and observations
+                  </PageHeaderDescription>
+                </div>
+                <Button onClick={() => setIsCreating(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Template
+                </Button>
+              </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Button
-              variant={categoryFilter === null ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setCategoryFilter(null)}
-            >
-              All
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={categoryFilter === category ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => setCategoryFilter(category)}
-              >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </PageHeader>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <Button
+                  variant={categoryFilter === null ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setCategoryFilter(null)}
+                >
+                  All
+                </Button>
+                {categories.map((category) => (
+                  <Button
+                    key={category}
+                    variant={categoryFilter === category ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setCategoryFilter(category)}
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Button>
+                ))}
+              </div>
+            </PageHeader>
 
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -399,6 +762,208 @@ export default function FormTemplatesPage() {
             )}
           </div>
         )}
+        </TabsContent>
+        
+        <TabsContent value="registration" className="space-y-6">
+          <PageHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <PageHeaderHeading>Registration Forms</PageHeaderHeading>
+                <PageHeaderDescription>
+                  Configure and manage dynamic registration forms with custom fields
+                </PageHeaderDescription>
+              </div>
+            </div>
+          </PageHeader>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center mb-4">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              {error}
+            </div>
+          )}
+          
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center mb-4">
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              {success}
+            </div>
+          )}
+          
+          {isLoadingForms ? (
+            <div className="flex justify-center items-center h-64">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <>
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle>Available Registration Forms</CardTitle>
+                  <CardDescription>
+                    Select a form to customize its fields. Set a form as active to use it for new registrations.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registrationForms.map((form) => (
+                        <TableRow key={form.id} className={selectedForm?.id === form.id ? 'bg-muted/50' : ''}>
+                          <TableCell className="font-medium">{form.name}</TableCell>
+                          <TableCell className="max-w-md">{form.description}</TableCell>
+                          <TableCell>
+                            {form.isActive ? (
+                              <Badge className="bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Inactive</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedForm(form)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit Fields
+                              </Button>
+                              
+                              {!form.isActive && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleActivateForm(form.id)}
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Set Active
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+              
+              {selectedForm && (
+                <Card>
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>{selectedForm.name}</CardTitle>
+                        <CardDescription>{selectedForm.description}</CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => handleAddField()}>
+                        <PlusCircle className="h-4 w-4 mr-1" />
+                        Add Field
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">Order</TableHead>
+                          <TableHead>Field</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Required</TableHead>
+                          <TableHead>Mapping</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedForm.fields && selectedForm.fields.sort((a, b) => a.order - b.order).map((field) => (
+                          <TableRow key={field.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8" 
+                                  onClick={() => handleChangeFieldOrder(field.id, 'up')}
+                                  disabled={field.order === 1}
+                                >
+                                  <span className="sr-only">Move up</span>
+                                  ↑
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8" 
+                                  onClick={() => handleChangeFieldOrder(field.id, 'down')}
+                                  disabled={field.order === selectedForm.fields.length}
+                                >
+                                  <span className="sr-only">Move down</span>
+                                  ↓
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium">{field.label}</div>
+                              <div className="text-sm text-muted-foreground">{field.name}</div>
+                            </TableCell>
+                            <TableCell className="capitalize">{field.type}</TableCell>
+                            <TableCell>{field.required ? 'Yes' : 'No'}</TableCell>
+                            <TableCell>
+                              {field.mapToUserField ? (
+                                <Badge variant="secondary" className="mr-1">User: {field.mapToUserField}</Badge>
+                              ) : null}
+                              {field.mapToProfileField ? (
+                                <Badge variant="outline">Profile: {field.mapToProfileField}</Badge>
+                              ) : null}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditField(field)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span className="sr-only">Edit</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive/90"
+                                  onClick={() => handleRemoveField(field.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        
+                        {!selectedForm.fields || selectedForm.fields.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                              No fields configured for this form. Click "Add Field" to create the first field.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+        </TabsContent>
+        </Tabs>
 
         {/* Create Template Dialog */}
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
