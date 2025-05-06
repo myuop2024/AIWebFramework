@@ -5,7 +5,7 @@ import {
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
-  UserCheck
+  UserCheck, GraduationCap
 } from "lucide-react";
 
 interface SidebarProps {
@@ -45,6 +45,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5 mr-3" /> },
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
     { path: "/training", label: "Training", icon: <BookOpen className="h-5 w-5 mr-3" /> },
+    { path: "/integrated-training", label: "Integrated Training", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
   ];
   
   // Admin links (only shown to users with admin role)
@@ -53,6 +54,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
+    { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5 mr-3" /> },
   ] : [];
 
   const supportLinks = [
@@ -89,20 +91,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <div className="mb-6 pb-6 border-b border-gray-200">
             <div className="flex items-center">
               <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {/* If user has profile photo, display it */}
-                {user.profilePhoto ? (
-                  <img 
-                    src={user.profilePhoto} 
-                    alt={`${user.firstName} ${user.lastName}`} 
-                    className="h-full w-full object-cover" 
-                  />
-                ) : (
-                  <User className="h-6 w-6 text-gray-600" />
-                )}
+                <User className="h-6 w-6 text-gray-600" />
               </div>
               <div className="ml-3">
-                <p className="font-medium text-gray-800">{`${user.firstName} ${user.lastName}`}</p>
-                <p className="text-sm text-gray-500">Observer ID: <span className="font-medium">{user.observerId}</span></p>
+                <p className="font-medium text-gray-800">{user.username || "User"}</p>
+                <p className="text-sm text-gray-500">Observer Role: <span className="font-medium">{user.role || "observer"}</span></p>
               </div>
             </div>
           </div>

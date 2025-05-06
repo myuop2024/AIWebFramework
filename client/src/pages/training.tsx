@@ -29,6 +29,22 @@ export default function Training() {
 
   return (
     <MainLayout>
+      {user?.role === 'admin' && (
+        <div className="mb-4 flex justify-end space-x-4">
+          <a 
+            href="#/integrated-training" 
+            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            View Integrated Training Portal
+          </a>
+          <a 
+            href="#/admin/training-integrations" 
+            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            Manage Moodle & Zoom Settings
+          </a>
+        </div>
+      )}
       <TrainingModule userId={user?.id} isAdmin={user?.role === 'admin'} />
     </MainLayout>
   );
