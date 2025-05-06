@@ -36,12 +36,21 @@ export interface FormField {
   validation?: {
     pattern?: string;
     customMessage?: string;
+    min?: number;
+    max?: number;
   };
   isAdminOnly: boolean;
   placeholder?: string;
   isUserEditable: boolean;
   mapToUserField?: string;
   mapToProfileField?: string;
+  isEncrypted?: boolean;
+  isHidden?: boolean;
+  defaultValue?: string | number | boolean | string[] | null;
+  conditional?: {
+    field: string;
+    value: string | number | boolean | string[];
+  };
 }
 
 interface DynamicFormProps {
@@ -95,6 +104,37 @@ export const DynamicForm = ({
 }: DynamicFormProps) => {
   // State for password strength meter
   const [passwordStrength, setPasswordStrength] = useState(0);
+  
+  // This function handles form submission, processing files as needed
+  const handleFormSubmit = async (formData: any) => {
+    const fileFields = fields.filter(field => field.type === 'file');
+    
+    // If there are no file fields, just pass the data to onSubmit
+    if (fileFields.length === 0) {
+      onSubmit(formData);
+      return;
+    }
+    
+    // Create a FormData object to handle file uploads
+    const submitData = new FormData();
+    
+    // Process each field in the form data
+    Object.entries(formData).forEach(([key, value]) => {
+      // Check if this is a file field
+      const field = fields.find(f => f.name === key);
+      
+      if (field?.type === 'file' && value instanceof File) {
+        // Add the file to the FormData
+        submitData.append(key, value);
+      } else if (value !== undefined && value !== null) {
+        // Add non-file values to the FormData
+        submitData.append(key, value.toString());
+      }
+    });
+    
+    // Call the provided onSubmit function with the enhanced data
+    onSubmit(submitData);
+  };
   // Build schema dynamically based on fields configuration
   const buildSchema = () => {
     const schemaMap: Record<string, any> = {};
@@ -130,6 +170,25 @@ export const DynamicForm = ({
         case "textarea":
           fieldSchema = z.string();
           break;
+        case "file":
+          // Handle file type differently - we'll validate it as any since the value will be a File object
+          fieldSchema = z.any()
+            .refine(
+              (file) => file instanceof File || !field.required,
+              { message: "Please upload a file" }
+            )
+            .refine(
+              (file) => {
+                if (file instanceof File) {
+                  // Validate file size - default max 5MB
+                  const maxSize = 5 * 1024 * 1024; // 5MB
+                  return file.size <= maxSize;
+                }
+                return true;
+              },
+              { message: "File size should be less than 5MB" }
+            );
+          break;
         default: // text and other inputs
           fieldSchema = z.string();
           if (field.validation?.pattern) {
@@ -146,10 +205,12 @@ export const DynamicForm = ({
           fieldSchema = fieldSchema.refine((val) => val === true, {
             message: `${field.label} is required`,
           });
+        } else if (field.type === "file") {
+          // File validation is already handled in the case statement
         } else {
           fieldSchema = fieldSchema.min(1, `${field.label} is required`);
         }
-      } else if (field.type !== "checkbox") {
+      } else if (field.type !== "checkbox" && field.type !== "file") {
         // Make non-required fields optional
         fieldSchema = fieldSchema.optional();
       }
@@ -322,6 +383,45 @@ export const DynamicForm = ({
             <FormMessage />
           </FormItem>
         );
+        
+      case "file":
+        return (
+          <FormItem>
+            <FormLabel>
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input
+                type="file"
+                className="cursor-pointer"
+                {...form.register(field.name, {
+                  onChange: (e) => {
+                    const files = e.target.files;
+                    if (files?.length) {
+                      // Set the file object to the form value
+                      form.setValue(field.name, files[0], {
+                        shouldValidate: true,
+                      });
+                    }
+                  },
+                })}
+              />
+            </FormControl>
+            {field.helpText && (
+              <p className="text-sm text-gray-500">{field.helpText}</p>
+            )}
+            <FormMessage />
+            {form.formState.errors[field.name] && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {form.formState.errors[field.name]?.message?.toString()}
+                </AlertDescription>
+              </Alert>
+            )}
+          </FormItem>
+        );
 
       default:
         return null;
@@ -330,7 +430,7 @@ export const DynamicForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         {sortedFields.map((field) => (
           <FormField
             key={field.id}
