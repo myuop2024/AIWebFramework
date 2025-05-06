@@ -333,7 +333,7 @@ export default function TrainingIntegrationsAdmin() {
                   onClick={() => handleSaveSettings('moodle')}
                   disabled={savingSettings}
                 >
-                  {savingSettings ? <Spinner size="sm" className="mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  {savingSettings ? <Spinner className="mr-2 h-4 w-4" /> : <Save className="h-4 w-4 mr-2" />}
                   Save Settings
                 </Button>
               </CardFooter>
@@ -616,14 +616,14 @@ export default function TrainingIntegrationsAdmin() {
                   onClick={() => handleTestConnection('zoom')}
                   disabled={testingConnection}
                 >
-                  {testingConnection ? <Spinner size="sm" className="mr-2" /> : null}
+                  {testingConnection ? <Spinner className="mr-2 h-4 w-4" /> : null}
                   Test Connection
                 </Button>
                 <Button
                   onClick={() => handleSaveSettings('zoom')}
                   disabled={savingSettings}
                 >
-                  {savingSettings ? <Spinner size="sm" className="mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  {savingSettings ? <Spinner className="mr-2 h-4 w-4" /> : <Save className="h-4 w-4 mr-2" />}
                   Save Settings
                 </Button>
               </CardFooter>

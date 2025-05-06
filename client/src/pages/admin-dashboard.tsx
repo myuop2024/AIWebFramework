@@ -10,8 +10,9 @@ import { BackgroundAnimation } from "@/components/three/BackgroundAnimation";
 import { ThreeBarChart } from "@/components/three/ThreeBarChart";
 import { ElectoralMapViewer } from "@/components/three/ElectoralMapViewer";
 import { useQuery } from "@tanstack/react-query";
+import AdminLayout from "@/components/layouts/admin-layout";
 
-export function AdminDashboard() {
+export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
 
@@ -103,7 +104,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="container relative mx-auto py-6">
+    <AdminLayout title="Admin Dashboard">
       {/* Background animation */}
       <BackgroundAnimation color="#4F46E5" />
       
@@ -366,6 +367,6 @@ export function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </AdminLayout>
   );
 }

@@ -21,7 +21,7 @@ import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
-import AdminPage from "@/pages/admin-page";
+import AdminDashboard from "@/pages/admin-dashboard";
 import VerificationPage from "@/pages/admin/verification";
 import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
@@ -49,7 +49,7 @@ function Router() {
       <Route path="/chat" component={Chat} />
       <Route path="/form-templates" component={FormTemplates} />
       <Route path="/admin" component={Admin} />
-      <Route path="/admin-dashboard" component={AdminPage} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/admin/verification" component={VerificationPage} />
       <Route path="/admin/training-integrations" component={TrainingIntegrationsAdmin} />
       <Route path="/admin/registration-forms" component={RegistrationFormsAdmin} />
