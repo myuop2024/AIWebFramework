@@ -1,40 +1,48 @@
-import express from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { Session, SessionData } from 'express-session';
 
-// Extend the Express Request type to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        role: string;
-        observerId?: string;
-      };
-    }
+// Extend the Request type to include user information from the session
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    observerId?: string;
+    role?: string;
   }
 }
 
+declare module 'express' {
+  interface Request {
+    user?: {
+      id: number;
+      role: string;
+      observerId?: string;
+    };
+  }
+}
+
+/**
+ * Middleware to require authentication for routes
+ * @param roles - Optional array of roles that are allowed to access the route
+ */
 export function requireAuth(roles: string[] = []) {
-  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    // First check if user is authenticated
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Check if user is authenticated
     if (!req.session?.userId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Then check roles if specified
-    if (roles.length > 0) {
-      const userRole = req.session.role;
-      if (!userRole || !roles.includes(userRole)) {
-        return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
-      }
+    // Add user info to request for convenience
+    req.user = {
+      id: req.session.userId,
+      role: req.session.role || 'observer',
+      observerId: req.session.observerId
+    };
+
+    // If roles are specified, check if user has required role
+    if (roles.length > 0 && !roles.includes(req.session.role || '')) {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
     }
 
-    // If user is authenticated and has required role (if specified), proceed
-    req.user = {
-      id: req.session.userId as number,
-      role: req.session.role as string || 'observer',
-      observerId: req.session.observerId as string | undefined
-    };
-    
     next();
   };
 }
