@@ -1,11 +1,22 @@
-import { createCanvas, loadImage, Canvas } from 'canvas';
+import { createCanvas, loadImage, Canvas, registerFont, Image } from 'canvas';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 import PDFDocument from 'pdfkit';
 import { storage } from '../storage';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import type { User, UserProfile, IdCardTemplate } from '@shared/schema';
 import { Readable } from 'stream';
+
+// Register custom fonts for better typography
+try {
+  registerFont('./assets/fonts/Roboto-Regular.ttf', { family: 'Roboto' });
+  registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
+  registerFont('./assets/fonts/Roboto-Italic.ttf', { family: 'Roboto', style: 'italic' });
+} catch (error) {
+  console.log('Could not register fonts, using system defaults');
+}
 
 interface CardElement {
   type: 'text' | 'image' | 'qrcode' | 'barcode';
@@ -79,162 +90,298 @@ export class IdCardService {
       return existingTemplates[0];
     }
 
-    // Create a default template based on provided image
+    // Create a professional modern template 
     const defaultTemplate = {
-      name: 'CAFFE Observer ID Card',
-      description: 'Default observer ID card template',
+      name: 'CAFFE Professional Observer ID Card',
+      description: 'Advanced observer ID card template with premium design and security features',
       isActive: true,
       templateData: {
         dimensions: {
           width: 1024,
           height: 650
         },
-        background: '', // Will be populated with default background
+        background: '', // Will be populated with gradient or image
         elements: [
-          // Header
+          // Header with gradient text effect
           {
             type: 'text',
             x: 512,
-            y: 50,
-            value: 'CAFFE ID',
+            y: 70,
+            value: 'OFFICIAL OBSERVER',
             style: {
-              font: 'bold 48px Arial',
+              font: 'bold 54px Roboto',
               textAlign: 'center',
-              fillStyle: '#6b2c91'
+              fillStyle: '#4F46E5', // Modern indigo color
+              shadowColor: 'rgba(79, 70, 229, 0.5)',
+              shadowBlur: 10,
+              shadowOffsetX: 2,
+              shadowOffsetY: 2
             }
           },
-          // Observer ID
+          // Subheader
           {
             type: 'text',
-            x: 600,
-            y: 170,
+            x: 512,
+            y: 120,
+            value: 'CITIZENS ACTION FOR FREE AND FAIR ELECTIONS',
+            style: {
+              font: 'bold 18px Roboto',
+              textAlign: 'center',
+              fillStyle: '#6D28D9' // Purple color
+            }
+          },
+          // Election Date
+          {
+            type: 'text',
+            x: 512,
+            y: 150,
+            value: 'GENERAL ELECTION - DECEMBER 2025',
+            style: {
+              font: '16px Roboto',
+              textAlign: 'center',
+              fillStyle: '#4B5563' // Gray color
+            }
+          },
+          // Observer Name Label
+          {
+            type: 'text',
+            x: 650,
+            y: 200,
+            value: 'OBSERVER NAME',
+            style: {
+              font: 'bold 14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#6D28D9'
+            }
+          },
+          // Observer Name Value (dynamic)
+          {
+            type: 'text',
+            x: 650,
+            y: 225,
+            fieldName: 'fullName',
+            style: {
+              font: 'bold 22px Roboto',
+              textAlign: 'left',
+              fillStyle: '#1F2937'
+            }
+          },
+          // Observer ID Label
+          {
+            type: 'text',
+            x: 650,
+            y: 265,
+            value: 'ID NUMBER',
+            style: {
+              font: 'bold 14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#6D28D9'
+            }
+          },
+          // Observer ID Value (dynamic)
+          {
+            type: 'text',
+            x: 650,
+            y: 290,
             fieldName: 'observerId',
             style: {
-              font: 'bold 24px Arial',
+              font: 'bold 22px Roboto',
               textAlign: 'left',
-              fillStyle: '#a05a2c'
+              fillStyle: '#1F2937'
+            }
+          },
+          // Expiration Label
+          {
+            type: 'text',
+            x: 650,
+            y: 330,
+            value: 'VALID UNTIL',
+            style: {
+              font: 'bold 14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#6D28D9'
             }
           },
           // Expiration Date
           {
             type: 'text',
-            x: 600,
-            y: 280,
+            x: 650,
+            y: 355,
             value: 'December 31, 2025',
             style: {
-              font: '24px Arial',
+              font: 'bold 20px Roboto',
               textAlign: 'left',
-              fillStyle: '#a05a2c'
+              fillStyle: '#1F2937'
             }
           },
-          // Observer Photo (placeholder)
+          // Modern photo frame with shadow effect
+          {
+            type: 'text', // Using text to draw a frame
+            x: 240,
+            y: 225,
+            value: '',
+            style: {
+              shadowColor: 'rgba(0, 0, 0, 0.3)',
+              shadowBlur: 15,
+              shadowOffsetX: 5,
+              shadowOffsetY: 5
+            }
+          },
+          // Observer Photo with rounded corners (placeholder)
           {
             type: 'image',
             x: 230,
             y: 200,
-            width: 180,
-            height: 180,
+            width: 200,
+            height: 250,
             fieldName: 'profilePhotoUrl'
           },
-          // Observer Role Title
+          // Observer Role Title with gradient background
           {
             type: 'text',
-            x: 256,
-            y: 500,
-            value: 'ELECTION OBSERVER',
+            x: 330,
+            y: 480,
+            value: 'CERTIFIED ELECTION OBSERVER',
             style: {
-              font: 'bold 36px Arial',
+              font: 'bold 20px Roboto',
               textAlign: 'center',
-              fillStyle: '#c15fdc'
+              fillStyle: '#FFFFFF',
+              backgroundColor: '#4F46E5',
+              borderRadius: '10px',
+              padding: '10px 20px'
             }
           },
-          // QR code with observer data
+          // Security hologram indicator
+          {
+            type: 'text',
+            x: 330,
+            y: 530,
+            value: '✓ SECURITY HOLOGRAM',
+            style: {
+              font: 'bold 14px Roboto',
+              textAlign: 'center',
+              fillStyle: '#10B981' // Green color
+            }
+          },
+          // Advanced QR code with observer data
           {
             type: 'qrcode',
-            x: 575,
-            y: 575,
+            x: 830,
+            y: 500,
             width: 150,
             height: 150,
             fieldName: 'qrData'
           },
-          // Organization info
+          // Verification text
           {
             type: 'text',
-            x: 512,
-            y: 400,
-            value: 'CITIZENS ACTION FOR FREE AND FAIR ELECTIONS',
+            x: 830,
+            y: 600,
+            value: 'SCAN TO VERIFY',
             style: {
-              font: '16px Arial',
+              font: 'bold 14px Roboto',
               textAlign: 'center',
-              fillStyle: '#000000'
-            }
-          },
-          // Contact info
-          {
-            type: 'text',
-            x: 512,
-            y: 425,
-            value: '876-320-3603',
-            style: {
-              font: '16px Arial',
-              textAlign: 'center',
-              fillStyle: '#000000'
-            }
-          },
-          // Website
-          {
-            type: 'text',
-            x: 512,
-            y: 450,
-            value: 'www.caffejamaica.com',
-            style: {
-              font: '16px Arial',
-              textAlign: 'center',
-              fillStyle: '#000000'
-            }
-          },
-          // Email
-          {
-            type: 'text',
-            x: 512,
-            y: 475,
-            value: 'info@caffejamaica.com',
-            style: {
-              font: '16px Arial',
-              textAlign: 'center',
-              fillStyle: '#000000'
+              fillStyle: '#4B5563'
             }
           },
           // Barcode with observer ID
           {
             type: 'barcode',
-            x: 300,
-            y: 580,
-            width: 200,
+            x: 750,
+            y: 420,
+            width: 220,
             height: 50,
             fieldName: 'observerId'
           },
-          // Authorized badge
+          // Regional Office
           {
             type: 'text',
-            x: 762,
-            y: 610,
-            value: 'AUTHORIZED',
+            x: 230,
+            y: 560,
+            value: 'ISSUED BY KINGSTON REGIONAL OFFICE',
             style: {
-              font: 'bold 18px Arial',
+              font: '14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#4B5563'
+            }
+          },
+          // Contact info
+          {
+            type: 'text',
+            x: 230,
+            y: 585,
+            value: 'TEL: 876-320-3603 | EMAIL: info@caffejamaica.com',
+            style: {
+              font: '14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#4B5563'
+            }
+          },
+          // Website
+          {
+            type: 'text',
+            x: 230,
+            y: 610,
+            value: 'www.caffejamaica.com',
+            style: {
+              font: 'bold 14px Roboto',
+              textAlign: 'left',
+              fillStyle: '#4F46E5',
+              textDecoration: 'underline'
+            }
+          },
+          // Signature line
+          {
+            type: 'text',
+            x: 512,
+            y: 550,
+            value: '_______________________________',
+            style: {
+              font: '16px Roboto',
               textAlign: 'center',
-              fillStyle: '#0000ff',
-              backgroundColor: '#f0f0f0',
+              fillStyle: '#000000'
+            }
+          },
+          // Signature text
+          {
+            type: 'text',
+            x: 512,
+            y: 575,
+            value: 'AUTHORIZED SIGNATURE',
+            style: {
+              font: 'bold 12px Roboto',
+              textAlign: 'center',
+              fillStyle: '#4B5563'
+            }
+          },
+          // Official badge with glow effect
+          {
+            type: 'text',
+            x: 880,
+            y: 80,
+            value: 'OFFICIAL',
+            style: {
+              font: 'bold 18px Roboto',
+              textAlign: 'center',
+              fillStyle: '#FFFFFF',
+              backgroundColor: '#DC2626', // Red color
               borderRadius: '5px',
-              padding: '5px'
+              padding: '5px 10px',
+              shadowColor: 'rgba(220, 38, 38, 0.5)',
+              shadowBlur: 15
             }
           }
         ]
       },
       securityFeatures: {
-        watermark: 'CAFFE',
+        watermark: 'CAFFE OFFICIAL',
         qrEncryption: true,
-        otherFeatures: ['holographic overlay']
+        otherFeatures: [
+          'holographic overlay',
+          'microprinting',
+          'uv-reactive ink',
+          'digital signature verification'
+        ]
       }
     };
 
