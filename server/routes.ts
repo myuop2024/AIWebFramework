@@ -1301,5 +1301,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training integrations (Moodle, Zoom)
   app.use('/api/training', trainingIntegrationRoutes);
   
+  // AI Analytics routes
+  app.use('/api/analytics', analyticsRoutes);
+  
   return httpServer;
 }

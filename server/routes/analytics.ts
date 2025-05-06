@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { aiAnalyticsService } from '../services/ai-analytics-service';
 import { z } from 'zod';
-import { isAuthenticated, isAdmin } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ const stationPredictionSchema = z.object({
  * GET /api/analytics/dashboard
  * Get the analytics dashboard data
  */
-router.get('/dashboard', isAuthenticated, isAdmin, async (req, res) => {
+router.get('/dashboard', requireAuth(['admin']), async (req, res) => {
   try {
     // Parse date range from query params if provided
     let timeRange;
@@ -64,7 +64,7 @@ router.get('/dashboard', isAuthenticated, isAdmin, async (req, res) => {
  * POST /api/analytics/analyze-report
  * Analyze a report using AI
  */
-router.post('/analyze-report', isAuthenticated, async (req, res) => {
+router.post('/analyze-report', requireAuth(), async (req, res) => {
   try {
     const result = reportAnalysisSchema.safeParse(req.body);
     
@@ -90,7 +90,7 @@ router.post('/analyze-report', isAuthenticated, async (req, res) => {
  * POST /api/analytics/predict-issues
  * Predict potential issues
  */
-router.post('/predict-issues', isAuthenticated, isAdmin, async (req, res) => {
+router.post('/predict-issues', requireAuth(['admin']), async (req, res) => {
   try {
     const result = stationPredictionSchema.safeParse(req.body);
     
@@ -116,7 +116,7 @@ router.post('/predict-issues', isAuthenticated, isAdmin, async (req, res) => {
  * POST /api/analytics/generate-report
  * Generate a comprehensive report
  */
-router.post('/generate-report', isAuthenticated, isAdmin, async (req, res) => {
+router.post('/generate-report', requireAuth(['admin']), async (req, res) => {
   try {
     const result = dateRangeSchema.safeParse(req.body);
     
