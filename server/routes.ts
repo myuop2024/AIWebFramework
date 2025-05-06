@@ -1056,12 +1056,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pending profile photo approvals
   app.get('/api/admin/pending-photo-approvals', requireAdmin, async (req, res) => {
     try {
+      console.log('Fetching pending photo approvals');
       const pendingPhotos = await storage.getPendingPhotoApprovals();
+      console.log('Found pending photos:', pendingPhotos);
       
       // Enhance with user information
       const pendingPhotosWithUserInfo = await Promise.all(
         pendingPhotos.map(async (photo) => {
+          console.log('Processing photo approval:', photo);
           const user = await storage.getUser(photo.userId);
+          console.log('Found user for photo:', user);
           
           return {
             id: photo.id,
@@ -1074,6 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
+      console.log('Returning enhanced photo approvals:', pendingPhotosWithUserInfo);
       res.status(200).json(pendingPhotosWithUserInfo);
     } catch (error) {
       console.error('Error fetching pending photo approvals:', error);
