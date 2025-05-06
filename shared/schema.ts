@@ -13,6 +13,12 @@ export const systemSettings = pgTable("system_settings", {
   updatedBy: integer("updated_by").references(() => users.id),
 });
 
+export const insertSystemSettingSchema = createInsertSchema(systemSettings)
+  .omit({
+    id: true,
+    updatedAt: true,
+  });
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -626,3 +632,7 @@ export type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
 // ID card template types
 export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
 export type InsertIdCardTemplate = z.infer<typeof insertIdCardTemplateSchema>;
+
+// System setting types
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;

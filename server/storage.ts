@@ -1,6 +1,6 @@
 import {
   users, userProfiles, documents, pollingStations, assignments, formTemplates, reports, reportAttachments,
-  events, eventParticipation, faqEntries, newsEntries, messages, registrationForms, userImportLogs,
+  events, eventParticipation, faqEntries, newsEntries, messages, registrationForms, userImportLogs, systemSettings,
   type User, type InsertUser, type UserProfile, type InsertUserProfile,
   type Document, type InsertDocument, type PollingStation, type InsertPollingStation,
   type Assignment, type InsertAssignment, type FormTemplate, type InsertFormTemplate,
@@ -8,12 +8,18 @@ import {
   type Event, type InsertEvent, type EventParticipation, type InsertEventParticipation,
   type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage,
   type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
-  type BulkUserImport
+  type BulkUserImport, type SystemSetting, type InsertSystemSetting
 } from "@shared/schema";
 import crypto from 'crypto';
 
 // Interface for storage operations
 export interface IStorage {
+  // System settings operations
+  getSystemSetting(key: string): Promise<SystemSetting | undefined>;
+  getAllSystemSettings(): Promise<SystemSetting[]>;
+  createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
+  updateSystemSetting(key: string, value: any, updatedBy?: number): Promise<SystemSetting | undefined>;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -159,6 +165,7 @@ export class MemStorage implements IStorage {
   private messages: Map<number, Message>;
   private registrationForms: Map<number, RegistrationForm>;
   private userImportLogs: Map<number, UserImportLog>;
+  private systemSettings: Map<number, SystemSetting>;
   
   private userIdCounter: number;
   private profileIdCounter: number;
@@ -175,6 +182,7 @@ export class MemStorage implements IStorage {
   private messageIdCounter: number;
   private registrationFormIdCounter: number;
   private userImportLogIdCounter: number;
+  private systemSettingIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -192,6 +200,7 @@ export class MemStorage implements IStorage {
     this.messages = new Map();
     this.registrationForms = new Map();
     this.userImportLogs = new Map();
+    this.systemSettings = new Map();
     
     this.userIdCounter = 1;
     this.profileIdCounter = 1;
@@ -208,12 +217,26 @@ export class MemStorage implements IStorage {
     this.messageIdCounter = 1;
     this.registrationFormIdCounter = 1;
     this.userImportLogIdCounter = 1;
+    this.systemSettingIdCounter = 1;
     
     // Initialize with sample data
     this.initializeData();
   }
   
   private initializeData(): void {
+    // Default system settings
+    const profilePhotoPolicy: InsertSystemSetting = {
+      settingKey: "profile_photo_policy",
+      settingValue: {
+        requireApprovalAfterVerification: true, // Require admin approval for profile photo changes after initial verification
+        enableFaceDetection: true, // Warn when face is not clearly visible in profile photo
+        enableBackgroundRemoval: true, // Automatically remove background from profile photos
+      },
+      description: "Policy settings for profile photo uploads and processing"
+    };
+    
+    this.createSystemSetting(profilePhotoPolicy);
+    
     // Sample polling stations
     const station1: InsertPollingStation = {
       name: "Kingston Central #24",
@@ -299,6 +322,47 @@ export class MemStorage implements IStorage {
     this.createEvent(event2);
   }
 
+  // System settings operations
+  async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
+    return Array.from(this.systemSettings.values()).find(
+      (setting) => setting.settingKey === key
+    );
+  }
+
+  async getAllSystemSettings(): Promise<SystemSetting[]> {
+    return Array.from(this.systemSettings.values());
+  }
+
+  async createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting> {
+    const id = this.systemSettingIdCounter++;
+    const now = new Date();
+    
+    const newSetting: SystemSetting = {
+      ...setting,
+      id,
+      updatedAt: now
+    };
+    
+    this.systemSettings.set(id, newSetting);
+    return newSetting;
+  }
+
+  async updateSystemSetting(key: string, value: any, updatedBy?: number): Promise<SystemSetting | undefined> {
+    const setting = await this.getSystemSetting(key);
+    if (!setting) return undefined;
+    
+    const now = new Date();
+    const updatedSetting: SystemSetting = {
+      ...setting,
+      settingValue: value,
+      updatedAt: now,
+      updatedBy: updatedBy || setting.updatedBy
+    };
+    
+    this.systemSettings.set(setting.id, updatedSetting);
+    return updatedSetting;
+  }
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
