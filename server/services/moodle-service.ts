@@ -155,7 +155,15 @@ export class MoodleService {
   /**
    * Get activity completion status for a user in a course
    */
-  async getActivitiesCompletionStatus(userId: number, courseId: number) {
+  async getActivitiesCompletionStatus(userId: number, courseId: number): Promise<{
+    statuses: Array<{
+      cmid: number;
+      modname: string;
+      state: number;
+      timecompleted: number;
+      tracking: number;
+    }>
+  }> {
     return this.makeRequest(
       MoodleFunction.GET_ACTIVITIES_COMPLETION_STATUS, 
       { userid: userId, courseid: courseId }
@@ -210,7 +218,7 @@ export class MoodleService {
       if (totalActivities === 0) return 100; // No activities to complete
       
       const completedActivities = activitiesStatus.statuses.filter(
-        status => status.state === 1 // 1 = completed
+        (status: { state: number }) => status.state === 1 // 1 = completed
       ).length;
       
       return Math.round((completedActivities / totalActivities) * 100);

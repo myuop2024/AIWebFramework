@@ -253,7 +253,7 @@ export interface ZoomTrainingSession {
     url?: string;
     processingStatus?: string;
   };
-  attendance?: {
+  attendance: {
     present: boolean;
     joinTime?: string;
     leaveTime?: string;

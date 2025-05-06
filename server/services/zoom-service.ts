@@ -232,6 +232,16 @@ export class ZoomService {
    * Utility: Convert a Zoom meeting to a training session format
    */
   convertMeetingToTrainingSession(meeting: ZoomMeeting, attendance?: Partial<ZoomTrainingSession['attendance']>): ZoomTrainingSession {
+    // Ensure attendance has the required present property
+    const defaultAttendance: ZoomTrainingSession['attendance'] = {
+      present: false
+    };
+    
+    const mergedAttendance: ZoomTrainingSession['attendance'] = {
+      ...defaultAttendance,
+      ...(attendance || {})
+    };
+    
     return {
       id: meeting.id,
       topic: meeting.topic,
@@ -249,9 +259,7 @@ export class ZoomService {
         name: '', // Requires additional API call to get host details
         email: ''
       },
-      attendance: attendance || {
-        present: false
-      }
+      attendance: mergedAttendance
     };
   }
   
@@ -259,6 +267,16 @@ export class ZoomService {
    * Utility: Convert a Zoom webinar to a training session format
    */
   convertWebinarToTrainingSession(webinar: ZoomWebinar, attendance?: Partial<ZoomTrainingSession['attendance']>): ZoomTrainingSession {
+    // Ensure attendance has the required present property
+    const defaultAttendance: ZoomTrainingSession['attendance'] = {
+      present: false
+    };
+    
+    const mergedAttendance: ZoomTrainingSession['attendance'] = {
+      ...defaultAttendance,
+      ...(attendance || {})
+    };
+    
     return {
       id: webinar.id,
       topic: webinar.topic,
@@ -276,9 +294,7 @@ export class ZoomService {
         name: '', // Requires additional API call to get host details
         email: ''
       },
-      attendance: attendance || {
-        present: false
-      }
+      attendance: mergedAttendance
     };
   }
   

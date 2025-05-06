@@ -184,6 +184,47 @@ export const messages = pgTable("messages", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Training systems integration configuration
+export const trainingIntegrations = pgTable("training_integrations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  systems: jsonb("systems").notNull(), // Array of TrainingSystemConfig
+  syncSchedule: text("sync_schedule"), // Cron format for sync schedule
+  lastSyncTime: timestamp("last_sync_time"),
+  settings: jsonb("settings"), // Additional settings as JSON
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User training content progress
+export const trainingProgress = pgTable("training_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  contentId: text("content_id").notNull(), // External content ID (e.g., moodle_course_123)
+  contentType: text("content_type").notNull(), // course, meeting, webinar, etc.
+  source: text("source").notNull(), // moodle, zoom, internal
+  progress: integer("progress").default(0), // 0-100 percentage
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  lastAccessedAt: timestamp("last_accessed_at").defaultNow(),
+  metadata: jsonb("metadata"), // Additional data specific to content type
+});
+
+// External user mappings
+export const externalUserMappings = pgTable("external_user_mappings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  system: text("system").notNull(), // moodle, zoom, etc.
+  externalId: text("external_id").notNull(), // ID in the external system
+  externalUsername: text("external_username"),
+  externalEmail: text("external_email"),
+  metadata: jsonb("metadata"), // Additional mapping data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Define insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .omit({
@@ -381,7 +422,40 @@ export type News = typeof newsEntries.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
+// Training schema
+export const insertTrainingIntegrationSchema = createInsertSchema(trainingIntegrations)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    lastSyncTime: true,
+  });
+
+export const insertTrainingProgressSchema = createInsertSchema(trainingProgress)
+  .omit({
+    id: true,
+    completedAt: true,
+    lastAccessedAt: true,
+  });
+
+export const insertExternalUserMappingSchema = createInsertSchema(externalUserMappings)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 export type LoginUser = z.infer<typeof loginUserSchema>;
+
+// Define types for training integration
+export type InsertTrainingIntegration = z.infer<typeof insertTrainingIntegrationSchema>;
+export type TrainingIntegration = typeof trainingIntegrations.$inferSelect;
+
+export type InsertTrainingProgress = z.infer<typeof insertTrainingProgressSchema>;
+export type TrainingProgress = typeof trainingProgress.$inferSelect;
+
+export type InsertExternalUserMapping = z.infer<typeof insertExternalUserMappingSchema>;
+export type ExternalUserMapping = typeof externalUserMappings.$inferSelect;
 
 // Form field type definitions
 export type FormField = z.infer<typeof formFieldSchema>;
