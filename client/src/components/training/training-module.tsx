@@ -15,6 +15,7 @@ import { VideoTrainingModule } from "./video-training-module";
 import { ReadingTrainingModule } from "./reading-training-module";
 import { QuizTrainingModule } from "./quiz-training-module";
 import { TrainingManager } from "../admin/training-manager";
+import { IntegratedTrainingCard } from "@/components/ui/integrated-training-card";
 
 interface TrainingModuleProps {
   userId?: number;
@@ -843,6 +844,7 @@ export function TrainingModule({ userId, isAdmin = false }: TrainingModuleProps)
         
         <TabsContent value="available" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <IntegratedTrainingCard />
             {Object.entries(trainingContent).map(([id, module]) => (
               <Card key={id} className="flex flex-col">
                 <CardHeader>
