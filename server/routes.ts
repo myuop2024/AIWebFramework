@@ -14,6 +14,7 @@ import {
 import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
+import analyticsRoutes from './routes/analytics';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
