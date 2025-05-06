@@ -27,6 +27,9 @@ interface PollingStationStatus {
 }
 
 export default function StatusCards() {
+  // Access the user data from auth context for consistent observer ID display
+  const { user } = useAuth();
+  
   // Fetch user profile data
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
     queryKey: ['/api/users/profile'],
@@ -81,66 +84,94 @@ export default function StatusCards() {
     primary: assignmentsData?.find(a => a.isPrimary)?.station?.name || null
   };
 
+  // Get the observer ID from profile data or context
+  const observerId = profileData?.user?.observerId || user?.observerId || '';
+  
   // Loading skeleton
   if (isProfileLoading || isReportsLoading || isAssignmentsLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-5 animate-pulse">
-            <div className="flex justify-between">
-              <div>
-                <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-                <div className="h-6 bg-gray-200 rounded w-32"></div>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+      <>
+        {/* Observer ID Banner skeleton */}
+        <div className="bg-primary/70 text-white rounded-lg shadow p-4 mb-4 animate-pulse">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="h-3 bg-white/30 rounded w-24 mb-3"></div>
+              <div className="h-8 bg-white/30 rounded w-40"></div>
             </div>
-            <div className="mt-3">
-              <div className="w-full bg-gray-200 rounded-full h-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-40 mt-2"></div>
-            </div>
+            <div className="h-12 w-12 rounded-full bg-white/20"></div>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, index) => (
+            <div key={index} className="bg-white rounded-lg shadow p-5 animate-pulse">
+              <div className="flex justify-between">
+                <div>
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+                  <div className="h-6 bg-gray-200 rounded w-32"></div>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-gray-200"></div>
+              </div>
+              <div className="mt-3">
+                <div className="w-full bg-gray-200 rounded-full h-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-40 mt-2"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Verification Status Card */}
-      <div className="bg-white rounded-lg shadow p-5">
-        <div className="flex justify-between">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">Verification Status</p>
-            <p className="text-lg font-medium text-gray-900">
-              {verificationStatus.status === "pending" && "Pending"}
-              {verificationStatus.status === "in-progress" && "In Progress"}
-              {verificationStatus.status === "completed" && "Completed"}
-            </p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-            {verificationStatus.status === "completed" ? (
-              <CheckCircle className="h-6 w-6 text-success" />
-            ) : (
-              <Clock className="h-6 w-6 text-warning" />
-            )}
-          </div>
+    <>
+      {/* Observer ID Banner */}
+      <div className="bg-primary text-white rounded-lg shadow p-4 mb-4 flex justify-between items-center">
+        <div>
+          <p className="text-sm font-medium mb-1">Observer ID</p>
+          <p className="text-2xl font-bold tracking-wider">{observerId}</p>
         </div>
-        <div className="mt-3">
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={`${
-                verificationStatus.status === "completed"
-                  ? "bg-success"
-                  : "bg-warning"
-              } h-2 rounded-full`}
-              style={{ width: `${(verificationStatus.stepsCompleted / verificationStatus.totalSteps) * 100}%` }}
-            ></div>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {verificationStatus.stepsCompleted} of {verificationStatus.totalSteps} steps completed
-          </p>
+        <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
+          <User className="h-7 w-7 text-white" />
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Verification Status Card */}
+        <div className="bg-white rounded-lg shadow p-5">
+          <div className="flex justify-between">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Verification Status</p>
+              <p className="text-lg font-medium text-gray-900">
+                {verificationStatus.status === "pending" && "Pending"}
+                {verificationStatus.status === "in-progress" && "In Progress"}
+                {verificationStatus.status === "completed" && "Completed"}
+              </p>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+              {verificationStatus.status === "completed" ? (
+                <CheckCircle className="h-6 w-6 text-success" />
+              ) : (
+                <Clock className="h-6 w-6 text-warning" />
+              )}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`${
+                  verificationStatus.status === "completed"
+                    ? "bg-success"
+                    : "bg-warning"
+                } h-2 rounded-full`}
+                style={{ width: `${(verificationStatus.stepsCompleted / verificationStatus.totalSteps) * 100}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {verificationStatus.stepsCompleted} of {verificationStatus.totalSteps} steps completed
+            </p>
+          </div>
+        </div>
       
       {/* Training Status Card */}
       <div className="bg-white rounded-lg shadow p-5">
@@ -227,5 +258,6 @@ export default function StatusCards() {
         </div>
       </div>
     </div>
+    </>
   );
 }
