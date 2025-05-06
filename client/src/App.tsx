@@ -43,8 +43,7 @@ function Router() {
       <Route path="/reports/new" component={NewReport} />
       <Route path="/reports/:id" component={ReportDetail} />
       <Route path="/assignments" component={Assignments} />
-      <Route path="/training" component={Training} />
-      <Route path="/integrated-training" component={IntegratedTraining} />
+      <Route path="/training" component={IntegratedTraining} />
       <Route path="/faq" component={Faq} />
       <Route path="/chat" component={Chat} />
       <Route path="/form-templates" component={FormTemplates} />

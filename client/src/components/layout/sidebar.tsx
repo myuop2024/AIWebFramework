@@ -44,8 +44,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5 mr-3" /> },
     { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5 mr-3" /> },
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
-    { path: "/training", label: "Training", icon: <BookOpen className="h-5 w-5 mr-3" /> },
-    { path: "/integrated-training", label: "Integrated Training", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
+    { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
   ];
   
   // Admin links (only shown to users with admin role)
