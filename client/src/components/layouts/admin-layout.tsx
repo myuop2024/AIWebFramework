@@ -11,6 +11,7 @@ import {
   Pencil,
   UserPlus,
   LineChart,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       name: 'User Import', 
       href: '/admin/user-import', 
       icon: UserPlus
+    },
+    { 
+      name: 'ID Card Management', 
+      href: '/admin/id-cards', 
+      icon: CreditCard
     },
     { 
       name: 'System Settings', 

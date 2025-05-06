@@ -8,12 +8,66 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import DocumentUpload from "@/components/profile/document-upload";
-import { User, FileText, ShieldCheck, MapPin } from "lucide-react";
+import { User, FileText, ShieldCheck, MapPin, CreditCard, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
 export default function Profile() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
+  
+  // Function to download the ID card
+  const downloadIdCard = async () => {
+    try {
+      // Start download
+      toast({
+        title: "Downloading ID card...",
+        description: "Your ID card is being generated.",
+      });
+      
+      // Call the API to generate and download the ID card
+      const response = await fetch('/api/id-cards/download', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download ID card');
+      }
+      
+      // Get the blob from the response
+      const blob = await response.blob();
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link and click it to download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `observer-id-card-${user?.observerId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "ID Card Downloaded",
+        description: "Your ID card has been successfully downloaded.",
+        variant: "default",
+        className: "bg-green-600 text-white",
+      });
+    } catch (error) {
+      console.error('Error downloading ID card:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was a problem downloading your ID card. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -85,6 +139,20 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
+              
+              {/* ID Card Download Button */}
+              {user?.verificationStatus === "verified" && (
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={downloadIdCard}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    <span>Download ID Card</span>
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

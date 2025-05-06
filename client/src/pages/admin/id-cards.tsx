@@ -1,422 +1,106 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import AdminLayout from '@/components/layouts/admin-layout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Eye, Download, Trash, Save, CheckCircle } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { IdCardTemplate } from '@/../../shared/schema';
+import { apiRequest } from "@/lib/queryClient";
+import AdminLayout from "@/components/layouts/admin-layout";
+import { toast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CreditCard, Eye, PencilLine, Trash2, FileImage, QrCode, CheckCircle } from "lucide-react";
 
-// Define a simplified form schema for the template
+// Define typescript types for ID card templates
+type IdCardTemplate = {
+  id: number;
+  name: string;
+  description: string;
+  template: {
+    backgroundColor: string;
+    headerColor: string;
+    textColor: string;
+    accentColor: string;
+    logo?: string;
+    showQrCode: boolean;
+    showWatermark: boolean;
+    showPhoto: boolean;
+    customText?: string;
+    footerText?: string;
+  };
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// Define zod schema for the form
 const templateFormSchema = z.object({
-  name: z.string().min(1, { message: "Template name is required" }),
-  description: z.string().optional(),
-  isActive: z.boolean().default(false),
-  templateData: z.object({
-    background: z.string().optional(),
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  description: z.string().min(5, { message: "Description must be at least 5 characters" }),
+  template: z.object({
+    backgroundColor: z.string().default("#FFFFFF"),
+    headerColor: z.string().default("#4F46E5"),
+    textColor: z.string().default("#000000"),
+    accentColor: z.string().default("#9333EA"),
     logo: z.string().optional(),
-    elements: z.array(z.object({
-      type: z.enum(["text", "image", "qrcode", "barcode"]),
-      x: z.coerce.number(),
-      y: z.coerce.number(),
-      width: z.coerce.number().optional(),
-      height: z.coerce.number().optional(),
-      value: z.string().optional(),
-      fieldName: z.string().optional(),
-      style: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-    })).default([]),
-    dimensions: z.object({
-      width: z.coerce.number(),
-      height: z.coerce.number(),
-    }),
+    showQrCode: z.boolean().default(true),
+    showWatermark: z.boolean().default(true),
+    showPhoto: z.boolean().default(true),
+    customText: z.string().optional(),
+    footerText: z.string().optional(),
   }),
-  securityFeatures: z.object({
-    watermark: z.string().optional(),
-    hologram: z.string().optional(),
-    qrEncryption: z.boolean().optional(),
-    otherFeatures: z.array(z.string()).optional(),
-  }).optional().default({}),
 });
 
 type TemplateFormValues = z.infer<typeof templateFormSchema>;
 
 // Default template values
 const defaultTemplate: TemplateFormValues = {
-  name: "New Template",
-  description: "A customizable ID card template",
-  isActive: false,
-  templateData: {
-    background: "",
-    logo: "",
-    dimensions: {
-      width: 1024,
-      height: 650
-    },
-    elements: [
-      {
-        type: "text",
-        x: 512,
-        y: 50,
-        value: "OBSERVER ID CARD",
-        style: {
-          font: "bold 48px Arial",
-          textAlign: "center",
-          fillStyle: "#6b2c91"
-        }
-      },
-      {
-        type: "text",
-        x: 600,
-        y: 170,
-        fieldName: "observerId",
-        style: {
-          font: "bold 24px Arial",
-          textAlign: "left",
-          fillStyle: "#000000"
-        }
-      },
-      {
-        type: "text",
-        x: 600,
-        y: 280,
-        value: "December 31, 2025",
-        style: {
-          font: "24px Arial",
-          textAlign: "left",
-          fillStyle: "#000000"
-        }
-      },
-      {
-        type: "image",
-        x: 230,
-        y: 200,
-        width: 180,
-        height: 180,
-        fieldName: "profilePhotoUrl"
-      }
-    ]
-  },
-  securityFeatures: {
-    watermark: "CAFFE",
-    qrEncryption: true,
-    otherFeatures: ["holographic overlay"]
+  name: "",
+  description: "",
+  template: {
+    backgroundColor: "#FFFFFF",
+    headerColor: "#4F46E5",
+    textColor: "#000000",
+    accentColor: "#9333EA",
+    showQrCode: true,
+    showWatermark: true,
+    showPhoto: true,
   }
 };
 
-// Component to add a new element to the template
-const ElementEditor = ({ 
-  element, 
-  index, 
-  onUpdate, 
-  onRemove 
-}: { 
-  element: any; 
-  index: number; 
-  onUpdate: (index: number, data: any) => void; 
-  onRemove: (index: number) => void;
-}) => {
-  return (
-    <Card className="mb-4">
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-sm font-medium">Element {index + 1}: {element.type}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={() => onRemove(index)}>
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-2">
-            <Label htmlFor={`type-${index}`}>Type</Label>
-            <Select
-              value={element.type}
-              onValueChange={(value) => onUpdate(index, { ...element, type: value })}
-            >
-              <SelectTrigger id={`type-${index}`}>
-                <SelectValue placeholder="Select element type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="image">Image</SelectItem>
-                <SelectItem value="qrcode">QR Code</SelectItem>
-                <SelectItem value="barcode">Barcode</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`field-${index}`}>Data Field</Label>
-            <Select
-              value={element.fieldName || ""}
-              onValueChange={(value) => onUpdate(index, { ...element, fieldName: value || undefined, value: value ? undefined : element.value })}
-            >
-              <SelectTrigger id={`field-${index}`}>
-                <SelectValue placeholder="Select field or use static value" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Static Value</SelectItem>
-                <SelectItem value="observerId">Observer ID</SelectItem>
-                <SelectItem value="fullName">Full Name</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="phoneNumber">Phone Number</SelectItem>
-                <SelectItem value="role">Role</SelectItem>
-                <SelectItem value="profilePhotoUrl">Photo URL</SelectItem>
-                <SelectItem value="qrData">QR Data (for QR codes)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2">
-          <div className="space-y-2">
-            <Label htmlFor={`x-${index}`}>X Position</Label>
-            <Input
-              id={`x-${index}`}
-              type="number"
-              value={element.x}
-              onChange={(e) => onUpdate(index, { ...element, x: Number(e.target.value) })}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={`y-${index}`}>Y Position</Label>
-            <Input
-              id={`y-${index}`}
-              type="number"
-              value={element.y}
-              onChange={(e) => onUpdate(index, { ...element, y: Number(e.target.value) })}
-            />
-          </div>
-          {(element.type === "image" || element.type === "qrcode" || element.type === "barcode") && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor={`width-${index}`}>Width</Label>
-                <Input
-                  id={`width-${index}`}
-                  type="number"
-                  value={element.width || ""}
-                  onChange={(e) => onUpdate(index, { ...element, width: Number(e.target.value) || undefined })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor={`height-${index}`}>Height</Label>
-                <Input
-                  id={`height-${index}`}
-                  type="number"
-                  value={element.height || ""}
-                  onChange={(e) => onUpdate(index, { ...element, height: Number(e.target.value) || undefined })}
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        {element.fieldName === "" && element.type === "text" && (
-          <div className="space-y-2">
-            <Label htmlFor={`value-${index}`}>Text Value</Label>
-            <Input
-              id={`value-${index}`}
-              type="text"
-              value={element.value || ""}
-              onChange={(e) => onUpdate(index, { ...element, value: e.target.value })}
-            />
-          </div>
-        )}
-
-        {element.type === "text" && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-2">
-              <Label htmlFor={`font-${index}`}>Font</Label>
-              <Input
-                id={`font-${index}`}
-                type="text"
-                value={(element.style?.font as string) || "16px Arial"}
-                onChange={(e) => onUpdate(index, { 
-                  ...element, 
-                  style: { ...element.style, font: e.target.value } 
-                })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`align-${index}`}>Text Align</Label>
-              <Select
-                value={(element.style?.textAlign as string) || "left"}
-                onValueChange={(value) => onUpdate(index, { 
-                  ...element, 
-                  style: { ...element.style, textAlign: value } 
-                })}
-              >
-                <SelectTrigger id={`align-${index}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Left</SelectItem>
-                  <SelectItem value="center">Center</SelectItem>
-                  <SelectItem value="right">Right</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`color-${index}`}>Color</Label>
-              <div className="flex">
-                <Input
-                  id={`color-${index}`}
-                  type="color"
-                  className="w-12 p-1 h-10"
-                  value={(element.style?.fillStyle as string) || "#000000"}
-                  onChange={(e) => onUpdate(index, { 
-                    ...element, 
-                    style: { ...element.style, fillStyle: e.target.value } 
-                  })}
-                />
-                <Input
-                  type="text"
-                  className="w-full ml-2"
-                  value={(element.style?.fillStyle as string) || "#000000"}
-                  onChange={(e) => onUpdate(index, { 
-                    ...element, 
-                    style: { ...element.style, fillStyle: e.target.value } 
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-};
-
-// Template Editor Component
-const TemplateEditor = ({ template, onSave, onPreview, onCancel }: { 
-  template: TemplateFormValues; 
+// Template form component
+interface TemplateFormProps {
+  template?: TemplateFormValues;
   onSave: (data: TemplateFormValues) => void;
   onPreview: (data: TemplateFormValues) => void;
-  onCancel: () => void;
-}) => {
-  const [currentTemplate, setCurrentTemplate] = useState<TemplateFormValues>(template);
-  
+}
+
+function TemplateForm({ template = defaultTemplate, onSave, onPreview }: TemplateFormProps) {
   const form = useForm<TemplateFormValues>({
     resolver: zodResolver(templateFormSchema),
     defaultValues: template,
   });
 
-  const handleElementUpdate = (index: number, data: any) => {
-    const newElements = [...currentTemplate.templateData.elements];
-    newElements[index] = data;
-    setCurrentTemplate({
-      ...currentTemplate,
-      templateData: {
-        ...currentTemplate.templateData,
-        elements: newElements
-      }
-    });
-    form.setValue('templateData.elements', newElements);
-  };
-
-  const handleAddElement = (type: string) => {
-    const newElement = {
-      type: type as "text" | "image" | "qrcode" | "barcode",
-      x: 300,
-      y: 300,
-      ...(type === "text" ? { 
-        value: "Text element", 
-        style: { 
-          font: "16px Arial", 
-          textAlign: "left", 
-          fillStyle: "#000000" 
-        } 
-      } : {}),
-      ...(type === "image" ? { width: 100, height: 100 } : {}),
-      ...(type === "qrcode" ? { width: 150, height: 150, fieldName: "qrData" } : {}),
-      ...(type === "barcode" ? { width: 200, height: 50, fieldName: "observerId" } : {})
-    };
-    
-    const newElements = [...currentTemplate.templateData.elements, newElement];
-    setCurrentTemplate({
-      ...currentTemplate,
-      templateData: {
-        ...currentTemplate.templateData,
-        elements: newElements
-      }
-    });
-    form.setValue('templateData.elements', newElements);
-  };
-
-  const handleRemoveElement = (index: number) => {
-    const newElements = [...currentTemplate.templateData.elements];
-    newElements.splice(index, 1);
-    setCurrentTemplate({
-      ...currentTemplate,
-      templateData: {
-        ...currentTemplate.templateData,
-        elements: newElements
-      }
-    });
-    form.setValue('templateData.elements', newElements);
-  };
-
   const onSubmit = (data: TemplateFormValues) => {
     onSave(data);
   };
 
-  const handlePreview = () => {
-    const values = form.getValues();
-    onPreview(values);
-  };
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="elements">Elements</TabsTrigger>
-            <TabsTrigger value="security">Security Features</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="general" className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <FormField
               control={form.control}
               name="name"
@@ -424,13 +108,13 @@ const TemplateEditor = ({ template, onSave, onPreview, onCancel }: {
                 <FormItem>
                   <FormLabel>Template Name</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="e.g. Standard Observer ID Card" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -438,566 +122,666 @@ const TemplateEditor = ({ template, onSave, onPreview, onCancel }: {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} value={field.value || ''} />
+                    <Textarea 
+                      placeholder="Describe the purpose of this template" 
+                      className="resize-none min-h-[80px]" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Set as Active Template</FormLabel>
-                    <FormDescription>
-                      This template will be used for all ID cards
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="templateData.dimensions.width"
+                name="template.backgroundColor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Width (px)</FormLabel>
+                    <FormLabel>Background Color</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <ColorPicker value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
-                name="templateData.dimensions.height"
+                name="template.headerColor"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Height (px)</FormLabel>
+                    <FormLabel>Header Color</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <ColorPicker value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.textColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Text Color</FormLabel>
+                    <FormControl>
+                      <ColorPicker value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.accentColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Accent Color</FormLabel>
+                    <FormControl>
+                      <ColorPicker value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            
+          </div>
+
+          <div className="space-y-6">
             <FormField
               control={form.control}
-              name="templateData.background"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Background Image URL (optional)</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ''} />
-                  </FormControl>
-                  <FormDescription>
-                    Leave empty for a default gradient background
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="templateData.logo"
+              name="template.logo"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Logo URL (optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </TabsContent>
-          
-          <TabsContent value="elements" className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Template Elements</h3>
-              <div className="flex space-x-2">
-                <Select onValueChange={handleAddElement}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Add element" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Add Text</SelectItem>
-                    <SelectItem value="image">Add Image</SelectItem>
-                    <SelectItem value="qrcode">Add QR Code</SelectItem>
-                    <SelectItem value="barcode">Add Barcode</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {currentTemplate.templateData.elements.map((element, index) => (
-                <ElementEditor
-                  key={index}
-                  element={element}
-                  index={index}
-                  onUpdate={handleElementUpdate}
-                  onRemove={handleRemoveElement}
-                />
-              ))}
-              
-              {currentTemplate.templateData.elements.length === 0 && (
-                <div className="text-center p-6 border border-dashed rounded-lg">
-                  <p className="text-muted-foreground">No elements added yet. Add elements to design your card.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="security" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="securityFeatures.watermark"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Watermark Text</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ''} />
+                    <div className="flex gap-2">
+                      <Input placeholder="URL to the logo image" {...field} value={field.value || ''} />
+                      <Button type="button" variant="outline" size="icon">
+                        <FileImage className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormDescription>
-                    Text to display as a watermark on the ID card
+                    Use a publicly accessible URL for the logo
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="template.showQrCode"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>QR Code</FormLabel>
+                      <FormDescription>
+                        Display a QR code for verification
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.showWatermark"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Watermark</FormLabel>
+                      <FormDescription>
+                        Add a security watermark to the card
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="template.showPhoto"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Observer Photo</FormLabel>
+                      <FormDescription>
+                        Display the observer's profile photo
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="securityFeatures.qrEncryption"
+              name="template.customText"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Enable QR Code Encryption</FormLabel>
-                    <FormDescription>
-                      Encrypt data stored in QR codes for enhanced security
-                    </FormDescription>
-                  </div>
+                <FormItem>
+                  <FormLabel>Custom Text (optional)</FormLabel>
                   <FormControl>
-                    <Switch
-                      checked={field.value || false}
-                      onCheckedChange={field.onChange}
+                    <Textarea 
+                      placeholder="Any additional text to display on the card" 
+                      className="resize-none min-h-[80px]" 
+                      {...field} 
+                      value={field.value || ''}
                     />
                   </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="securityFeatures.hologram"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hologram Text (for printing)</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ''} />
-                  </FormControl>
-                  <FormDescription>
-                    Text to display as a hologram on printed cards
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex justify-end space-x-2">
+
+            <FormField
+              control={form.control}
+              name="template.footerText"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Footer Text (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Valid until December 2025" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2">
           <Button 
             type="button" 
-            variant="outline" 
-            onClick={onCancel}
+            variant="outline"
+            onClick={() => onPreview(form.getValues())}
           >
-            Cancel
-          </Button>
-          <Button 
-            type="button"
-            variant="secondary"
-            onClick={handlePreview}
-          >
-            <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
-          <Button type="submit">
-            <Save className="mr-2 h-4 w-4" />
-            Save Template
-          </Button>
+          <Button type="submit">Save Template</Button>
         </div>
       </form>
     </Form>
   );
-};
+}
 
-// Main ID Card Management Component
-function IdCardManagement() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+// ID Card Template Preview component
+interface TemplatePreviewProps {
+  template: TemplateFormValues;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function TemplatePreview({ template, isOpen, onClose }: TemplatePreviewProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>ID Card Preview</DialogTitle>
+          <DialogDescription>
+            Preview of how the ID card will appear for observers
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="p-4">
+          <div 
+            className="w-full aspect-[85/54] rounded-lg overflow-hidden shadow-lg"
+            style={{ backgroundColor: template.template.backgroundColor }}
+          >
+            <div 
+              className="h-16 px-6 flex items-center justify-between"
+              style={{ backgroundColor: template.template.headerColor }}
+            >
+              <div className="flex items-center gap-2">
+                {template.template.logo && (
+                  <img src={template.template.logo} alt="Logo" className="h-10 w-auto" />
+                )}
+                <h1 
+                  className="text-2xl font-bold"
+                  style={{ color: template.template.textColor }}
+                >
+                  CAFFE ID
+                </h1>
+              </div>
+              {template.template.showWatermark && (
+                <div className="opacity-20 text-xs">
+                  OFFICIAL
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 flex flex-col md:flex-row gap-4">
+              {template.template.showPhoto && (
+                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2" style={{ borderColor: template.template.accentColor }}>
+                  <FileImage className="h-10 w-10 text-gray-400" />
+                </div>
+              )}
+              
+              <div className="flex-1">
+                <div style={{ color: template.template.textColor }}>
+                  <p className="text-sm font-medium">Observer ID</p>
+                  <p className="text-xl font-bold mb-2">CAF123456</p>
+                  
+                  <p className="text-sm font-medium">Name</p>
+                  <p className="text-lg mb-2">John Doe</p>
+                  
+                  <p className="text-sm font-medium">Status</p>
+                  <Badge style={{ backgroundColor: template.template.accentColor }}>VERIFIED</Badge>
+                </div>
+                
+                {template.template.customText && (
+                  <p className="mt-2 text-sm opacity-75" style={{ color: template.template.textColor }}>
+                    {template.template.customText}
+                  </p>
+                )}
+              </div>
+              
+              {template.template.showQrCode && (
+                <div className="flex-none w-24 h-24 bg-white p-1 rounded-lg">
+                  <QrCode className="w-full h-full text-gray-800" />
+                </div>
+              )}
+            </div>
+            
+            {template.template.footerText && (
+              <div className="p-2 text-center text-sm" style={{ color: template.template.textColor }}>
+                {template.template.footerText}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Main component
+export default function IdCardManagement() {
+  const [selectedTemplate, setSelectedTemplate] = useState<IdCardTemplate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentTemplate, setCurrentTemplate] = useState<TemplateFormValues | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateFormValues>(defaultTemplate);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
+
+  const queryClient = useQueryClient();
+
   // Fetch templates
   const { data: templates, isLoading } = useQuery({
     queryKey: ['/api/id-cards/templates'],
-    queryFn: () => apiRequest<IdCardTemplate[]>('/api/id-cards/templates'),
+    refetchInterval: false,
   });
-  
+
   // Create template mutation
-  const createMutation = useMutation({
+  const createTemplateMutation = useMutation({
     mutationFn: (data: TemplateFormValues) => 
-      apiRequest('/api/id-cards/templates', { method: 'POST', data }),
+      apiRequest('/api/id-cards/templates', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
       toast({
         title: "Template Created",
-        description: "ID card template has been created successfully.",
+        description: "The ID card template has been created successfully.",
       });
       setIsEditing(false);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create template. Please try again.",
+        description: "Failed to create the template. Please try again.",
         variant: "destructive",
       });
+      console.error(error);
     }
   });
-  
+
   // Update template mutation
-  const updateMutation = useMutation({
+  const updateTemplateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number, data: TemplateFormValues }) => 
-      apiRequest(`/api/id-cards/templates/${id}`, { method: 'PUT', data }),
+      apiRequest(`/api/id-cards/templates/${id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
       toast({
         title: "Template Updated",
-        description: "ID card template has been updated successfully.",
+        description: "The ID card template has been updated successfully.",
       });
       setIsEditing(false);
+      setSelectedTemplate(null);
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update template. Please try again.",
+        description: "Failed to update the template. Please try again.",
         variant: "destructive",
       });
+      console.error(error);
     }
   });
-  
+
   // Delete template mutation
-  const deleteMutation = useMutation({
+  const deleteTemplateMutation = useMutation({
     mutationFn: (id: number) => 
-      apiRequest(`/api/id-cards/templates/${id}`, { method: 'DELETE' }),
+      apiRequest(`/api/id-cards/templates/${id}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
       toast({
         title: "Template Deleted",
-        description: "ID card template has been deleted successfully.",
+        description: "The ID card template has been deleted.",
+      });
+      setDeleteDialogOpen(false);
+      setTemplateToDelete(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete the template. Please try again.",
+        variant: "destructive",
+      });
+      console.error(error);
+    }
+  });
+
+  // Activate template mutation
+  const activateTemplateMutation = useMutation({
+    mutationFn: (id: number) => 
+      apiRequest(`/api/id-cards/templates/${id}/activate`, 'POST'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
+      toast({
+        title: "Template Activated",
+        description: "The ID card template is now active.",
       });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete template. Please try again.",
+        description: "Failed to activate the template. Please try again.",
         variant: "destructive",
       });
+      console.error(error);
     }
   });
-  
-  // Preview template
-  const previewTemplate = async (data: TemplateFormValues) => {
-    try {
-      // If we're editing an existing template, use its ID
-      const templateId = currentTemplate && 'id' in currentTemplate ? (currentTemplate as any).id : null;
-      
-      // Display a loading toast
-      const loadingToast = toast({
-        title: "Generating preview...",
-        description: "Please wait while we generate your preview.",
-      });
-      
-      // Make a POST request to the preview endpoint
-      const response = await fetch('/api/id-cards/preview-template', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to generate preview');
-      }
-      
-      // Convert the response to a blob and create a URL
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
-      setShowPreview(true);
-      
-      // Dismiss the loading toast
-      toast.dismiss(loadingToast);
-    } catch (error) {
-      toast({
-        title: "Preview Failed",
-        description: "Failed to generate preview. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Generate ID card for download
-  const generateIdCard = async (userId: number) => {
-    try {
-      const response = await fetch(`/api/id-cards/generate/${userId}`);
-      if (!response.ok) {
-        throw new Error('Failed to generate ID card');
-      }
-      
-      // Create a blob from the PDF response
-      const blob = await response.blob();
-      
-      // Create a download link and click it
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `observer-id-${userId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      
-      toast({
-        title: "ID Card Generated",
-        description: "ID card has been generated and downloaded successfully.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate ID card. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const handleCreateNew = () => {
-    setCurrentTemplate(defaultTemplate);
-    setIsEditing(true);
-  };
-  
-  const handleEdit = (template: IdCardTemplate) => {
-    setCurrentTemplate(template as unknown as TemplateFormValues);
-    setIsEditing(true);
-  };
-  
-  const handleSave = (data: TemplateFormValues) => {
-    if (currentTemplate && 'id' in currentTemplate) {
-      updateMutation.mutate({ id: (currentTemplate as any).id, data });
-    } else {
-      createMutation.mutate(data);
-    }
-  };
-  
-  const handlePreview = (data: TemplateFormValues) => {
-    previewTemplate(data);
-  };
-  
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this template?')) {
-      deleteMutation.mutate(id);
-    }
-  };
-  
-  const handleCloseEditor = () => {
-    setIsEditing(false);
-    setCurrentTemplate(null);
+
+  // Generate template preview
+  const generatePreview = async (data: TemplateFormValues) => {
+    setPreviewTemplate(data);
+    setIsPreviewOpen(true);
   };
 
-  const handleGenerateOwnCard = () => {
-    // Generate ID card for the current user
-    generateIdCard(0); // The backend will use the session user ID
+  // Handle template edit
+  const handleEdit = (template: IdCardTemplate) => {
+    const formattedTemplate: TemplateFormValues = {
+      name: template.name,
+      description: template.description,
+      template: template.template
+    };
+    setSelectedTemplate(template);
+    setIsEditing(true);
+    setPreviewTemplate(formattedTemplate);
   };
-  
+
+  // Handle template save
+  const handleSave = (data: TemplateFormValues) => {
+    if (selectedTemplate) {
+      updateTemplateMutation.mutate({ id: selectedTemplate.id, data });
+    } else {
+      createTemplateMutation.mutate(data);
+    }
+  };
+
+  // Handle template preview
+  const handlePreview = (data: TemplateFormValues) => {
+    generatePreview(data);
+  };
+
+  // Handle template delete
+  const handleDeleteClick = (id: number) => {
+    setTemplateToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle template activate
+  const handleActivate = (id: number) => {
+    activateTemplateMutation.mutate(id);
+  };
+
+  // Render loading state
+  if (isLoading) {
+    return (
+      <AdminLayout title="ID Card Management">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-2/3" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <AdminLayout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">ID Card Management</h1>
-            <p className="text-muted-foreground mt-1">Create and manage ID card templates for observers</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleGenerateOwnCard}>
-              <Download className="mr-2 h-4 w-4" />
-              Download My ID Card
+    <AdminLayout title="ID Card Management">
+      <Tabs defaultValue={isEditing ? "edit" : "templates"} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger 
+              value="templates" 
+              onClick={() => isEditing && setIsEditing(false)}
+            >
+              Templates
+            </TabsTrigger>
+            <TabsTrigger 
+              value="edit"
+              onClick={() => !isEditing && setIsEditing(true)}
+            >
+              {selectedTemplate ? "Edit Template" : "Create Template"}
+            </TabsTrigger>
+          </TabsList>
+          
+          {!isEditing && (
+            <Button onClick={() => {
+              setSelectedTemplate(null);
+              setIsEditing(true);
+            }}>
+              Create New Template
             </Button>
-            <Button onClick={handleCreateNew}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Template
-            </Button>
-          </div>
+          )}
         </div>
         
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading templates...</span>
-          </div>
-        ) : isEditing ? (
+        <TabsContent value="templates">
           <Card>
             <CardHeader>
-              <CardTitle>
-                {currentTemplate && 'id' in currentTemplate ? 'Edit Template' : 'Create New Template'}
-              </CardTitle>
+              <CardTitle>ID Card Templates</CardTitle>
               <CardDescription>
-                Design your ID card template by adding and positioning elements
+                Manage the templates used to generate observer ID cards
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TemplateEditor
-                template={currentTemplate!}
+              {templates?.length === 0 ? (
+                <div className="text-center py-6">
+                  <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-lg font-medium">No templates found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Create your first ID card template to get started
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setSelectedTemplate(null);
+                      setIsEditing(true);
+                    }}
+                    className="mt-4"
+                  >
+                    Create Template
+                  </Button>
+                </div>
+              ) : (
+                <Table>
+                  <TableCaption>A list of all ID card templates</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {templates?.map((template: IdCardTemplate) => (
+                      <TableRow key={template.id}>
+                        <TableCell className="font-medium">{template.name}</TableCell>
+                        <TableCell>{template.description}</TableCell>
+                        <TableCell>
+                          {template.isActive ? (
+                            <Badge variant="success">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Inactive</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                setPreviewTemplate({
+                                  name: template.name,
+                                  description: template.description,
+                                  template: template.template
+                                });
+                                setIsPreviewOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleEdit(template)}
+                            >
+                              <PencilLine className="h-4 w-4" />
+                            </Button>
+                            {!template.isActive && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleDeleteClick(template.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!template.isActive && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleActivate(template.id)}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="edit">
+          <Card>
+            <CardHeader>
+              <CardTitle>{selectedTemplate ? "Edit Template" : "Create New Template"}</CardTitle>
+              <CardDescription>
+                {selectedTemplate 
+                  ? "Modify the selected ID card template" 
+                  : "Create a new template for generating observer ID cards"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TemplateForm 
+                template={selectedTemplate ? {
+                  name: selectedTemplate.name,
+                  description: selectedTemplate.description,
+                  template: selectedTemplate.template
+                } : undefined}
                 onSave={handleSave}
                 onPreview={handlePreview}
-                onCancel={handleCloseEditor}
               />
             </CardContent>
           </Card>
-        ) : (
-          <>
-            {templates && templates.length > 0 ? (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>ID Card Templates</CardTitle>
-                    <CardDescription>
-                      Manage your ID card templates and set the active template
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {templates.map((template) => (
-                          <TableRow key={template.id}>
-                            <TableCell className="font-medium">{template.name}</TableCell>
-                            <TableCell>{template.description || 'No description'}</TableCell>
-                            <TableCell>
-                              {template.isActive ? (
-                                <div className="flex items-center">
-                                  <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                                  <span className="text-sm">Active</span>
-                                </div>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">Inactive</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handlePreview(template as unknown as TemplateFormValues)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEdit(template)}
-                                >
-                                  Edit
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleDelete(template.id)}
-                                  disabled={template.isActive}
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center p-12">
-                  <div className="rounded-full bg-muted p-3 mb-4">
-                    <Plus className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No Templates Found</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    You haven't created any ID card templates yet. Create your first template to get started.
-                  </p>
-                  <Button onClick={handleCreateNew}>Create Template</Button>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
-        
-        {/* Preview Dialog */}
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogContent className="max-w-screen-md">
-            <DialogHeader>
-              <DialogTitle>Template Preview</DialogTitle>
-              <DialogDescription>
-                This is a preview of how the ID card will look
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-center p-4 bg-gray-100 rounded-md">
-              {previewUrl && (
-                <iframe 
-                  src={previewUrl} 
-                  className="w-full h-[600px] border-0 rounded"
-                  title="ID Card Preview"
-                />
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowPreview(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Preview Dialog */}
+      <TemplatePreview 
+        template={previewTemplate}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the ID card template.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (templateToDelete !== null) {
+                  deleteTemplateMutation.mutate(templateToDelete);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
-
-export default IdCardManagement;
