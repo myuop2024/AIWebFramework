@@ -25,6 +25,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import VerificationPage from "@/pages/admin/verification";
 import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
+import IdCardManagement from "@/pages/admin/id-cards";
 import Analytics from "@/pages/analytics";
 
 function Router() {
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/admin/verification" component={VerificationPage} />
       <Route path="/admin/training-integrations" component={TrainingIntegrationsAdmin} />
       <Route path="/admin/registration-forms" component={RegistrationFormsAdmin} />
+      <Route path="/admin/id-cards" component={IdCardManagement} />
       <Route path="/admin/analytics" component={Analytics} />
       
       {/* Fallback to 404 */}

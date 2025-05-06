@@ -15,6 +15,7 @@ import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
 import analyticsRoutes from './routes/analytics';
+import idCardRoutes from './routes/id-cards';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
@@ -1303,6 +1304,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI Analytics routes
   app.use('/api/analytics', analyticsRoutes);
+  
+  // ID Card routes
+  app.use('/api/id-cards', idCardRoutes);
   
   return httpServer;
 }
