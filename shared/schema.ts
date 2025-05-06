@@ -184,6 +184,34 @@ export const messages = pgTable("messages", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Dynamic registration form configuration
+export const registrationForms = pgTable("registration_forms", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  fields: jsonb("fields").notNull(), // Array of registration field definitions
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  version: integer("version").default(1).notNull(),
+});
+
+// Bulk import records
+export const userImportLogs = pgTable("user_import_logs", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  importedBy: integer("imported_by").references(() => users.id),
+  totalRecords: integer("total_records").notNull(),
+  successCount: integer("success_count").notNull(),
+  failureCount: integer("failure_count").notNull(),
+  importedAt: timestamp("imported_at").defaultNow(),
+  status: text("status").notNull(), // "in_progress", "completed", "failed"
+  errors: jsonb("errors"), // Any error details
+  options: jsonb("options"), // Import options (verification status, etc.)
+  sourceType: text("source_type").notNull(), // "csv", "google_form", "json", etc.
+});
+
 // Training systems integration configuration
 export const trainingIntegrations = pgTable("training_integrations", {
   id: serial("id").primaryKey(),
@@ -445,7 +473,83 @@ export const insertExternalUserMappingSchema = createInsertSchema(externalUserMa
     updatedAt: true,
   });
 
+// Registration form schemas
+export const registrationFieldSchema = z.object({
+  id: z.string().uuid().optional(),
+  type: z.enum([
+    'text', 'textarea', 'number', 'email', 'tel', 'date', 'select',
+    'checkbox', 'radio', 'file'
+  ]),
+  label: z.string().min(1, "Label is required"),
+  name: z.string().min(1, "Field name is required"),
+  required: z.boolean().default(false),
+  placeholder: z.string().optional(),
+  helpText: z.string().optional(),
+  options: z.array(
+    z.object({
+      label: z.string(),
+      value: z.string(),
+    })
+  ).optional(),
+  validation: z.object({
+    min: z.number().optional(),
+    max: z.number().optional(),
+    pattern: z.string().optional(),
+    customMessage: z.string().optional(),
+  }).optional(),
+  defaultValue: z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(z.string()),
+    z.null()
+  ]).optional().nullable(),
+  isHidden: z.boolean().default(false),
+  order: z.number().optional(),
+  isUserEditable: z.boolean().default(true), // Can users modify this field after registration
+  isAdminOnly: z.boolean().default(false), // Only visible/editable by admins
+  mapToUserField: z.string().optional(), // Maps to a field in the users table
+  mapToProfileField: z.string().optional(), // Maps to a field in the userProfiles table
+});
+
+export const insertRegistrationFormSchema = createInsertSchema(registrationForms)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    version: true,
+  })
+  .extend({
+    fields: z.array(registrationFieldSchema)
+  });
+
+export const insertUserImportLogSchema = createInsertSchema(userImportLogs)
+  .omit({
+    id: true,
+    importedAt: true,
+  });
+
+export const bulkUserImportSchema = z.object({
+  users: z.array(z.record(z.string(), z.any())),
+  options: z.object({
+    verificationStatus: z.enum(['pending', 'verified', 'rejected']).default('pending'),
+    sendWelcomeEmails: z.boolean().default(false),
+    generatePasswords: z.boolean().default(true),
+    defaultRole: z.enum(['observer', 'admin', 'supervisor']).default('observer'),
+  }),
+  mappings: z.record(z.string(), z.string()).optional(), // Maps CSV/form headers to user fields
+});
+
 export type LoginUser = z.infer<typeof loginUserSchema>;
+
+// Registration form types
+export type RegistrationField = z.infer<typeof registrationFieldSchema>;
+export type InsertRegistrationForm = z.infer<typeof insertRegistrationFormSchema>;
+export type RegistrationForm = typeof registrationForms.$inferSelect;
+
+export type InsertUserImportLog = z.infer<typeof insertUserImportLogSchema>;
+export type UserImportLog = typeof userImportLogs.$inferSelect;
+export type BulkUserImport = z.infer<typeof bulkUserImportSchema>;
 
 // Define types for training integration
 export type InsertTrainingIntegration = z.infer<typeof insertTrainingIntegrationSchema>;

@@ -14,7 +14,10 @@ import {
   eventParticipation, EventParticipation, InsertEventParticipation,
   faqEntries, Faq, InsertFaq,
   newsEntries, News, InsertNews,
-  messages, Message, InsertMessage
+  messages, Message, InsertMessage,
+  registrationForms, RegistrationForm, InsertRegistrationForm,
+  userImportLogs, UserImportLog, InsertUserImportLog,
+  BulkUserImport, RegistrationField
 } from "@shared/schema";
 import crypto from "crypto";
 
