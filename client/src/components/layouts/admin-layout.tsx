@@ -10,6 +10,7 @@ import {
   BookOpen,
   Pencil,
   UserPlus,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +56,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       name: 'Reports Management', 
       href: '/admin/reports', 
       icon: FileText 
+    },
+    { 
+      name: 'Analytics', 
+      href: '/admin/analytics', 
+      icon: LineChart 
     },
     { 
       name: 'Registration Forms', 
