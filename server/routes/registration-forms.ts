@@ -1,117 +1,218 @@
 import { Router } from 'express';
 import { storage } from '../storage';
-import { insertRegistrationFormSchema } from '@shared/schema';
-import { ZodError } from 'zod';
-import { fromZodError } from 'zod-validation-error';
-import { requireAuth } from '../middleware/auth';
+import { z } from 'zod';
 
 const router = Router();
-const requireAdmin = requireAuth(['admin']);
 
-// Get all registration forms (admin only)
-router.get('/', requireAdmin, async (req, res) => {
+// Field validation schema
+const FormFieldValidationSchema = z.object({
+  pattern: z.string().optional(),
+  customMessage: z.string().optional(),
+}).optional();
+
+// Field option schema
+const FormFieldOptionSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+});
+
+// Field schema
+const FormFieldSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['text', 'email', 'password', 'tel', 'number', 'select', 'checkbox', 'textarea']),
+  label: z.string(),
+  placeholder: z.string().optional(),
+  helpText: z.string().optional(),
+  required: z.boolean().optional(),
+  order: z.number(),
+  options: z.array(FormFieldOptionSchema).optional(),
+  validation: FormFieldValidationSchema,
+  isAdminOnly: z.boolean().optional(),
+  isUserEditable: z.boolean().optional(),
+  mapToUserField: z.string().optional(),
+  mapToProfileField: z.string().optional(),
+});
+
+// GET all registration forms
+router.get('/', async (req, res) => {
   try {
     const forms = await storage.getAllRegistrationForms();
-    res.status(200).json(forms);
+    res.json(forms);
   } catch (error) {
     console.error('Error fetching registration forms:', error);
     res.status(500).json({ message: 'Failed to fetch registration forms' });
   }
 });
 
-// Get active registration form (public)
+// GET active registration form
 router.get('/active', async (req, res) => {
   try {
-    const activeForm = await storage.getActiveRegistrationForm();
-    if (!activeForm) {
+    const form = await storage.getActiveRegistrationForm();
+    if (!form) {
       return res.status(404).json({ message: 'No active registration form found' });
     }
-    res.status(200).json(activeForm);
+    res.json(form);
   } catch (error) {
     console.error('Error fetching active registration form:', error);
     res.status(500).json({ message: 'Failed to fetch active registration form' });
   }
 });
 
-// Get specific registration form (admin only)
-router.get('/:id', requireAdmin, async (req, res) => {
+// GET a specific registration form
+router.get('/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const formId = parseInt(req.params.id);
+    if (isNaN(formId)) {
       return res.status(400).json({ message: 'Invalid form ID' });
     }
-    
-    const form = await storage.getRegistrationForm(id);
+
+    const form = await storage.getRegistrationForm(formId);
     if (!form) {
       return res.status(404).json({ message: 'Registration form not found' });
     }
-    
-    res.status(200).json(form);
+
+    res.json(form);
   } catch (error) {
     console.error('Error fetching registration form:', error);
     res.status(500).json({ message: 'Failed to fetch registration form' });
   }
 });
 
-// Create registration form (admin only)
-router.post('/', requireAdmin, async (req, res) => {
+// CREATE a new registration form
+router.post('/', async (req, res) => {
   try {
-    const result = insertRegistrationFormSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: 'Invalid registration form data', 
-        errors: fromZodError(result.error).message 
-      });
-    }
+    // Basic form validation
+    const { name, description, fields } = req.body;
     
-    const form = await storage.createRegistrationForm(result.data);
-    res.status(201).json(form);
+    if (!name || !description) {
+      return res.status(400).json({ message: 'Name and description are required' });
+    }
+
+    // Validate fields if provided
+    if (fields) {
+      try {
+        z.array(FormFieldSchema).parse(fields);
+      } catch (validationError: any) {
+        return res.status(400).json({ 
+          message: 'Invalid field format', 
+          errors: validationError.errors 
+        });
+      }
+    }
+
+    // Create the form
+    const newForm = await storage.createRegistrationForm({
+      name,
+      description,
+      isActive: false,
+      fields: fields || [],
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+
+    res.status(201).json(newForm);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create registration form';
     console.error('Error creating registration form:', error);
-    res.status(500).json({ message: errorMessage });
+    res.status(500).json({ message: 'Failed to create registration form' });
   }
 });
 
-// Update registration form (admin only)
-router.patch('/:id', requireAdmin, async (req, res) => {
+// UPDATE a registration form
+router.patch('/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const formId = parseInt(req.params.id);
+    if (isNaN(formId)) {
       return res.status(400).json({ message: 'Invalid form ID' });
     }
-    
-    const existingForm = await storage.getRegistrationForm(id);
+
+    // Get the existing form
+    const existingForm = await storage.getRegistrationForm(formId);
     if (!existingForm) {
       return res.status(404).json({ message: 'Registration form not found' });
     }
-    
-    const updatedForm = await storage.updateRegistrationForm(id, req.body);
-    res.status(200).json(updatedForm);
+
+    // Prepare update data
+    const updateData: any = {
+      ...req.body,
+      updatedAt: new Date()
+    };
+
+    // Validate fields if provided
+    if (updateData.fields) {
+      try {
+        z.array(FormFieldSchema).parse(updateData.fields);
+      } catch (validationError: any) {
+        return res.status(400).json({ 
+          message: 'Invalid field format', 
+          errors: validationError.errors 
+        });
+      }
+    }
+
+    // Remove undefined fields to avoid overriding with null
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
+    // If changing isActive to true, ensure there's only one active form
+    if (updateData.isActive === true) {
+      // This is handled in the activation endpoint
+      delete updateData.isActive;
+    }
+
+    // Update the form
+    const updatedForm = await storage.updateRegistrationForm(formId, updateData);
+    if (!updatedForm) {
+      return res.status(500).json({ message: 'Failed to update registration form' });
+    }
+
+    res.json(updatedForm);
   } catch (error) {
     console.error('Error updating registration form:', error);
     res.status(500).json({ message: 'Failed to update registration form' });
   }
 });
 
-// Activate registration form (admin only)
-router.post('/:id/activate', requireAdmin, async (req, res) => {
+// ACTIVATE a registration form
+router.post('/:id/activate', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) {
+    const formId = parseInt(req.params.id);
+    if (isNaN(formId)) {
       return res.status(400).json({ message: 'Invalid form ID' });
     }
-    
-    const existingForm = await storage.getRegistrationForm(id);
+
+    // Get the existing form
+    const existingForm = await storage.getRegistrationForm(formId);
     if (!existingForm) {
       return res.status(404).json({ message: 'Registration form not found' });
     }
-    
-    const activatedForm = await storage.activateRegistrationForm(id);
-    res.status(200).json(activatedForm);
+
+    // Activate the form
+    const activatedForm = await storage.activateRegistrationForm(formId);
+    if (!activatedForm) {
+      return res.status(500).json({ message: 'Failed to activate registration form' });
+    }
+
+    res.json(activatedForm);
   } catch (error) {
     console.error('Error activating registration form:', error);
     res.status(500).json({ message: 'Failed to activate registration form' });
+  }
+});
+
+// DELETE a registration form
+router.delete('/:id', async (req, res) => {
+  try {
+    // In a real system, you might want to prevent deletion of forms that are currently active
+    // or have been used for registrations, and instead implement a soft-delete mechanism.
+    res.status(501).json({ message: 'Deletion not implemented' });
+  } catch (error) {
+    console.error('Error deleting registration form:', error);
+    res.status(500).json({ message: 'Failed to delete registration form' });
   }
 });
 

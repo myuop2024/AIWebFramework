@@ -31,13 +31,7 @@ const DynamicRegister = () => {
   // Registration mutation
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return apiRequest('POST', '/api/auth/register', data);
     },
     onSuccess: () => {
       setRegistrationSuccess(true);
@@ -50,15 +44,17 @@ const DynamicRegister = () => {
 
   // Handle form submission
   const handleRegister = (data: any) => {
-    const formData = formData as RegistrationForm;
+    const formDataObj = formData as RegistrationForm;
     const userData: Record<string, any> = {};
     
     // Map form fields to user data structure based on mapToUserField and mapToProfileField
-    formData.fields.forEach((field) => {
-      if (field.mapToUserField && data[field.name] !== undefined) {
-        userData[field.mapToUserField] = data[field.name];
-      }
-    });
+    if (formDataObj && formDataObj.fields) {
+      formDataObj.fields.forEach((field) => {
+        if (field.mapToUserField && data[field.name] !== undefined) {
+          userData[field.mapToUserField] = data[field.name];
+        }
+      });
+    }
     
     // Profile data will be submitted in a separate step after user creation
     registerMutation.mutate(userData);
