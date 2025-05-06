@@ -18,6 +18,7 @@ import {
   registrationForms, RegistrationForm, InsertRegistrationForm,
   userImportLogs, UserImportLog, InsertUserImportLog,
   idCardTemplates, IdCardTemplate, InsertIdCardTemplate,
+  photoApprovals, PhotoApproval, InsertPhotoApproval,
   BulkUserImport, RegistrationField
 } from "@shared/schema";
 import crypto from "crypto";
