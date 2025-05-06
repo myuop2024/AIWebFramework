@@ -11,6 +11,7 @@ import {
   insertFormTemplateSchema,
   formTemplateExtendedSchema
 } from "@shared/schema";
+import trainingIntegrationRoutes from './routes/training-integration-routes';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
@@ -1287,6 +1288,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
+  
+  // Training integrations (Moodle, Zoom)
+  app.use('/api/training', trainingIntegrationRoutes);
   
   return httpServer;
 }
