@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
-import Register from "@/pages/register";
 import DynamicRegister from "@/pages/dynamic-register";
 import ForgotPassword from "@/pages/forgot-password";
 import Dashboard from "@/pages/dashboard";
@@ -32,8 +31,7 @@ function Router() {
     <Switch>
       {/* Authentication Routes */}
       <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
-      <Route path="/dynamic-register" component={DynamicRegister} />
+      <Route path="/register" component={DynamicRegister} />
       <Route path="/forgot-password" component={ForgotPassword} />
       
       {/* App Routes */}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Form,
   FormControl,
@@ -6,6 +6,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Spinner } from "@/components/ui/spinner";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 // Types for form field configuration from registration form schema
 export interface FormField {
@@ -45,12 +48,50 @@ interface DynamicFormProps {
   defaultValues?: Record<string, any>;
 }
 
+// Password strength calculation
+const calculatePasswordStrength = (password: string): number => {
+  if (!password) return 0;
+  
+  let score = 0;
+  // Length check
+  if (password.length >= 8) score += 20;
+  if (password.length >= 12) score += 10;
+  
+  // Character variety checks
+  if (/[A-Z]/.test(password)) score += 20; // Uppercase
+  if (/[a-z]/.test(password)) score += 20; // Lowercase
+  if (/[0-9]/.test(password)) score += 20; // Numbers
+  if (/[^A-Za-z0-9]/.test(password)) score += 20; // Special chars
+  
+  // Bonus for combination of different character types
+  let types = 0;
+  if (/[A-Z]/.test(password)) types++;
+  if (/[a-z]/.test(password)) types++;
+  if (/[0-9]/.test(password)) types++;
+  if (/[^A-Za-z0-9]/.test(password)) types++;
+  
+  if (types >= 3) score += 10;
+  
+  return Math.min(100, score);
+};
+
+// Get password strength label and color
+const getPasswordStrengthInfo = (strength: number): { label: string; color: string } => {
+  if (strength < 20) return { label: "Very Weak", color: "bg-red-600" };
+  if (strength < 40) return { label: "Weak", color: "bg-orange-500" };
+  if (strength < 60) return { label: "Fair", color: "bg-yellow-500" };
+  if (strength < 80) return { label: "Good", color: "bg-blue-500" };
+  return { label: "Strong", color: "bg-green-600" };
+};
+
 export const DynamicForm = ({
   fields,
   onSubmit,
   isLoading = false,
   defaultValues = {},
 }: DynamicFormProps) => {
+  // State for password strength meter
+  const [passwordStrength, setPasswordStrength] = useState(0);
   // Build schema dynamically based on fields configuration
   const buildSchema = () => {
     const schemaMap: Record<string, any> = {};
@@ -132,9 +173,54 @@ export const DynamicForm = ({
     if (field.isAdminOnly) return null;
 
     switch (field.type) {
+      case "password":
+        return (
+          <FormItem>
+            <FormLabel>
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <Input 
+                type={field.type} 
+                placeholder={field.placeholder} 
+                {...form.register(field.name, {
+                  onChange: (e) => {
+                    const strength = calculatePasswordStrength(e.target.value);
+                    setPasswordStrength(strength);
+                  }
+                })}
+              />
+            </FormControl>
+            
+            {/* Password strength meter */}
+            <div className="mt-2 space-y-1">
+              <Progress 
+                value={passwordStrength} 
+                className={cn("h-2 w-full", 
+                  getPasswordStrengthInfo(passwordStrength).color
+                )} 
+              />
+              <div className="flex justify-between text-xs">
+                <span>Strength:</span>
+                <span className="font-medium">
+                  {getPasswordStrengthInfo(passwordStrength).label}
+                </span>
+              </div>
+              <FormDescription className="text-xs">
+                Password should include uppercase, lowercase, numbers, and special characters.
+              </FormDescription>
+            </div>
+            
+            {field.helpText && (
+              <p className="text-sm text-gray-500">{field.helpText}</p>
+            )}
+            <FormMessage />
+          </FormItem>
+        );
+      
       case "text":
       case "email":
-      case "password":
       case "tel":
       case "number":
         return (
