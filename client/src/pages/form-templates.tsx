@@ -28,10 +28,24 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
+  Table, 
+  TableBody, 
+  TableCaption, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -42,22 +56,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  Table, 
-  TableBody, 
-  TableCaption, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import { Spinner } from '@/components/ui/spinner';
-import { Label } from '@/components/ui/label';
-import { FormField } from '@/components/registration/dynamic-form';
+import { FormField as FormFieldComponent } from '@/components/registration/dynamic-form';
 
 import { 
   ClipboardEdit, 
@@ -78,7 +78,9 @@ import {
 } from 'lucide-react';
 import { 
   type FormTemplate,
-  type FormTemplateExtended
+  type FormTemplateExtended,
+  type RegistrationForm,
+  type FormField
 } from '@shared/schema';
 
 export default function FormTemplatesPage() {
@@ -92,9 +94,9 @@ export default function FormTemplatesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   
   // Registration Form States
-  const [selectedForm, setSelectedForm] = useState(null);
+  const [selectedForm, setSelectedForm] = useState<RegistrationForm | null>(null);
   const [showFieldEditor, setShowFieldEditor] = useState(false);
-  const [editingField, setEditingField] = useState(null);
+  const [editingField, setEditingField] = useState<FormField | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -111,7 +113,7 @@ export default function FormTemplatesPage() {
   }, [user, loading, navigate, toast]);
 
   // Query to get all form templates
-  const { data: templates = [], isLoading, refetch } = useQuery({
+  const { data: templates = [], isLoading, refetch } = useQuery<FormTemplate[]>({
     queryKey: ['/api/form-templates'],
     enabled: !!user && user.role === 'admin'
   });
@@ -120,7 +122,7 @@ export default function FormTemplatesPage() {
   const { 
     data: registrationForms = [], 
     isLoading: isLoadingForms 
-  } = useQuery({
+  } = useQuery<RegistrationForm[]>({
     queryKey: ['/api/registration-forms'],
     enabled: !!user && user.role === 'admin'
   });
@@ -231,7 +233,7 @@ export default function FormTemplatesPage() {
   
   // Registration Form Mutations
   const updateFormMutation = useMutation({
-    mutationFn: async ({ id, formData }) => {
+    mutationFn: async ({ id, formData }: { id: number; formData: any }) => {
       const res = await apiRequest('PATCH', `/api/registration-forms/${id}`, formData);
       return await res.json();
     },
@@ -247,7 +249,7 @@ export default function FormTemplatesPage() {
   });
   
   const activateFormMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: number) => {
       const res = await apiRequest('POST', `/api/registration-forms/${id}/activate`, {});
       return await res.json();
     },
@@ -291,12 +293,12 @@ export default function FormTemplatesPage() {
   };
   
   // Registration Form Handlers
-  const handleActivateForm = (id) => {
+  const handleActivateForm = (id: number) => {
     activateFormMutation.mutate(id);
   };
   
   const handleAddField = () => {
-    if (!selectedForm) return;
+    if (!selectedForm || !selectedForm.fields) return;
     
     setEditingField({
       id: `new-${Date.now()}`,
@@ -308,17 +310,17 @@ export default function FormTemplatesPage() {
       required: false,
       isAdminOnly: false,
       isUserEditable: true
-    });
+    } as FormField);
     setShowFieldEditor(true);
   };
   
-  const handleEditField = (field) => {
+  const handleEditField = (field: FormField) => {
     setEditingField({...field});
     setShowFieldEditor(true);
   };
   
-  const handleRemoveField = (fieldId) => {
-    if (!selectedForm) return;
+  const handleRemoveField = (fieldId: string | number) => {
+    if (!selectedForm || !selectedForm.fields) return;
     
     const updatedFields = selectedForm.fields.filter(f => f.id !== fieldId);
     
@@ -341,8 +343,8 @@ export default function FormTemplatesPage() {
     });
   };
   
-  const handleChangeFieldOrder = (fieldId, direction) => {
-    if (!selectedForm) return;
+  const handleChangeFieldOrder = (fieldId: string | number, direction: 'up' | 'down') => {
+    if (!selectedForm || !selectedForm.fields) return;
     
     const fields = [...selectedForm.fields];
     const index = fields.findIndex(f => f.id === fieldId);
@@ -375,18 +377,18 @@ export default function FormTemplatesPage() {
   };
   
   const handleSaveField = () => {
-    if (!selectedForm || !editingField) return;
+    if (!selectedForm || !editingField || !selectedForm.fields) return;
     
     const fields = [...selectedForm.fields];
-    const isNew = editingField.id.startsWith('new');
+    const isNew = typeof editingField.id === 'string' && editingField.id.startsWith('new');
     
     if (isNew) {
       // Add new field with a proper id
       const newField = {
         ...editingField,
-        id: editingField.id.replace('new-', '')
+        id: (editingField.id as string).replace('new-', '')
       };
-      fields.push(newField);
+      fields.push(newField as FormField);
     } else {
       // Update existing field
       const index = fields.findIndex(f => f.id === editingField.id);
@@ -1040,6 +1042,34 @@ export default function FormTemplatesPage() {
                 </ScrollArea>
               </TabsContent>
             </Tabs>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Field Editor Dialog */}
+        <Dialog open={showFieldEditor} onOpenChange={setShowFieldEditor}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {editingField?.id?.startsWith('new') ? 'Add New Field' : 'Edit Field'}
+              </DialogTitle>
+              <DialogDescription>
+                Configure the properties for this registration form field
+              </DialogDescription>
+            </DialogHeader>
+            
+            <ScrollArea className="max-h-[60vh]">
+              {renderFieldEditor()}
+            </ScrollArea>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowFieldEditor(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveField}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Field
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
