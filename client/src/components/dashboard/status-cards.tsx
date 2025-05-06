@@ -91,14 +91,18 @@ export default function StatusCards() {
   if (isProfileLoading || isReportsLoading || isAssignmentsLoading) {
     return (
       <>
-        {/* Observer ID Banner skeleton */}
-        <div className="bg-primary/70 text-white rounded-lg shadow p-4 mb-4 animate-pulse">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="h-3 bg-white/30 rounded w-24 mb-3"></div>
-              <div className="h-8 bg-white/30 rounded w-40"></div>
+        {/* Observer ID Banner skeleton - matched to the card style */}
+        <div className="bg-white rounded-lg shadow mb-4 animate-pulse">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="h-5 bg-gray-200 rounded w-36"></div>
+          </div>
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="h-3 bg-gray-200 rounded w-24 mb-3"></div>
+              <div className="h-8 bg-gray-200 rounded w-40 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-56"></div>
             </div>
-            <div className="h-12 w-12 rounded-full bg-white/20"></div>
+            <div className="h-16 w-16 rounded-lg bg-gray-200"></div>
           </div>
         </div>
 
@@ -125,14 +129,22 @@ export default function StatusCards() {
 
   return (
     <>
-      {/* Observer ID Banner */}
-      <div className="bg-primary text-white rounded-lg shadow p-4 mb-4 flex justify-between items-center">
-        <div>
-          <p className="text-sm font-medium mb-1">Observer ID</p>
-          <p className="text-2xl font-bold tracking-wider">{observerId}</p>
+      {/* Observer ID Banner - styled to match the QR code component */}
+      <div className="bg-white rounded-lg shadow mb-4">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium">Your Observer ID</h3>
         </div>
-        <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-          <User className="h-7 w-7 text-white" />
+        <div className="p-6 flex items-center justify-between">
+          <div className="flex flex-col">
+            <p className="text-sm text-gray-500 mb-1">Your Observer ID</p>
+            <p className="text-3xl font-bold tracking-wide text-gray-800">{observerId}</p>
+            <p className="text-xs text-gray-500 mt-2">
+              Use this ID to identify yourself to election officials
+            </p>
+          </div>
+          <div className="h-16 w-16 rounded-lg bg-primary flex items-center justify-center">
+            <User className="h-8 w-8 text-white" />
+          </div>
         </div>
       </div>
 
