@@ -48,12 +48,23 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    // Process the image using AI
-    const result = await imageProcessingService.processProfilePhoto(
-      req.file.buffer,
-      300, // Standard profile photo width
-      300  // Standard profile photo height
-    );
+    let result;
+    try {
+      // Process the image using AI
+      result = await imageProcessingService.processProfilePhoto(
+        req.file.buffer,
+        300, // Standard profile photo width
+        300  // Standard profile photo height
+      );
+    } catch (aiError) {
+      console.error('AI processing error, using original image:', aiError);
+      // If AI processing fails, just use the original image
+      result = {
+        buffer: req.file.buffer,
+        hasFace: false,
+        message: "AI processing failed. Using original image."
+      };
+    }
 
     // Generate a unique filename and save the processed image
     const filename = imageProcessingService.generateFilename(req.file.originalname);
@@ -128,8 +139,22 @@ router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, 
       return res.status(400).json({ message: 'No image file provided' });
     }
 
-    // Use higher quality AI enhancement for ID photos
-    const processedImageBuffer = await imageProcessingService.applyAIEnhancement(req.file.buffer);
+    let processedImageBuffer;
+    let message = 'ID photo enhanced successfully';
+    
+    try {
+      // Use higher quality AI enhancement for ID photos
+      processedImageBuffer = await imageProcessingService.applyAIEnhancement(req.file.buffer);
+    } catch (aiError) {
+      console.error('AI enhancement error for ID photo, using original image:', aiError);
+      // If AI processing fails, just use the original image with basic resizing
+      processedImageBuffer = await imageProcessingService.processProfilePhoto(
+        req.file.buffer,
+        400, // Larger size for ID photos
+        600
+      ).then(result => result.buffer);
+      message = 'ID photo saved with basic processing';
+    }
 
     // Generate a unique filename and save the processed image
     const filename = imageProcessingService.generateFilename(req.file.originalname);
@@ -142,12 +167,31 @@ router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, 
     const imageUrl = `/uploads/processed/${filename}`;
     
     res.status(200).json({ 
-      message: 'ID photo enhanced successfully',
+      message,
       imageUrl
     });
   } catch (error) {
     console.error('Error enhancing ID photo:', error);
-    res.status(500).json({ message: 'Error enhancing ID photo' });
+    // Even if all processing fails, try to save the original
+    try {
+      // Generate a unique filename and save the original image
+      const filename = imageProcessingService.generateFilename(req.file.originalname);
+      const processedDir = ensureProcessedDirExists();
+      const filePath = path.join(processedDir, filename);
+      
+      fs.writeFileSync(filePath, req.file.buffer);
+      
+      // Return the URL path to the original image
+      const imageUrl = `/uploads/processed/${filename}`;
+      
+      res.status(200).json({ 
+        message: 'Using original image due to processing error',
+        imageUrl
+      });
+    } catch (saveError) {
+      console.error('Error saving original ID photo:', saveError);
+      res.status(500).json({ message: 'Error enhancing ID photo' });
+    }
   }
 });
 
@@ -160,8 +204,25 @@ router.post('/upscale-image', upload.single('image'), async (req: Request, res: 
       return res.status(400).json({ message: 'No image file provided' });
     }
 
-    // Upscale the low-resolution image
-    const upscaledImageBuffer = await imageProcessingService.upscaleImage(req.file.buffer);
+    let upscaledImageBuffer;
+    let message = 'Image upscaled successfully';
+    
+    try {
+      // Upscale the low-resolution image
+      upscaledImageBuffer = await imageProcessingService.upscaleImage(req.file.buffer);
+    } catch (aiError) {
+      console.error('AI upscaling error, using simpler method:', aiError);
+      // Fallback to basic upscaling
+      const image = await imageProcessingService.loadImage(req.file.buffer);
+      const canvas = createCanvas(image.width * 2, image.height * 2);
+      const ctx = canvas.getContext('2d');
+      
+      // Simple 2x upscaling
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      
+      upscaledImageBuffer = canvas.toBuffer('image/jpeg');
+      message = 'Image upscaled using basic resizing';
+    }
 
     // Generate a unique filename and save the processed image
     const filename = imageProcessingService.generateFilename(req.file.originalname);
@@ -174,12 +235,31 @@ router.post('/upscale-image', upload.single('image'), async (req: Request, res: 
     const imageUrl = `/uploads/processed/${filename}`;
     
     res.status(200).json({ 
-      message: 'Image upscaled successfully',
+      message,
       imageUrl
     });
   } catch (error) {
     console.error('Error upscaling image:', error);
-    res.status(500).json({ message: 'Error upscaling image' });
+    
+    try {
+      // Even if all fails, save the original
+      const filename = imageProcessingService.generateFilename(req.file.originalname);
+      const processedDir = ensureProcessedDirExists();
+      const filePath = path.join(processedDir, filename);
+      
+      fs.writeFileSync(filePath, req.file.buffer);
+      
+      // Return the URL path to the original image
+      const imageUrl = `/uploads/processed/${filename}`;
+      
+      res.status(200).json({ 
+        message: 'Using original image (upscaling failed)',
+        imageUrl
+      });
+    } catch (saveError) {
+      console.error('Error saving original image:', saveError);
+      res.status(500).json({ message: 'Error processing image' });
+    }
   }
 });
 
