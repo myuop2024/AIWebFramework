@@ -107,16 +107,26 @@ export function ProfilePhotoUpload({
           !data.autoUpdated
         );
         
+        let photoTitle = "Photo processed successfully";
         let photoMessage = "Your profile photo has been processed with AI";
-        if (!data.autoUpdated) {
-          photoMessage += " and is pending approval";
-        }
+        let toastVariant = "default";
         
-        toast({
-          title: "Photo processed successfully",
-          description: photoMessage,
-          variant: "default"
-        });
+        if (!data.autoUpdated) {
+          photoTitle = "Photo pending approval";
+          photoMessage = "Your profile photo has been submitted for administrator approval. You'll be notified when it's approved.";
+          
+          // Show a more detailed notification for pending approvals
+          toast({
+            title: photoTitle,
+            description: photoMessage,
+            duration: 6000, // Show for longer to ensure user sees it
+          });
+        } else {
+          toast({
+            title: photoTitle,
+            description: photoMessage,
+          });
+        }
       } else {
         throw new Error('No image URL in response');
       }
@@ -169,7 +179,7 @@ export function ProfilePhotoUpload({
           
           {/* Face detection warning */}
           {hasFaceWarning && (
-            <Alert variant="warning" className="mt-4">
+            <Alert variant="destructive" className="mt-4">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>No face detected</AlertTitle>
               <AlertDescription>
