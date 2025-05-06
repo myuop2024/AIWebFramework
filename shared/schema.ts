@@ -3,6 +3,16 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { TrainingSystemConfig } from "./moodle-types";
 
+// System settings for global application configuration
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  settingKey: text("setting_key").notNull().unique(),
+  settingValue: jsonb("setting_value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: integer("updated_by").references(() => users.id),
+});
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

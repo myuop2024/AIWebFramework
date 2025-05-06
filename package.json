@@ -11,6 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
     "@google-cloud/bigquery": "^8.0.0",
     "@hookform/resolvers": "^3.10.0",
     "@huggingface/inference": "^3.12.1",

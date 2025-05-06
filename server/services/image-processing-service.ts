@@ -11,23 +11,38 @@ const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
  */
 export class ImageProcessingService {
   /**
-   * Process a profile photo using AI to crop, resize, and enhance
+   * Process a profile photo using AI to crop, resize, enhance, and remove background
    * @param imageBuffer Original image buffer
    * @param targetWidth Target width
    * @param targetHeight Target height
-   * @returns Processed image buffer
+   * @returns Processed image buffer and face detection results
    */
   async processProfilePhoto(
     imageBuffer: Buffer,
     targetWidth: number = 300,
     targetHeight: number = 300
-  ): Promise<Buffer> {
+  ): Promise<{ buffer: Buffer; hasFace: boolean; message?: string }> {
     try {
       // Load the image
       const image = await this.loadImage(imageBuffer);
       
-      // Detect faces to determine the optimal crop area
+      // Detect faces to determine the optimal crop area and validate face presence
       const faceDetection = await this.detectFaces(imageBuffer);
+      
+      // Check if we detected any faces
+      const faces = faceDetection.labels?.filter((label: any) => 
+        label.score > 0.8 && label.label === 'person'
+      ) || [];
+      
+      const hasFace = faces.length > 0;
+      
+      // If no face is detected, provide a warning but continue processing
+      // (The UI will show a message to the user)
+      let message = undefined;
+      if (!hasFace) {
+        message = "No face clearly detected in the image. Please upload a photo where your face is clearly visible.";
+        console.warn("No face detected in profile photo");
+      }
       
       // Smart crop the image (centered around detected faces if any)
       const croppedCanvas = this.smartCropImage(
@@ -40,12 +55,29 @@ export class ImageProcessingService {
       // Apply basic image enhancements (contrast, brightness, etc.)
       const enhancedCanvas = await this.enhanceImage(croppedCanvas);
       
-      // Convert to buffer and return
-      return this.canvasToBuffer(enhancedCanvas);
+      // Remove background using AI (if possible)
+      let processedBuffer;
+      try {
+        processedBuffer = await this.removeBackground(this.canvasToBuffer(enhancedCanvas));
+      } catch (bgError) {
+        console.error('Background removal error, using enhanced image instead:', bgError);
+        processedBuffer = this.canvasToBuffer(enhancedCanvas);
+      }
+      
+      return {
+        buffer: processedBuffer,
+        hasFace,
+        message
+      };
     } catch (error) {
       console.error('Error in AI profile photo processing:', error);
       // Fallback to basic resizing if AI processing fails
-      return this.basicResizeImage(imageBuffer, targetWidth, targetHeight);
+      const buffer = await this.basicResizeImage(imageBuffer, targetWidth, targetHeight);
+      return {
+        buffer,
+        hasFace: false,
+        message: "Error processing image. Please try a different photo."
+      };
     }
   }
 
@@ -327,6 +359,73 @@ export class ImageProcessingService {
     return canvas.toBuffer(mimeType, { quality });
   }
 
+  /**
+   * Use AI to remove the background from a profile photo
+   * Returns a transparent PNG with only the subject
+   */
+  async removeBackground(imageBuffer: Buffer): Promise<Buffer> {
+    try {
+      // Convert buffer to base64 for Hugging Face API
+      const base64Image = imageBuffer.toString('base64');
+      
+      // Call Hugging Face API for background removal
+      // Using a segmentation model to isolate the person
+      const response = await hf.imageSegmentation({
+        model: "briaai/RMBG-1.4",
+        data: Buffer.from(base64Image, 'base64'),
+      });
+      
+      // Extract the mask
+      if (!response || !response.mask) {
+        throw new Error('No valid segmentation mask returned from API');
+      }
+      
+      // Convert the mask to a canvas format we can work with
+      const originalImage = await this.loadImage(imageBuffer);
+      const maskImage = await this.loadImage(
+        Buffer.from(await response.mask.arrayBuffer())
+      );
+      
+      // Create a canvas with RGBA support for transparency
+      const canvas = createCanvas(originalImage.width, originalImage.height);
+      const ctx = canvas.getContext('2d');
+      
+      // Draw the original image
+      ctx.drawImage(originalImage, 0, 0);
+      
+      // Get image data to modify pixels
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Also get mask data
+      const tempCanvas = createCanvas(maskImage.width, maskImage.height);
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCtx.drawImage(maskImage, 0, 0);
+      const maskData = tempCtx.getImageData(0, 0, maskImage.width, maskImage.height).data;
+      
+      // Apply the mask to create transparency
+      // The mask is grayscale, so we only need to check one channel
+      for (let i = 0; i < data.length; i += 4) {
+        // Get the corresponding pixel in the mask
+        const maskPixelValue = maskData[i]; // Just use R channel 
+        
+        // Set alpha channel based on the mask
+        // Black (0) in mask = transparent, White (255) in mask = fully visible
+        data[i + 3] = maskPixelValue;
+      }
+      
+      // Put the modified image data back
+      ctx.putImageData(imageData, 0, 0);
+      
+      // Convert to PNG with transparency
+      return this.canvasToBuffer(canvas, 'image/png', 1.0);
+    } catch (error) {
+      console.error('Background removal error:', error);
+      // Return the original image buffer if background removal fails
+      return imageBuffer;
+    }
+  }
+  
   /**
    * Generate a unique filename for the processed image
    */

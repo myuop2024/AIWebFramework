@@ -35,6 +35,7 @@ function ensureProcessedDirExists() {
 /**
  * Process profile photo endpoint
  * Accepts an image file, applies AI processing, and returns the processed image URL
+ * Optionally updates the user's profile with the processed image
  */
 router.post('/process-profile-photo', upload.single('profilePhoto'), async (req: Request, res: Response) => {
   try {
@@ -42,8 +43,12 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
       return res.status(400).json({ message: 'No image file provided' });
     }
 
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     // Process the image using AI
-    const processedImageBuffer = await imageProcessingService.processProfilePhoto(
+    const result = await imageProcessingService.processProfilePhoto(
       req.file.buffer,
       300, // Standard profile photo width
       300  // Standard profile photo height
@@ -54,14 +59,58 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
     const processedDir = ensureProcessedDirExists();
     const filePath = path.join(processedDir, filename);
     
-    fs.writeFileSync(filePath, processedImageBuffer);
+    fs.writeFileSync(filePath, result.buffer);
 
     // Return the URL path to the processed image
     const imageUrl = `/uploads/processed/${filename}`;
     
+    // Get system settings to check if we should automatically update the profile
+    // or if admin approval is required for subsequent uploads
+    const storage = req.app.locals.storage;
+    let autoUpdateProfile = true;
+    
+    try {
+      // Check if the user is already verified
+      const user = await storage.getUser(req.session.userId);
+      
+      if (user && user.verificationStatus === 'approved') {
+        // Get the setting for subsequent photo changes
+        const photoPolicy = await storage.getSystemSetting('profile_photo_policy');
+        
+        if (photoPolicy && photoPolicy.setting_value.requireApprovalAfterVerification) {
+          autoUpdateProfile = false;
+        }
+      }
+      
+      // If auto update is allowed, update the user's profile
+      if (autoUpdateProfile) {
+        // Check if user has a profile
+        const profile = await storage.getUserProfile(req.session.userId);
+        
+        if (profile) {
+          // Update existing profile
+          await storage.updateUserProfile(req.session.userId, {
+            profilePhotoUrl: imageUrl
+          });
+        } else {
+          // Create new profile
+          await storage.createUserProfile({
+            userId: req.session.userId,
+            profilePhotoUrl: imageUrl
+          });
+        }
+      }
+    } catch (dbError) {
+      console.error('Database error when saving profile photo:', dbError);
+      // Continue - we want to return the processed image even if saving fails
+    }
+    
     res.status(200).json({ 
       message: 'Profile photo processed successfully',
-      imageUrl
+      imageUrl,
+      hasFace: result.hasFace,
+      warning: result.message,
+      autoUpdated: autoUpdateProfile
     });
   } catch (error) {
     console.error('Error processing profile photo:', error);
