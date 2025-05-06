@@ -16,12 +16,14 @@ import NewReport from "@/pages/reports/new";
 import ReportDetail from "@/pages/reports/[id]";
 import Assignments from "@/pages/assignments";
 import Training from "@/pages/training";
+import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
 import AdminPage from "@/pages/admin-page";
 import VerificationPage from "@/pages/admin/verification";
+import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 
 function Router() {
   return (
@@ -42,12 +44,14 @@ function Router() {
       <Route path="/reports/:id" component={ReportDetail} />
       <Route path="/assignments" component={Assignments} />
       <Route path="/training" component={Training} />
+      <Route path="/integrated-training" component={IntegratedTraining} />
       <Route path="/faq" component={Faq} />
       <Route path="/chat" component={Chat} />
       <Route path="/form-templates" component={FormTemplates} />
       <Route path="/admin" component={Admin} />
       <Route path="/admin-dashboard" component={AdminPage} />
       <Route path="/admin/verification" component={VerificationPage} />
+      <Route path="/admin/training-integrations" component={TrainingIntegrationsAdmin} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
