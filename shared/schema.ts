@@ -561,7 +561,57 @@ export type TrainingProgress = typeof trainingProgress.$inferSelect;
 export type InsertExternalUserMapping = z.infer<typeof insertExternalUserMappingSchema>;
 export type ExternalUserMapping = typeof externalUserMappings.$inferSelect;
 
+// ID Card Templates table
+export const idCardTemplates = pgTable("id_card_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  templateData: jsonb("template_data").notNull(),
+  isActive: boolean("is_active").notNull().default(false),
+  securityFeatures: jsonb("security_features").notNull().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ID card template schema for validation
+export const idCardTemplateSchema = z.object({
+  name: z.string().min(1, "Template name is required"),
+  description: z.string().optional(),
+  templateData: z.object({
+    background: z.string().optional(), // Base64 or URL for background
+    logo: z.string().optional(), // Base64 or URL for logo
+    elements: z.array(z.object({
+      type: z.enum(['text', 'image', 'qrcode', 'barcode']),
+      x: z.number(), // X position
+      y: z.number(), // Y position
+      width: z.number().optional(),
+      height: z.number().optional(),
+      value: z.string().optional(), // Static text or data field name
+      fieldName: z.string().optional(), // Reference to user data field
+      style: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+    })),
+    dimensions: z.object({
+      width: z.number(),
+      height: z.number(),
+    }),
+  }),
+  securityFeatures: z.object({
+    watermark: z.string().optional(),
+    hologram: z.string().optional(),
+    qrEncryption: z.boolean().optional(),
+    otherFeatures: z.array(z.string()).optional(),
+  }).optional().default({}),
+  isActive: z.boolean().optional().default(false),
+});
+
+// Create insert schema for ID card templates
+export const insertIdCardTemplateSchema = createInsertSchema(idCardTemplates);
+
 // Form field type definitions
 export type FormField = z.infer<typeof formFieldSchema>;
 export type FormSection = z.infer<typeof formSectionSchema>;
 export type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
+
+// ID card template types
+export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
+export type InsertIdCardTemplate = z.infer<typeof insertIdCardTemplateSchema>;

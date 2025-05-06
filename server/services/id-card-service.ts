@@ -1,0 +1,558 @@
+import { createCanvas, loadImage, Canvas } from 'canvas';
+import QRCode from 'qrcode';
+import JsBarcode from 'jsbarcode';
+import PDFDocument from 'pdfkit';
+import { storage } from '../storage';
+import crypto from 'crypto';
+import type { User, UserProfile, IdCardTemplate } from '@shared/schema';
+import { Readable } from 'stream';
+
+interface CardElement {
+  type: 'text' | 'image' | 'qrcode' | 'barcode';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  value?: string;
+  fieldName?: string;
+  style?: Record<string, string | number>;
+}
+
+interface CardTemplate {
+  background?: string;
+  logo?: string;
+  elements: CardElement[];
+  dimensions: {
+    width: number;
+    height: number;
+  };
+}
+
+interface SecurityFeatures {
+  watermark?: string;
+  hologram?: string;
+  qrEncryption?: boolean;
+  otherFeatures?: string[];
+}
+
+export class IdCardService {
+  /**
+   * Generate an ID card for a user
+   */
+  async generateIdCard(userId: number): Promise<Buffer> {
+    try {
+      // Fetch user data
+      const user = await storage.getUser(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // Fetch user profile data
+      const profile = await storage.getUserProfile(userId);
+      
+      // Fetch active template
+      const template = await storage.getActiveIdCardTemplate();
+      if (!template) {
+        throw new Error('No active ID card template found');
+      }
+
+      // Generate the ID card image
+      const cardImage = await this.renderIdCard(user, profile, template);
+      
+      // Convert to PDF
+      const pdfBuffer = await this.generatePDF(cardImage, template);
+      
+      return pdfBuffer;
+    } catch (error) {
+      console.error('Error generating ID card:', error);
+      throw new Error('Failed to generate ID card');
+    }
+  }
+
+  /**
+   * Generate a default template if none exists
+   */
+  async createDefaultTemplate(): Promise<IdCardTemplate> {
+    const existingTemplates = await storage.getAllIdCardTemplates();
+    
+    if (existingTemplates.length > 0) {
+      return existingTemplates[0];
+    }
+
+    // Create a default template based on provided image
+    const defaultTemplate = {
+      name: 'CAFFE Observer ID Card',
+      description: 'Default observer ID card template',
+      isActive: true,
+      templateData: {
+        dimensions: {
+          width: 1024,
+          height: 650
+        },
+        background: '', // Will be populated with default background
+        elements: [
+          // Header
+          {
+            type: 'text',
+            x: 512,
+            y: 50,
+            value: 'CAFFE ID',
+            style: {
+              font: 'bold 48px Arial',
+              textAlign: 'center',
+              fillStyle: '#6b2c91'
+            }
+          },
+          // Observer ID
+          {
+            type: 'text',
+            x: 600,
+            y: 170,
+            fieldName: 'observerId',
+            style: {
+              font: 'bold 24px Arial',
+              textAlign: 'left',
+              fillStyle: '#a05a2c'
+            }
+          },
+          // Expiration Date
+          {
+            type: 'text',
+            x: 600,
+            y: 280,
+            value: 'December 31, 2025',
+            style: {
+              font: '24px Arial',
+              textAlign: 'left',
+              fillStyle: '#a05a2c'
+            }
+          },
+          // Observer Photo (placeholder)
+          {
+            type: 'image',
+            x: 230,
+            y: 200,
+            width: 180,
+            height: 180,
+            fieldName: 'profilePhotoUrl'
+          },
+          // Observer Role Title
+          {
+            type: 'text',
+            x: 256,
+            y: 500,
+            value: 'ELECTION OBSERVER',
+            style: {
+              font: 'bold 36px Arial',
+              textAlign: 'center',
+              fillStyle: '#c15fdc'
+            }
+          },
+          // QR code with observer data
+          {
+            type: 'qrcode',
+            x: 575,
+            y: 575,
+            width: 150,
+            height: 150,
+            fieldName: 'qrData'
+          },
+          // Organization info
+          {
+            type: 'text',
+            x: 512,
+            y: 400,
+            value: 'CITIZENS ACTION FOR FREE AND FAIR ELECTIONS',
+            style: {
+              font: '16px Arial',
+              textAlign: 'center',
+              fillStyle: '#000000'
+            }
+          },
+          // Contact info
+          {
+            type: 'text',
+            x: 512,
+            y: 425,
+            value: '876-320-3603',
+            style: {
+              font: '16px Arial',
+              textAlign: 'center',
+              fillStyle: '#000000'
+            }
+          },
+          // Website
+          {
+            type: 'text',
+            x: 512,
+            y: 450,
+            value: 'www.caffejamaica.com',
+            style: {
+              font: '16px Arial',
+              textAlign: 'center',
+              fillStyle: '#000000'
+            }
+          },
+          // Email
+          {
+            type: 'text',
+            x: 512,
+            y: 475,
+            value: 'info@caffejamaica.com',
+            style: {
+              font: '16px Arial',
+              textAlign: 'center',
+              fillStyle: '#000000'
+            }
+          },
+          // Barcode with observer ID
+          {
+            type: 'barcode',
+            x: 300,
+            y: 580,
+            width: 200,
+            height: 50,
+            fieldName: 'observerId'
+          },
+          // Authorized badge
+          {
+            type: 'text',
+            x: 762,
+            y: 610,
+            value: 'AUTHORIZED',
+            style: {
+              font: 'bold 18px Arial',
+              textAlign: 'center',
+              fillStyle: '#0000ff',
+              backgroundColor: '#f0f0f0',
+              borderRadius: '5px',
+              padding: '5px'
+            }
+          }
+        ]
+      },
+      securityFeatures: {
+        watermark: 'CAFFE',
+        qrEncryption: true,
+        otherFeatures: ['holographic overlay']
+      }
+    };
+
+    return storage.createIdCardTemplate(defaultTemplate);
+  }
+
+  /**
+   * Render an ID card based on a template and user data
+   */
+  private async renderIdCard(
+    user: User, 
+    profile: UserProfile | undefined, 
+    template: IdCardTemplate
+  ): Promise<Buffer> {
+    const templateData = template.templateData as unknown as CardTemplate;
+    const securityFeatures = template.securityFeatures as unknown as SecurityFeatures;
+
+    // Create canvas with template dimensions
+    const canvas = createCanvas(
+      templateData.dimensions.width,
+      templateData.dimensions.height
+    );
+    const ctx = canvas.getContext('2d');
+
+    // Draw background if available
+    if (templateData.background) {
+      try {
+        const backgroundImage = await loadImage(templateData.background);
+        ctx.drawImage(
+          backgroundImage, 
+          0, 
+          0, 
+          templateData.dimensions.width, 
+          templateData.dimensions.height
+        );
+      } catch (error) {
+        // Use a gradient background if image fails to load
+        const gradient = ctx.createLinearGradient(0, 0, templateData.dimensions.width, 0);
+        gradient.addColorStop(0, '#6e2dc1');
+        gradient.addColorStop(1, '#ffffff');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, templateData.dimensions.width, templateData.dimensions.height);
+      }
+    } else {
+      // Default background
+      const gradient = ctx.createLinearGradient(0, 0, templateData.dimensions.width, 0);
+      gradient.addColorStop(0, '#6e2dc1');
+      gradient.addColorStop(1, '#ffffff');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, templateData.dimensions.width, templateData.dimensions.height);
+    }
+
+    // Apply watermark if configured
+    if (securityFeatures.watermark) {
+      ctx.save();
+      ctx.globalAlpha = 0.1;
+      ctx.font = '80px Arial';
+      ctx.fillStyle = '#000000';
+      ctx.textAlign = 'center';
+      ctx.translate(templateData.dimensions.width / 2, templateData.dimensions.height / 2);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(securityFeatures.watermark, 0, 0);
+      ctx.restore();
+    }
+
+    // Draw logo if available
+    if (templateData.logo) {
+      try {
+        const logoImage = await loadImage(templateData.logo);
+        ctx.drawImage(logoImage, 50, 50, 180, 180);
+      } catch (error) {
+        console.error('Error loading logo image:', error);
+      }
+    }
+
+    // Draw all elements from template
+    for (const element of templateData.elements) {
+      await this.drawElement(ctx, element, user, profile, canvas);
+    }
+
+    // Return the image as a buffer
+    return canvas.toBuffer('image/png');
+  }
+
+  /**
+   * Draw a single element on the ID card
+   */
+  private async drawElement(
+    ctx: CanvasRenderingContext2D, 
+    element: CardElement, 
+    user: User, 
+    profile: UserProfile | undefined,
+    canvas: Canvas
+  ): Promise<void> {
+    // Get the value for this element (either static or from user data)
+    const value = this.resolveFieldValue(element, user, profile);
+
+    // Apply any custom styles
+    if (element.style) {
+      Object.entries(element.style).forEach(([key, value]) => {
+        if (typeof value === 'string' || typeof value === 'number') {
+          (ctx as any)[key] = value;
+        }
+      });
+    }
+
+    switch (element.type) {
+      case 'text':
+        // Set default text styles if not provided
+        if (!element.style?.font) ctx.font = '16px Arial';
+        if (!element.style?.fillStyle) ctx.fillStyle = '#000000';
+        if (!element.style?.textAlign) {
+          ctx.textAlign = 'left';
+        } else {
+          (ctx as any).textAlign = element.style.textAlign;
+        }
+
+        ctx.fillText(value || '', element.x, element.y);
+        break;
+
+      case 'image':
+        try {
+          if (value) {
+            const image = await loadImage(value);
+            ctx.drawImage(
+              image, 
+              element.x, 
+              element.y, 
+              element.width || 100, 
+              element.height || 100
+            );
+          } else {
+            // Draw a placeholder
+            ctx.fillStyle = '#cccccc';
+            ctx.fillRect(
+              element.x, 
+              element.y, 
+              element.width || 100, 
+              element.height || 100
+            );
+            ctx.fillStyle = '#666666';
+            ctx.textAlign = 'center';
+            ctx.font = '14px Arial';
+            ctx.fillText(
+              'Photo', 
+              element.x + (element.width || 100) / 2, 
+              element.y + (element.height || 100) / 2
+            );
+          }
+        } catch (error) {
+          console.error('Error loading image:', error);
+          // Draw a placeholder
+          ctx.fillStyle = '#cccccc';
+          ctx.fillRect(
+            element.x, 
+            element.y, 
+            element.width || 100, 
+            element.height || 100
+          );
+        }
+        break;
+
+      case 'qrcode':
+        try {
+          const qrSize = element.width || 150;
+          const qrCodeUrl = await QRCode.toDataURL(value || 'No data', {
+            width: qrSize,
+            margin: 1
+          });
+          const qrImage = await loadImage(qrCodeUrl);
+          ctx.drawImage(qrImage, element.x - qrSize/2, element.y - qrSize/2, qrSize, qrSize);
+        } catch (error) {
+          console.error('Error generating QR code:', error);
+        }
+        break;
+
+      case 'barcode':
+        try {
+          // Create a temporary canvas for the barcode
+          const barcodeCanvas = createCanvas(
+            element.width || 200, 
+            element.height || 80
+          );
+          
+          // Generate barcode
+          JsBarcode(barcodeCanvas, value || 'N/A', {
+            format: 'CODE128',
+            width: 2,
+            height: element.height ? element.height - 20 : 60,
+            displayValue: true,
+            fontSize: 14
+          });
+
+          // Draw on main canvas
+          ctx.drawImage(
+            barcodeCanvas, 
+            element.x - (element.width || 200) / 2, 
+            element.y - (element.height || 80) / 2, 
+            element.width || 200, 
+            element.height || 80
+          );
+        } catch (error) {
+          console.error('Error generating barcode:', error);
+        }
+        break;
+    }
+  }
+
+  /**
+   * Resolve the value for a field from user data
+   */
+  private resolveFieldValue(
+    element: CardElement, 
+    user: User, 
+    profile: UserProfile | undefined
+  ): string {
+    // If there's a static value, use that
+    if (element.value) {
+      return element.value;
+    }
+
+    // If there's a field name to look up, get the value from user or profile
+    if (element.fieldName) {
+      if (element.fieldName === 'qrData') {
+        // Special case: Generate QR data with user and profile info
+        const qrData = {
+          id: user.id,
+          observerId: user.observerId,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          role: user.role,
+          verificationStatus: user.verificationStatus,
+          timestamp: Date.now()
+        };
+        return JSON.stringify(qrData);
+      }
+
+      // Look for the field in user object
+      if (element.fieldName in user) {
+        return (user as any)[element.fieldName] || '';
+      }
+
+      // Look for the field in profile object if it exists
+      if (profile && element.fieldName in profile) {
+        return (profile as any)[element.fieldName] || '';
+      }
+
+      // Special case: full name
+      if (element.fieldName === 'fullName') {
+        return `${user.firstName} ${user.lastName}`;
+      }
+    }
+
+    return '';
+  }
+
+  /**
+   * Generate a PDF document from the ID card image
+   */
+  private async generatePDF(cardImage: Buffer, template: IdCardTemplate): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const templateData = template.templateData as unknown as CardTemplate;
+        
+        // Create a PDF document
+        const doc = new PDFDocument({
+          size: [templateData.dimensions.width, templateData.dimensions.height],
+          margin: 0
+        });
+
+        // Buffer to store PDF data
+        const buffers: Buffer[] = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        // Add the card image
+        doc.image(cardImage, 0, 0, {
+          width: templateData.dimensions.width,
+          height: templateData.dimensions.height
+        });
+
+        // Add metadata
+        doc.info.Title = `Observer ID Card - ${template.name}`;
+        doc.info.Author = 'CAFFE Election Observer Platform';
+        
+        // Add security features
+        const securityFeatures = template.securityFeatures as unknown as SecurityFeatures;
+        if (securityFeatures.otherFeatures && securityFeatures.otherFeatures.length > 0) {
+          doc.info.Keywords = securityFeatures.otherFeatures.join(', ');
+        }
+
+        // Finalize PDF
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Convert a PDF buffer to a readable stream
+   */
+  bufferToStream(buffer: Buffer): Readable {
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null);
+    return stream;
+  }
+
+  /**
+   * Generate a SHA-256 hash for data verification
+   */
+  generateVerificationHash(data: string): string {
+    return crypto.createHash('sha256').update(data).digest('hex');
+  }
+}
+
+export const idCardService = new IdCardService();

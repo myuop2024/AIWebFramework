@@ -968,4 +968,100 @@ export class DatabaseStorage implements IStorage {
     // Sort by issue count (highest first)
     return stationsWithIssues.sort((a, b) => b.issueCount - a.issueCount);
   }
+
+  // ID Card Template Methods
+  async getAllIdCardTemplates(): Promise<IdCardTemplate[]> {
+    try {
+      return await db.select().from(idCardTemplates);
+    } catch (error) {
+      console.error('Error fetching all ID card templates:', error);
+      return [];
+    }
+  }
+
+  async getActiveIdCardTemplate(): Promise<IdCardTemplate | undefined> {
+    try {
+      const [template] = await db
+        .select()
+        .from(idCardTemplates)
+        .where(eq(idCardTemplates.isActive, true))
+        .limit(1);
+      return template;
+    } catch (error) {
+      console.error('Error fetching active ID card template:', error);
+      return undefined;
+    }
+  }
+
+  async getIdCardTemplate(id: number): Promise<IdCardTemplate | undefined> {
+    try {
+      const [template] = await db
+        .select()
+        .from(idCardTemplates)
+        .where(eq(idCardTemplates.id, id));
+      return template;
+    } catch (error) {
+      console.error('Error fetching ID card template:', error);
+      return undefined;
+    }
+  }
+
+  async createIdCardTemplate(template: InsertIdCardTemplate): Promise<IdCardTemplate> {
+    try {
+      // If this template is set as active, deactivate all others
+      if (template.isActive) {
+        await db
+          .update(idCardTemplates)
+          .set({ isActive: false })
+          .where(eq(idCardTemplates.isActive, true));
+      }
+
+      const [newTemplate] = await db
+        .insert(idCardTemplates)
+        .values(template)
+        .returning();
+      return newTemplate;
+    } catch (error) {
+      console.error('Error creating ID card template:', error);
+      throw new Error('Failed to create ID card template');
+    }
+  }
+
+  async updateIdCardTemplate(id: number, data: Partial<IdCardTemplate>): Promise<IdCardTemplate | undefined> {
+    try {
+      // If this template is set as active, deactivate all others
+      if (data.isActive) {
+        await db
+          .update(idCardTemplates)
+          .set({ isActive: false })
+          .where(eq(idCardTemplates.isActive, true));
+      }
+
+      const [updated] = await db
+        .update(idCardTemplates)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(idCardTemplates.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating ID card template:', error);
+      return undefined;
+    }
+  }
+
+  async deleteIdCardTemplate(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(idCardTemplates)
+        .where(eq(idCardTemplates.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting ID card template:', error);
+      return false;
+    }
+  }
 }
