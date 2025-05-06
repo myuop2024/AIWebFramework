@@ -349,9 +349,9 @@ const RegistrationFormsAdmin = () => {
         <div className="space-y-2">
           <Label htmlFor="field-mapping">Map to User Field</Label>
           <Select
-            value={editingField.mapToUserField || ''}
+            value={editingField.mapToUserField || 'none'}
             onValueChange={(value) => {
-              if (value === "") {
+              if (value === "none") {
                 const { mapToUserField, ...rest } = editingField;
                 setEditingField(rest);
               } else {
@@ -363,7 +363,7 @@ const RegistrationFormsAdmin = () => {
               <SelectValue placeholder="Map to user field" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               <SelectItem value="firstName">First Name</SelectItem>
               <SelectItem value="lastName">Last Name</SelectItem>
               <SelectItem value="email">Email</SelectItem>
@@ -378,9 +378,9 @@ const RegistrationFormsAdmin = () => {
         <div className="space-y-2">
           <Label htmlFor="field-profile-mapping">Map to Profile Field</Label>
           <Select
-            value={editingField.mapToProfileField || ''}
+            value={editingField.mapToProfileField || 'none'}
             onValueChange={(value) => {
-              if (value === "") {
+              if (value === "none") {
                 const { mapToProfileField, ...rest } = editingField;
                 setEditingField(rest);
               } else {
@@ -392,7 +392,7 @@ const RegistrationFormsAdmin = () => {
               <SelectValue placeholder="Map to profile field" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
+              <SelectItem value="none">None</SelectItem>
               <SelectItem value="address">Address</SelectItem>
               <SelectItem value="city">City</SelectItem>
               <SelectItem value="state">State/Parish</SelectItem>
