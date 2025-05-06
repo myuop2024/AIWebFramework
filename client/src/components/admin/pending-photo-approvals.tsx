@@ -62,7 +62,7 @@ export function PendingPhotoApprovals() {
   // Mutation for approving a photo
   const approveMutation = useMutation({
     mutationFn: (photoId: number) => {
-      return apiRequest(`/api/admin/pending-photo-approvals/${photoId}/approve`, 'POST');
+      return apiRequest('POST', `/api/admin/pending-photo-approvals/${photoId}/approve`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-photo-approvals'] });
@@ -85,7 +85,7 @@ export function PendingPhotoApprovals() {
   // Mutation for rejecting a photo
   const rejectMutation = useMutation({
     mutationFn: (photoId: number) => {
-      return apiRequest(`/api/admin/pending-photo-approvals/${photoId}/reject`, 'POST');
+      return apiRequest('POST', `/api/admin/pending-photo-approvals/${photoId}/reject`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/pending-photo-approvals'] });
