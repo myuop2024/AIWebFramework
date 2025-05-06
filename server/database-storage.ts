@@ -1065,4 +1065,137 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Photo approval operations
+  async getPhotoApproval(id: number): Promise<PhotoApproval | undefined> {
+    try {
+      const [approval] = await db
+        .select()
+        .from(photoApprovals)
+        .where(eq(photoApprovals.id, id));
+      return approval;
+    } catch (error) {
+      console.error('Error fetching photo approval:', error);
+      return undefined;
+    }
+  }
+
+  async getPendingPhotoApprovals(): Promise<PhotoApproval[]> {
+    try {
+      const approvals = await db
+        .select()
+        .from(photoApprovals)
+        .where(eq(photoApprovals.status, "pending"))
+        .orderBy(desc(photoApprovals.createdAt));
+      return approvals;
+    } catch (error) {
+      console.error('Error fetching pending photo approvals:', error);
+      return [];
+    }
+  }
+
+  async getPhotoApprovalsByUserId(userId: number): Promise<PhotoApproval[]> {
+    try {
+      const approvals = await db
+        .select()
+        .from(photoApprovals)
+        .where(eq(photoApprovals.userId, userId))
+        .orderBy(desc(photoApprovals.createdAt));
+      return approvals;
+    } catch (error) {
+      console.error('Error fetching photo approvals by user ID:', error);
+      return [];
+    }
+  }
+
+  async createPhotoApproval(approval: InsertPhotoApproval): Promise<PhotoApproval> {
+    try {
+      const [newApproval] = await db
+        .insert(photoApprovals)
+        .values(approval)
+        .returning();
+      return newApproval;
+    } catch (error) {
+      console.error('Error creating photo approval:', error);
+      throw new Error('Failed to create photo approval');
+    }
+  }
+
+  async updatePhotoApproval(id: number, data: Partial<PhotoApproval>): Promise<PhotoApproval | undefined> {
+    try {
+      const [updated] = await db
+        .update(photoApprovals)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(photoApprovals.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating photo approval:', error);
+      return undefined;
+    }
+  }
+
+  async approvePhotoApproval(id: number, approvedBy: number): Promise<PhotoApproval | undefined> {
+    try {
+      // Get the approval to update the user profile
+      const [approval] = await db
+        .select()
+        .from(photoApprovals)
+        .where(eq(photoApprovals.id, id));
+      
+      if (!approval) {
+        return undefined;
+      }
+      
+      // Update the user's profile with the approved photo
+      await db
+        .update(userProfiles)
+        .set({
+          profilePhotoUrl: approval.photoUrl,
+          updatedAt: new Date()
+        })
+        .where(eq(userProfiles.userId, approval.userId));
+      
+      // Update the approval status
+      const [updated] = await db
+        .update(photoApprovals)
+        .set({
+          status: "approved",
+          reviewedBy: approvedBy,
+          reviewedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(photoApprovals.id, id))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error('Error approving photo:', error);
+      return undefined;
+    }
+  }
+
+  async rejectPhotoApproval(id: number, reviewedBy: number, notes?: string): Promise<PhotoApproval | undefined> {
+    try {
+      const [updated] = await db
+        .update(photoApprovals)
+        .set({
+          status: "rejected",
+          reviewedBy,
+          reviewedAt: new Date(),
+          notes: notes || null,
+          updatedAt: new Date()
+        })
+        .where(eq(photoApprovals.id, id))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error('Error rejecting photo:', error);
+      return undefined;
+    }
+  }
 }
