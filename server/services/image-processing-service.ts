@@ -95,16 +95,30 @@ export class ImageProcessingService {
       const base64Image = imageBuffer.toString('base64');
       
       try {
-        // First attempt with Hugging Face
+        // First attempt with YOLOv8-Face-Detection model
+        // This is a specialized face detection model that should work better than general object detection
+        console.log('Attempting face detection with YOLOv8-Face-Detection model');
         const response = await hf.objectDetection({
-          model: 'facebook/detr-resnet-50',
+          model: 'keremberke/yolov8n-face-detection',
           data: Buffer.from(base64Image, 'base64'),
-          // We're only interested in faces
           parameters: {
-            threshold: 0.5,
-            labels: ['person']
+            threshold: 0.3, // Lower threshold to catch more potential faces
           }
         });
+        
+        // If no faces found with YOLOv8 model, fall back to general person detection
+        if (!response.labels || response.labels.length === 0) {
+          console.log('No faces detected with YOLOv8, trying general person detection');
+          const generalResponse = await hf.objectDetection({
+            model: 'facebook/detr-resnet-50',
+            data: Buffer.from(base64Image, 'base64'),
+            parameters: {
+              threshold: 0.5,
+              labels: ['person']
+            }
+          });
+          return generalResponse;
+        }
         
         return response;
       } catch (hfError) {
@@ -304,26 +318,46 @@ export class ImageProcessingService {
       // Convert buffer to base64 for Hugging Face API
       const base64Image = imageBuffer.toString('base64');
       
-      // Call Hugging Face API for image enhancement
-      // Using an image-to-image model for enhancement
-      const response = await hf.imageToImage({
-        model: "stabilityai/stable-diffusion-img2img",
-        data: Buffer.from(base64Image, 'base64'),
-        parameters: {
-          prompt: "A high quality, professional portrait photograph, clear facial features, sharp details",
-          negative_prompt: "blurry, distorted, low quality, pixelated",
-          strength: 0.3, // Lower strength preserves more of the original image
-          guidance_scale: 7.5
-        }
-      });
-      
-      // Response is a blob containing the enhanced image
-      const enhancedImageBuffer = Buffer.from(await response.arrayBuffer());
-      return enhancedImageBuffer;
+      // First try AK-Image-Optimizer model for ID photo optimization
+      try {
+        console.log('Attempting ID photo enhancement with AK-Image-Optimizer model');
+        // Using the AK-Image-Optimizer model for better ID photo optimization
+        const response = await hf.imageToImage({
+          model: "zhenhuan-chen/AK-Image-Optimizer-64p-v1.0",
+          data: Buffer.from(base64Image, 'base64'),
+          parameters: {
+            prompt: "A high quality, professional ID photograph, clear facial features, sharp details, neutral background",
+            negative_prompt: "blurry, distorted, low quality, noisy, pixelated, artifacts",
+            strength: 0.25 // Lower strength preserves more of the original image while still enhancing
+          }
+        });
+        
+        // Response is a blob containing the enhanced image
+        const enhancedImageBuffer = Buffer.from(await response.arrayBuffer());
+        return enhancedImageBuffer;
+      } catch (optimizerError) {
+        console.error('AK-Image-Optimizer error, falling back to stable diffusion:', optimizerError);
+        
+        // Fall back to stable diffusion model
+        const fallbackResponse = await hf.imageToImage({
+          model: "stabilityai/stable-diffusion-img2img",
+          data: Buffer.from(base64Image, 'base64'),
+          parameters: {
+            prompt: "A high quality, professional portrait photograph, clear facial features, sharp details",
+            negative_prompt: "blurry, distorted, low quality, pixelated",
+            strength: 0.3, // Lower strength preserves more of the original image
+            guidance_scale: 7.5
+          }
+        });
+        
+        // Response is a blob containing the enhanced image
+        const enhancedImageBuffer = Buffer.from(await fallbackResponse.arrayBuffer());
+        return enhancedImageBuffer;
+      }
     } catch (error) {
-      console.error('AI enhancement error:', error);
+      console.error('All AI enhancement methods failed:', error);
       // Fallback to basic processing
-      return this.processProfilePhoto(imageBuffer, 400, 600);
+      return this.processProfilePhoto(imageBuffer, 400, 600).then(result => result.buffer);
     }
   }
 
@@ -463,17 +497,29 @@ export class ImageProcessingService {
       const base64Image = imageBuffer.toString('base64');
       
       try {
-        // First attempt with Hugging Face
-        // Call Hugging Face API for background removal
-        // Using a segmentation model to isolate the person
+        // First attempt with RMBG 2.0 which is an improved version for background removal
+        console.log('Attempting background removal with RMBG v2.0');
         const response = await hf.imageSegmentation({
-          model: "briaai/RMBG-1.4",
+          model: "briaai/RMBG-2.0",  // Using the newer, better model
           data: Buffer.from(base64Image, 'base64'),
         });
         
         // Extract the mask
         if (!response || !response.mask) {
-          throw new Error('No valid segmentation mask returned from API');
+          console.log('No valid mask from RMBG 2.0, trying fallback to RMBG 1.4');
+          
+          // Try the original model as fallback
+          const fallbackResponse = await hf.imageSegmentation({
+            model: "briaai/RMBG-1.4",
+            data: Buffer.from(base64Image, 'base64'),
+          });
+          
+          if (!fallbackResponse || !fallbackResponse.mask) {
+            throw new Error('No valid segmentation mask returned from any API model');
+          }
+          
+          // Use the fallback response instead
+          response.mask = fallbackResponse.mask;
         }
         
         // Convert the mask to a canvas format we can work with
