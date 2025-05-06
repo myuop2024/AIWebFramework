@@ -190,16 +190,16 @@ export default function TrainingIntegrationsAdmin() {
 
   if (loading) {
     return (
-      <AdminLayout>
+      <AdminLayout title="Training Integrations">
         <div className="flex items-center justify-center h-64">
-          <Spinner size="lg" />
+          <Spinner />
         </div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout title="Training Integrations">
       <div className="space-y-6">
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Training Integrations</h1>
@@ -326,7 +326,7 @@ export default function TrainingIntegrationsAdmin() {
                   onClick={() => handleTestConnection('moodle')}
                   disabled={testingConnection}
                 >
-                  {testingConnection ? <Spinner size="sm" className="mr-2" /> : null}
+                  {testingConnection ? <Spinner className="mr-2 h-4 w-4" /> : null}
                   Test Connection
                 </Button>
                 <Button

@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AdminModal from "@/components/admin/admin-modal";
 import AdminDashboard from "@/components/admin/admin-dashboard";
+import AdminLayout from "@/components/layouts/admin-layout";
 import { 
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
-  FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server
+  FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server, BookOpen
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -800,7 +801,7 @@ export default function Admin() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <AdminLayout title="Admin Dashboard">
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
@@ -1700,6 +1701,6 @@ export default function Admin() {
         title={modalTitle}
         content={modalContent}
       />
-    </div>
+    </AdminLayout>
   );
 }
