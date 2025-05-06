@@ -1294,6 +1294,93 @@ export class MemStorage implements IStorage {
     
     return { success, failures };
   }
+  
+  // Photo approval operations
+  async getPhotoApproval(id: number): Promise<PhotoApproval | undefined> {
+    return this.photoApprovals.get(id);
+  }
+
+  async getPendingPhotoApprovals(): Promise<PhotoApproval[]> {
+    return Array.from(this.photoApprovals.values())
+      .filter(approval => approval.status === "pending")
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getPhotoApprovalsByUserId(userId: number): Promise<PhotoApproval[]> {
+    return Array.from(this.photoApprovals.values())
+      .filter(approval => approval.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createPhotoApproval(approval: InsertPhotoApproval): Promise<PhotoApproval> {
+    const id = this.photoApprovalIdCounter++;
+    const now = new Date();
+    
+    const newApproval: PhotoApproval = {
+      ...approval,
+      id,
+      status: "pending",
+      createdAt: now,
+      processedAt: null,
+      approvedBy: null,
+      notes: null
+    };
+    
+    this.photoApprovals.set(id, newApproval);
+    return newApproval;
+  }
+
+  async updatePhotoApproval(id: number, data: Partial<PhotoApproval>): Promise<PhotoApproval | undefined> {
+    const approval = await this.getPhotoApproval(id);
+    if (!approval) return undefined;
+    
+    const updatedApproval = { ...approval, ...data };
+    this.photoApprovals.set(id, updatedApproval);
+    return updatedApproval;
+  }
+
+  async approvePhotoApproval(id: number, approvedBy: number): Promise<PhotoApproval | undefined> {
+    const approval = await this.getPhotoApproval(id);
+    if (!approval) return undefined;
+    
+    // Update the approval
+    const now = new Date();
+    const updatedApproval: PhotoApproval = {
+      ...approval,
+      status: "approved",
+      approvedBy,
+      processedAt: now
+    };
+    
+    this.photoApprovals.set(id, updatedApproval);
+    
+    // Update the user's profile photo
+    const profile = await this.getUserProfile(approval.userId);
+    if (profile) {
+      await this.updateUserProfile(approval.userId, { 
+        profilePhotoUrl: approval.photoUrl 
+      });
+    }
+    
+    return updatedApproval;
+  }
+
+  async rejectPhotoApproval(id: number, approvedBy: number, notes?: string): Promise<PhotoApproval | undefined> {
+    const approval = await this.getPhotoApproval(id);
+    if (!approval) return undefined;
+    
+    const now = new Date();
+    const updatedApproval: PhotoApproval = {
+      ...approval,
+      status: "rejected",
+      approvedBy,
+      processedAt: now,
+      notes: notes || null
+    };
+    
+    this.photoApprovals.set(id, updatedApproval);
+    return updatedApproval;
+  }
 }
 
 // Import and use DatabaseStorage
