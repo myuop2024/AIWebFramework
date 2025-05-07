@@ -57,6 +57,7 @@ function Router() {
       <Route path="/admin/registration-forms" component={RegistrationFormsAdmin} />
       <Route path="/admin/id-cards" component={IdCardManagement} />
       <Route path="/admin/analytics" component={Analytics} />
+      <Route path="/admin/settings" component={() => import("@/pages/admin/settings").then(mod => <mod.default />)} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

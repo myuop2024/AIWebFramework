@@ -31,7 +31,7 @@ router.get('/status', ensureAuthenticated, async (req: Request, res: Response) =
 });
 
 // Route to start the verification process
-router.get('/start', ensureAuthenticated, async (req: Request, res: Response) => {
+router.get('/initiate', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     if (!userId) {
@@ -48,7 +48,7 @@ router.get('/start', ensureAuthenticated, async (req: Request, res: Response) =>
     await diditConnector.initializeConfig();
 
     // Generate a verification URL
-    const redirectUrl = `${req.protocol}://${req.get('host')}/api/verification/initiate?email=${encodeURIComponent(user.email)}`;
+    const redirectUrl = `${req.protocol}://${req.get('host')}/api/verification/redirect?email=${encodeURIComponent(user.email)}`;
     
     return res.json({ redirectUrl });
   } catch (error) {

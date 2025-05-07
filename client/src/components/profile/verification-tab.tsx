@@ -47,7 +47,7 @@ export default function VerificationTab() {
   // Mutation to start verification process
   const startVerificationMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/verification/start', {
+      const response = await fetch('/api/verification/initiate', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
