@@ -27,6 +27,7 @@ import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
 import IdCardManagement from "@/pages/admin/id-cards";
 import Analytics from "@/pages/analytics";
+import AdminSettings from "@/pages/admin/settings";
 
 function Router() {
   return (
@@ -57,7 +58,7 @@ function Router() {
       <Route path="/admin/registration-forms" component={RegistrationFormsAdmin} />
       <Route path="/admin/id-cards" component={IdCardManagement} />
       <Route path="/admin/analytics" component={Analytics} />
-      <Route path="/admin/settings" component={() => import("@/pages/admin/settings").then(mod => <mod.default />)} />
+      <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

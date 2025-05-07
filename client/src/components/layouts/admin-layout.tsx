@@ -108,7 +108,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     { 
       name: 'System Settings', 
       href: '/admin/settings', 
-      icon: Settings 
+      icon: Settings,
+      highlight: true
     },
   ];
   
@@ -190,7 +191,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                               collapsed ? "p-2 justify-center" : "p-3",
                               isActive
                                 ? "bg-primary text-white"
-                                : "text-gray-600 hover:bg-gray-100"
+                                : "text-gray-600 hover:bg-gray-100",
+                              item.highlight && !isActive && "border border-primary text-primary"
                             )}
                           >
                             <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />

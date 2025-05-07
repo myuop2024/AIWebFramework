@@ -57,8 +57,8 @@ router.get('/initiate', ensureAuthenticated, async (req: Request, res: Response)
   }
 });
 
-// Route that initiates verification and redirects to Didit
-router.get('/initiate', async (req: Request, res: Response) => {
+// Route that redirects to Didit
+router.get('/redirect', async (req: Request, res: Response) => {
   try {
     const email = req.query.email as string;
     if (!email) {
