@@ -54,8 +54,19 @@ export default function VerificationTab() {
     isError,
     refetch: refetchStatus
   } = useQuery<StatusResponse>({
-    queryKey: ['/api/verification/status'],
+    queryKey: ['verification-status'],
+    queryFn: async () => {
+      const response = await fetch('/api/verification/status', {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch verification status');
+      }
+      return response.json();
+    },
     refetchOnWindowFocus: false,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Mutation to start verification process
@@ -150,10 +161,14 @@ export default function VerificationTab() {
             </AlertDescription>
           </Alert>
         </CardContent>
-        <CardFooter>
-          <Button onClick={() => refetchStatus()} variant="outline" className="w-full">
+        <CardFooter className="flex gap-2">
+          <Button onClick={() => refetchStatus()} variant="default" className="flex-1">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
+          </Button>
+          <Button onClick={handleStartVerification} variant="outline" className="flex-1">
+            <Fingerprint className="mr-2 h-4 w-4" />
+            Start New Verification
           </Button>
         </CardFooter>
       </Card>
