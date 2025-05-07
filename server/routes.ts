@@ -17,6 +17,7 @@ import userImportRoutes from './routes/user-imports';
 import analyticsRoutes from './routes/analytics';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
+import diditVerificationRoutes from './routes/didit-verification';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
