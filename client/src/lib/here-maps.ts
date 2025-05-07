@@ -2,6 +2,91 @@
  * HERE Maps API integration for CAFFE Observer Platform
  * Provides address autocomplete, geocoding, map viewing, and route planning
  */
+import { useEffect, useState } from 'react';
+
+declare global {
+  interface Window {
+    H: any; // HERE Maps JavaScript API global object
+  }
+}
+
+export function useHereMaps() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<Error | null>(null);
+  const apiKey = import.meta.env.VITE_HERE_API_KEY || '';
+
+  useEffect(() => {
+    // Check if the API is already loaded
+    if (window.H) {
+      setIsLoaded(true);
+      return;
+    }
+
+    // Load the HERE Maps JavaScript API
+    const loadAPI = async () => {
+      try {
+        // Load core module
+        const coreScript = document.createElement('script');
+        coreScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-core.js';
+        coreScript.async = true;
+        
+        // Load service module
+        const serviceScript = document.createElement('script');
+        serviceScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-service.js';
+        serviceScript.async = true;
+        
+        // Load events module (for map interactivity)
+        const eventsScript = document.createElement('script');
+        eventsScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-mapevents.js';
+        eventsScript.async = true;
+        
+        // Load UI module (for controls)
+        const uiScript = document.createElement('script');
+        uiScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-ui.js';
+        uiScript.async = true;
+        
+        // Load UI CSS
+        const uiCss = document.createElement('link');
+        uiCss.rel = 'stylesheet';
+        uiCss.type = 'text/css';
+        uiCss.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+        
+        // Append scripts to document head
+        document.head.appendChild(coreScript);
+        document.head.appendChild(serviceScript);
+        document.head.appendChild(eventsScript);
+        document.head.appendChild(uiScript);
+        document.head.appendChild(uiCss);
+        
+        // Wait for all scripts to load
+        await Promise.all([
+          new Promise<void>((resolve) => { coreScript.onload = () => resolve(); }),
+          new Promise<void>((resolve) => { serviceScript.onload = () => resolve(); }),
+          new Promise<void>((resolve) => { eventsScript.onload = () => resolve(); }),
+          new Promise<void>((resolve) => { uiScript.onload = () => resolve(); }),
+        ]);
+        
+        setIsLoaded(true);
+      } catch (error) {
+        console.error('Failed to load HERE Maps API:', error);
+        setLoadError(error instanceof Error ? error : new Error('Failed to load HERE Maps API'));
+      }
+    };
+    
+    loadAPI();
+    
+    // Cleanup function
+    return () => {
+      // No cleanup needed for script tags
+    };
+  }, [apiKey]);
+  
+  return { 
+    H: window.H,
+    isLoaded,
+    loadError
+  };
+}
 
 // Define types for HERE API responses
 export interface HereAutocompleteResult {

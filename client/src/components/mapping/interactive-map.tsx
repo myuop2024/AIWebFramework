@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react';
-import H from '@here/maps-api-for-javascript';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Loader2, MapPin, Navigation, RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHereMaps } from "@/lib/here-maps";
 
 interface InteractiveMapProps {
   center?: { lat: number; lng: number };
@@ -16,55 +16,67 @@ interface InteractiveMapProps {
 
 export function InteractiveMap({ center, zoom = 12, markers = [], height = 400, width = "100%", showUserLocation = false, showControls = true }: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<H.Map | null>(null);
+  const mapInstance = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const { H, isLoaded, loadError } = useHereMaps();
 
 
   useEffect(() => {
-    if (!mapRef.current) return;
-
-    const platform = new H.service.Platform({
-      apikey: import.meta.env.VITE_HERE_API_KEY || ''
-    });
-
-    const defaultLayers = platform.createDefaultLayers();
-
-    mapInstance.current = new H.Map(
-      mapRef.current,
-      defaultLayers.vector.normal.map,
-      {
-        center: center || { lat: 0, lng: 0 },
-        zoom,
-        pixelRatio: window.devicePixelRatio || 1
+    if (!mapRef.current || !isLoaded || !H) {
+      if (loadError) {
+        setError("Failed to load HERE Maps API. Please try again later.");
       }
-    );
-
-    const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(mapInstance.current));
-    const ui = H.ui.UI.createDefault(mapInstance.current, defaultLayers);
-
-    markers.forEach(marker => {
-      const markerObject = new H.map.Marker({ lat: marker.lat, lng: marker.lng });
-      if (marker.text) {
-        markerObject.setData(marker.text);
-      }
-      mapInstance.current?.addObject(markerObject);
-    });
-
-    // Add user location marker if enabled
-    if (showUserLocation) {
-      getUserLocation();
+      return;
     }
 
-    setLoading(false);
+    try {
+      const platform = new H.service.Platform({
+        apikey: import.meta.env.VITE_HERE_API_KEY || ''
+      });
+
+      const defaultLayers = platform.createDefaultLayers();
+
+      mapInstance.current = new H.Map(
+        mapRef.current,
+        defaultLayers.vector.normal.map,
+        {
+          center: center || { lat: 0, lng: 0 },
+          zoom,
+          pixelRatio: window.devicePixelRatio || 1
+        }
+      );
+
+      const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(mapInstance.current));
+      const ui = H.ui.UI.createDefault(mapInstance.current, defaultLayers);
+
+      markers.forEach(marker => {
+        const markerObject = new H.map.Marker({ lat: marker.lat, lng: marker.lng });
+        if (marker.text) {
+          markerObject.setData(marker.text);
+        }
+        mapInstance.current?.addObject(markerObject);
+      });
+
+      // Add user location marker if enabled
+      if (showUserLocation) {
+        getUserLocation();
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error initializing map:", err);
+      setError("Failed to initialize map. Please try again later.");
+      setLoading(false);
+    }
 
     return () => {
       if (mapInstance.current) {
         mapInstance.current.dispose();
       }
     };
-  }, [center, zoom, markers, showUserLocation]);
+  }, [center, zoom, markers, showUserLocation, H, isLoaded, loadError]);
 
   // Get user location
   const getUserLocation = () => {
