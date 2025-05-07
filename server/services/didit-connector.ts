@@ -96,13 +96,40 @@ class DiditConnector {
         };
       }
 
-      // For demo purposes, we'll just check if we have credentials
-      // In a real implementation, this would make an API call to test auth
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated delay
+      // Test connection by making a real API call
+      const testUrl = `${this.config.baseUrl}/health`;
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'X-API-Secret': this.config.apiSecret,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+
+      // Validate the credentials with auth endpoint
+      const authUrl = `${this.config.baseUrl}/auth/validate`;
+      const authResponse = await fetch(authUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'X-API-Secret': this.config.apiSecret,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!authResponse.ok) {
+        throw new Error('Invalid credentials');
+      }
       
       return {
         success: true,
-        message: 'Connection successful. Didit.me integration is properly configured.'
+        message: 'Connection successful. Didit.me integration is properly configured and responsive.'
       };
     } catch (error) {
       console.error('Error testing Didit connection:', error);

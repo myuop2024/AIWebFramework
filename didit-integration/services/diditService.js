@@ -73,37 +73,54 @@ class DiditService {
    * @param {string} code - The authorization code from Didit.me
    * @returns {Promise<Object>} The token response object
    */
-  async exchangeCodeForToken(code) {
-    try {
-      const config = await this.getConfig();
+  async exchangeCodeForToken(code, retries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const config = await this.getConfig();
 
-      // Use default values if not provided in the config
-      const tokenUrl = config.tokenUrl || 'https://auth.didit.me/oauth/token';
-      const redirectUri = config.redirectUri || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verification-callback`;
+        // Use default values if not provided in the config
+        const tokenUrl = config.tokenUrl || 'https://auth.didit.me/oauth/token';
+        const redirectUri = config.redirectUri || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verification-callback`;
 
-      if (!config.clientId || !config.clientSecret) {
-        throw new Error('Client credentials are not fully configured');
-      }
-
-      // Exchange the code for a token
-      const response = await axios.post(tokenUrl, {
-        grant_type: 'authorization_code',
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        code: code,
-        redirect_uri: redirectUri
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+        if (!config.clientId || !config.clientSecret) {
+          throw new Error('Client credentials are not fully configured');
         }
-      });
 
-      return response.data;
-    } catch (error) {
-      console.error('Error exchanging code for token:', error.response?.data || error.message);
-      throw new Error('Failed to exchange authorization code for token');
+        // Exchange the code for a token with timeout
+        const response = await axios.post(tokenUrl, {
+          grant_type: 'authorization_code',
+          client_id: config.clientId,
+          client_secret: config.clientSecret,
+          code: code,
+          redirect_uri: redirectUri
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          timeout: 10000 // 10 second timeout
+        });
+
+        if (!response.data?.access_token) {
+          throw new Error('Invalid token response');
+        }
+
+        return response.data;
+      } catch (error) {
+        lastError = error;
+        console.error(`Token exchange attempt ${attempt} failed:`, error.response?.data || error.message);
+        
+        if (attempt < retries) {
+          // Wait before retrying with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * attempt, 3000)));
+          continue;
+        }
+      }
     }
+
+    throw new Error(`Failed to exchange authorization code for token after ${retries} attempts: ${lastError?.message || 'Unknown error'}`);
   }
 
   /**
