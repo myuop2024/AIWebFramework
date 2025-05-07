@@ -383,6 +383,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ message: 'Logged out successfully' });
     });
   });
+  
+  // Current user endpoint for client authentication
+  app.get('/api/user', async (req, res) => {
+    try {
+      // If no session or userId, return 401 (client will handle this as "not logged in")
+      if (!req.session || !req.session.userId) {
+        logger.debug('GET /api/user: No authenticated user', {
+          sessionExists: !!req.session,
+          sessionID: req.sessionID
+        });
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      // Get the user information
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        logger.warn(`GET /api/user: User not found with ID ${userId}`);
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      logger.error('Error in GET /api/user:', error instanceof Error ? error : new Error('Unknown error'), {
+        sessionID: req.sessionID
+      });
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
   // Note: Using standardized middleware from auth.ts
 
