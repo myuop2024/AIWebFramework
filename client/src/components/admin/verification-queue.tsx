@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Card, 
   CardHeader, 
@@ -48,6 +47,7 @@ interface ObserverForVerification {
 
 export default function VerificationQueue() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<string>("pending");
   const [selectedObserver, setSelectedObserver] = useState<ObserverForVerification | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);

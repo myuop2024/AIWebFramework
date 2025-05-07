@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import VerificationQueue from "@/components/admin/verification-queue";
 import { PendingPhotoApprovals } from "@/components/admin/pending-photo-approvals";
 import AdminLayout from "@/components/layout/admin-layout";
@@ -9,18 +9,18 @@ import { UserCheck, Image } from "lucide-react";
 
 export default function VerificationPage() {
   const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!isLoading && (!user || user.role !== 'admin')) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
   
   // Show loading state while checking authentication
-  if (loading || !user) {
+  if (isLoading || !user) {
     return <div className="container p-8 flex justify-center items-center min-h-screen">
       <div className="flex flex-col items-center gap-2">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
