@@ -71,12 +71,8 @@ router.get('/mockverify', async (req: Request, res: Response) => {
 
     // Render a success verification result page
     return res.render('verification-result', {
-      success: true,
-      verificationId: 'mock-verification-' + Date.now(),
-      date: new Date().toISOString(),
-      appName: 'CAFFE Observer Platform',
-      message: 'Your identity has been verified successfully!',
-      details: 'This is a test verification. In production, you would complete the actual verification process with Didit.me.'
+      status: 'success',
+      message: 'Your identity has been verified successfully! This is a mock verification for testing purposes.'
     });
   } catch (error) {
     console.error('Error with mock verification:', error);
@@ -142,10 +138,8 @@ router.get('/result', async (req: Request, res: Response) => {
     
     // Render the verification result page
     return res.render('verification-result', {
-      success,
-      verificationId,
-      date: new Date().toISOString(),
-      appName: 'CAFFE Observer Platform',
+      status: success ? 'success' : 'error',
+      message: success ? 'Your identity has been successfully verified.' : 'Identity verification failed.'
     });
   } catch (error) {
     console.error('Error rendering verification result:', error);

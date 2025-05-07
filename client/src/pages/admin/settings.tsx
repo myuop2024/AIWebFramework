@@ -22,8 +22,9 @@ interface SystemSetting {
   updatedBy: number | null;
 }
 
-// Import Didit settings panel
+// Import settings panels
 import DiditSettingsPanel from "@/components/admin/didit-settings-panel";
+import VerificationSettings from "@/components/admin/verification-settings";
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("profile-photos");
@@ -236,19 +237,7 @@ export default function SystemSettings() {
         </TabsContent>
 
         <TabsContent value="user-verification" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Verification Settings</CardTitle>
-              <CardDescription>
-                Configure the verification process for new observers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                User verification settings will be implemented in a future update.
-              </p>
-            </CardContent>
-          </Card>
+          <VerificationSettings />
         </TabsContent>
         
         <TabsContent value="didit-integration" className="space-y-4">

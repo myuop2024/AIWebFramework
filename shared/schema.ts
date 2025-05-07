@@ -52,6 +52,9 @@ export const userProfiles = pgTable("user_profiles", {
   idNumber: text("id_number"),
   profilePhotoUrl: text("profile_photo_url"),
   idPhotoUrl: text("id_photo_url"),
+  verificationStatus: text("verification_status"),
+  verificationId: text("verification_id"),
+  verifiedAt: timestamp("verified_at"),
 });
 
 // Documents table
