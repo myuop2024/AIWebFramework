@@ -1,0 +1,154 @@
+<%- include('layout', { 
+  title: 'Didit.me Identity Verification', 
+  isAuthenticated: isAuthenticated, 
+  isAdmin: isAdmin, 
+  body: `
+    <div class="row justify-content-center mt-5">
+      <div class="col-md-8">
+        <div class="card shadow">
+          <div class="card-body p-4">
+            <h1 class="card-title text-center mb-4">Identity Verification Demo</h1>
+            
+            <div id="verification-status-container" class="d-none mb-4">
+              <!-- Verification status will be displayed here -->
+            </div>
+            
+            <div id="login-form" class="${isAuthenticated ? 'd-none' : ''}">
+              <p class="text-center mb-4">Please log in or register to start identity verification</p>
+              
+              <form id="login-register-form" class="needs-validation" novalidate>
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email address</label>
+                  <input type="email" class="form-control" id="email" required>
+                  <div class="invalid-feedback">Please provide a valid email address.</div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="name" class="form-label">Full Name (optional)</label>
+                  <input type="text" class="form-control" id="name">
+                </div>
+                
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary btn-lg">Login / Register</button>
+                </div>
+              </form>
+            </div>
+            
+            <div id="verification-actions" class="${isAuthenticated ? '' : 'd-none'}">
+              <p class="lead text-center mb-4">Get verified with Didit.me's secure identity verification service</p>
+              
+              <div class="d-grid gap-3">
+                <a href="/start-verification" class="btn btn-primary btn-lg" id="start-verification-btn">Get Verified</a>
+                <button class="btn btn-outline-secondary" id="check-status-btn">Check Verification Status</button>
+              </div>
+              
+              <div class="mt-4">
+                <h5>How it works:</h5>
+                <ol>
+                  <li>Click "Get Verified" to start the identity verification process</li>
+                  <li>You'll be redirected to Didit.me's secure verification service</li>
+                  <li>Complete the verification steps on Didit.me</li>
+                  <li>Once complete, you'll be redirected back to this application</li>
+                  <li>Your verified identity information will be securely stored</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `,
+  scripts: `
+    <script>
+      // Login / Register functionality
+      document.getElementById('login-register-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const name = document.getElementById('name').value;
+        
+        if (!email) {
+          alert('Email is required');
+          return;
+        }
+        
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, name }),
+            credentials: 'same-origin'
+          });
+          
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            const data = await response.json();
+            alert('Error: ' + (data.error || 'Failed to log in'));
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          alert('An error occurred. Please try again.');
+        }
+      });
+      
+      // Check verification status
+      document.getElementById('check-status-btn')?.addEventListener('click', async function() {
+        try {
+          const response = await fetch('/verification-status', {
+            credentials: 'same-origin'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const statusContainer = document.getElementById('verification-status-container');
+            
+            if (data.verified) {
+              // Display verification details
+              let verificationDetails = '';
+              if (data.verificationDetails) {
+                const details = data.verificationDetails;
+                verificationDetails = \`
+                  <p><strong>Verified Name:</strong> \${details.name || 'N/A'}</p>
+                  <p><strong>Verification ID:</strong> \${details.id || 'N/A'}</p>
+                  <p><strong>Verification Level:</strong> \${details.verification_level || 'N/A'}</p>
+                \`;
+              }
+              
+              statusContainer.innerHTML = \`
+                <div class="verification-complete">
+                  <h4>✅ Verification Complete</h4>
+                  \${verificationDetails}
+                </div>
+              \`;
+            } else {
+              // Not verified yet
+              statusContainer.innerHTML = \`
+                <div class="verification-pending">
+                  <h4>⚠️ Not Verified</h4>
+                  <p>You have not completed identity verification yet.</p>
+                  <p>Click the "Get Verified" button to start the process.</p>
+                </div>
+              \`;
+            }
+            
+            statusContainer.classList.remove('d-none');
+          } else {
+            const data = await response.json();
+            alert('Error: ' + (data.error || 'Failed to check verification status'));
+          }
+        } catch (error) {
+          console.error('Status check error:', error);
+          alert('An error occurred while checking verification status.');
+        }
+      });
+      
+      // If user is authenticated, check status automatically
+      if (${isAuthenticated}) {
+        document.getElementById('check-status-btn')?.click();
+      }
+    </script>
+  `
+}) %>

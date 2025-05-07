@@ -1,0 +1,65 @@
+<%- include('layout', { 
+  title: 'Verification Result - Didit.me Integration', 
+  isAuthenticated: true, 
+  isAdmin: false, 
+  body: `
+    <div class="row justify-content-center mt-5">
+      <div class="col-md-8">
+        <div class="card shadow">
+          <div class="card-body p-4">
+            <h1 class="card-title text-center mb-4">Verification Result</h1>
+            
+            <% if (success) { %>
+              <div class="text-center mb-4">
+                <div class="verification-complete mb-4">
+                  <h2>✅ Verification Complete</h2>
+                  <p class="lead">Your identity has been successfully verified through Didit.me</p>
+                </div>
+                
+                <% if (user && user.verificationDetails) { %>
+                  <div class="card mb-4">
+                    <div class="card-header bg-light">
+                      <h5 class="mb-0">Verification Details</h5>
+                    </div>
+                    <div class="card-body text-start">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <p><strong>Name:</strong> <%= user.verificationDetails.name || 'N/A' %></p>
+                          <p><strong>Verification ID:</strong> <%= user.verificationDetails.id || 'N/A' %></p>
+                          <p><strong>Verification Level:</strong> <%= user.verificationDetails.verification_level || 'N/A' %></p>
+                        </div>
+                        <div class="col-md-6">
+                          <p><strong>Email:</strong> <%= user.verificationDetails.email || 'N/A' %></p>
+                          <p><strong>Phone:</strong> <%= user.verificationDetails.phone || 'N/A' %></p>
+                          <% if (user.verificationDetails.verified_at) { %>
+                            <p><strong>Verified On:</strong> <%= new Date(user.verificationDetails.verified_at).toLocaleString() %></p>
+                          <% } %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <div class="text-center mb-4">
+                <div class="alert alert-danger p-4">
+                  <h2>❌ Verification Failed</h2>
+                  <p class="lead"><%= error || 'An error occurred during verification' %></p>
+                  <% if (details) { %>
+                    <div class="alert alert-secondary mt-3">
+                      <p class="small mb-0"><%= details %></p>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            <% } %>
+            
+            <div class="text-center mt-4">
+              <a href="/" class="btn btn-primary">Return to Home</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+}) %>
