@@ -162,6 +162,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Internal server error' });
     }
   });
+  
+  // QR code data endpoint for observer verification
+  app.get('/api/users/qrcode', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId as number;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
+      }
+
+      // Get user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error(`User not found with ID: ${userId}`);
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Return observer ID for QR code generation
+      res.status(200).json({
+        observerId: user.observerId,
+        userId: user.id,
+        username: user.username
+      });
+    } catch (error) {
+      console.error('Error fetching QR code data:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 
   // Device reset request route
   app.post('/api/auth/device-reset-request', async (req, res) => {
