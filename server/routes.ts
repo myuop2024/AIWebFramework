@@ -295,25 +295,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Device ID set for user ${username}: ${deviceId}`);
       }
       
-      // Set session data
+      // Set session data with explicit type safety
       req.session.userId = user.id;
       req.session.observerId = user.observerId;
       req.session.role = user.role;
       
-      console.log('Session data set', {
-        userId: req.session.userId,
-        observerId: req.session.observerId,
-        role: req.session.role
+      logger.info('Login attempt successful, setting session data', {
+        userId: user.id,
+        observerId: user.observerId,
+        role: user.role,
+        sessionID: req.sessionID,
+        path: req.path
       });
       
-      // Save session explicitly to ensure it's persisted
+      // Save session explicitly to ensure it's persisted, with enhanced error handling
       req.session.save((err) => {
         if (err) {
-          console.error('Error saving session:', err);
-          return res.status(500).json({ message: 'Session error. Please try again.' });
+          logger.error('Failed to save session during login', err, {
+            userId: user.id,
+            sessionID: req.sessionID
+          });
+          return res.status(500).json({ 
+            message: 'Session error. Please try again.',
+            details: 'Failed to save authentication state' 
+          });
         }
         
-        console.log(`Login successful, session saved for user ${username}`);
+        logger.info(`Login successful, session saved for user ${username}`, {
+          userId: user.id,
+          sessionID: req.sessionID
+        });
         
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;

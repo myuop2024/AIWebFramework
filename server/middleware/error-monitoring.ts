@@ -22,7 +22,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const originalEnd = res.end;
   
   // Override end method to calculate and log response time
-  res.end = function(...args: any[]): Response {
+  res.end = function(chunk: any, encoding?: BufferEncoding, callback?: () => void): Response {
     const responseTime = Date.now() - startTime;
     
     // Log request with timing
@@ -38,7 +38,15 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     }
     
     // Call original end method with proper type handling
-    return originalEnd.apply(this, args);
+    if (arguments.length === 0) {
+      return originalEnd.call(this);
+    } else if (arguments.length === 1) {
+      return originalEnd.call(this, chunk);
+    } else if (arguments.length === 2) {
+      return originalEnd.call(this, chunk, encoding);
+    } else {
+      return originalEnd.call(this, chunk, encoding, callback);
+    }
   };
   
   next();
