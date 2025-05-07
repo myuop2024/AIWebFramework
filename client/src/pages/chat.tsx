@@ -1,19 +1,19 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import MainLayout from "@/components/layout/main-layout";
 import ChatInterface from "@/components/chat/chat-interface";
 
 export default function Chat() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user && !isLoading) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   return (
     <MainLayout>

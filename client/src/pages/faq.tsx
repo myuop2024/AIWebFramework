@@ -13,10 +13,10 @@ export default function Faq() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user && !isLoading) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   return (
     <MainLayout>
