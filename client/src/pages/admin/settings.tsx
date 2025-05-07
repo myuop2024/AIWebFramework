@@ -31,7 +31,7 @@ export default function SystemSettings() {
   const { toast } = useToast();
 
   // Query to fetch all system settings
-  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery<SystemSetting[]>({
     queryKey: ['/api/system-settings'],
     refetchOnWindowFocus: false,
   });
@@ -40,7 +40,8 @@ export default function SystemSettings() {
 
   // Function to find a specific setting
   const findSetting = (key: string): SystemSetting | undefined => {
-    return settings?.find((setting: SystemSetting) => setting.settingKey === key);
+    if (!settings) return undefined;
+    return settings.find((setting) => setting.settingKey === key);
   };
 
   // Get profile photo policy settings
@@ -61,10 +62,7 @@ export default function SystemSettings() {
   // Mutation for updating a system setting
   const updateSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      return apiRequest(`/api/system-settings/${key}`, {
-        method: 'PUT',
-        body: JSON.stringify({ value }),
-      });
+      return apiRequest('PUT', `/api/system-settings/${key}`, { value });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/system-settings'] });
