@@ -22,16 +22,8 @@ interface SystemSetting {
   updatedBy: number | null;
 }
 
-// Interface for Didit.me configuration
-interface DiditConfig {
-  clientId: string;
-  clientSecret: string;
-  redirectUri: string;
-  authUrl: string;
-  tokenUrl: string;
-  meUrl: string;
-  isValid: boolean;
-}
+// Import Didit settings panel
+import DiditSettingsPanel from "@/components/admin/didit-settings-panel";
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("profile-photos");
@@ -43,16 +35,7 @@ export default function SystemSettings() {
     refetchOnWindowFocus: false,
   });
   
-  // Query to fetch Didit.me configuration
-  const { 
-    data: diditConfig, 
-    isLoading: diditLoading, 
-    isError: diditError,
-    refetch: refetchDiditConfig
-  } = useQuery<DiditConfig>({
-    queryKey: ['/api/verification/admin/config'],
-    refetchOnWindowFocus: false,
-  });
+  // For the Didit.me tab we're using a separate component
 
   // Function to find a specific setting
   const findSetting = (key: string): SystemSetting | undefined => {
@@ -180,8 +163,8 @@ export default function SystemSettings() {
     });
   };
 
-  const isLoading = settingsLoading || diditLoading;
-  const isError = settingsError || diditError;
+  const isLoading = settingsLoading;
+  const isError = settingsError;
 
   if (isLoading) {
     return (
