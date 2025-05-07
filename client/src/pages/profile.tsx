@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import DocumentUpload from "@/components/profile/document-upload";
 import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
-import { User, FileText, ShieldCheck, MapPin, CreditCard, Download } from "lucide-react";
+import VerificationTab from "@/components/profile/verification-tab";
+import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -226,15 +227,25 @@ export default function Profile() {
       
       {/* Profile Tabs */}
       <Tabs defaultValue="personal-info" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
           <TabsTrigger value="personal-info">Personal Info</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="verification">
+            <div className="flex items-center">
+              <Fingerprint className="mr-2 h-4 w-4" />
+              Verification
+            </div>
+          </TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="personal-info">
           <ProfileForm />
+        </TabsContent>
+        
+        <TabsContent value="verification">
+          <VerificationTab />
         </TabsContent>
         
         <TabsContent value="documents">

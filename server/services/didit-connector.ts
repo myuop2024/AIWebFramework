@@ -1,253 +1,267 @@
-/**
- * Connector service to integrate with Didit.me verification flow
- */
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs-extra';
+import { spawn, ChildProcess } from 'child_process';
 import axios from 'axios';
+import path from 'path';
 import { storage } from '../storage';
 
-// Constants
-const DIDIT_INTEGRATION_PATH = path.join(process.cwd(), 'didit-integration');
-const DIDIT_PORT = process.env.DIDIT_PORT || 3030;
-const DIDIT_URL = `http://localhost:${DIDIT_PORT}`;
-
-let diditProcess: any = null;
+/**
+ * Configuration interface for Didit service
+ */
+interface DiditConfig {
+  apiKey?: string;
+  apiSecret?: string;
+  baseUrl?: string;
+  enabled?: boolean;
+}
 
 /**
- * DiditConnectorService provides methods to interact with the Didit.me integration
+ * DiditConnector class handles interaction with the Didit.me identity verification service
  */
-class DiditConnectorService {
-  isRunning: boolean = false;
-  
+class DiditConnector {
+  private config: DiditConfig = {
+    baseUrl: 'https://api.didit.me/v1',
+    enabled: false
+  };
+  private serverProcess: ChildProcess | null = null;
+  private serverRunning = false;
+
+  constructor() {
+    // Initialize with empty config, will be loaded from system settings later
+  }
+
   /**
-   * Start the Didit.me integration server
+   * Initialize configuration from system settings
    */
-  async startServer(): Promise<boolean> {
-    if (this.isRunning) {
-      console.log('Didit.me integration server is already running');
-      return true;
-    }
-    
+  async initializeConfig(): Promise<void> {
     try {
-      // Make sure the directory exists
-      if (!fs.existsSync(DIDIT_INTEGRATION_PATH)) {
-        console.error('Didit integration directory not found:', DIDIT_INTEGRATION_PATH);
-        return false;
-      }
+      const apiKey = await storage.getSystemSetting('didit_api_key');
+      const apiSecret = await storage.getSystemSetting('didit_api_secret');
+      const baseUrl = await storage.getSystemSetting('didit_base_url');
+      const enabled = await storage.getSystemSetting('didit_enabled');
+
+      this.config = {
+        apiKey: apiKey?.settingValue,
+        apiSecret: apiSecret?.settingValue,
+        baseUrl: baseUrl?.settingValue || 'https://api.didit.me/v1',
+        enabled: enabled?.settingValue === 'true'
+      };
       
-      // Make sure the .env file exists
-      const envPath = path.join(DIDIT_INTEGRATION_PATH, '.env');
-      if (!fs.existsSync(envPath)) {
-        // Create it from the example
-        const exampleEnvPath = path.join(DIDIT_INTEGRATION_PATH, '.env.example');
-        if (fs.existsSync(exampleEnvPath)) {
-          await fs.copyFile(exampleEnvPath, envPath);
-          console.log('Created .env file from example');
-          
-          // Update the PORT in the .env file
-          let envContent = await fs.readFile(envPath, 'utf8');
-          envContent = envContent.replace(/PORT=\d+/, `PORT=${DIDIT_PORT}`);
-          await fs.writeFile(envPath, envContent, 'utf8');
-        } else {
-          console.error('No .env.example file found for Didit integration');
-        }
-      }
-      
-      // Start the Didit.me integration server
-      console.log('Starting Didit.me integration server...');
-      diditProcess = spawn('node', ['app.js'], {
-        cwd: DIDIT_INTEGRATION_PATH,
-        env: {
-          ...process.env,
-          PORT: String(DIDIT_PORT)
-        },
-        stdio: 'pipe' // Capture stdout and stderr
+      console.log('Didit connector initialized with config:', { 
+        apiKey: this.config.apiKey ? '[REDACTED]' : undefined, 
+        apiSecret: this.config.apiSecret ? '[REDACTED]' : undefined,
+        baseUrl: this.config.baseUrl,
+        enabled: this.config.enabled
       });
-      
-      diditProcess.stdout.on('data', (data: Buffer) => {
-        console.log(`[Didit Integration] ${data.toString().trim()}`);
-      });
-      
-      diditProcess.stderr.on('data', (data: Buffer) => {
-        console.error(`[Didit Integration Error] ${data.toString().trim()}`);
-      });
-      
-      diditProcess.on('close', (code: number) => {
-        console.log(`Didit.me integration server exited with code ${code}`);
-        this.isRunning = false;
-        diditProcess = null;
-      });
-      
-      // Wait for the server to start
-      await this.waitForServer();
-      this.isRunning = true;
-      console.log(`Didit.me integration server started on port ${DIDIT_PORT}`);
-      
-      return true;
     } catch (error) {
-      console.error('Failed to start Didit.me integration server:', error);
-      return false;
+      console.error('Error initializing Didit config:', error);
+      // Use default config
+      this.config = {
+        baseUrl: 'https://api.didit.me/v1',
+        enabled: false
+      };
     }
   }
-  
+
   /**
-   * Stop the Didit.me integration server
+   * Update configuration with new values
    */
-  stopServer(): boolean {
-    if (!diditProcess || !this.isRunning) {
-      console.log('Didit.me integration server is not running');
-      return true;
-    }
+  updateConfig(newConfig: DiditConfig): void {
+    this.config = { ...this.config, ...newConfig };
     
-    try {
-      diditProcess.kill();
-      this.isRunning = false;
-      diditProcess = null;
-      console.log('Didit.me integration server stopped');
-      return true;
-    } catch (error) {
-      console.error('Failed to stop Didit.me integration server:', error);
-      return false;
+    console.log('Didit connector config updated:', { 
+      apiKey: this.config.apiKey ? '[REDACTED]' : undefined, 
+      apiSecret: this.config.apiSecret ? '[REDACTED]' : undefined,
+      baseUrl: this.config.baseUrl,
+      enabled: this.config.enabled
+    });
+    
+    // If server is running and enabled flag changed to false, stop the server
+    if (this.serverRunning && this.config.enabled === false) {
+      this.stopServer();
     }
   }
-  
+
   /**
-   * Wait for the server to be ready
+   * Ensure the Didit integration server is running
    */
-  private async waitForServer(maxAttempts: number = 10): Promise<boolean> {
-    let attempts = 0;
-    
-    while (attempts < maxAttempts) {
+  async ensureServerRunning(): Promise<void> {
+    if (this.serverRunning) {
+      return;
+    }
+
+    if (!this.config.enabled || !this.config.apiKey || !this.config.apiSecret) {
+      throw new Error('Didit integration is not enabled or configured properly');
+    }
+
+    await this.startServer();
+  }
+
+  /**
+   * Start the Didit integration server
+   */
+  async startServer(): Promise<void> {
+    if (this.serverRunning) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
       try {
-        const response = await axios.get(DIDIT_URL, { timeout: 2000 });
-        if (response.status === 200) {
-          return true;
-        }
+        // Load current configuration from system settings first
+        this.initializeConfig().then(() => {
+          if (!this.config.enabled) {
+            console.log('Didit integration server not started: integration is disabled');
+            return resolve();
+          }
+
+          if (!this.config.apiKey || !this.config.apiSecret) {
+            console.log('Didit integration server not started: API credentials not configured');
+            return resolve();
+          }
+
+          console.log('Starting Didit integration server...');
+          
+          // Set environment variables for the server
+          const env = {
+            ...process.env,
+            DIDIT_API_KEY: this.config.apiKey,
+            DIDIT_API_SECRET: this.config.apiSecret,
+            DIDIT_API_URL: this.config.baseUrl,
+            PORT: '3030'
+          };
+
+          // Start the server process
+          const serverPath = path.resolve(process.cwd(), 'didit-integration/app.js');
+          this.serverProcess = spawn('node', [serverPath], { 
+            env,
+            stdio: ['ignore', 'pipe', 'pipe'],
+            detached: false
+          });
+
+          // Handle output
+          if (this.serverProcess.stdout) {
+            this.serverProcess.stdout.on('data', (data) => {
+              console.log(`[Didit Integration] ${data.toString().trim()}`);
+            });
+          }
+
+          if (this.serverProcess.stderr) {
+            this.serverProcess.stderr.on('data', (data) => {
+              console.error(`[Didit Integration Error] ${data.toString().trim()}`);
+            });
+          }
+
+          // Handle server exit
+          this.serverProcess.on('close', (code) => {
+            console.log(`Didit integration server exited with code ${code}`);
+            this.serverRunning = false;
+            this.serverProcess = null;
+          });
+
+          // Handle error
+          this.serverProcess.on('error', (err) => {
+            console.error('Failed to start Didit integration server:', err);
+            this.serverRunning = false;
+            this.serverProcess = null;
+            reject(err);
+          });
+
+          // Wait for server to be ready
+          setTimeout(() => {
+            this.serverRunning = true;
+            console.log('Didit integration server started successfully');
+            resolve();
+          }, 1000);
+        });
       } catch (error) {
-        // Server not ready yet
+        console.error('Error starting Didit integration server:', error);
+        reject(error);
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      attempts++;
-    }
-    
-    throw new Error('Didit.me integration server failed to start in time');
+    });
   }
-  
+
   /**
-   * Generate a verification URL for a user
-   * @param userId User ID in our main application
-   * @returns The verification URL to redirect the user to
+   * Stop the Didit integration server
    */
-  async getVerificationUrl(userId: number): Promise<string> {
-    try {
-      // Make sure the server is running
-      if (!this.isRunning) {
-        await this.startServer();
-      }
-      
-      // Get user details
-      const user = await storage.getUser(userId);
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      // Create a "shadow" user in the Didit integration
-      const response = await axios.post(`${DIDIT_URL}/api/login`, {
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`
-      });
-      
-      if (!response.data.success) {
-        throw new Error('Failed to create user in Didit integration');
-      }
-      
-      // Return the verification URL
-      return `${DIDIT_URL}/start-verification`;
-    } catch (error) {
-      console.error('Error generating verification URL:', error);
-      throw new Error('Failed to generate verification URL');
+  stopServer(): void {
+    if (!this.serverProcess) {
+      return;
     }
+
+    console.log('Stopping Didit integration server...');
+    if (process.platform === 'win32') {
+      // Windows
+      spawn('taskkill', ['/pid', `${this.serverProcess.pid}`, '/f', '/t']);
+    } else {
+      // Linux/Mac
+      process.kill(-this.serverProcess.pid, 'SIGINT');
+    }
+
+    this.serverRunning = false;
+    this.serverProcess = null;
   }
-  
+
   /**
-   * Check the verification status of a user
-   * @param userId User ID in our main application
-   * @returns The verification status
+   * Check verification status with Didit service
    */
-  async checkVerificationStatus(userId: number): Promise<{
-    verified: boolean;
-    verificationDetails: any;
-  }> {
+  async checkVerificationStatus(email: string): Promise<{ verified: boolean, details?: any }> {
     try {
-      // Make sure the server is running
-      if (!this.isRunning) {
-        await this.startServer();
+      if (!this.config.enabled || !this.config.apiKey || !this.config.apiSecret) {
+        console.log('Didit integration is not enabled or configured properly');
+        return { verified: false };
       }
-      
-      // Get user details
-      const user = await storage.getUser(userId);
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      // Create a "shadow" user in the Didit integration if needed
-      await axios.post(`${DIDIT_URL}/api/login`, {
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`
+
+      // Start server if not running
+      await this.ensureServerRunning();
+
+      // Call the Didit server API to check status
+      const response = await axios.get(`http://localhost:3030/api/status?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'internal'
+        }
       });
-      
-      // Check verification status
-      const response = await axios.get(`${DIDIT_URL}/verification-status`);
-      
-      return {
-        verified: response.data.verified || false,
-        verificationDetails: response.data.verificationDetails || null
-      };
+
+      if (response.data && response.data.verified) {
+        return {
+          verified: true,
+          details: response.data
+        };
+      }
+
+      return { verified: false };
     } catch (error) {
-      console.error('Error checking verification status:', error);
-      return {
-        verified: false,
-        verificationDetails: null
-      };
+      console.error('Error checking verification status with Didit:', error);
+      return { verified: false };
     }
   }
-  
+
   /**
-   * Update the Didit.me configuration
-   * @param config Configuration object
-   * @returns Success status
+   * Get verification details from Didit service
    */
-  async updateConfiguration(config: {
-    clientId: string;
-    clientSecret: string;
-    redirectUri?: string;
-    authUrl?: string;
-    tokenUrl?: string;
-    meUrl?: string;
-  }): Promise<boolean> {
+  async getVerificationDetails(verificationId: string): Promise<any> {
     try {
-      // Make sure the server is running
-      if (!this.isRunning) {
-        await this.startServer();
+      if (!this.config.enabled || !this.config.apiKey || !this.config.apiSecret) {
+        console.log('Didit integration is not enabled or configured properly');
+        return null;
       }
-      
-      // Admin login
-      await axios.post(`${DIDIT_URL}/api/admin/login`, {
-        username: 'admin',
-        password: 'admin123'
+
+      // Start server if not running
+      await this.ensureServerRunning();
+
+      // Call the Didit server API to get verification details
+      const response = await axios.get(`http://localhost:3030/api/verification/${verificationId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'internal'
+        }
       });
-      
-      // Update configuration
-      const response = await axios.put(`${DIDIT_URL}/admin/settings/didit`, config);
-      
-      return response.data.isValid || false;
+
+      return response.data;
     } catch (error) {
-      console.error('Error updating Didit.me configuration:', error);
-      return false;
+      console.error('Error getting verification details from Didit:', error);
+      return null;
     }
   }
 }
 
-export const diditConnector = new DiditConnectorService();
+// Create singleton instance
+export const diditConnector = new DiditConnector();

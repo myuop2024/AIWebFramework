@@ -1,157 +1,214 @@
-/**
- * Routes for Didit.me identity verification
- */
-import { Router, Request, Response } from 'express';
-import { diditConnector } from '../services/didit-connector';
+import express, { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { diditConnector } from '../services/didit-connector';
 
-const router = Router();
-
-/**
- * Start the verification process for the current user
- * GET /api/verification/start
- */
-router.get('/start', ensureAuthenticated, async (req: Request, res: Response) => {
-  try {
-    const userId = req.session.userId!;
-    
-    // Get the verification URL
-    const verificationUrl = await diditConnector.getVerificationUrl(userId);
-    
-    // Redirect the user to the verification URL
-    res.redirect(verificationUrl);
-  } catch (error: any) {
-    console.error('Error starting verification:', error);
-    res.status(500).json({ 
-      error: 'Failed to start verification process',
-      details: error.message
-    });
-  }
-});
+const router: Router = express.Router();
 
 /**
  * Check the verification status of the current user
- * GET /api/verification/status
  */
 router.get('/status', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
-    const userId = req.session.userId!;
-    
-    // Check the verification status
-    const status = await diditConnector.checkVerificationStatus(userId);
-    
-    // If verified, update our database
-    if (status.verified && status.verificationDetails) {
-      // Get the user profile
-      const userProfile = await storage.getUserProfile(userId);
-      
-      if (userProfile) {
-        // Update verification status in our user database
-        await storage.updateUser(userId, {
-          verificationStatus: 'verified'
-        });
-        
-        // Store verification details in the database
-        // We'll add this data as a JSON string to avoid schema changes
-        await storage.updateSystemSetting(
-          `user_verification_${userId}`,
-          JSON.stringify(status.verificationDetails),
-          userId
-        );
-      }
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    // Get user data
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if the user has already verified with Didit
+    // If verified, return all the verification details
+    if (user.verificationStatus === 'verified') {
+      // Get verification details from system settings
+      const verificationDetails = await storage.getSystemSetting(`didit_verification_${userId}`);
+      
+      return res.json({ 
+        verified: true,
+        verificationDetails: verificationDetails ? JSON.parse(verificationDetails.settingValue) : null
+      });
+    }
+
+    // If the user is not verified, check with Didit service
+    const verificationStatus = await diditConnector.checkVerificationStatus(user.email);
     
-    res.json(status);
-  } catch (error: any) {
+    // If the user is now verified according to Didit, update our system
+    if (verificationStatus.verified) {
+      // Update user verification status
+      await storage.updateUser(userId, { verificationStatus: 'verified' });
+      
+      // Store verification details
+      await storage.updateSystemSetting(
+        `didit_verification_${userId}`,
+        JSON.stringify(verificationStatus.details),
+        userId
+      );
+      
+      return res.json({ 
+        verified: true,
+        verificationDetails: verificationStatus.details
+      });
+    }
+
+    // User not verified
+    return res.json({ verified: false });
+  } catch (error) {
     console.error('Error checking verification status:', error);
-    res.status(500).json({ 
-      error: 'Failed to check verification status',
-      details: error.message
-    });
+    return res.status(500).json({ error: 'An error occurred checking verification status' });
   }
 });
 
 /**
- * Admin endpoint to update Didit.me configuration
- * PUT /api/verification/admin/config
+ * Start the verification process for the current user
  */
-router.put('/admin/config', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/start', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
-    const config = req.body;
-    
-    // Validate required fields
-    if (!config || !config.clientId || !config.clientSecret) {
-      return res.status(400).json({ error: 'Client ID and Client Secret are required' });
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Get user data
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
     
-    // Update the configuration
-    const success = await diditConnector.updateConfiguration(config);
+    // Start the Didit integration server if not already running
+    await diditConnector.ensureServerRunning();
+
+    // Redirect to the Didit verification page
+    // This will start a verification session with the user's email
+    res.redirect(`http://localhost:3030/start-verification?email=${encodeURIComponent(user.email)}&redirect_url=${encodeURIComponent('/api/verification/callback')}`);
+  } catch (error) {
+    console.error('Error starting verification:', error);
+    return res.status(500).json({ error: 'An error occurred starting verification' });
+  }
+});
+
+/**
+ * Callback endpoint for Didit verification process
+ */
+router.get('/callback', async (req: Request, res: Response) => {
+  try {
+    // Get the verification ID from the query string
+    const verificationId = req.query.verification_id as string;
+    const success = req.query.success === 'true';
     
-    if (success) {
-      // Store the configuration in system settings
-      await storage.updateSystemSetting('didit_client_id', config.clientId, req.session.userId);
-      await storage.updateSystemSetting('didit_client_secret', config.clientSecret, req.session.userId);
-      
-      if (config.redirectUri) {
-        await storage.updateSystemSetting('didit_redirect_uri', config.redirectUri, req.session.userId);
-      }
-      
-      if (config.authUrl) {
-        await storage.updateSystemSetting('didit_auth_url', config.authUrl, req.session.userId);
-      }
-      
-      if (config.tokenUrl) {
-        await storage.updateSystemSetting('didit_token_url', config.tokenUrl, req.session.userId);
-      }
-      
-      if (config.meUrl) {
-        await storage.updateSystemSetting('didit_me_url', config.meUrl, req.session.userId);
-      }
-      
-      res.json({ success: true });
-    } else {
-      res.status(500).json({ error: 'Failed to update configuration' });
+    if (!success || !verificationId) {
+      return res.render('verification-result', { 
+        success: false, 
+        message: 'Verification failed. Please try again.' 
+      });
     }
-  } catch (error: any) {
-    console.error('Error updating Didit.me configuration:', error);
-    res.status(500).json({ 
-      error: 'Failed to update configuration',
-      details: error.message
+    
+    // Get verification details from Didit
+    const verificationDetails = await diditConnector.getVerificationDetails(verificationId);
+    
+    if (!verificationDetails || !verificationDetails.email) {
+      return res.render('verification-result', { 
+        success: false, 
+        message: 'Could not retrieve verification details. Please try again.' 
+      });
+    }
+    
+    // Find the user by email
+    const user = await storage.getUserByEmail(verificationDetails.email);
+    if (!user) {
+      return res.render('verification-result', { 
+        success: false, 
+        message: 'User not found with this email. Please contact support.' 
+      });
+    }
+    
+    // Update user verification status
+    await storage.updateUser(user.id, { verificationStatus: 'verified' });
+    
+    // Store verification details
+    await storage.updateSystemSetting(
+      `didit_verification_${user.id}`,
+      JSON.stringify({
+        id: verificationId,
+        name: `${user.firstName} ${user.lastName}`,
+        verification_level: verificationDetails.level || 'standard',
+        verified_at: new Date().toISOString()
+      }),
+      user.id
+    );
+    
+    // Render success page
+    return res.render('verification-result', { 
+      success: true, 
+      message: 'Verification successful! You can close this window and return to the app.' 
+    });
+  } catch (error) {
+    console.error('Error in verification callback:', error);
+    return res.render('verification-result', { 
+      success: false, 
+      message: 'An error occurred during verification. Please try again later.' 
     });
   }
 });
 
 /**
- * Admin endpoint to get Didit.me configuration
- * GET /api/verification/admin/config
+ * Admin endpoint to get Didit configuration
  */
 router.get('/admin/config', ensureAdmin, async (req: Request, res: Response) => {
   try {
-    // Get configuration from system settings
-    const clientId = await storage.getSystemSetting('didit_client_id');
-    const clientSecret = await storage.getSystemSetting('didit_client_secret');
-    const redirectUri = await storage.getSystemSetting('didit_redirect_uri');
-    const authUrl = await storage.getSystemSetting('didit_auth_url');
-    const tokenUrl = await storage.getSystemSetting('didit_token_url');
-    const meUrl = await storage.getSystemSetting('didit_me_url');
+    // Get Didit configuration from system settings
+    const apiKey = await storage.getSystemSetting('didit_api_key');
+    const apiSecret = await storage.getSystemSetting('didit_api_secret');
+    const baseUrl = await storage.getSystemSetting('didit_base_url');
+    const enabled = await storage.getSystemSetting('didit_enabled');
     
     res.json({
-      clientId: clientId?.settingValue || '',
-      // Don't return the actual secret, just indicate if it's set
-      clientSecret: clientSecret ? '************' : '',
-      redirectUri: redirectUri?.settingValue || '',
-      authUrl: authUrl?.settingValue || '',
-      tokenUrl: tokenUrl?.settingValue || '',
-      meUrl: meUrl?.settingValue || '',
-      isValid: !!(clientId?.settingValue && clientSecret?.settingValue)
+      apiKey: apiKey?.settingValue || '',
+      apiSecret: apiSecret?.settingValue ? '********' : '', // Don't return the actual secret
+      baseUrl: baseUrl?.settingValue || 'https://api.didit.me/v1',
+      enabled: enabled?.settingValue === 'true',
     });
-  } catch (error: any) {
-    console.error('Error getting Didit.me configuration:', error);
-    res.status(500).json({ 
-      error: 'Failed to get configuration',
-      details: error.message
+  } catch (error) {
+    console.error('Error getting Didit configuration:', error);
+    return res.status(500).json({ error: 'An error occurred retrieving Didit configuration' });
+  }
+});
+
+/**
+ * Admin endpoint to update Didit configuration
+ */
+router.post('/admin/config', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { apiKey, apiSecret, baseUrl, enabled } = req.body;
+    
+    // Update Didit configuration in system settings
+    await storage.updateSystemSetting('didit_api_key', apiKey, userId);
+    if (apiSecret && apiSecret !== '********') {
+      await storage.updateSystemSetting('didit_api_secret', apiSecret, userId);
+    }
+    await storage.updateSystemSetting('didit_base_url', baseUrl, userId);
+    await storage.updateSystemSetting('didit_enabled', enabled ? 'true' : 'false', userId);
+    
+    // Update the connector with new settings
+    diditConnector.updateConfig({
+      apiKey,
+      apiSecret: apiSecret && apiSecret !== '********' ? apiSecret : undefined,
+      baseUrl,
+      enabled
     });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating Didit configuration:', error);
+    return res.status(500).json({ error: 'An error occurred updating Didit configuration' });
   }
 });
 

@@ -1598,11 +1598,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add Didit.me verification routes
   app.use('/api/verification', diditVerificationRoutes);
   
-  // Initialize the Didit.me integration
-  // Start the Didit.me integration server
-  diditConnector.startServer().catch(error => {
-    console.error('Failed to start Didit.me integration server:', error);
-  });
+  // We'll initialize the Didit.me integration on demand instead of on startup
+  // This prevents redirect issues and allows more control over when verification is used
   
   return httpServer;
 }
