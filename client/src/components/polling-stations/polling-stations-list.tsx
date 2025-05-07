@@ -280,8 +280,7 @@ export default function PollingStationsList() {
                 <TabsContent value="map" className="mt-0">
                   <div className="rounded-md overflow-hidden border">
                     <InteractiveMap
-                      latitude={mapCenter.lat}
-                      longitude={mapCenter.lng}
+                      center={{ lat: mapCenter.lat, lng: mapCenter.lng }}
                       markers={stationMarkers}
                       height={600}
                       zoom={stationMarkers.length > 0 ? 10 : 2}

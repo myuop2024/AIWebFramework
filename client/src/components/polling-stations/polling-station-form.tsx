@@ -306,6 +306,7 @@ export default function PollingStationForm({
                   markers={mapCoordinates ? [{ lat: mapCoordinates.lat, lng: mapCoordinates.lng }] : []}
                   height={300}
                   zoom={15}
+                  onMapClick={handleMapClick}
                   showUserLocation
                 />
                 
