@@ -11,10 +11,12 @@ import { ThreeBarChart } from "@/components/three/ThreeBarChart";
 import { ElectoralMapViewer } from "@/components/three/ElectoralMapViewer";
 import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
+import { usePerformanceSettings } from "@/components/ui/performance-toggle";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
+  const [performanceSettings] = usePerformanceSettings();
 
   // Fetch system stats
   const { data: stats, isLoading: isStatsLoading } = useQuery({
@@ -105,8 +107,12 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout title="Admin Dashboard">
-      {/* Background animation */}
-      <BackgroundAnimation color="#4F46E5" />
+      {/* Background animation - only show if enabled in performance settings */}
+      <BackgroundAnimation 
+        color="#4F46E5" 
+        enabled={performanceSettings.enable3D && performanceSettings.enableAnimations}
+        count={performanceSettings.lowPerformanceMode ? 15 : 25}
+      />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex justify-between items-center">

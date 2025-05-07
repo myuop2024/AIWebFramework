@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PerformanceToggle } from "@/components/ui/performance-toggle";
 
 interface TopNavigationProps {
   toggleSidebar: () => void;
@@ -88,6 +89,9 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
             />
             <Search className="h-5 w-5 text-gray-400 absolute left-2.5 top-2.5" />
           </div>
+          
+          {/* Performance Settings */}
+          <PerformanceToggle />
           
           {/* Notifications */}
           <DropdownMenu>
