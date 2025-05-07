@@ -16,6 +16,16 @@ import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
+interface UserProfile {
+  profile: {
+    profilePhotoUrl?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    address?: string;
+  };
+}
+
 export default function Profile() {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
@@ -80,10 +90,10 @@ export default function Profile() {
   }, [user, isLoading, navigate]);
 
   // Fetch user profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery({
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<UserProfile>({
     queryKey: ['/api/users/profile'],
     staleTime: 60000, // Cache valid data for 1 minute
-    cacheTime: 300000, // Keep data in cache for 5 minutes
+    gcTime: 300000, // Keep data in cache for 5 minutes
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
