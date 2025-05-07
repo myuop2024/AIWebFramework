@@ -340,10 +340,10 @@ export function TwoFactorAuth() {
           </div>
         ) : (
           <div className="space-y-4">
-            <Alert variant="warning">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Two-factor authentication is not enabled</AlertTitle>
-              <AlertDescription>
+            <Alert variant="destructive" className="bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AlertTitle className="text-amber-800">Two-factor authentication is not enabled</AlertTitle>
+              <AlertDescription className="text-amber-700">
                 Your account is not protected with two-factor authentication.
                 We strongly recommend enabling this feature for additional security.
               </AlertDescription>
