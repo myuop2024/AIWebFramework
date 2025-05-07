@@ -34,6 +34,12 @@ export const users = pgTable("users", {
   deviceId: text("device_id"),
   trainingStatus: text("training_status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
+  // Two-factor authentication fields
+  twoFactorSecret: text("two_factor_secret"),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  twoFactorVerified: boolean("two_factor_verified").default(false),
+  // Recovery codes for 2FA (stored as JSON array)
+  recoveryCodes: jsonb("recovery_codes"),
 });
 
 // User profile table for KYC
