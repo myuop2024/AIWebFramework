@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Menu, Search, Bell, MessageSquare, User } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -19,7 +19,7 @@ interface TopNavigationProps {
 
 export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
   
   // Set page title based on location
@@ -53,7 +53,7 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
   
   const handleLogout = async () => {
     try {
-      await logout();
+      await logoutMutation.mutateAsync();
       navigate("/login"); // Redirect to login page after successful logout
     } catch (error) {
       console.error("Logout failed:", error);

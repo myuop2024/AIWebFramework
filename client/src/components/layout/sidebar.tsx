@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { 
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const [location, navigate] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await logoutMutation.mutateAsync();
       navigate("/login"); // Redirect to login page after successful logout
     } catch (error) {
       console.error("Logout failed:", error);

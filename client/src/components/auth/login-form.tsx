@@ -73,7 +73,7 @@ export default function LoginForm() {
       setError(null);
       setDeviceBindingFailed(false);
       
-      await login(values.username, values.password);
+      await loginMutation.mutateAsync(values);
       navigate("/dashboard");
     } catch (err) {
       // Check if it's a device binding error
