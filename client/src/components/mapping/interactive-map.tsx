@@ -36,6 +36,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
 
   useEffect(() => {
+    // If HERE API key is not provided, set a friendly error
+    if (!import.meta.env.VITE_HERE_API_KEY) {
+      setError("HERE Maps API key is missing. Please add it to your environment variables.");
+      setLoading(false);
+      return;
+    }
+    
     if (!mapRef.current || !isLoaded || !H) {
       if (loadError) {
         setError("Failed to load HERE Maps API. Please try again later.");

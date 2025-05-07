@@ -60,8 +60,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             <>
               <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
               <p className="mb-4">You don't have permission to access this area.</p>
-              <Link href="/dashboard">
-                <a className="text-primary hover:underline">Return to Dashboard</a>
+              <Link href="/dashboard" className="text-primary hover:underline">
+                Return to Dashboard
               </Link>
             </>
           )}
@@ -191,14 +191,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div>
-                          <Link href={item.href} className={cn(
-                                "flex items-center rounded-md transition-colors",
-                                collapsed ? "p-2 justify-center" : "p-3",
-                                isActive
-                                  ? "bg-primary text-white"
-                                  : "text-gray-600 hover:bg-gray-100",
-                                item.highlight && !isActive && "border border-primary text-primary"
-                              )}>
+                          <Link 
+                            href={item.href} 
+                            className={cn(
+                              "flex items-center rounded-md transition-colors",
+                              collapsed ? "p-2 justify-center" : "p-3",
+                              isActive
+                                ? "bg-primary text-white"
+                                : "text-gray-600 hover:bg-gray-100",
+                              item.highlight && !isActive && "border border-primary text-primary"
+                            )}
+                          >
                             <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
                             {!collapsed && <span>{item.name}</span>}
                           </Link>
@@ -220,10 +223,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div>
-                          <Link href={item.href} className={cn(
-                                "flex items-center rounded-md transition-colors text-gray-600 hover:bg-gray-100",
-                                collapsed ? "p-2 justify-center" : "p-3",
-                              )}>
+                          <Link 
+                            href={item.href} 
+                            className={cn(
+                              "flex items-center rounded-md transition-colors text-gray-600 hover:bg-gray-100",
+                              collapsed ? "p-2 justify-center" : "p-3",
+                            )}
+                          >
                             <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
                             {!collapsed && <span>{item.name}</span>}
                           </Link>
