@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AdminModal from "@/components/admin/admin-modal";
 import AdminDashboard from "@/components/admin/admin-dashboard";
-import AdminLayout from "@/components/layouts/admin-layout";
+import AdminLayout from "@/components/layout/admin-layout";
 import { 
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
   FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server, BookOpen

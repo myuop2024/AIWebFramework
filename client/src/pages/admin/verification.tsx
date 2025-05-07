@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 import VerificationQueue from "@/components/admin/verification-queue";
 import { PendingPhotoApprovals } from "@/components/admin/pending-photo-approvals";
-import AdminLayout from "@/components/layouts/admin-layout";
+import AdminLayout from "@/components/layout/admin-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserCheck, Image } from "lucide-react";
 

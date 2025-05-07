@@ -10,7 +10,7 @@ import { BackgroundAnimation } from "@/components/three/BackgroundAnimation";
 import { ThreeBarChart } from "@/components/three/ThreeBarChart";
 import { ElectoralMapViewer } from "@/components/three/ElectoralMapViewer";
 import { useQuery } from "@tanstack/react-query";
-import AdminLayout from "@/components/layouts/admin-layout";
+import AdminLayout from "@/components/layout/admin-layout";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
