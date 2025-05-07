@@ -47,13 +47,18 @@ router.get('/status', ensureAuthenticated, async (req: Request, res: Response) =
       const userProfile = await storage.getUserProfile(userId);
       
       if (userProfile) {
-        // Update verification status in our database
-        await storage.updateUserProfile(userId, {
-          verificationStatus: 'verified',
-          verificationDetails: status.verificationDetails,
-          verified: true,
-          verifiedAt: new Date()
+        // Update verification status in our user database
+        await storage.updateUser(userId, {
+          verificationStatus: 'verified'
         });
+        
+        // Store verification details in the database
+        // We'll add this data as a JSON string to avoid schema changes
+        await storage.updateSystemSetting(
+          `user_verification_${userId}`,
+          JSON.stringify(status.verificationDetails),
+          userId
+        );
       }
     }
     
@@ -132,14 +137,14 @@ router.get('/admin/config', ensureAdmin, async (req: Request, res: Response) => 
     const meUrl = await storage.getSystemSetting('didit_me_url');
     
     res.json({
-      clientId: clientId?.value || '',
+      clientId: clientId?.settingValue || '',
       // Don't return the actual secret, just indicate if it's set
       clientSecret: clientSecret ? '************' : '',
-      redirectUri: redirectUri?.value || '',
-      authUrl: authUrl?.value || '',
-      tokenUrl: tokenUrl?.value || '',
-      meUrl: meUrl?.value || '',
-      isValid: !!(clientId?.value && clientSecret?.value)
+      redirectUri: redirectUri?.settingValue || '',
+      authUrl: authUrl?.settingValue || '',
+      tokenUrl: tokenUrl?.settingValue || '',
+      meUrl: meUrl?.settingValue || '',
+      isValid: !!(clientId?.settingValue && clientSecret?.settingValue)
     });
   } catch (error: any) {
     console.error('Error getting Didit.me configuration:', error);

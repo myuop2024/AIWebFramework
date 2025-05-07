@@ -18,6 +18,7 @@ import analyticsRoutes from './routes/analytics';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
+import { diditConnector } from './services/didit-connector';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
@@ -1593,6 +1594,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI-powered image processing routes
   app.use('/api/images', imageProcessingRoutes);
+  
+  // Add Didit.me verification routes
+  app.use('/api/verification', diditVerificationRoutes);
+  
+  // Initialize the Didit.me integration
+  // Start the Didit.me integration server
+  diditConnector.startServer().catch(error => {
+    console.error('Failed to start Didit.me integration server:', error);
+  });
   
   return httpServer;
 }

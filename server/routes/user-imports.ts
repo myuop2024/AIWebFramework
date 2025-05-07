@@ -3,13 +3,13 @@ import { storage } from '../storage';
 import { bulkUserImportSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
 import crypto from 'crypto';
 
 const router = Router();
 
 // Get all user import logs (admin only)
-router.get('/', requireAuth, requireAdmin, async (req, res) => {
+router.get('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const logs = await storage.getAllUserImportLogs();
     res.status(200).json(logs);
@@ -20,7 +20,7 @@ router.get('/', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Get specific user import log (admin only)
-router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
+router.get('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -40,7 +40,7 @@ router.get('/:id', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Bulk create users (admin only)
-router.post('/bulk', requireAuth, requireAdmin, async (req, res) => {
+router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const result = bulkUserImportSchema.safeParse(req.body);
     if (!result.success) {

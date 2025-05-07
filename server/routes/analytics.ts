@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { aiAnalyticsService } from '../services/ai-analytics-service';
-import { requireAuth, requireAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
 
 const router = Router();
 
 // Get analytics dashboard data
-router.get('/dashboard', requireAuth, requireAdmin, async (req, res) => {
+router.get('/dashboard', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
     const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
@@ -19,7 +19,7 @@ router.get('/dashboard', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Predict potential issues
-router.post('/predict-issues', requireAuth, requireAdmin, async (req, res) => {
+router.post('/predict-issues', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const { stationId } = req.body;
     const predictions = await aiAnalyticsService.predictIssues(stationId);
@@ -31,7 +31,7 @@ router.post('/predict-issues', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Generate comprehensive report
-router.post('/generate-report', requireAuth, requireAdmin, async (req, res) => {
+router.post('/generate-report', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const { startDate, endDate } = req.body;
     

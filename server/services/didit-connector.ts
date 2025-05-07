@@ -156,7 +156,7 @@ class DiditConnectorService {
       // Create a "shadow" user in the Didit integration
       const response = await axios.post(`${DIDIT_URL}/api/login`, {
         email: user.email,
-        name: user.name || user.username
+        name: `${user.firstName} ${user.lastName}`
       });
       
       if (!response.data.success) {
@@ -195,7 +195,7 @@ class DiditConnectorService {
       // Create a "shadow" user in the Didit integration if needed
       await axios.post(`${DIDIT_URL}/api/login`, {
         email: user.email,
-        name: user.name || user.username
+        name: `${user.firstName} ${user.lastName}`
       });
       
       // Check verification status
