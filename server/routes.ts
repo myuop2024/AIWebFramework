@@ -828,16 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Middleware to check admin role
-  const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (!req.session?.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    if (req.session.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden - Admin access required' });
-    }
-    next();
-  };
+  // Note: Using standardized middleware from auth.ts
 
   // System settings routes
   app.get('/api/system-settings', async (req, res) => {
@@ -866,7 +857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/system-settings/:key', requireAdmin, async (req, res) => {
+  app.put('/api/system-settings/:key', ensureAdmin, async (req, res) => {
     try {
       const { key } = req.params;
       const { value } = req.body;
@@ -890,7 +881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/system-settings', requireAdmin, async (req, res) => {
+  app.post('/api/system-settings', ensureAdmin, async (req, res) => {
     try {
       const { settingKey, settingValue, description } = req.body;
       
@@ -1001,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Form Template Management Routes
   
   // Admin endpoints - get all users
-  app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  app.get('/api/admin/users', ensureAdmin, async (req, res) => {
     try {
       // Get all users from the database
       const allUsers = await storage.getAllUsers();
@@ -1031,7 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Endpoint for approving or rejecting user verification
-  app.post('/api/admin/users/:userId/verify', requireAdmin, async (req, res) => {
+  app.post('/api/admin/users/:userId/verify', ensureAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { verificationStatus } = req.body;
@@ -1059,7 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Pending profile photo approvals
-  app.get('/api/admin/pending-photo-approvals', requireAdmin, async (req, res) => {
+  app.get('/api/admin/pending-photo-approvals', ensureAdmin, async (req, res) => {
     try {
       console.log('Fetching pending photo approvals');
       const pendingPhotos = await storage.getPendingPhotoApprovals();
@@ -1092,7 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Approve a pending profile photo
-  app.post('/api/admin/pending-photo-approvals/:id/approve', requireAdmin, async (req, res) => {
+  app.post('/api/admin/pending-photo-approvals/:id/approve', ensureAdmin, async (req, res) => {
     try {
       const approvalId = parseInt(req.params.id);
       if (isNaN(approvalId)) {
@@ -1136,7 +1127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Reject a pending profile photo
-  app.post('/api/admin/pending-photo-approvals/:id/reject', requireAdmin, async (req, res) => {
+  app.post('/api/admin/pending-photo-approvals/:id/reject', ensureAdmin, async (req, res) => {
     try {
       const approvalId = parseInt(req.params.id);
       if (isNaN(approvalId)) {
@@ -1160,7 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Observer verification queue
-  app.get('/api/admin/verification-queue', requireAdmin, async (req, res) => {
+  app.get('/api/admin/verification-queue', ensureAdmin, async (req, res) => {
     try {
       // If using DatabaseStorage, we need to query the database differently
       if (storage instanceof DatabaseStorage) {
@@ -1236,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Approve observer verification
-  app.post('/api/admin/verification/:id/approve', requireAdmin, async (req, res) => {
+  app.post('/api/admin/verification/:id/approve', ensureAdmin, async (req, res) => {
     try {
       const observerId = parseInt(req.params.id);
       if (isNaN(observerId)) {
@@ -1269,7 +1260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Reject observer verification
-  app.post('/api/admin/verification/:id/reject', requireAdmin, async (req, res) => {
+  app.post('/api/admin/verification/:id/reject', ensureAdmin, async (req, res) => {
     try {
       const observerId = parseInt(req.params.id);
       if (isNaN(observerId)) {
@@ -1312,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin dashboard statistics
-  app.get('/api/admin/system-stats', requireAdmin, async (req, res) => {
+  app.get('/api/admin/system-stats', ensureAdmin, async (req, res) => {
     try {
       // Get stats from database
       const totalUsers = await storage.getTotalUserCount();
@@ -1426,7 +1417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Create form template (admin only)
-  app.post('/api/form-templates', requireAdmin, async (req, res) => {
+  app.post('/api/form-templates', ensureAdmin, async (req, res) => {
     try {
       const userId = req.session.userId;
       
@@ -1464,7 +1455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update form template (admin only)
-  app.put('/api/form-templates/:id', requireAdmin, async (req, res) => {
+  app.put('/api/form-templates/:id', ensureAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1511,7 +1502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activate/deactivate form template (admin only)
-  app.patch('/api/form-templates/:id/status', requireAdmin, async (req, res) => {
+  app.patch('/api/form-templates/:id/status', ensureAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1546,7 +1537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Delete form template (admin only)
-  app.delete('/api/form-templates/:id', requireAdmin, async (req, res) => {
+  app.delete('/api/form-templates/:id', ensureAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
