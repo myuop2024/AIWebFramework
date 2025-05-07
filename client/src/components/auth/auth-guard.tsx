@@ -1,24 +1,24 @@
 import { ReactNode, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 
 interface AuthGuardProps {
   children: ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user && !isLoading) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // If still checking authentication, show loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-lg mx-auto text-center">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,7 +43,7 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterForm() {
-  const { register } = useAuth();
+  const { registerMutation } = useAuth();
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,14 +66,14 @@ export default function RegisterForm() {
       setIsSubmitting(true);
       setError(null);
       
-      await register(
-        values.username, 
-        values.password, 
-        values.email, 
-        values.firstName, 
-        values.lastName, 
-        values.phoneNumber
-      );
+      await registerMutation.mutateAsync({
+        username: values.username, 
+        password: values.password, 
+        email: values.email, 
+        firstName: values.firstName, 
+        lastName: values.lastName, 
+        phoneNumber: values.phoneNumber
+      });
       
       navigate("/dashboard");
     } catch (err) {
