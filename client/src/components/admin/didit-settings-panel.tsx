@@ -43,7 +43,7 @@ export default function DiditSettingsPanel() {
 
   // Fetch current Didit settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ['/api/verification/admin/config'],
+    queryKey: ['/api/verification/admin/settings'],
   });
 
   // Form setup
@@ -66,12 +66,13 @@ export default function DiditSettingsPanel() {
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (values: DiditSettingsFormValues) => {
-      const response = await fetch('/api/verification/admin/config', {
-        method: 'POST',
+      const response = await fetch('/api/verification/admin/settings', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(values),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -88,7 +89,7 @@ export default function DiditSettingsPanel() {
         variant: 'default',
         className: 'bg-green-600 text-white',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/verification/admin/config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/verification/admin/settings'] });
     },
     onError: (error) => {
       toast({

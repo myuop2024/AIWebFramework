@@ -28,6 +28,20 @@ interface VerificationStatus {
   };
 }
 
+// Define the response type for the status API
+interface StatusResponse {
+  verified: boolean;
+  status: 'pending' | 'verified' | 'failed' | 'none';
+  verificationDetails?: {
+    id: string;
+    timestamp: string;
+    documentType?: string;
+    fullName?: string;
+    documentNumber?: string;
+    expiryDate?: string;
+  };
+}
+
 export default function VerificationTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,7 +53,7 @@ export default function VerificationTab() {
     isLoading,
     isError,
     refetch: refetchStatus
-  } = useQuery({
+  } = useQuery<StatusResponse>({
     queryKey: ['/api/verification/status'],
     refetchOnWindowFocus: false,
   });
