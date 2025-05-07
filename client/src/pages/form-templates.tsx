@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/lib/auth';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import MainLayout from '@/components/layout/main-layout';
 import { FormTemplateEditor } from '@/components/forms/form-template-editor';
@@ -85,8 +85,9 @@ import {
 
 export default function FormTemplatesPage() {
   const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -102,7 +103,7 @@ export default function FormTemplatesPage() {
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!isLoading && (!user || user.role !== 'admin')) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this page.",
@@ -110,10 +111,10 @@ export default function FormTemplatesPage() {
       });
       navigate("/dashboard");
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, isLoading, navigate, toast]);
 
   // Query to get all form templates
-  const { data: templates = [], isLoading, refetch } = useQuery<FormTemplate[]>({
+  const { data: templates = [], isLoading: isTemplatesLoading, refetch } = useQuery<FormTemplate[]>({
     queryKey: ['/api/form-templates'],
     enabled: !!user && user.role === 'admin'
   });
@@ -631,7 +632,7 @@ export default function FormTemplatesPage() {
               </div>
             </PageHeader>
 
-        {isLoading ? (
+        {isTemplatesLoading ? (
           <div className="flex justify-center items-center h-64">
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
           </div>
