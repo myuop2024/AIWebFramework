@@ -179,18 +179,24 @@ export default function PollingStationsList() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Tabs value={view} onValueChange={(v) => setView(v as "map" | "list")}>
-                <TabsList>
-                  <TabsTrigger value="list">
-                    <ClipboardList className="h-4 w-4 mr-2" />
-                    List
-                  </TabsTrigger>
-                  <TabsTrigger value="map">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Map
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <div className="flex items-center">
+                <Button
+                  variant={view === "list" ? "default" : "outline"}
+                  className="rounded-r-none"
+                  onClick={() => setView("list")}
+                >
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  List
+                </Button>
+                <Button
+                  variant={view === "map" ? "default" : "outline"}
+                  className="rounded-l-none"
+                  onClick={() => setView("map")}
+                >
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Map
+                </Button>
+              </div>
             </div>
 
             {isLoading ? (
@@ -199,99 +205,103 @@ export default function PollingStationsList() {
               </div>
             ) : (
               <>
-                <TabsContent value="list" className="mt-0">
-                  {filteredStations.length > 0 ? (
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Address</TableHead>
-                            <TableHead>Code</TableHead>
-                            <TableHead className="text-center">Capacity</TableHead>
-                            <TableHead className="text-center">Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredStations.map((station: PollingStation) => (
-                            <TableRow key={station.id}>
-                              <TableCell className="font-medium">{station.name}</TableCell>
-                              <TableCell>{station.address}</TableCell>
-                              <TableCell>{station.stationCode}</TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center justify-center">
-                                  <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-                                  {station.capacity}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge
-                                  variant={
-                                    station.status === "active"
-                                      ? "default"
-                                      : station.status === "pending"
-                                      ? "outline"
-                                      : "destructive"
-                                  }
-                                >
-                                  {station.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => {
-                                      setSelectedStation(station);
-                                      setShowEditDialog(true);
-                                    }}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => handleDelete(station.id)}
-                                  >
-                                    <Trash className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
+                {view === "list" && (
+                  <div className="mt-0">
+                    {filteredStations.length > 0 ? (
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Address</TableHead>
+                              <TableHead>Code</TableHead>
+                              <TableHead className="text-center">Capacity</TableHead>
+                              <TableHead className="text-center">Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium">No polling stations found</h3>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {searchQuery
-                          ? "Try a different search term"
-                          : "Create your first polling station"}
-                      </p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="map" className="mt-0">
-                  <div className="rounded-md overflow-hidden border">
-                    <InteractiveMap
-                      center={{ lat: mapCenter.lat, lng: mapCenter.lng }}
-                      markers={stationMarkers}
-                      height={600}
-                      zoom={stationMarkers.length > 0 ? 10 : 2}
-                      onMarkerClick={(index) => {
-                        setSelectedStation(filteredStations[index]);
-                        setShowEditDialog(true);
-                      }}
-                      showUserLocation
-                    />
+                          </TableHeader>
+                          <TableBody>
+                            {filteredStations.map((station: PollingStation) => (
+                              <TableRow key={station.id}>
+                                <TableCell className="font-medium">{station.name}</TableCell>
+                                <TableCell>{station.address}</TableCell>
+                                <TableCell>{station.stationCode}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center">
+                                    <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                                    {station.capacity}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Badge
+                                    variant={
+                                      station.status === "active"
+                                        ? "default"
+                                        : station.status === "pending"
+                                        ? "outline"
+                                        : "destructive"
+                                    }
+                                  >
+                                    {station.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => {
+                                        setSelectedStation(station);
+                                        setShowEditDialog(true);
+                                      }}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleDelete(station.id)}
+                                    >
+                                      <Trash className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <MapPin className="h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium">No polling stations found</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {searchQuery
+                            ? "Try a different search term"
+                            : "Create your first polling station"}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </TabsContent>
+                )}
+
+                {view === "map" && (
+                  <div className="mt-0">
+                    <div className="rounded-md overflow-hidden border">
+                      <InteractiveMap
+                        center={{ lat: mapCenter.lat, lng: mapCenter.lng }}
+                        markers={stationMarkers}
+                        height={600}
+                        zoom={stationMarkers.length > 0 ? 10 : 2}
+                        onMarkerClick={(index) => {
+                          setSelectedStation(filteredStations[index]);
+                          setShowEditDialog(true);
+                        }}
+                        showUserLocation
+                      />
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
