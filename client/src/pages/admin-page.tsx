@@ -157,8 +157,8 @@ export default function AdminPage() {
                 </Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('manage-stations')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Manage Stations"}
+                <Button onClick={() => handleAction('manage-stations')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Manage Stations"}
                 </Button>
               </CardFooter>
             </Card>
@@ -176,8 +176,8 @@ export default function AdminPage() {
                 </Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('manage-assignments')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Manage Assignments"}
+                <Button onClick={() => handleAction('manage-assignments')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Manage Assignments"}
                 </Button>
               </CardFooter>
             </Card>
@@ -196,8 +196,8 @@ export default function AdminPage() {
                 </Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('view-risk-assessment')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "View Risk Map"}
+                <Button onClick={() => handleAction('view-risk-assessment')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "View Risk Map"}
                 </Button>
               </CardFooter>
             </Card>
@@ -216,8 +216,8 @@ export default function AdminPage() {
                 <p>Draft Templates: <Badge variant="secondary">3</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('manage-templates')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Manage Templates"}
+                <Button onClick={() => handleAction('manage-templates')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Manage Templates"}
                 </Button>
               </CardFooter>
             </Card>
@@ -236,8 +236,8 @@ export default function AdminPage() {
                 <p>Pending Review: <Badge variant="destructive">{systemStats?.reports?.pending || "-"}</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('manage-reports')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Manage Reports"}
+                <Button onClick={() => handleAction('manage-reports')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Manage Reports"}
                 </Button>
               </CardFooter>
             </Card>
@@ -252,8 +252,8 @@ export default function AdminPage() {
                 <p>Last Export: <Badge variant="secondary">Today, 10:25 AM</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('export-data')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Export Data"}
+                <Button onClick={() => handleAction('export-data')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Export Data"}
                 </Button>
               </CardFooter>
             </Card>
@@ -293,8 +293,8 @@ export default function AdminPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('save-system-settings')} disabled={isLoading}>
-                  {isLoading ? "Saving..." : "Save Settings"}
+                <Button onClick={() => handleAction('save-system-settings')} disabled={isActionLoading}>
+                  {isActionLoading ? "Saving..." : "Save Settings"}
                 </Button>
               </CardFooter>
             </Card>
@@ -330,8 +330,8 @@ export default function AdminPage() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('save-notification-settings')} disabled={isLoading}>
-                  {isLoading ? "Saving..." : "Save Settings"}
+                <Button onClick={() => handleAction('save-notification-settings')} disabled={isActionLoading}>
+                  {isActionLoading ? "Saving..." : "Save Settings"}
                 </Button>
               </CardFooter>
             </Card>
@@ -411,11 +411,11 @@ export default function AdminPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => handleAction('run-backup')} disabled={isLoading}>
-                  {isLoading ? "Processing..." : "Run Backup"}
+                <Button variant="outline" className="flex-1" onClick={() => handleAction('run-backup')} disabled={isActionLoading}>
+                  {isActionLoading ? "Processing..." : "Run Backup"}
                 </Button>
-                <Button variant="default" className="flex-1" onClick={() => handleAction('view-logs')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "System Logs"}
+                <Button variant="default" className="flex-1" onClick={() => handleAction('view-logs')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "System Logs"}
                 </Button>
               </CardFooter>
             </Card>
