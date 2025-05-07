@@ -1,72 +1,54 @@
-import { useState } from "react";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Lock, Eye, EyeOff, RefreshCw, Save } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
-// Form schema for password change
-const passwordChangeSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-        "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character"
-      ),
-    confirmPassword: z.string().min(1, "Please confirm your new password"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+// Password change form schema
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  confirmPassword: z.string().min(1, 'Please confirm your password')
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword']
+});
 
+// Define type for form values based on the schema
 type PasswordChangeFormValues = z.infer<typeof passwordChangeSchema>;
 
 export default function PasswordChangeForm() {
   const { toast } = useToast();
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSuccessful, setIsSuccessful] = useState(false);
 
-  // Form setup
+  // Initialize form with default values
   const form = useForm<PasswordChangeFormValues>({
     resolver: zodResolver(passwordChangeSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
   });
 
-  // Password change mutation
-  const passwordChangeMutation = useMutation({
+  // Mutation for changing password
+  const { mutate, isPending } = useMutation({
     mutationFn: async (values: PasswordChangeFormValues) => {
-      const response = await fetch('/api/user/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentPassword: values.currentPassword,
-          newPassword: values.newPassword,
-        }),
-        credentials: 'include',
+      const response = await apiRequest('POST', '/api/user/change-password', {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword
       });
       
       if (!response.ok) {
@@ -74,166 +56,130 @@ export default function PasswordChangeForm() {
         throw new Error(errorData.message || 'Failed to change password');
       }
       
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
+      setIsSuccessful(true);
       toast({
-        title: 'Password Changed',
-        description: 'Your password has been updated successfully.',
-        variant: 'default',
-        className: 'bg-green-600 text-white',
+        title: 'Password Updated',
+        description: 'Your password has been changed successfully.',
+        variant: 'default'
       });
+      
+      // Reset the form
       form.reset();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: 'Error Changing Password',
-        description: error instanceof Error ? error.message : 'There was an error changing your password.',
-        variant: 'destructive',
+        title: 'Password Change Failed',
+        description: error.message,
+        variant: 'destructive'
       });
-    },
+    }
   });
 
   // Form submission handler
   function onSubmit(values: PasswordChangeFormValues) {
-    passwordChangeMutation.mutate(values);
+    mutate(values);
   }
 
   return (
-    <Card>
+    <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <Lock className="mr-2 h-5 w-5" /> Change Password
-        </CardTitle>
+        <CardTitle>Change Password</CardTitle>
         <CardDescription>
-          Update your password to keep your account secure
+          Update your password to keep your account secure.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your current password"
-                        type={showCurrentPassword ? "text" : "password"}
-                        {...field}
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    >
-                      {showCurrentPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="Enter your current password" 
+                      {...field} 
+                      disabled={isPending || isSuccessful}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your new password"
-                        type={showNewPassword ? "text" : "password"}
-                        {...field}
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="Enter your new password" 
+                      {...field} 
+                      disabled={isPending || isSuccessful}
+                    />
+                  </FormControl>
                   <FormDescription>
-                    Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                    Password must be at least 8 characters with uppercase, lowercase, number, and special character.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
+            
             <FormField
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        placeholder="Confirm your new password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        {...field}
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      placeholder="Confirm your new password" 
+                      {...field} 
+                      disabled={isPending || isSuccessful}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={passwordChangeMutation.isPending}
+            
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isPending || isSuccessful}
             >
-              {passwordChangeMutation.isPending ? (
+              {isPending ? (
                 <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating Password...
                 </>
+              ) : isSuccessful ? (
+                'Password Updated'
               ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Password
-                </>
+                'Change Password'
               )}
             </Button>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="flex justify-center">
+        {isSuccessful && (
+          <p className="text-sm text-green-600">
+            Your password has been successfully updated.
+          </p>
+        )}
+      </CardFooter>
     </Card>
   );
 }

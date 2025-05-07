@@ -447,6 +447,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Password change endpoint
+  app.post('/api/user/change-password', async (req, res) => {
+    try {
+      // If no session or userId, return 401 (client will handle this as "not logged in")
+      if (!req.session || !req.session.userId) {
+        logger.debug('POST /api/user/change-password: No authenticated user', {
+          sessionExists: !!req.session,
+          sessionID: req.sessionID
+        });
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      // Import password utilities
+      const { comparePasswords, hashPassword } = await import('./utils/password-utils');
+      
+      // Get user's current password hash from the database
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        logger.warn(`POST /api/user/change-password: User not found with ID ${userId}`);
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Verify current password
+      const isPasswordValid = await comparePasswords(currentPassword, user.password);
+      
+      if (!isPasswordValid) {
+        return res.status(400).json({ message: 'Current password is incorrect' });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update user's password
+      await storage.updateUser(userId, { password: hashedPassword });
+      
+      logger.info(`Password changed successfully for user ${userId}`);
+      return res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+      logger.error('Error in POST /api/user/change-password:', error instanceof Error ? error : new Error('Unknown error'), {
+        sessionID: req.sessionID
+      });
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Note: Using standardized middleware from auth.ts
 
   // User profile routes
