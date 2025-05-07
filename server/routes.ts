@@ -310,63 +310,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User profile routes
   app.get('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.userId as number;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
+      }
+      
+      console.log(`Fetching profile for user ID: ${userId}`);
       
       // Get user
       const user = await storage.getUser(userId);
       if (!user) {
+        console.error(`User not found with ID: ${userId}`);
         return res.status(404).json({ message: 'User not found' });
       }
       
       // Get profile
       const profile = await storage.getUserProfile(userId);
+      console.log(`Profile retrieved: ${profile ? 'Yes' : 'No'}`);
       
       // Get documents
       const documents = await storage.getDocumentsByUserId(userId);
+      console.log(`Documents retrieved: ${documents.length}`);
       
       // Remove sensitive data
       const { password, ...userWithoutPassword } = user;
       
       res.status(200).json({
         user: userWithoutPassword,
-        profile,
-        documents
+        profile: profile || null, // Ensure null instead of undefined if no profile
+        documents: documents || []
       });
     } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error in /api/users/profile:', error);
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
   app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
-      const profileData = insertUserProfileSchema.parse(req.body);
-      
-      // Check if profile exists
-      const existingProfile = await storage.getUserProfile(userId);
-      
-      let profile;
-      if (existingProfile) {
-        profile = await storage.updateUserProfile(userId, {
-          ...profileData,
-          userId
-        });
-      } else {
-        profile = await storage.createUserProfile({
-          ...profileData,
-          userId
-        });
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
       }
+
+      console.log(`Creating/updating profile for user ID: ${userId}`);
       
-      // Update user verification status
-      await storage.updateUser(userId, { verificationStatus: 'in-progress' });
-      
-      res.status(200).json(profile);
+      try {
+        const profileData = insertUserProfileSchema.parse(req.body);
+        
+        // Check if profile exists
+        const existingProfile = await storage.getUserProfile(userId);
+        console.log(`Existing profile found: ${existingProfile ? 'Yes' : 'No'}`);
+        
+        let profile;
+        if (existingProfile) {
+          profile = await storage.updateUserProfile(userId, {
+            ...profileData,
+            userId
+          });
+          console.log(`Profile updated for user ${userId}`);
+        } else {
+          profile = await storage.createUserProfile({
+            ...profileData,
+            userId
+          });
+          console.log(`Profile created for user ${userId}`);
+        }
+        
+        // Update user verification status
+        await storage.updateUser(userId, { verificationStatus: 'in-progress' });
+        console.log(`User verification status updated for ${userId}`);
+        
+        res.status(200).json(profile);
+      } catch (validationError) {
+        if (validationError instanceof ZodError) {
+          console.error('Validation error in profile data:', validationError);
+          return res.status(400).json({ 
+            message: fromZodError(validationError).message,
+            errors: validationError.errors
+          });
+        }
+        throw validationError; // Re-throw if not a ZodError
+      }
     } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(error).message });
-      }
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error in /api/users/profile (POST):', error);
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
