@@ -368,8 +368,7 @@ export default function RoutePlanner({
       
       <div className="rounded-md overflow-hidden border">
         <InteractiveMap
-          latitude={mapCenter.lat}
-          longitude={mapCenter.lng}
+          center={{ lat: mapCenter.lat, lng: mapCenter.lng }}
           zoom={mapCenter.zoom}
           markers={getMapMarkers()}
           height={400}

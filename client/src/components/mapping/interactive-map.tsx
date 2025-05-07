@@ -12,9 +12,21 @@ interface InteractiveMapProps {
   width?: string | number;
   showUserLocation?: boolean;
   showControls?: boolean;
+  onMapClick?: (lat: number, lng: number) => void;
+  onMarkerClick?: (index: number) => void;
 }
 
-export function InteractiveMap({ center, zoom = 12, markers = [], height = 400, width = "100%", showUserLocation = false, showControls = true }: InteractiveMapProps) {
+export function InteractiveMap({ 
+  center, 
+  zoom = 12, 
+  markers = [], 
+  height = 400, 
+  width = "100%", 
+  showUserLocation = false, 
+  showControls = true,
+  onMapClick,
+  onMarkerClick
+}: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,12 +62,33 @@ export function InteractiveMap({ center, zoom = 12, markers = [], height = 400, 
 
       const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(mapInstance.current));
       const ui = H.ui.UI.createDefault(mapInstance.current, defaultLayers);
+      
+      // Add map click listener if onMapClick is provided
+      if (onMapClick) {
+        mapInstance.current.addEventListener('tap', (evt: any) => {
+          const coords = mapInstance.current.screenToGeo(
+            evt.currentPointer.viewportX,
+            evt.currentPointer.viewportY
+          );
+          onMapClick(coords.lat, coords.lng);
+        });
+      }
 
-      markers.forEach(marker => {
+      // Add markers with click functionality
+      markers.forEach((marker, index) => {
         const markerObject = new H.map.Marker({ lat: marker.lat, lng: marker.lng });
+        
         if (marker.text) {
           markerObject.setData(marker.text);
         }
+        
+        // Add marker click listener if onMarkerClick is provided
+        if (onMarkerClick) {
+          markerObject.addEventListener('tap', () => {
+            onMarkerClick(index);
+          });
+        }
+        
         mapInstance.current?.addObject(markerObject);
       });
 

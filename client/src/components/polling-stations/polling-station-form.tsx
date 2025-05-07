@@ -302,12 +302,10 @@ export default function PollingStationForm({
                   </p>
                 </div>
                 <InteractiveMap
-                  latitude={mapCoordinates?.lat}
-                  longitude={mapCoordinates?.lng}
+                  center={mapCoordinates ? { lat: mapCoordinates.lat, lng: mapCoordinates.lng } : undefined}
                   markers={mapCoordinates ? [{ lat: mapCoordinates.lat, lng: mapCoordinates.lng }] : []}
                   height={300}
                   zoom={15}
-                  onMapClick={handleMapClick}
                   showUserLocation
                 />
                 
