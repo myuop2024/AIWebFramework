@@ -210,6 +210,44 @@ export class DatabaseStorage implements IStorage {
     const result = await db.insert(pollingStations).values(station).returning();
     return result[0];
   }
+  
+  async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
+    // If lat/lng coordinates are provided in a JSON string, extract them
+    if (data.coordinates && typeof data.coordinates === 'string') {
+      try {
+        const coords = JSON.parse(data.coordinates);
+        if (coords.lat && coords.lng) {
+          data.latitude = coords.lat;
+          data.longitude = coords.lng;
+        }
+      } catch (e) {
+        // Invalid coordinates format, ignore and continue
+        console.error('Error parsing coordinates:', e);
+      }
+    }
+    
+    const result = await db.update(pollingStations)
+      .set(data)
+      .where(eq(pollingStations.id, id))
+      .returning();
+      
+    return result[0];
+  }
+  
+  async deletePollingStation(id: number): Promise<boolean> {
+    try {
+      // First check if station exists
+      const station = await this.getPollingStation(id);
+      if (!station) return false;
+      
+      // Delete the polling station
+      await db.delete(pollingStations).where(eq(pollingStations.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting polling station:', error);
+      return false;
+    }
+  }
 
   // Assignment operations
   async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {

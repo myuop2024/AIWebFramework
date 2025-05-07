@@ -887,6 +887,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Perform check-in
       const updatedAssignment = await storage.checkInObserver(assignmentId);
+      
+      if (!updatedAssignment) {
+        return res.status(404).json({ error: "Assignment not found or could not be updated" });
+      }
 
       // Get station info
       const station = await storage.getPollingStation(updatedAssignment.stationId);
@@ -932,6 +936,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Perform check-out
       const updatedAssignment = await storage.checkOutObserver(assignmentId);
+      
+      if (!updatedAssignment) {
+        return res.status(404).json({ error: "Assignment not found or could not be updated" });
+      }
 
       // Get station info
       const station = await storage.getPollingStation(updatedAssignment.stationId);
@@ -950,6 +958,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/reports', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - user ID not found in session' });
+      }
+      
       const reportData = insertReportSchema.parse(req.body);
 
       const report = await storage.createReport({
@@ -1146,7 +1159,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/messages/:receiverId', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - user ID not found in session' });
+      }
+      
       const receiverId = parseInt(req.params.receiverId);
+      if (isNaN(receiverId)) {
+        return res.status(400).json({ message: 'Invalid receiver ID' });
+      }
 
       const messages = await storage.getMessagesBetweenUsers(userId, receiverId);
       res.status(200).json(messages);
@@ -1269,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: photo.id,
             userId: photo.userId,
             photoUrl: photo.photoUrl,
-            submittedAt: photo.createdAt.toISOString(),
+            submittedAt: photo.createdAt ? photo.createdAt.toISOString() : new Date().toISOString(),
             username: user?.username || 'unknown',
             fullName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Unknown User'
           };

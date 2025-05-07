@@ -10,6 +10,32 @@ import InteractiveMap from "@/components/mapping/interactive-map";
 // We'd use a real map implementation like Google Maps or Leaflet in production
 // This is a simplified version for the demo
 
+interface PollingStation {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  coordinates?: string;
+  latitude?: number;
+  longitude?: number;
+  status: 'active' | 'closed' | 'issue';
+  capacity?: number;
+}
+
+interface Assignment {
+  id: number;
+  userId: number;
+  stationId: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+  isPrimary: boolean;
+  role: string;
+  // other fields...
+}
+
 interface StationMapProps {
   selectedStationId?: number;
   onSelectStation?: (stationId: number) => void;
@@ -26,12 +52,12 @@ export default function StationMap({
   const [checkinTime, setCheckinTime] = useState<Date | null>(null);
 
   // Fetch polling stations
-  const { data: stations, isLoading: isStationsLoading } = useQuery({
+  const { data: stations = [], isLoading: isStationsLoading } = useQuery<PollingStation[]>({
     queryKey: ['/api/polling-stations'],
   });
 
   // Fetch user assignments
-  const { data: assignments, isLoading: isAssignmentsLoading } = useQuery({
+  const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery<Assignment[]>({
     queryKey: ['/api/users/assignments'],
   });
 
@@ -45,7 +71,7 @@ export default function StationMap({
   };
 
   // Get selected station details
-  const selectedStation = stations?.find(station => station.id === selectedStationId);
+  const selectedStation = stations.find(station => station.id === selectedStationId);
   
   // Handle check-in
   const handleCheckin = () => {
@@ -70,7 +96,7 @@ export default function StationMap({
     );
   }
 
-  if (!stations || stations.length === 0) {
+  if (stations.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -103,14 +129,18 @@ export default function StationMap({
           </TabsList>
           <TabsContent value="map" className="relative">
             <div className="h-[300px] relative">
-              {stations?.length > 0 && (
+              {stations.length > 0 && (
                 <InteractiveMap
-                  markers={stations.map((station, index) => ({
+                  markers={stations.map((station) => ({
                     lat: station.latitude || parseCoordinates(station.coordinates || "{}").lat || 0,
                     lng: station.longitude || parseCoordinates(station.coordinates || "{}").lng || 0,
                     text: station.name
                   }))}
-                  onMarkerClick={(index) => onSelectStation?.(stations[index].id)}
+                  onMarkerClick={(index) => {
+                    if (index >= 0 && index < stations.length) {
+                      onSelectStation?.(stations[index].id);
+                    }
+                  }}
                   showUserLocation={true}
                   height="300px"
                 />
@@ -119,9 +149,9 @@ export default function StationMap({
           </TabsContent>
           <TabsContent value="list">
             <div className="divide-y divide-gray-200">
-              {stations.map(station => {
-                const isAssigned = assignments?.some(a => a.stationId === station.id);
-                const isPrimary = assignments?.some(a => a.stationId === station.id && a.isPrimary);
+              {stations.map((station) => {
+                const isAssigned = assignments.some((a) => a.stationId === station.id);
+                const isPrimary = assignments.some((a) => a.stationId === station.id && a.isPrimary);
                 
                 return (
                   <div 
