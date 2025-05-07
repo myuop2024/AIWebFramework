@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import DocumentUpload from "@/components/profile/document-upload";
 import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
 import VerificationTab from "@/components/profile/verification-tab";
+import PasswordChangeForm from "@/components/profile/password-change-form";
 import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -330,10 +331,7 @@ export default function Profile() {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-2">Change Password</h3>
-                  <p className="text-gray-500 mb-4">
-                    Password change functionality will be implemented in a future update.
-                  </p>
+                  <PasswordChangeForm />
                 </div>
                 
                 <Separator />
