@@ -11,6 +11,7 @@ import {
   insertFormTemplateSchema,
   formTemplateExtendedSchema
 } from "@shared/schema";
+import { ensureAuthenticated, ensureAdmin } from './middleware/auth';
 import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
@@ -304,16 +305,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Middleware to check authentication
-  const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (!req.session?.userId) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    next();
-  };
+  // Note: Using standardized middleware from auth.ts
   
   // User profile routes
-  app.get('/api/users/profile', requireAuth, async (req, res) => {
+  app.get('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       
@@ -342,7 +337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/users/profile', requireAuth, async (req, res) => {
+  app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const profileData = insertUserProfileSchema.parse(req.body);
@@ -376,7 +371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Document routes
-  app.post('/api/documents', requireAuth, async (req, res) => {
+  app.post('/api/documents', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const documentData = insertDocumentSchema.parse(req.body);
@@ -395,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/documents', requireAuth, async (req, res) => {
+  app.get('/api/documents', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const documents = await storage.getDocumentsByUserId(userId);
@@ -407,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Polling station routes
-  app.get('/api/polling-stations', requireAuth, async (req, res) => {
+  app.get('/api/polling-stations', ensureAuthenticated, async (req, res) => {
     try {
       const stations = await storage.getAllPollingStations();
       res.status(200).json(stations);
@@ -416,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/users/assignments', requireAuth, async (req, res) => {
+  app.get('/api/users/assignments', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const assignments = await storage.getAssignmentsByUserId(userId);
@@ -438,7 +433,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/users/assignments/active', requireAuth, async (req, res) => {
+  app.get('/api/users/assignments/active', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const assignments = await storage.getActiveAssignments(userId);
@@ -461,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/stations/:stationId/assignments', requireAuth, async (req, res) => {
+  app.get('/api/stations/:stationId/assignments', ensureAuthenticated, async (req, res) => {
     try {
       const stationId = parseInt(req.params.stationId);
       if (isNaN(stationId)) {
@@ -494,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/assignments/:id', requireAuth, async (req, res) => {
+  app.get('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const userRole = req.session.userRole;
@@ -528,7 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/assignments', requireAuth, async (req, res) => {
+  app.post('/api/assignments', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const userRole = req.session.userRole;
@@ -589,7 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put('/api/assignments/:id', requireAuth, async (req, res) => {
+  app.put('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const userRole = req.session.userRole;
@@ -659,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/assignments/:id/check-in', requireAuth, async (req, res) => {
+  app.post('/api/assignments/:id/check-in', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const userRole = req.session.userRole;
@@ -704,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/assignments/:id/check-out', requireAuth, async (req, res) => {
+  app.post('/api/assignments/:id/check-out', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const userRole = req.session.userRole;
@@ -750,7 +745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Report routes
-  app.post('/api/reports', requireAuth, async (req, res) => {
+  app.post('/api/reports', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const reportData = insertReportSchema.parse(req.body);
@@ -769,7 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/reports', requireAuth, async (req, res) => {
+  app.get('/api/reports', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       if (!userId) {
@@ -815,7 +810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Event routes
-  app.get('/api/events', requireAuth, async (req, res) => {
+  app.get('/api/events', ensureAuthenticated, async (req, res) => {
     try {
       const events = await storage.getAllEvents();
       res.status(200).json(events);
@@ -824,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/events/upcoming', requireAuth, async (req, res) => {
+  app.get('/api/events/upcoming', ensureAuthenticated, async (req, res) => {
     try {
       const events = await storage.getUpcomingEvents();
       res.status(200).json(events);
@@ -955,7 +950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Message routes
-  app.get('/api/messages/:receiverId', requireAuth, async (req, res) => {
+  app.get('/api/messages/:receiverId', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const receiverId = parseInt(req.params.receiverId);
@@ -967,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/messages/:receiverId/read/:messageId', requireAuth, async (req, res) => {
+  app.post('/api/messages/:receiverId/read/:messageId', ensureAuthenticated, async (req, res) => {
     try {
       const messageId = parseInt(req.params.messageId);
       
@@ -983,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // QR Code generation route (in real implementation would use a QR code library)
-  app.get('/api/users/qrcode', requireAuth, async (req, res) => {
+  app.get('/api/users/qrcode', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const user = await storage.getUser(userId);
@@ -1377,7 +1372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get all form templates
-  app.get('/api/form-templates', requireAuth, async (req, res) => {
+  app.get('/api/form-templates', ensureAuthenticated, async (req, res) => {
     try {
       const templates = await storage.getAllFormTemplates();
       res.status(200).json(templates);
@@ -1388,7 +1383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get active form templates
-  app.get('/api/form-templates/active', requireAuth, async (req, res) => {
+  app.get('/api/form-templates/active', ensureAuthenticated, async (req, res) => {
     try {
       const templates = await storage.getActiveFormTemplates();
       res.status(200).json(templates);
@@ -1399,7 +1394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get form templates by category
-  app.get('/api/form-templates/category/:category', requireAuth, async (req, res) => {
+  app.get('/api/form-templates/category/:category', ensureAuthenticated, async (req, res) => {
     try {
       const { category } = req.params;
       const templates = await storage.getFormTemplatesByCategory(category);
@@ -1411,7 +1406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get form template by ID
-  app.get('/api/form-templates/:id', requireAuth, async (req, res) => {
+  app.get('/api/form-templates/:id', ensureAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
