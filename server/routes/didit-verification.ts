@@ -109,10 +109,23 @@ router.post('/webhook', async (req: Request, res: Response) => {
       const userProfile = await storage.getUserProfile(user.id);
       
       if (userProfile) {
-        await storage.updateUserProfile(user.id, {
-          verificationStatus: verified ? 'verified' : 'failed',
+        // Create a partial update object with only the fields that exist in the database schema
+        const updateData: any = {
+          // Use the user.verificationStatus field instead of a profile field
+          // verificationStatus: verified ? 'verified' : 'failed',
           verificationId: verificationId,
-          verifiedAt: verified ? new Date() : null,
+        };
+        
+        // Only add verifiedAt if verified is true
+        if (verified) {
+          updateData.verifiedAt = new Date();
+        }
+        
+        await storage.updateUserProfile(user.id, updateData);
+        
+        // Also update the user verification status
+        await storage.updateUser(user.id, {
+          verificationStatus: verified ? 'verified' : 'failed'
         });
       }
     }
