@@ -181,7 +181,7 @@ router.get('/download', ensureAuthenticated, async (req, res) => {
 });
 
 // Preview ID card template (admin only)
-router.post('/preview-template', requireAuth, requireAdmin, async (req, res) => {
+router.post('/preview-template', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const result = idCardTemplateSchema.safeParse(req.body);
     if (!result.success) {

@@ -1,0 +1,13 @@
+{
+  "didit": {
+    "clientId": "",
+    "clientSecret": "",
+    "redirectUri": "http://localhost:3000/verification-callback",
+    "authUrl": "https://auth.didit.me/oauth/authorize",
+    "tokenUrl": "https://auth.didit.me/oauth/token",
+    "meUrl": "https://api.didit.me/v1/me"
+  },
+  "security": {
+    "encryptionKey": "e1f192aed60ab83812bd4f4365c7a095"
+  }
+}
