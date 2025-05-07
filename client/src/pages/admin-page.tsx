@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,16 +19,16 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AdminPage() {
   const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!isLoading && (!user || user.role !== 'admin')) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // Fetch system statistics
   const { data: systemStats, isLoading: statsLoading } = useQuery({
@@ -43,7 +43,7 @@ export default function AdminPage() {
   });
 
   // State for managing modal dialogs
-  const [isLoading, setIsLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>('');
   const [modalTitle, setModalTitle] = useState<string>('');
@@ -102,8 +102,8 @@ export default function AdminPage() {
                 <p>New This Week: <Badge variant="secondary">18</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('manage-users')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Manage Users"}
+                <Button onClick={() => handleAction('manage-users')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Manage Users"}
                 </Button>
               </CardFooter>
             </Card>
@@ -118,8 +118,8 @@ export default function AdminPage() {
                 <p>Completed Today: <Badge variant="secondary">7</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('process-verifications')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Process Verifications"}
+                <Button onClick={() => handleAction('process-verifications')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Process Verifications"}
                 </Button>
               </CardFooter>
             </Card>
@@ -134,8 +134,8 @@ export default function AdminPage() {
                 <p>Custom Roles: <Badge variant="secondary">1</Badge></p>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => handleAction('edit-roles')} disabled={isLoading}>
-                  {isLoading ? "Loading..." : "Edit Roles"}
+                <Button onClick={() => handleAction('edit-roles')} disabled={isActionLoading}>
+                  {isActionLoading ? "Loading..." : "Edit Roles"}
                 </Button>
               </CardFooter>
             </Card>
