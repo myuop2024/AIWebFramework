@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Users, 
-  BarChart, 
-  ClipboardCheck, 
-  FileText, 
-  Settings, 
+import {
+  Users,
+  BarChart,
+  ClipboardCheck,
+  FileText,
+  Settings,
   BookOpen,
   Pencil,
   UserPlus,
@@ -16,7 +16,7 @@ import {
   ChevronRight,
   LucideIcon,
   LogOut,
-  Home
+  Home,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,88 +31,94 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const [location] = useLocation();
   const [collapsed, setCollapsed] = useState(true);
-  const { data: userData } = useQuery({
+  const { data: userData, isFetching } = useQuery({
     queryKey: ['/api/users/profile'],
   });
 
   const isAdmin = userData?.user?.role === 'admin';
-  
+
   // Store collapsed state in localStorage
   useEffect(() => {
     const storedCollapsed = localStorage.getItem('adminSidebarCollapsed');
     if (storedCollapsed !== null) {
-      setCollapsed(storedCollapsed === 'true');
+      setCollapsed(JSON.parse(storedCollapsed)); //Parse JSON for boolean
     }
   }, []);
-  
+
   // Update localStorage when collapsed state changes
   useEffect(() => {
-    localStorage.setItem('adminSidebarCollapsed', String(collapsed));
+    localStorage.setItem('adminSidebarCollapsed', JSON.stringify(collapsed)); //Stringify for localStorage
   }, [collapsed]);
 
-  if (!isAdmin) {
+  if (!isAdmin || isFetching) { //Handle loading state
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-4">You don't have permission to access this area.</p>
-          <Link href="/dashboard">
-            <a className="text-primary hover:underline">Return to Dashboard</a>
-          </Link>
+          {isFetching ? (
+            <p>Loading...</p>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+              <p className="mb-4">You don't have permission to access this area.</p>
+              <Link href="/dashboard">
+                <a className="text-primary hover:underline">Return to Dashboard</a>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
   const navigationItems = [
-    { 
-      name: 'Dashboard', 
-      href: '/admin-dashboard', 
-      icon: BarChart 
+    {
+      name: 'Dashboard',
+      href: '/admin-dashboard',
+      icon: BarChart
     },
-    { 
-      name: 'Observer Management', 
-      href: '/admin/verification', 
-      icon: Users 
+    {
+      name: 'Observer Management',
+      href: '/admin/verification',
+      icon: Users
     },
-    { 
-      name: 'Reports Management', 
-      href: '/admin/reports', 
-      icon: FileText 
+    {
+      name: 'Reports Management',
+      href: '/admin/reports',
+      icon: FileText
     },
-    { 
-      name: 'Analytics', 
-      href: '/admin/analytics', 
-      icon: LineChart 
+    {
+      name: 'Analytics',
+      href: '/admin/analytics',
+      icon: LineChart
     },
-    { 
-      name: 'Registration Forms', 
-      href: '/admin/registration-forms', 
+    {
+      name: 'Registration Forms',
+      href: '/admin/registration-forms',
       icon: Pencil
     },
-    { 
-      name: 'Training Integrations', 
-      href: '/admin/training-integrations', 
-      icon: BookOpen 
+    {
+      name: 'Training Integrations',
+      href: '/admin/training-integrations',
+      icon: BookOpen
     },
-    { 
-      name: 'User Import', 
-      href: '/admin/user-import', 
+    {
+      name: 'User Import',
+      href: '/admin/user-import',
       icon: UserPlus
     },
-    { 
-      name: 'ID Card Management', 
-      href: '/admin/id-cards', 
+    {
+      name: 'ID Card Management',
+      href: '/admin/id-cards',
       icon: CreditCard
     },
-    { 
-      name: 'System Settings', 
-      href: '/admin/settings', 
+    {
+      name: 'System Settings',
+      href: '/admin/settings',
       icon: Settings,
       highlight: true
     },
   ];
-  
+
   const quickLinks = [
     { name: 'Home', href: '/dashboard', icon: Home },
     { name: 'Logout', href: '/logout', icon: LogOut }
@@ -121,7 +127,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div 
+      <div
         className={cn(
           "bg-white shadow-lg fixed h-full overflow-y-auto z-30 transition-all duration-300 ease-in-out",
           collapsed ? "w-16" : "w-64"
@@ -132,16 +138,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           collapsed ? "justify-center" : "justify-between"
         )}>
           {!collapsed && <h2 className="text-xl font-bold text-gray-800">Admin Panel</h2>}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="rounded-full hover:bg-gray-100"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         </div>
-        
+
         {userData?.user && (
           <div className={cn(
             "border-b py-4",
@@ -174,7 +180,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
             )}
           </div>
         )}
-        
+
         <nav className="mt-6">
           <ul className="space-y-1">
             {navigationItems.map((item) => {
@@ -184,20 +190,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={item.href}>
-                          <a
-                            className={cn(
+                        <Link href={item.href} className={cn(
                               "flex items-center rounded-md transition-colors",
                               collapsed ? "p-2 justify-center" : "p-3",
                               isActive
                                 ? "bg-primary text-white"
                                 : "text-gray-600 hover:bg-gray-100",
                               item.highlight && !isActive && "border border-primary text-primary"
-                            )}
-                          >
-                            <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
-                            {!collapsed && <span>{item.name}</span>}
-                          </a>
+                            )}>
+                          <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
+                          {!collapsed && <span>{item.name}</span>}
                         </Link>
                       </TooltipTrigger>
                       {collapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
@@ -207,7 +209,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
               );
             })}
           </ul>
-          
+
           <div className="pt-6 mt-6 border-t">
             <ul className="space-y-1">
               {quickLinks.map((item) => (
@@ -215,16 +217,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={item.href}>
-                          <a
-                            className={cn(
+                        <Link href={item.href} className={cn(
                               "flex items-center rounded-md transition-colors text-gray-600 hover:bg-gray-100",
                               collapsed ? "p-2 justify-center" : "p-3",
-                            )}
-                          >
-                            <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
-                            {!collapsed && <span>{item.name}</span>}
-                          </a>
+                            )}>
+                          <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
+                          {!collapsed && <span>{item.name}</span>}
                         </Link>
                       </TooltipTrigger>
                       {collapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
@@ -245,8 +243,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
         <header className="bg-white shadow-sm">
           <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            
-            <Button 
+
+            <Button
               variant="outline"
               size="sm"
               className="md:hidden"
