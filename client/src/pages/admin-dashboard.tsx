@@ -212,6 +212,7 @@ export default function AdminDashboard() {
                   data={getUserRoleData()}
                   height={250}
                   width={450}
+                  enabled={performanceSettings.enable3D}
                 />
               </CardContent>
             </Card>
@@ -226,6 +227,7 @@ export default function AdminDashboard() {
                   data={getReportTypeData()}
                   height={250}
                   width={450}
+                  enabled={performanceSettings.enable3D}
                 />
               </CardContent>
             </Card>
@@ -242,6 +244,7 @@ export default function AdminDashboard() {
                 stationData={getStationsWithGeoData()}
                 height={400}
                 width={900}
+                enabled={performanceSettings.enable3D}
               />
             </CardContent>
           </Card>
@@ -340,6 +343,7 @@ export default function AdminDashboard() {
                 height={300}
                 width={800}
                 title="Reports by Status"
+                enabled={performanceSettings.enable3D}
               />
               <p className="text-center mt-4 text-gray-500">Select a tab to manage reports by status</p>
             </CardContent>
@@ -359,6 +363,7 @@ export default function AdminDashboard() {
                   height={300}
                   width={450}
                   title="Stations by Risk Level"
+                  enabled={performanceSettings.enable3D}
                 />
                 
                 <div className="flex items-center justify-center">
@@ -366,6 +371,7 @@ export default function AdminDashboard() {
                     stationData={getStationsWithGeoData()}
                     height={300}
                     width={450}
+                    enabled={performanceSettings.enable3D}
                   />
                 </div>
               </div>
