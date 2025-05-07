@@ -20,13 +20,30 @@ export const pool = new Pool({
   max: 5, // Reduce max connections to avoid overwhelming the server
   idleTimeoutMillis: 30000, // 30 seconds before idle connections are closed
   maxUses: 100, // Max number of times a client can be used before being recycled
+  allowExitOnIdle: false, // Prevent pool from shutting down on idle
+  retry_strategy: (times: number) => {
+    const delay = Math.min(times * 500, 3000); // Progressive delay up to 3 seconds
+    return delay;
+  }
 });
 
 // Handle connection errors
 pool.on('error', (err) => {
   console.error('Unexpected error on database client', err);
+  // Log detailed error information
+  console.error('Error code:', err.code);
+  console.error('Error detail:', err.detail);
   // Don't crash the server, just log the error
   // process.exit(1);
+});
+
+// Monitor pool events
+pool.on('connect', () => {
+  console.log('New client connected to database');
+});
+
+pool.on('remove', () => {
+  console.log('Client removed from pool');
 });
 
 // Initialize Drizzle ORM with the schema
@@ -35,15 +52,29 @@ export const db = drizzle(pool, { schema });
 // Export a function to check db connectivity
 export async function checkDbConnection() {
   let client;
-  try {
-    client = await pool.connect();
-    await client.query('SELECT 1');
-    console.log('Database connection successful');
-    return true;
-  } catch (err) {
-    console.error('Database connection error:', err);
-    return false;
-  } finally {
-    if (client) client.release();
+  let retries = 3;
+  
+  while (retries > 0) {
+    try {
+      client = await pool.connect();
+      const result = await client.query('SELECT version()');
+      console.log('Database connection successful');
+      console.log('PostgreSQL version:', result.rows[0].version);
+      return true;
+    } catch (err) {
+      console.error(`Database connection attempt ${4 - retries} failed:`, err);
+      retries--;
+      if (retries === 0) {
+        console.error('All database connection attempts failed');
+        return false;
+      }
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } finally {
+      if (client) {
+        client.release(true); // Force release
+      }
+    }
   }
+  return false;
 }
