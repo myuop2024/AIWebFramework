@@ -45,7 +45,7 @@ export default function Reports() {
   }, [user, isLoading, navigate]);
 
   // Fetch reports
-  const { data: reports, isLoading: isReportsLoading } = useQuery({
+  const { data: reports = [], isLoading: isReportsLoading } = useQuery({
     queryKey: ['/api/reports'],
   });
 
