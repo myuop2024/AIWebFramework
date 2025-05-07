@@ -5,15 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ForgotPasswordForm from "@/components/auth/forgot-password-form";
 
 export default function ForgotPassword() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !isLoading) {
       navigate("/dashboard");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

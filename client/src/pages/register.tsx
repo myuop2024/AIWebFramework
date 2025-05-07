@@ -5,18 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import RegisterForm from "@/components/auth/register-form";
 
 export default function Register() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !isLoading) {
       navigate("/dashboard");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // If still checking authentication, show loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-lg mx-auto">

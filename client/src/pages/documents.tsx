@@ -13,16 +13,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FileText, Eye, Download, Upload, AlertTriangle } from "lucide-react";
 
 export default function Documents() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("all");
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user && !isLoading) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // Fetch user documents
   const { data: documents, isLoading: isDocumentsLoading } = useQuery({
@@ -78,7 +78,7 @@ export default function Documents() {
     alert(`Downloading document: ${documentUrl}`);
   };
 
-  if (loading || isDocumentsLoading) {
+  if (isLoading || isDocumentsLoading) {
     return (
       <MainLayout>
         <Card className="mb-6">

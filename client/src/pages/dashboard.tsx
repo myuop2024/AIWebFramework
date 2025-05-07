@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import MainLayout from "@/components/layout/main-layout";
 import AlertBanner from "@/components/dashboard/alert-banner";
 import StatusCards from "@/components/dashboard/status-cards";
