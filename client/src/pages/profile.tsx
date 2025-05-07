@@ -11,7 +11,8 @@ import DocumentUpload from "@/components/profile/document-upload";
 import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
 import VerificationTab from "@/components/profile/verification-tab";
 import PasswordChangeForm from "@/components/profile/password-change-form";
-import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint } from "lucide-react";
+import { TwoFactorAuth } from "@/components/profile/two-factor-auth";
+import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -323,15 +324,24 @@ export default function Profile() {
         <TabsContent value="security">
           <Card>
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Security Settings
+              </CardTitle>
               <CardDescription>
                 Manage your account security settings and device access
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 <div>
                   <PasswordChangeForm />
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <TwoFactorAuth />
                 </div>
                 
                 <Separator />
@@ -340,15 +350,6 @@ export default function Profile() {
                   <h3 className="text-lg font-medium mb-2">Device Access</h3>
                   <p className="text-gray-500 mb-4">
                     Your account is currently bound to this device. For security reasons, you can only access your account from one device at a time.
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Two-Factor Authentication</h3>
-                  <p className="text-gray-500 mb-4">
-                    Two-factor authentication will be available in a future update.
                   </p>
                 </div>
               </div>
