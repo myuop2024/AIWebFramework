@@ -26,7 +26,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   showControls = true,
   onMapClick,
   onMarkerClick
-}: InteractiveMapProps) => { // Added : React.FC<InteractiveMapProps>
+}: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -212,4 +212,4 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   );
 }
 
-export default InteractiveMap; // Added default export for backwards compatibility
+export default InteractiveMap;
