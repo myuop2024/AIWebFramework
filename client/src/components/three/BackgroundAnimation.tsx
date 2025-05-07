@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 interface BackgroundAnimationProps {
@@ -6,13 +6,15 @@ interface BackgroundAnimationProps {
   intensity?: number;
   speed?: number;
   count?: number;
+  enabled?: boolean; // New prop to control if animation is running
 }
 
 export function BackgroundAnimation({
   color = '#4F46E5',
   intensity = 0.2,
   speed = 0.5,
-  count = 50
+  count = 25, // Reduced default count
+  enabled = true // Default to enabled
 }: BackgroundAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -20,9 +22,10 @@ export function BackgroundAnimation({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const particlesRef = useRef<THREE.Points | null>(null);
   const frameIdRef = useRef<number | null>(null);
-
+  
+  // Only initialize if enabled
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !enabled) return;
     
     // Convert hex color to THREE.Color
     const threeColor = new THREE.Color(color);
@@ -39,12 +42,15 @@ export function BackgroundAnimation({
     );
     camera.position.z = 20;
     
-    // Setup renderer with transparency
+    // Setup renderer with transparency and lower pixel ratio for performance
+    const pixelRatio = Math.min(window.devicePixelRatio, 1.5); // Cap pixel ratio
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true
+      antialias: false, // Disable antialiasing for performance
+      powerPreference: 'low-power' // Request low-power mode for better performance
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(pixelRatio);
     renderer.setClearColor(0x000000, 0); // Transparent background
     
     // Add canvas to container
@@ -70,12 +76,12 @@ export function BackgroundAnimation({
       const i3 = i * 3;
       positions[i3] = (Math.random() - 0.5) * 50; // x
       positions[i3 + 1] = (Math.random() - 0.5) * 50; // y
-      positions[i3 + 2] = (Math.random() - 0.5) * 50; // z
+      positions[i3 + 2] = (Math.random() - 0.5) * 25; // z (smaller range for better performance)
       
-      // Set random velocities
-      velocities[i3] = (Math.random() - 0.5) * 0.05 * speed;
-      velocities[i3 + 1] = (Math.random() - 0.5) * 0.05 * speed;
-      velocities[i3 + 2] = (Math.random() - 0.5) * 0.05 * speed;
+      // Set random velocities (slower for better performance)
+      velocities[i3] = (Math.random() - 0.5) * 0.03 * speed;
+      velocities[i3 + 1] = (Math.random() - 0.5) * 0.03 * speed;
+      velocities[i3 + 2] = (Math.random() - 0.5) * 0.03 * speed;
     }
     
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -91,11 +97,21 @@ export function BackgroundAnimation({
     rendererRef.current = renderer;
     particlesRef.current = particles;
     
-    // Animation function
-    const animate = () => {
+    // Define a lower frame rate for the animation (30fps target)
+    const frameInterval = 1000 / 30; // ~33ms for 30fps
+    let lastFrameTime = 0;
+    
+    // Animation function with throttling
+    const animate = (currentTime: number) => {
       if (!particlesRef.current || !rendererRef.current || !sceneRef.current || !cameraRef.current) {
         return;
       }
+      
+      frameIdRef.current = requestAnimationFrame(animate);
+      
+      // Skip frames to maintain target FPS
+      if (currentTime - lastFrameTime < frameInterval) return;
+      lastFrameTime = currentTime;
       
       const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
       const velocities = particlesRef.current.geometry.attributes.velocity.array as Float32Array;
@@ -115,27 +131,29 @@ export function BackgroundAnimation({
       // Flag the positions for update
       particlesRef.current.geometry.attributes.position.needsUpdate = true;
       
-      // Rotate the entire particle system slightly
-      particlesRef.current.rotation.x += 0.001;
-      particlesRef.current.rotation.y += 0.001;
+      // Slower rotation for better performance
+      particlesRef.current.rotation.x += 0.0005;
+      particlesRef.current.rotation.y += 0.0005;
       
       // Render the scene
       rendererRef.current.render(sceneRef.current, cameraRef.current);
-      
-      // Continue the animation loop
-      frameIdRef.current = requestAnimationFrame(animate);
     };
     
-    animate();
+    animate(0);
     
-    // Handle window resize
+    // Handle window resize with debouncing
+    let resizeTimeout: number | null = null;
     const handleResize = () => {
-      if (!cameraRef.current || !rendererRef.current) return;
+      if (resizeTimeout) window.clearTimeout(resizeTimeout);
       
-      cameraRef.current.aspect = window.innerWidth / window.innerHeight;
-      cameraRef.current.updateProjectionMatrix();
-      
-      rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+      resizeTimeout = window.setTimeout(() => {
+        if (!cameraRef.current || !rendererRef.current) return;
+        
+        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        cameraRef.current.updateProjectionMatrix();
+        
+        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+      }, 200); // Debounce resize events
     };
     
     window.addEventListener('resize', handleResize);
@@ -148,13 +166,20 @@ export function BackgroundAnimation({
       
       if (rendererRef.current && containerRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement);
+        rendererRef.current.dispose();
+      }
+      
+      if (particlesRef.current) {
+        particlesRef.current.geometry.dispose();
+        (particlesRef.current.material as THREE.Material).dispose();
       }
       
       window.removeEventListener('resize', handleResize);
+      if (resizeTimeout) window.clearTimeout(resizeTimeout);
     };
-  }, [color, intensity, speed, count]);
+  }, [color, intensity, speed, count, enabled]);
 
-  return (
+  return enabled ? (
     <div
       ref={containerRef}
       style={{
@@ -167,5 +192,5 @@ export function BackgroundAnimation({
         pointerEvents: 'none'
       }}
     />
-  );
+  ) : null;
 }
