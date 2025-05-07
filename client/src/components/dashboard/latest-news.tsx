@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
 
 export default function LatestNews() {
-  const { data: news, isLoading, error } = useQuery({
+  const { data: news, isLoading, error } = useQuery<any[]>({
     queryKey: ['/api/news/latest'],
   });
 
@@ -92,17 +92,23 @@ export default function LatestNews() {
         <CardTitle className="text-lg font-medium">Latest News</CardTitle>
       </CardHeader>
       <CardContent className="p-0 divide-y divide-gray-200">
-        {news.map((item) => (
-          <div key={item.id} className="p-6">
-            {getCategoryBadge(item.category)}
-            <h4 className="font-medium text-gray-900 mt-2">{item.title}</h4>
-            <p className="text-sm text-gray-500 mt-1">{item.content}</p>
-            <div className="flex items-center mt-3 text-xs text-gray-500">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>{formatDate(item.createdAt)}</span>
+        {Array.isArray(news) && news.length > 0 ? (
+          news.map((item) => (
+            <div key={item.id} className="p-6">
+              {item.category && getCategoryBadge(item.category)}
+              <h4 className="font-medium text-gray-900 mt-2">{item.title || "Untitled"}</h4>
+              <p className="text-sm text-gray-500 mt-1">{item.content || "No content available"}</p>
+              <div className="flex items-center mt-3 text-xs text-gray-500">
+                <Clock className="h-4 w-4 mr-1" />
+                <span>{item.createdAt ? formatDate(item.createdAt) : "Unknown date"}</span>
+              </div>
             </div>
+          ))
+        ) : (
+          <div className="p-6 text-center">
+            <p className="text-gray-500">No news items available.</p>
           </div>
-        ))}
+        )}
       </CardContent>
       <CardFooter className="px-6 py-4 bg-gray-50 border-t border-gray-200">
         <Link href="/news" className="text-sm font-medium text-primary hover:text-primary-dark">

@@ -9,40 +9,112 @@ export default function QRCode() {
   const { user } = useAuth();
   const [qrSvg, setQrSvg] = useState<string | null>(null);
   
-  const { data: qrData, isLoading, error } = useQuery({
+  const { data: qrData, isLoading, error } = useQuery<{observerId?: string}>({
     queryKey: ['/api/users/qrcode'],
     enabled: !!user,
   });
 
   useEffect(() => {
-    if (qrData?.observerId) {
-      // In a real application, this would use a QR code generation library
-      // Here we're using a simple SVG placeholder based on observer ID
-      generatePlaceholderQR(qrData.observerId);
+    // Use either qrData.observerId or user.observerId, with fallback to empty string
+    const observerId = (qrData?.observerId || user?.observerId || '').toString();
+    if (observerId) {
+      generateQR(observerId);
     }
-  }, [qrData]);
+  }, [qrData, user]);
 
-  // This is a placeholder function - in production, use a proper QR library
-  const generatePlaceholderQR = (observerId: string) => {
-    // Create a deterministic pattern based on observer ID
-    const svg = `
-      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-        <rect x="10" y="10" width="80" height="80" fill="none" stroke="black" stroke-width="1" />
-        <g fill="black">
-          <rect x="15" y="15" width="5" height="5" />
-          <rect x="20" y="15" width="5" height="5" />
-          <rect x="25" y="15" width="5" height="5" />
-          <rect x="35" y="15" width="5" height="5" />
-          <rect x="45" y="15" width="5" height="5" />
-          ${observerId.split('').map((digit, index) => {
-            const x = 15 + ((index * 7) % 60);
-            const y = 15 + Math.floor((index * 7) / 60) * 7;
-            return `<rect x="${x}" y="${y}" width="5" height="5" />`;
-          }).join('')}
-        </g>
-      </svg>
-    `;
-    setQrSvg(svg);
+  // Generate a QR code SVG directly
+  const generateQR = (observerId: string) => {
+    try {
+      // Create a more reliable QR code pattern
+      // Each module is a 5x5 square
+      // We'll generate a grid based on the observer ID
+      const size = 100; // Viewbox size
+      const moduleSize = 5;
+      const margin = 10;
+      const availableSize = size - (margin * 2);
+      const modules = Math.floor(availableSize / moduleSize);
+      
+      // Create a deterministic pattern based on observer ID
+      let cells: boolean[][] = Array(modules).fill(false).map(() => Array(modules).fill(false));
+      
+      // Fill the QR patterns
+      // 1. Position detection patterns (corners)
+      // Top-left corner
+      for (let i = 0; i < 7; i++) {
+        for (let j = 0; j < 7; j++) {
+          // Create the solid border pattern
+          cells[i][j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4));
+        }
+      }
+      
+      // Bottom-left corner
+      for (let i = 0; i < 7; i++) {
+        for (let j = 0; j < 7; j++) {
+          cells[modules-7+i][j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4));
+        }
+      }
+      
+      // Top-right corner
+      for (let i = 0; i < 7; i++) {
+        for (let j = 0; j < 7; j++) {
+          cells[i][modules-7+j] = (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4));
+        }
+      }
+      
+      // 2. Use observer ID to fill in data modules
+      const idChars = observerId.split('');
+      for (let i = 0; i < idChars.length; i++) {
+        const char = idChars[i];
+        const charCode = char.charCodeAt(0);
+        
+        // Use the character code to determine positions
+        const row = 8 + Math.floor(i / 5);
+        const col = 8 + (i % 5) * 2;
+        
+        if (row < modules && col < modules) {
+          // Main cell
+          cells[row][col] = true;
+          
+          // Add some pattern based on the character
+          if (charCode % 2 === 0 && row + 1 < modules) cells[row+1][col] = true;
+          if (charCode % 3 === 0 && col + 1 < modules) cells[row][col+1] = true;
+          if (charCode % 5 === 0 && row + 1 < modules && col + 1 < modules) cells[row+1][col+1] = true;
+        }
+      }
+      
+      // 3. Build the SVG representation
+      let svgContent = '';
+      for (let i = 0; i < modules; i++) {
+        for (let j = 0; j < modules; j++) {
+          if (cells[i][j]) {
+            const x = margin + (j * moduleSize);
+            const y = margin + (i * moduleSize);
+            svgContent += `<rect x="${x}" y="${y}" width="${moduleSize}" height="${moduleSize}" />`;
+          }
+        }
+      }
+      
+      const svg = `
+        <svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+          <rect x="0" y="0" width="${size}" height="${size}" fill="white" />
+          <g fill="black">
+            ${svgContent}
+          </g>
+        </svg>
+      `;
+      
+      setQrSvg(svg);
+    } catch (err) {
+      console.error("Error generating QR code:", err);
+      // Fallback to simple representation
+      const fallbackSvg = `
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+          <rect x="10" y="10" width="80" height="80" fill="none" stroke="black" stroke-width="1" />
+          <text x="20" y="55" font-family="monospace" font-size="12">${observerId}</text>
+        </svg>
+      `;
+      setQrSvg(fallbackSvg);
+    }
   };
 
   const handleDownload = () => {

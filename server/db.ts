@@ -21,18 +21,14 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000, // 30 seconds before idle connections are closed
   maxUses: 100, // Max number of times a client can be used before being recycled
   allowExitOnIdle: false, // Prevent pool from shutting down on idle
-  retry_strategy: (times: number) => {
-    const delay = Math.min(times * 500, 3000); // Progressive delay up to 3 seconds
-    return delay;
-  }
 });
 
 // Handle connection errors
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   console.error('Unexpected error on database client', err);
-  // Log detailed error information
-  console.error('Error code:', err.code);
-  console.error('Error detail:', err.detail);
+  // Log only standard error properties to avoid TypeScript errors
+  console.error('Error message:', err.message);
+  console.error('Error stack:', err.stack);
   // Don't crash the server, just log the error
   // process.exit(1);
 });
