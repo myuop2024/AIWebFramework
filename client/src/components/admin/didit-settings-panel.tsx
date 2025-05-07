@@ -41,8 +41,16 @@ export default function DiditSettingsPanel() {
     message: string;
   } | null>(null);
 
+  // Define interface for Didit settings response
+  interface DiditSettings {
+    apiKey: string;
+    apiSecret: string;
+    baseUrl: string;
+    enabled: boolean;
+  }
+  
   // Fetch current Didit settings
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+  const { data: settings, isLoading: isLoadingSettings } = useQuery<DiditSettings>({
     queryKey: ['/api/verification/admin/settings'],
   });
 
