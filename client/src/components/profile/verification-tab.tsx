@@ -47,19 +47,25 @@ export default function VerificationTab() {
   // Mutation to start verification process
   const startVerificationMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/verification/initiate', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start verification process');
+      try {
+        const response = await fetch('/api/verification/initiate', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include' // Important: include credentials
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to start verification process');
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Error starting verification:", error);
+        throw error;
       }
-      
-      return response.json();
     },
     onSuccess: (data) => {
       // Open the verification URL in a new window/tab
