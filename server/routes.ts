@@ -228,15 +228,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deviceId: userData.deviceId || null
       });
       
-      // Set session data
+      // Set session data with explicit type safety
       req.session.userId = user.id;
       req.session.observerId = user.observerId;
       req.session.role = user.role;
       
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
+      logger.info('Registration successful, setting session data', {
+        userId: user.id,
+        observerId: user.observerId,
+        role: user.role,
+        sessionID: req.sessionID,
+        path: req.path
+      });
       
-      res.status(201).json(userWithoutPassword);
+      // Save session explicitly to ensure it's persisted
+      req.session.save((err) => {
+        if (err) {
+          logger.error('Failed to save session during registration', err, {
+            userId: user.id,
+            sessionID: req.sessionID
+          });
+          return res.status(500).json({ 
+            message: 'Session error. Please try again.',
+            details: 'Failed to save authentication state' 
+          });
+        }
+        
+        logger.info(`Registration successful, session saved for user ${user.username}`, {
+          userId: user.id,
+          sessionID: req.sessionID
+        });
+        
+        // Remove password from response
+        const { password, ...userWithoutPassword } = user;
+        
+        res.status(201).json(userWithoutPassword);
+      });
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
@@ -722,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
-      const userRole = req.session.userRole;
+      const userRole = req.session.role;
       const assignmentId = parseInt(req.params.id);
       
       if (isNaN(assignmentId)) {
@@ -792,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/assignments/:id/check-in', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
-      const userRole = req.session.userRole;
+      const userRole = req.session.role;
       const assignmentId = parseInt(req.params.id);
       
       if (isNaN(assignmentId)) {
@@ -837,7 +864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/assignments/:id/check-out', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
-      const userRole = req.session.userRole;
+      const userRole = req.session.role;
       const assignmentId = parseInt(req.params.id);
       
       if (isNaN(assignmentId)) {
