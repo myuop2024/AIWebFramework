@@ -46,6 +46,8 @@ export interface IStorage {
   getPollingStation(id: number): Promise<PollingStation | undefined>;
   getAllPollingStations(): Promise<PollingStation[]>;
   createPollingStation(station: InsertPollingStation): Promise<PollingStation>;
+  updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined>;
+  deletePollingStation(id: number): Promise<boolean>;
   
   // Assignment operations
   getAssignmentsByUserId(userId: number): Promise<Assignment[]>;
@@ -507,9 +509,80 @@ export class MemStorage implements IStorage {
 
   async createPollingStation(station: InsertPollingStation): Promise<PollingStation> {
     const id = this.stationIdCounter++;
-    const pollingStation: PollingStation = { ...station, id };
-    this.pollingStations.set(id, pollingStation);
-    return pollingStation;
+    
+    // Convert coordinates string to latitude/longitude if provided
+    let latitude = null;
+    let longitude = null;
+    if (station.coordinates) {
+      try {
+        const coords = JSON.parse(station.coordinates);
+        if (coords.lat && coords.lng) {
+          latitude = coords.lat;
+          longitude = coords.lng;
+        }
+      } catch (e) {
+        // Invalid coordinates format
+      }
+    }
+    
+    const newStation: PollingStation = {
+      id,
+      name: station.name,
+      address: station.address,
+      city: station.city,
+      state: station.state,
+      zipCode: station.zipCode,
+      coordinates: station.coordinates || null,
+      stationCode: station.stationCode,
+      status: station.status || 'active',
+      latitude,
+      longitude,
+      capacity: station.capacity || 5
+    };
+    
+    this.pollingStations.set(id, newStation);
+    return newStation;
+  }
+  
+  async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
+    const station = this.pollingStations.get(id);
+    if (!station) {
+      return undefined;
+    }
+    
+    // Update the station data
+    const updatedStation: PollingStation = {
+      ...station,
+      ...data,
+      // Ensure mandatory fields remain
+      id: station.id,
+    };
+    
+    // Update latitude/longitude if coordinates were updated
+    if (data.coordinates && typeof data.coordinates === 'string') {
+      try {
+        const coords = JSON.parse(data.coordinates);
+        if (coords.lat && coords.lng) {
+          updatedStation.latitude = coords.lat;
+          updatedStation.longitude = coords.lng;
+        }
+      } catch (e) {
+        // Invalid coordinates format, keep existing lat/lng
+      }
+    }
+    
+    this.pollingStations.set(id, updatedStation);
+    return updatedStation;
+  }
+  
+  async deletePollingStation(id: number): Promise<boolean> {
+    // Check if station exists
+    if (!this.pollingStations.has(id)) {
+      return false;
+    }
+    
+    // Delete the station
+    return this.pollingStations.delete(id);
   }
 
   // Assignment operations

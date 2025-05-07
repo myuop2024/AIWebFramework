@@ -1,272 +1,333 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2, MapPin, Navigation } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-
-interface MapLocation {
-  lat: number;
-  lng: number;
-  label?: string;
-  id?: number;
-  description?: string;
-  riskLevel?: 'high' | 'medium' | 'low' | 'none';
-}
+import { Loader2, MapPin, Navigation, RotateCw } from "lucide-react";
+import { hereMapsService } from "@/lib/here-maps";
+import { cn } from "@/lib/utils";
 
 interface InteractiveMapProps {
-  locations: MapLocation[];
-  height?: string;
-  width?: string;
-  initialZoom?: number;
-  onLocationSelect?: (location: MapLocation) => void;
-  centerLocation?: MapLocation;
-  showUserLocation?: boolean;
+  latitude?: number;
+  longitude?: number;
+  markers?: Array<{
+    lat: number;
+    lng: number;
+    title?: string;
+    color?: string;
+  }>;
+  height?: string | number;
+  width?: string | number;
+  zoom?: number;
+  onMapClick?: (lat: number, lng: number) => void;
+  onMarkerClick?: (index: number) => void;
   className?: string;
+  showUserLocation?: boolean;
+  showControls?: boolean;
 }
 
-export function InteractiveMap({
-  locations = [],
-  height = "400px",
+export default function InteractiveMap({
+  latitude,
+  longitude,
+  markers = [],
+  height = 400,
   width = "100%",
-  initialZoom = 10,
-  onLocationSelect,
-  centerLocation,
-  showUserLocation = false,
+  zoom = 14,
+  onMapClick,
+  onMarkerClick,
   className,
+  showUserLocation = false,
+  showControls = true,
 }: InteractiveMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [loadingUserLocation, setLoadingUserLocation] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
-  
-  // This will simulate a map with an SVG for now
-  // In a real implementation, this would be replaced with a proper mapping library
-  // such as Google Maps, Mapbox, or Leaflet
-  
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapObjectRef = useRef<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+
+  // Initialize and cleanup the map
   useEffect(() => {
-    // Simulating map loading
-    const timer = setTimeout(() => {
-      setMapLoaded(true);
-    }, 500);
-    
-    return () => clearTimeout(timer);
+    // First, load the HERE Maps script
+    const loadHereMaps = () => {
+      if (window.H) {
+        initializeMap();
+        return;
+      }
+
+      const scriptElement = document.createElement("script");
+      scriptElement.type = "text/javascript";
+      scriptElement.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
+      scriptElement.async = true;
+      scriptElement.onload = () => {
+        const serviceScript = document.createElement("script");
+        serviceScript.type = "text/javascript";
+        serviceScript.src = `https://js.api.here.com/v3/3.1/mapsjs-service.js`;
+        serviceScript.async = true;
+        serviceScript.onload = () => {
+          const uiScript = document.createElement("script");
+          uiScript.type = "text/javascript";
+          uiScript.src = `https://js.api.here.com/v3/3.1/mapsjs-ui.js`;
+          uiScript.async = true;
+          uiScript.onload = () => {
+            const eventsScript = document.createElement("script");
+            eventsScript.type = "text/javascript";
+            eventsScript.src = `https://js.api.here.com/v3/3.1/mapsjs-mapevents.js`;
+            eventsScript.async = true;
+            eventsScript.onload = initializeMap;
+            document.body.appendChild(eventsScript);
+          };
+          document.body.appendChild(uiScript);
+        };
+        document.body.appendChild(serviceScript);
+      };
+      document.body.appendChild(scriptElement);
+    };
+
+    const initializeMap = () => {
+      try {
+        // Check if resources are loaded
+        if (!window.H || !window.H.map || !window.H.service || !window.H.ui) {
+          throw new Error("HERE Maps resources are not fully loaded");
+        }
+        
+        // Create platform with API key
+        const platform = new window.H.service.Platform({
+          apikey: hereMapsService.getApiKey()
+        });
+
+        // Get default layers
+        const defaultLayers = platform.createDefaultLayers();
+
+        // Create map instance
+        const map = new window.H.Map(
+          mapRef.current,
+          defaultLayers.vector.normal.map,
+          {
+            zoom: zoom,
+            center: {
+              lat: latitude || 0,
+              lng: longitude || 0,
+            },
+            pixelRatio: window.devicePixelRatio || 1,
+          }
+        );
+
+        // Add map controls
+        if (showControls) {
+          // Add UI components
+          const ui = new window.H.ui.UI.createDefault(map, defaultLayers);
+          
+          // Enable map interaction (pan, zoom, etc.)
+          const behavior = new window.H.mapevents.Behavior(
+            new window.H.mapevents.MapEvents(map)
+          );
+        }
+
+        // Store map reference
+        mapObjectRef.current = map;
+
+        // Add user location marker if enabled
+        if (showUserLocation) {
+          getUserLocation();
+        }
+
+        // Add map click handler
+        if (onMapClick) {
+          map.addEventListener('tap', (evt: any) => {
+            const coord = map.screenToGeo(
+              evt.currentPointer.viewportX,
+              evt.currentPointer.viewportY
+            );
+            onMapClick(coord.lat, coord.lng);
+          });
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error initializing HERE map:", err);
+        setError("Failed to load map. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    loadHereMaps();
+
+    // Cleanup function
+    return () => {
+      if (mapObjectRef.current) {
+        mapObjectRef.current.dispose();
+      }
+    };
   }, []);
-  
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Geolocation not supported",
-        description: "Your browser does not support geolocation.",
-        variant: "destructive",
+
+  // Update map center and zoom when props change
+  useEffect(() => {
+    if (!mapObjectRef.current || !latitude || !longitude) return;
+    
+    mapObjectRef.current.setCenter({ lat: latitude, lng: longitude });
+    mapObjectRef.current.setZoom(zoom);
+  }, [latitude, longitude, zoom]);
+
+  // Update markers when they change
+  useEffect(() => {
+    if (!mapObjectRef.current) return;
+
+    // Clear existing markers
+    mapObjectRef.current.removeObjects(mapObjectRef.current.getObjects());
+
+    // Add new markers
+    const markerGroup = new window.H.map.Group();
+    
+    markers.forEach((marker, index) => {
+      const markerObject = new window.H.map.Marker({
+        lat: marker.lat,
+        lng: marker.lng
       });
-      return;
+      
+      // Add click event to markers
+      if (onMarkerClick) {
+        markerObject.addEventListener('tap', () => {
+          onMarkerClick(index);
+        });
+      }
+      
+      markerGroup.addObject(markerObject);
+    });
+
+    // Add user location marker if available
+    if (userLocation && showUserLocation) {
+      const userMarker = new window.H.map.Marker({
+        lat: userLocation.lat,
+        lng: userLocation.lng
+      }, {
+        icon: new window.H.map.Icon(`
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" fill="#3B82F6" fill-opacity="0.3" />
+            <circle cx="12" cy="12" r="5" fill="#3B82F6" />
+            <circle cx="12" cy="12" r="3" fill="white" />
+          </svg>
+        `)
+      });
+      
+      markerGroup.addObject(userMarker);
     }
     
-    setLoadingUserLocation(true);
-    
+    mapObjectRef.current.addObject(markerGroup);
+  }, [markers, userLocation, showUserLocation]);
+
+  // Get user location
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation is not supported by this browser");
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setLoadingUserLocation(false);
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
         
-        toast({
-          title: "Location found",
-          description: "Your current location has been detected.",
-        });
+        // Center on user location if no specific coordinates provided
+        if (!mapObjectRef.current) return;
+        
+        if (!markers.length && (!latitude || !longitude)) {
+          mapObjectRef.current.setCenter({ lat: latitude, lng: longitude });
+          mapObjectRef.current.setZoom(15);
+        }
       },
       (error) => {
-        setLoadingUserLocation(false);
-        
-        toast({
-          title: "Error getting location",
-          description: error.message,
-          variant: "destructive",
-        });
+        console.warn("Error getting user location:", error.message);
       }
     );
   };
-  
-  // Calculate the map center based on the locations or provided center
-  const getMapCenter = () => {
-    if (centerLocation) {
-      return centerLocation;
-    }
-    
-    if (userLocation) {
-      return userLocation;
-    }
-    
-    if (locations.length > 0) {
-      // Calculate average of location coordinates
-      const sumLat = locations.reduce((sum, loc) => sum + loc.lat, 0);
-      const sumLng = locations.reduce((sum, loc) => sum + loc.lng, 0);
-      
-      return {
-        lat: sumLat / locations.length,
-        lng: sumLng / locations.length,
-      };
-    }
-    
-    // Default to Kingston, Jamaica if no locations provided
-    return { lat: 18.017, lng: -76.809 };
-  };
-  
-  const handleLocationClick = (location: MapLocation) => {
-    if (onLocationSelect) {
-      onLocationSelect(location);
+
+  // Center on user location
+  const centerOnUserLocation = () => {
+    getUserLocation();
+    if (userLocation && mapObjectRef.current) {
+      mapObjectRef.current.setCenter(userLocation);
+      mapObjectRef.current.setZoom(15);
     }
   };
-  
-  const getRiskColor = (riskLevel?: 'high' | 'medium' | 'low' | 'none') => {
-    switch (riskLevel) {
-      case 'high':
-        return '#ef4444'; // red-500
-      case 'medium':
-        return '#f59e0b'; // amber-500
-      case 'low':
-        return '#10b981'; // emerald-500
-      case 'none':
-      default:
-        return '#6366f1'; // indigo-500
-    }
+
+  // Reset map to original view
+  const resetMapView = () => {
+    if (!mapObjectRef.current || !latitude || !longitude) return;
+    mapObjectRef.current.setCenter({ lat: latitude, lng: longitude });
+    mapObjectRef.current.setZoom(zoom);
   };
-  
-  const center = getMapCenter();
-  
+
   return (
-    <Card className={className}>
-      <CardContent className="p-0 overflow-hidden relative">
-        {mapError && (
-          <Alert variant="destructive" className="m-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              {mapError}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div 
-          ref={mapContainerRef}
-          style={{ height, width, position: 'relative' }}
-          className="bg-gray-100 relative"
-        >
-          {!mapLoaded ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2 text-gray-600">Loading map...</span>
-            </div>
-          ) : (
-            // SVG mock map with location markers
-            <svg
-              viewBox="0 0 100 100"
-              preserveAspectRatio="xMidYMid meet"
-              className="w-full h-full"
-              style={{ backgroundColor: '#f3f4f6' }}
-            >
-              {/* Mock map grid lines */}
-              <g className="map-grid" stroke="#e5e7eb" strokeWidth="0.2">
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <line 
-                    key={`h-${i}`} 
-                    x1="0" 
-                    y1={i * 10} 
-                    x2="100" 
-                    y2={i * 10} 
-                  />
-                ))}
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <line 
-                    key={`v-${i}`} 
-                    x1={i * 10} 
-                    y1="0" 
-                    x2={i * 10} 
-                    y2="100" 
-                  />
-                ))}
-              </g>
-              
-              {/* Map location markers */}
-              {locations.map((location, index) => {
-                // Convert geo coordinates to SVG coordinates (basic mock conversion)
-                // In a real map implementation, this would use proper geo projection
-                const x = ((location.lng - center.lng) * 5) + 50;
-                const y = 50 - ((location.lat - center.lat) * 5);
-                
-                return (
-                  <g 
-                    key={index} 
-                    transform={`translate(${x}, ${y})`}
-                    onClick={() => handleLocationClick(location)} 
-                    className="cursor-pointer hover:scale-110 transition-transform"
-                  >
-                    <circle 
-                      r="2.5" 
-                      fill={getRiskColor(location.riskLevel)}
-                      stroke="white"
-                      strokeWidth="0.8"
-                    />
-                    <text 
-                      x="3" 
-                      y="1" 
-                      fontSize="3" 
-                      fill="#374151"
-                      className="pointer-events-none"
-                    >
-                      {location.label || `Location ${index + 1}`}
-                    </text>
-                  </g>
-                );
-              })}
-              
-              {/* User location marker */}
-              {userLocation && (
-                <g 
-                  transform={`translate(${((userLocation.lng - center.lng) * 5) + 50}, ${50 - ((userLocation.lat - center.lat) * 5)})`}
-                  className="animate-pulse"
-                >
-                  <circle 
-                    r="3" 
-                    fill="#3b82f6"
-                    fillOpacity="0.3"
-                    stroke="#3b82f6"
-                    strokeWidth="0.8"
-                  />
-                  <circle 
-                    r="1.5" 
-                    fill="#3b82f6"
-                  />
-                </g>
-              )}
-            </svg>
-          )}
-          
-          {/* Map controls */}
-          <div className="absolute bottom-4 right-4 flex flex-col gap-2">
-            {showUserLocation && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={getUserLocation}
-                disabled={loadingUserLocation}
-              >
-                {loadingUserLocation ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Navigation className="h-4 w-4 mr-1" />
-                )}
-                {loadingUserLocation ? 'Locating...' : 'My Location'}
-              </Button>
-            )}
+    <div className={cn("relative rounded-md overflow-hidden", className)}>
+      {/* Map container */}
+      <div 
+        ref={mapRef} 
+        style={{ 
+          height: typeof height === 'number' ? `${height}px` : height,
+          width: typeof width === 'number' ? `${width}px` : width,
+        }}
+        className="bg-accent/10"
+      />
+      
+      {/* Loading state */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-2 text-sm font-medium">Loading map...</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+      
+      {/* Error state */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+          <div className="text-center max-w-xs mx-auto">
+            <p className="text-destructive font-medium">{error}</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              <RotateCw className="mr-2 h-4 w-4" />
+              Reload
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* Map controls */}
+      {showControls && !loading && !error && (
+        <div className="absolute bottom-3 right-3 flex flex-col gap-2">
+          {showUserLocation && (
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10 shadow-md bg-background"
+              onClick={centerOnUserLocation}
+              title="Center on my location"
+            >
+              <Navigation className="h-5 w-5" />
+            </Button>
+          )}
+          
+          {latitude && longitude && (
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-10 w-10 shadow-md bg-background"
+              onClick={resetMapView}
+              title="Reset view"
+            >
+              <MapPin className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
+}
+
+// Add custom declaration for HERE Maps
+declare global {
+  interface Window {
+    H: any;
+  }
 }

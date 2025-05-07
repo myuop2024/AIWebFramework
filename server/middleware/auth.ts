@@ -104,8 +104,39 @@ export const attachUser = async (req: Request, res: Response, next: NextFunction
   next();
 };
 
+/**
+ * Middleware to ensure a user has one of the specified roles
+ * @param allowedRoles Array of roles that are allowed to access the route
+ */
+export const hasRole = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    // First ensure the user is authenticated
+    if (!req.session || !req.session.userId) {
+      logger.warn('Role check failed: No authenticated user');
+      return res.status(401).json({ 
+        message: 'Unauthorized', 
+        details: 'You must be logged in to access this resource' 
+      });
+    }
+    
+    // Then check if the user has one of the allowed roles
+    const role = req.session.role;
+    if (!role || !allowedRoles.includes(role)) {
+      logger.warn(`Access denied: User ${req.session.userId} with role ${role} attempted restricted action. Allowed roles: ${allowedRoles.join(', ')}`);
+      return res.status(403).json({ 
+        message: 'Forbidden', 
+        details: 'You do not have permission to access this resource' 
+      });
+    }
+    
+    // User has allowed role, continue to next middleware or route handler
+    next();
+  };
+};
+
 export default {
   ensureAuthenticated,
   ensureAdmin,
-  attachUser
+  attachUser,
+  hasRole
 };
