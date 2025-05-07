@@ -50,8 +50,6 @@ export default function VerificationSettings() {
   // Fetch current verification settings
   const { data: settings, isLoading: isLoadingSettings } = useQuery<VerificationSettingsFormValues>({
     queryKey: ['/api/admin/settings/verification'],
-    // This is a preview component, so we'll return mock data
-    queryFn: () => Promise.resolve(defaultValues),
   });
 
   // Form setup
@@ -63,13 +61,22 @@ export default function VerificationSettings() {
 
   // Save settings mutation
   const saveSettingsMutation = useMutation({
-    mutationFn: (values: VerificationSettingsFormValues) => {
-      // This is a preview component, so we'll just simulate an API call
-      return new Promise<void>((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 1000);
+    mutationFn: async (values: VerificationSettingsFormValues) => {
+      const response = await fetch('/api/admin/settings/verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+        credentials: 'include',
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save verification settings');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -130,14 +137,6 @@ export default function VerificationSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Coming in a future update</AlertTitle>
-          <AlertDescription>
-            The User Verification Settings feature is planned for a future update. This interface is currently a preview.
-          </AlertDescription>
-        </Alert>
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => saveSettingsMutation.mutate(data))} className="space-y-6">
             <div className="space-y-4">

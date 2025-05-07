@@ -284,6 +284,20 @@ export const photoApprovals = pgTable("photo_approvals", {
   notes: text("notes"),
 });
 
+// Verification settings schema for the application
+export const verificationSettingsSchema = z.object({
+  autoApproval: z.boolean().default(false),
+  requireIdCard: z.boolean().default(true),
+  requireAddress: z.boolean().default(true),
+  requireProfilePhoto: z.boolean().default(true),
+  requireIdentificationNumber: z.boolean().default(true),
+  allowPhotoUpdates: z.boolean().default(true),
+  verificationMessage: z.string().optional(),
+  minVerificationAge: z.number().min(16).max(99).default(18),
+});
+
+export type VerificationSettings = z.infer<typeof verificationSettingsSchema>;
+
 // Define insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .omit({

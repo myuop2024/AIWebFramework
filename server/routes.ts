@@ -1244,6 +1244,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Form Template Management Routes
 
+  // Verification settings endpoints
+  app.get('/api/admin/settings/verification', ensureAdmin, async (req, res) => {
+    try {
+      // Get verification settings from the system settings table
+      const setting = await storage.getSystemSetting('verification_settings');
+      
+      if (setting) {
+        return res.json(setting.settingValue);
+      } else {
+        // Return default settings if not found
+        const defaultSettings = {
+          autoApproval: false,
+          requireIdCard: true,
+          requireAddress: true,
+          requireProfilePhoto: true,
+          requireIdentificationNumber: true,
+          allowPhotoUpdates: true,
+          verificationMessage: "Please upload your identification documents and complete your profile to verify your account.",
+          minVerificationAge: 18,
+        };
+        return res.json(defaultSettings);
+      }
+    } catch (error) {
+      console.error('Error fetching verification settings:', error);
+      res.status(500).json({ message: 'Failed to fetch verification settings' });
+    }
+  });
+
+  app.post('/api/admin/settings/verification', ensureAdmin, async (req, res) => {
+    try {
+      const { verificationSettingsSchema } = await import('@shared/schema');
+      
+      // Validate request body against the schema
+      const settings = verificationSettingsSchema.parse(req.body);
+      
+      // Update or create the verification settings
+      const updatedSetting = await storage.updateSystemSetting(
+        'verification_settings',
+        settings,
+        req.session.userId as number
+      );
+      
+      if (!updatedSetting) {
+        // If update failed, create the setting
+        await storage.createSystemSetting({
+          settingKey: 'verification_settings',
+          settingValue: settings,
+          description: 'Verification requirements and process configuration',
+          updatedBy: req.session.userId as number
+        });
+      }
+      
+      return res.status(200).json(settings);
+    } catch (error) {
+      console.error('Error updating verification settings:', error);
+      if (error.errors) {
+        return res.status(400).json({ message: 'Invalid verification settings', errors: error.errors });
+      }
+      res.status(500).json({ message: 'Failed to update verification settings' });
+    }
+  });
+
   // Admin endpoints - get all users
   app.get('/api/admin/users', ensureAdmin, async (req, res) => {
     try {
