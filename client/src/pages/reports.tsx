@@ -45,7 +45,7 @@ export default function Reports() {
   }, [user, isLoading, navigate]);
 
   // Fetch reports
-  const { data: reports = [], isLoading: isReportsLoading } = useQuery({
+  const { data: reports = [], isLoading: isReportsLoading } = useQuery<any[]>({
     queryKey: ['/api/reports'],
   });
 
@@ -96,7 +96,7 @@ export default function Reports() {
   };
 
   // Filter reports
-  const filteredReports = reports?.filter(report => {
+  const filteredReports = reports.filter((report: any) => {
     // Status filter
     if (statusFilter !== 'all' && report.status.toLowerCase() !== statusFilter) {
       return false;
@@ -265,7 +265,7 @@ export default function Reports() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredReports.map((report) => (
+                      {filteredReports.map((report: any) => (
                         <TableRow key={report.id}>
                           <TableCell className="font-medium">
                             {generateReportId(report.id)}

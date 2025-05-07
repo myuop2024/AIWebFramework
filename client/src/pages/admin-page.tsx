@@ -31,13 +31,19 @@ export default function AdminPage() {
   }, [user, isLoading, navigate]);
 
   // Fetch system statistics
-  const { data: systemStats, isLoading: statsLoading } = useQuery({
+  const { data: systemStats = {
+    users: { total: 0, byRole: {} },
+    reports: { total: 0, byStatus: {}, byType: {} },
+    pollingStations: { total: 0, active: 0 },
+    assignments: { total: 0, active: 0 },
+    system: { version: '', uptime: 0, database: { status: '', size: 0 } }
+  }, isLoading: statsLoading } = useQuery({
     queryKey: ['/api/admin/system-stats'],
     enabled: !!user && user.role === 'admin',
   });
 
   // Fetch user data
-  const { data: usersData, isLoading: usersLoading } = useQuery({
+  const { data: usersData = [], isLoading: usersLoading } = useQuery({
     queryKey: ['/api/admin/users'],
     enabled: !!user && user.role === 'admin',
   });
