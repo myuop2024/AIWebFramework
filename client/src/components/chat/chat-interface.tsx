@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { useWebSocket, type ChatMessage } from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
