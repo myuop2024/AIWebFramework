@@ -15,19 +15,6 @@ import {
   ArrowRight 
 } from "lucide-react";
 
-interface VerificationStatus {
-  verified: boolean;
-  status: 'pending' | 'verified' | 'failed' | 'none';
-  verificationDetails?: {
-    id: string;
-    timestamp: string;
-    documentType?: string;
-    fullName?: string;
-    documentNumber?: string;
-    expiryDate?: string;
-  };
-}
-
 // Define the response type for the status API
 interface StatusResponse {
   verified: boolean;
@@ -53,7 +40,7 @@ export default function VerificationTab() {
     isLoading,
     isError,
     refetch: refetchStatus
-  } = useQuery<StatusResponse>({
+  } = useQuery<StatusResponse, Error, StatusResponse>({
     queryKey: ['verification-status'],
     queryFn: async () => {
       try {
@@ -74,7 +61,7 @@ export default function VerificationTab() {
     retry: 1,
     retryDelay: 1000,
     staleTime: 30000, // Cache valid data for 30 seconds
-    cacheTime: 60000, // Keep data in cache for 1 minute
+    gcTime: 60000, // Keep data in cache for 1 minute (formerly 'cacheTime')
   });
 
   // Mutation to start verification process
