@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Save, Settings as SettingsIcon, Image, User } from "lucide-react";
+import { Loader2, Save, Settings as SettingsIcon, Image, User, Lock, CheckCircle2, Fingerprint } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 
 // Interface for system settings
@@ -21,14 +22,36 @@ interface SystemSetting {
   updatedBy: number | null;
 }
 
+// Interface for Didit.me configuration
+interface DiditConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  authUrl: string;
+  tokenUrl: string;
+  meUrl: string;
+  isValid: boolean;
+}
+
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("profile-photos");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Query to fetch all system settings
-  const { data: settings, isLoading, isError } = useQuery({
+  const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
     queryKey: ['/api/system-settings'],
+    refetchOnWindowFocus: false,
+  });
+  
+  // Query to fetch Didit.me configuration
+  const { 
+    data: diditConfig, 
+    isLoading: diditLoading, 
+    isError: diditError,
+    refetch: refetchDiditConfig
+  } = useQuery<DiditConfig>({
+    queryKey: ['/api/verification/admin/config'],
     refetchOnWindowFocus: false,
   });
 
@@ -77,6 +100,75 @@ export default function SystemSettings() {
     },
   });
 
+  // Didit.me configuration state
+  const [diditFormData, setDiditFormData] = useState({
+    clientId: '',
+    clientSecret: '',
+    redirectUri: '',
+    authUrl: '',
+    tokenUrl: '',
+    meUrl: ''
+  });
+
+  // Update Didit form when data is loaded
+  useEffect(() => {
+    if (diditConfig) {
+      setDiditFormData({
+        clientId: diditConfig.clientId || '',
+        clientSecret: '', // Don't populate secret field
+        redirectUri: diditConfig.redirectUri || '',
+        authUrl: diditConfig.authUrl || '',
+        tokenUrl: diditConfig.tokenUrl || '',
+        meUrl: diditConfig.meUrl || ''
+      });
+    }
+  }, [diditConfig]);
+
+  // Handle Didit form field changes
+  const handleDiditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setDiditFormData({
+      ...diditFormData,
+      [name]: value
+    });
+  };
+
+  // Mutation for updating Didit configuration
+  const updateDiditConfigMutation = useMutation({
+    mutationFn: async (config: any) => {
+      return apiRequest('/api/verification/admin/config', {
+        method: 'PUT',
+        body: JSON.stringify(config)
+      });
+    },
+    onSuccess: () => {
+      refetchDiditConfig();
+      toast({
+        title: "Didit.me configuration updated",
+        description: "Your integration settings have been saved successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error updating configuration",
+        description: "An error occurred while saving your Didit.me settings. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Error updating Didit.me configuration:", error);
+    }
+  });
+
+  // Save Didit.me configuration
+  const saveDiditConfig = () => {
+    // Only include clientSecret if it's provided
+    const config = {
+      ...diditFormData,
+      clientSecret: diditFormData.clientSecret || undefined
+    };
+    
+    updateDiditConfigMutation.mutate(config);
+  };
+
   // Save profile photo policy settings
   const saveProfilePhotoSettings = () => {
     updateSettingMutation.mutate({
@@ -88,6 +180,9 @@ export default function SystemSettings() {
       },
     });
   };
+
+  const isLoading = settingsLoading || diditLoading;
+  const isError = settingsError || diditError;
 
   if (isLoading) {
     return (
@@ -106,7 +201,7 @@ export default function SystemSettings() {
         <Alert variant="destructive" className="mb-6">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Failed to load system settings. Please refresh the page and try again.
+            Failed to load settings. Please refresh the page and try again.
           </AlertDescription>
         </Alert>
       </AdminLayout>
