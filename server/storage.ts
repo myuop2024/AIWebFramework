@@ -545,12 +545,12 @@ export class MemStorage implements IStorage {
   }
   
   async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
-    const station = this.pollingStations.get(id);
+    const station = await this.getPollingStation(id);
     if (!station) {
       return undefined;
     }
     
-    // Update the station data
+    // Update the station data with a merged object
     const updatedStation: PollingStation = {
       ...station,
       ...data,
@@ -559,7 +559,7 @@ export class MemStorage implements IStorage {
     };
     
     // Update latitude/longitude if coordinates were updated
-    if (data.coordinates && typeof data.coordinates === 'string') {
+    if (data.coordinates && typeof data.coordinates === 'string' && data.coordinates !== station.coordinates) {
       try {
         const coords = JSON.parse(data.coordinates);
         if (coords.lat && coords.lng) {
@@ -576,12 +576,9 @@ export class MemStorage implements IStorage {
   }
   
   async deletePollingStation(id: number): Promise<boolean> {
-    // Check if station exists
-    if (!this.pollingStations.has(id)) {
-      return false;
-    }
+    const exists = await this.getPollingStation(id);
+    if (!exists) return false;
     
-    // Delete the station
     return this.pollingStations.delete(id);
   }
 
