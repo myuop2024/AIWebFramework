@@ -200,6 +200,9 @@ router.post('/preview-template', ensureAuthenticated, ensureAdmin, async (req, r
     
     // Generate preview using admin's own ID
     const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     const pdfBuffer = await idCardService.generateIdCard(userId);
     
     // Delete the temporary template
