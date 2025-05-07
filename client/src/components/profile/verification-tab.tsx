@@ -56,17 +56,25 @@ export default function VerificationTab() {
   } = useQuery<StatusResponse>({
     queryKey: ['verification-status'],
     queryFn: async () => {
-      const response = await fetch('/api/verification/status', {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch verification status');
+      try {
+        const response = await fetch('/api/verification/status', {
+          credentials: 'include',
+          cache: 'no-store' // Prevent browser caching
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch verification status: ${response.status}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Verification status fetch error:', error);
+        throw error;
       }
-      return response.json();
     },
     refetchOnWindowFocus: false,
-    retry: 2,
+    retry: 1,
     retryDelay: 1000,
+    staleTime: 30000, // Cache valid data for 30 seconds
+    cacheTime: 60000, // Keep data in cache for 1 minute
   });
 
   // Mutation to start verification process

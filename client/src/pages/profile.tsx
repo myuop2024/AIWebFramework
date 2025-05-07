@@ -82,6 +82,9 @@ export default function Profile() {
   // Fetch user profile data
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
     queryKey: ['/api/users/profile'],
+    staleTime: 60000, // Cache valid data for 1 minute
+    cacheTime: 300000, // Keep data in cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
   if (loading || isProfileLoading) {
