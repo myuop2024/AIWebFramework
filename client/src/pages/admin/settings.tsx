@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "@/components/layouts/admin-layout";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,6 @@ interface DiditConfig {
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState("profile-photos");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   // Query to fetch all system settings
   const { data: settings, isLoading: settingsLoading, isError: settingsError } = useQuery({
@@ -230,6 +229,10 @@ export default function SystemSettings() {
             <User className="mr-2 h-4 w-4" />
             User Verification
           </TabsTrigger>
+          <TabsTrigger value="didit-integration">
+            <Fingerprint className="mr-2 h-4 w-4" />
+            Didit.me Integration
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile-photos" className="space-y-4">
@@ -329,6 +332,146 @@ export default function SystemSettings() {
                 User verification settings will be implemented in a future update.
               </p>
             </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="didit-integration" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Didit.me Integration</CardTitle>
+              <CardDescription>
+                Configure the Didit.me identity verification service integration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {diditConfig?.isValid && (
+                <Alert className="mb-6">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertTitle>Didit.me Integration Active</AlertTitle>
+                  <AlertDescription>
+                    Your Didit.me integration is properly configured and active.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="clientId">Client ID</Label>
+                    <Input
+                      id="clientId"
+                      name="clientId"
+                      placeholder="Enter your Didit.me Client ID"
+                      value={diditFormData.clientId}
+                      onChange={handleDiditInputChange}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Your unique identifier from the Didit.me developer portal.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="clientSecret">Client Secret</Label>
+                    <Input
+                      id="clientSecret"
+                      name="clientSecret"
+                      type="password"
+                      placeholder={diditConfig?.clientSecret ? "••••••••••••" : "Enter your Didit.me Client Secret"}
+                      value={diditFormData.clientSecret}
+                      onChange={handleDiditInputChange}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {diditConfig?.clientSecret 
+                        ? "Leave blank to keep the current secret. Enter a new value to change it." 
+                        : "The secret key from the Didit.me developer portal."}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="redirectUri">Redirect URI</Label>
+                  <Input
+                    id="redirectUri"
+                    name="redirectUri"
+                    placeholder="https://your-app.com/callback"
+                    value={diditFormData.redirectUri}
+                    onChange={handleDiditInputChange}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    The callback URL registered in the Didit.me developer portal.
+                  </p>
+                </div>
+                
+                <div className="space-y-2 pt-2">
+                  <h3 className="text-lg font-medium">Advanced Settings</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    These fields should typically use the default Didit.me endpoints.
+                  </p>
+                  
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="authUrl">Authorization URL</Label>
+                      <Input
+                        id="authUrl"
+                        name="authUrl"
+                        placeholder="https://auth.didit.me/oauth/authorize"
+                        value={diditFormData.authUrl}
+                        onChange={handleDiditInputChange}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="tokenUrl">Token URL</Label>
+                      <Input
+                        id="tokenUrl"
+                        name="tokenUrl"
+                        placeholder="https://auth.didit.me/oauth/token"
+                        value={diditFormData.tokenUrl}
+                        onChange={handleDiditInputChange}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="meUrl">User Info URL</Label>
+                    <Input
+                      id="meUrl"
+                      name="meUrl"
+                      placeholder="https://api.didit.me/v1/me"
+                      value={diditFormData.meUrl}
+                      onChange={handleDiditInputChange}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-sm text-muted-foreground">
+                {diditConfig?.isValid && (
+                  <span className="flex items-center text-green-600">
+                    <CheckCircle2 className="mr-1 h-4 w-4" />
+                    Configuration is valid
+                  </span>
+                )}
+              </div>
+              <Button 
+                onClick={saveDiditConfig} 
+                disabled={updateDiditConfigMutation.isPending}
+                className="flex items-center"
+              >
+                {updateDiditConfigMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-2 h-4 w-4" />
+                    Save Integration Settings
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
