@@ -20,6 +20,7 @@ import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
 import { diditConnector } from './services/didit-connector';
+import logger from './utils/logger';
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;

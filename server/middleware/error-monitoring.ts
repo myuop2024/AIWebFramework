@@ -18,11 +18,8 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   // Record request start time
   const startTime = Date.now();
   
-  // Capture original end method to add timing
-  const originalEnd = res.end;
-  
-  // Override end method to calculate and log response time
-  res.end = function(chunk: any, encoding?: BufferEncoding, callback?: () => void): Response {
+  // Add response listener instead of wrapping the end method
+  res.on('finish', () => {
     const responseTime = Date.now() - startTime;
     
     // Log request with timing
@@ -36,18 +33,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
         threshold: '500ms'
       });
     }
-    
-    // Call original end method with proper type handling
-    if (arguments.length === 0) {
-      return originalEnd.call(this);
-    } else if (arguments.length === 1) {
-      return originalEnd.call(this, chunk);
-    } else if (arguments.length === 2) {
-      return originalEnd.call(this, chunk, encoding);
-    } else {
-      return originalEnd.call(this, chunk, encoding, callback);
-    }
-  };
+  });
   
   next();
 }
