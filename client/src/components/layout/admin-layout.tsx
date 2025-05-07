@@ -190,8 +190,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div>
-                          <Link 
+                        <Link 
                             href={item.href} 
                             className={cn(
                               "flex items-center rounded-md transition-colors",
@@ -205,7 +204,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                             <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
                             {!collapsed && <span>{item.name}</span>}
                           </Link>
-                        </div>
                       </TooltipTrigger>
                       {collapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
                     </Tooltip>
