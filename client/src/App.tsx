@@ -23,6 +23,7 @@ import VerificationPage from "@/pages/admin/verification";
 import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
 import IdCardManagement from "@/pages/admin/id-cards";
+import UserImportsPage from "@/pages/admin/user-imports";
 import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -58,6 +59,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/training-integrations" component={TrainingIntegrationsAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/registration-forms" component={RegistrationFormsAdmin} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/id-cards" component={IdCardManagement} allowedRoles={["admin"]} />
+      <RoleProtectedRoute path="/admin/user-imports" component={UserImportsPage} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin"]} />
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin"]} />
       

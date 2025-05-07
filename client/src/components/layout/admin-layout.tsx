@@ -102,8 +102,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       icon: BookOpen
     },
     {
-      name: 'User Import',
-      href: '/admin/user-import',
+      name: 'User Imports',
+      href: '/admin/user-imports',
       icon: UserPlus
     },
     {
