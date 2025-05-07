@@ -797,6 +797,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update the assignment
       const updatedAssignment = await storage.updateAssignment(assignmentId, data);
       
+      if (!updatedAssignment) {
+        return res.status(404).json({ message: 'Assignment could not be updated' });
+      }
+      
       // Get station info
       const station = await storage.getPollingStation(updatedAssignment.stationId);
       
