@@ -1194,6 +1194,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/qrcode', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized - user ID not found in session' });
+      }
+      
       const user = await storage.getUser(userId);
 
       if (!user) {
@@ -1339,7 +1343,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Mark the approval as completed using the dedicated approval method
-      await storage.approvePhotoApproval(approvalId, req.session.userId);
+      const adminId = req.session.userId;
+      if (!adminId) {
+        return res.status(401).json({ message: 'Unauthorized - admin ID not found in session' });
+      }
+      
+      await storage.approvePhotoApproval(approvalId, adminId);
 
       res.status(200).json({ message: 'Photo approved successfully' });
     } catch (error) {
@@ -1363,7 +1372,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Mark the approval as rejected using the dedicated rejection method
-      await storage.rejectPhotoApproval(approvalId, req.session.userId);
+      const adminId = req.session.userId;
+      if (!adminId) {
+        return res.status(401).json({ message: 'Unauthorized - admin ID not found in session' });
+      }
+      
+      await storage.rejectPhotoApproval(approvalId, adminId);
 
       res.status(200).json({ message: 'Photo rejected successfully' });
     } catch (error) {
