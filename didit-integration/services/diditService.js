@@ -44,15 +44,15 @@ class DiditService {
   async getAuthorizationUrl(state) {
     try {
       const config = await this.getConfig();
-      
+
       // Use default values if not provided in the config
       const authUrl = config.authUrl || 'https://auth.didit.me/oauth/authorize';
-      const redirectUri = config.redirectUri || 'http://localhost:3000/verification-callback';
-      
+      const redirectUri = config.redirectUri || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verification-callback`;
+
       if (!config.clientId) {
         throw new Error('Client ID is not configured');
       }
-      
+
       // Build the authorization URL
       const url = new URL(authUrl);
       url.searchParams.append('client_id', config.clientId);
@@ -60,7 +60,7 @@ class DiditService {
       url.searchParams.append('response_type', 'code');
       url.searchParams.append('scope', 'openid profile email');
       url.searchParams.append('state', state);
-      
+
       return url.toString();
     } catch (error) {
       console.error('Error generating authorization URL:', error);
@@ -76,15 +76,15 @@ class DiditService {
   async exchangeCodeForToken(code) {
     try {
       const config = await this.getConfig();
-      
+
       // Use default values if not provided in the config
       const tokenUrl = config.tokenUrl || 'https://auth.didit.me/oauth/token';
-      const redirectUri = config.redirectUri || 'http://localhost:3000/verification-callback';
-      
+      const redirectUri = config.redirectUri || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/verification-callback`;
+
       if (!config.clientId || !config.clientSecret) {
         throw new Error('Client credentials are not fully configured');
       }
-      
+
       // Exchange the code for a token
       const response = await axios.post(tokenUrl, {
         grant_type: 'authorization_code',
@@ -98,7 +98,7 @@ class DiditService {
           'Accept': 'application/json'
         }
       });
-      
+
       return response.data;
     } catch (error) {
       console.error('Error exchanging code for token:', error.response?.data || error.message);
@@ -114,10 +114,10 @@ class DiditService {
   async getUserVerificationData(accessToken) {
     try {
       const config = await this.getConfig();
-      
+
       // Use default value if not provided in the config
       const meUrl = config.meUrl || 'https://api.didit.me/v1/me';
-      
+
       // Get the user data
       const response = await axios.get(meUrl, {
         headers: {
@@ -125,10 +125,10 @@ class DiditService {
           'Accept': 'application/json'
         }
       });
-      
+
       // Extract the verification data
       const userData = response.data;
-      
+
       // Build a structured verification object
       return {
         id: userData.id,

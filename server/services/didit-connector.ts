@@ -146,7 +146,8 @@ class DiditConnector {
           DIDIT_API_KEY: this.config.apiKey || '',
           DIDIT_API_SECRET: this.config.apiSecret || '',
           DIDIT_BASE_URL: this.config.baseUrl || 'https://api.didit.me/v1',
-          PORT: '3030' // Use a different port from the main app
+          PORT: '5000',
+          HOST: '0.0.0.0'
         },
         detached: false,
         stdio: 'pipe'
@@ -200,12 +201,20 @@ class DiditConnector {
    */
   async checkVerificationStatus(email: string): Promise<{ verified: boolean, status: string, verificationDetails?: any }> {
     try {
+      if (!email) {
+        throw new Error('Email is required');
+      }
+
       if (!this.config.enabled) {
         return { 
           verified: false, 
           status: 'none',
           verificationDetails: null
         };
+      }
+
+      if (!this.initialized) {
+        await this.initializeConfig();
       }
 
       // Ensure the server is running
