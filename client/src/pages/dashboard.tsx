@@ -12,7 +12,7 @@ import QRCode from "@/components/dashboard/qr-code";
 import LatestNews from "@/components/dashboard/latest-news";
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Prefetch related data
   useQuery({ queryKey: ['/api/users/profile'] });
@@ -21,7 +21,7 @@ export default function Dashboard() {
   useQuery({ queryKey: ['/api/users/assignments'] });
   useQuery({ queryKey: ['/api/news/latest'] });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <MainLayout>
         <div className="animate-pulse space-y-6">

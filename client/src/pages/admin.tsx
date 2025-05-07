@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,16 +21,16 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Admin() {
   const [, navigate] = useLocation();
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
+    if (!isLoading && (!user || user.role !== 'admin')) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // Mock queries for various admin data
   const { data: usersData, isLoading: usersLoading } = useQuery({
@@ -47,7 +47,7 @@ export default function Admin() {
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
   const [selectedReport, setSelectedReport] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string>('');
   const [modalTitle, setModalTitle] = useState<string>('');
@@ -61,11 +61,11 @@ export default function Admin() {
 
   // Handler for saving settings
   const handleSaveSettings = (section: string) => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       toast({
         title: "Settings Updated",
         description: `${section} settings have been saved successfully.`,
@@ -76,11 +76,11 @@ export default function Admin() {
 
   // Handler for toggling maintenance mode
   const handleToggleMaintenance = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       toast({
         title: "Maintenance Mode Toggled",
         description: "System maintenance mode has been updated.",
@@ -91,11 +91,11 @@ export default function Admin() {
   
   // Handler for user management
   const handleManageUsers = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call to get users
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "User Management", 
         `
@@ -141,11 +141,11 @@ export default function Admin() {
   
   // Handler for processing verifications
   const handleProcessVerifications = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "User Verification", 
         `
@@ -185,11 +185,11 @@ export default function Admin() {
   
   // Handler for editing roles
   const handleEditRoles = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Edit User Roles", 
         `
@@ -242,11 +242,11 @@ export default function Admin() {
   
   // Handler for managing stations
   const handleManageStations = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Polling Station Management", 
         `
@@ -312,11 +312,11 @@ export default function Admin() {
   
   // Handler for managing assignments
   const handleManageAssignments = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Station Assignments", 
         `
@@ -396,11 +396,11 @@ export default function Admin() {
   
   // Handler for viewing station analytics
   const handleViewStationAnalytics = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Station Analytics", 
         `
@@ -483,11 +483,11 @@ export default function Admin() {
   
   // Handler for sending notification
   const handleSendNotification = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       toast({
         title: "Notification Sent",
         description: "Your notification has been sent to all relevant users.",
@@ -498,11 +498,11 @@ export default function Admin() {
   
   // Let's restart from a clean function definition
   const handleManageEvents = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Event Management", 
         `
@@ -546,11 +546,11 @@ export default function Admin() {
   
   // Handler for analytics
   const handleViewAnalytics = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Analytics Dashboard", 
         `
@@ -591,11 +591,11 @@ export default function Admin() {
   
   // Handler for review reports
   const handleReviewReports = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Report Management", 
         `
@@ -663,11 +663,11 @@ export default function Admin() {
   
   // Handler for sending event notification
   const handleSendEventNotification = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       toast({
         title: "Event Notification Sent",
         description: "Your event notification has been sent to all participants.",
@@ -678,11 +678,11 @@ export default function Admin() {
   
   // Handler for managing training
   const handleManageTraining = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "Training Management", 
         `
@@ -735,11 +735,11 @@ export default function Admin() {
   
   // Handler for viewing system logs
   const handleViewLogs = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       openModal(
         "System Logs", 
         `
@@ -779,11 +779,11 @@ export default function Admin() {
   
   // Handler for running backup
   const handleRunBackup = () => {
-    setIsLoading(true);
+    setIsActionLoading(true);
     
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
+      setIsActionLoading(false);
       toast({
         title: "Backup Initiated",
         description: "System backup process has started. You'll be notified when complete.",
@@ -792,7 +792,7 @@ export default function Admin() {
     }, 800);
   };
 
-  if (loading || !user) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -1346,9 +1346,9 @@ export default function Admin() {
                   className="w-full" 
                   variant="default"
                   onClick={() => {
-                    setIsLoading(true);
+                    setIsActionLoading(true);
                     setTimeout(() => {
-                      setIsLoading(false);
+                      setIsActionLoading(false);
                       openModal(
                         "Event Management",
                         `
@@ -1467,9 +1467,9 @@ export default function Admin() {
                   className="w-full" 
                   variant="default"
                   onClick={() => {
-                    setIsLoading(true);
+                    setIsActionLoading(true);
                     setTimeout(() => {
-                      setIsLoading(false);
+                      setIsActionLoading(false);
                       openModal(
                         "Training Management",
                         `

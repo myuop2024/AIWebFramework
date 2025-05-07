@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
 import MainLayout from "@/components/layout/main-layout";
 import ProfileForm from "@/components/profile/profile-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function Profile() {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   
   // Function to download the ID card
@@ -74,10 +74,10 @@ export default function Profile() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user && !loading) {
+    if (!user && !isLoading) {
       navigate("/login");
     }
-  }, [user, loading, navigate]);
+  }, [user, isLoading, navigate]);
 
   // Fetch user profile data
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
@@ -87,7 +87,7 @@ export default function Profile() {
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
-  if (loading || isProfileLoading) {
+  if (isLoading || isProfileLoading) {
     return (
       <MainLayout>
         <div className="animate-pulse space-y-6">
