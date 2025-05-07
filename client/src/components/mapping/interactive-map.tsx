@@ -62,7 +62,7 @@ export function InteractiveMap({
 
       const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(mapInstance.current));
       const ui = H.ui.UI.createDefault(mapInstance.current, defaultLayers);
-      
+
       // Add map click listener if onMapClick is provided
       if (onMapClick) {
         mapInstance.current.addEventListener('tap', (evt: any) => {
@@ -77,18 +77,18 @@ export function InteractiveMap({
       // Add markers with click functionality
       markers.forEach((marker, index) => {
         const markerObject = new H.map.Marker({ lat: marker.lat, lng: marker.lng });
-        
+
         if (marker.text) {
           markerObject.setData(marker.text);
         }
-        
+
         // Add marker click listener if onMarkerClick is provided
         if (onMarkerClick) {
           markerObject.addEventListener('tap', () => {
             onMarkerClick(index);
           });
         }
-        
+
         mapInstance.current?.addObject(markerObject);
       });
 
