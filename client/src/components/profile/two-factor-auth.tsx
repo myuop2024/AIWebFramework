@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Icons } from "@/components/ui/icons";
+import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
@@ -244,7 +244,7 @@ export function TwoFactorAuth() {
                   disabled={verifyMutation.isPending}
                 >
                   {verifyMutation.isPending && (
-                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Verify and Activate
                 </Button>
@@ -328,7 +328,7 @@ export function TwoFactorAuth() {
                         disabled={disableMutation.isPending}
                       >
                         {disableMutation.isPending && (
-                          <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         Disable
                       </Button>
@@ -354,7 +354,7 @@ export function TwoFactorAuth() {
               disabled={setupMutation.isPending}
             >
               {setupMutation.isPending && (
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Set Up Two-Factor Authentication
             </Button>
