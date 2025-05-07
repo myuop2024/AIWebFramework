@@ -51,26 +51,29 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         <div className="py-6">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-            <Link href="/dashboard" className="text-sm font-medium text-primary hover:text-primary-dark">
-              Back to Main Dashboard
-            </Link>
+            <div>
+              <Link href="/dashboard" className="text-sm font-medium text-primary hover:text-primary-dark">
+                Back to Main Dashboard
+              </Link>
+            </div>
           </div>
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
               <nav className="space-y-1 bg-white p-4 rounded-lg shadow">
                 {adminNavLinks.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                      location === link.href
-                        ? 'bg-primary text-white'
-                        : 'text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="mr-3">{link.icon}</span>
-                    {link.label}
-                  </Link>
+                  <div key={link.href}>
+                    <Link
+                      href={link.href}
+                      className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                        location === link.href
+                          ? 'bg-primary text-white'
+                          : 'text-gray-900 hover:bg-gray-100'
+                      }`}
+                    >
+                      <span className="mr-3">{link.icon}</span>
+                      {link.label}
+                    </Link>
+                  </div>
                 ))}
               </nav>
             </div>

@@ -190,17 +190,19 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={item.href} className={cn(
-                              "flex items-center rounded-md transition-colors",
-                              collapsed ? "p-2 justify-center" : "p-3",
-                              isActive
-                                ? "bg-primary text-white"
-                                : "text-gray-600 hover:bg-gray-100",
-                              item.highlight && !isActive && "border border-primary text-primary"
-                            )}>
-                          <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
-                          {!collapsed && <span>{item.name}</span>}
-                        </Link>
+                        <div>
+                          <Link href={item.href} className={cn(
+                                "flex items-center rounded-md transition-colors",
+                                collapsed ? "p-2 justify-center" : "p-3",
+                                isActive
+                                  ? "bg-primary text-white"
+                                  : "text-gray-600 hover:bg-gray-100",
+                                item.highlight && !isActive && "border border-primary text-primary"
+                              )}>
+                            <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
+                            {!collapsed && <span>{item.name}</span>}
+                          </Link>
+                        </div>
                       </TooltipTrigger>
                       {collapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
                     </Tooltip>
@@ -217,13 +219,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Link href={item.href} className={cn(
-                              "flex items-center rounded-md transition-colors text-gray-600 hover:bg-gray-100",
-                              collapsed ? "p-2 justify-center" : "p-3",
-                            )}>
-                          <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
-                          {!collapsed && <span>{item.name}</span>}
-                        </Link>
+                        <div>
+                          <Link href={item.href} className={cn(
+                                "flex items-center rounded-md transition-colors text-gray-600 hover:bg-gray-100",
+                                collapsed ? "p-2 justify-center" : "p-3",
+                              )}>
+                            <item.icon className={cn("w-5 h-5", !collapsed && "mr-3")} />
+                            {!collapsed && <span>{item.name}</span>}
+                          </Link>
+                        </div>
                       </TooltipTrigger>
                       {collapsed && <TooltipContent side="right">{item.name}</TooltipContent>}
                     </Tooltip>

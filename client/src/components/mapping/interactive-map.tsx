@@ -16,7 +16,7 @@ interface InteractiveMapProps {
   onMarkerClick?: (index: number) => void;
 }
 
-export function InteractiveMap({ 
+export const InteractiveMap: React.FC<InteractiveMapProps> = ({ 
   center, 
   zoom = 12, 
   markers = [], 
@@ -26,7 +26,7 @@ export function InteractiveMap({
   showControls = true,
   onMapClick,
   onMarkerClick
-}: InteractiveMapProps) {
+}: InteractiveMapProps) => { // Added : React.FC<InteractiveMapProps>
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -212,4 +212,4 @@ export function InteractiveMap({
   );
 }
 
-export default InteractiveMap;
+export default InteractiveMap; // Added default export for backwards compatibility
