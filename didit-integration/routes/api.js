@@ -1,5 +1,5 @@
 /**
- * API Routes for the application
+ * API routes for the Didit.me integration
  */
 const express = require('express');
 const router = express.Router();
@@ -7,28 +7,10 @@ const userModel = require('../models/user');
 const authUtils = require('../utils/auth');
 
 /**
- * Get current user
- * GET /api/user
+ * User login/registration endpoint
+ * POST /api/login
  */
-router.get('/user', authUtils.ensureAuthenticated, async (req, res) => {
-  try {
-    const user = await userModel.getById(req.session.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    res.json(authUtils.sanitizeUser(user));
-  } catch (error) {
-    console.error('Error getting user:', error);
-    res.status(500).json({ error: 'Failed to get user information' });
-  }
-});
-
-/**
- * Create a new user (simplified registration for demo)
- * POST /api/user
- */
-router.post('/user', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, name } = req.body;
     
@@ -36,88 +18,50 @@ router.post('/user', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
     
-    // Check if user already exists
-    const existingUser = await userModel.getByEmail(email);
-    if (existingUser) {
-      return res.status(409).json({ error: 'User with this email already exists' });
-    }
-    
-    // Create new user
-    const newUser = await userModel.create({ email, name });
-    
-    // Set session
-    req.session.userId = newUser.id;
-    
-    res.status(201).json(authUtils.sanitizeUser(newUser));
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ error: 'Failed to create user' });
-  }
-});
-
-/**
- * Login user (simplified login for demo)
- * POST /api/login
- */
-router.post('/login', async (req, res) => {
-  try {
-    const { email } = req.body;
-    
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-    
-    // Find user by email
-    let user = await userModel.getByEmail(email);
-    
-    // For demo purposes, create user if not found
-    if (!user) {
-      user = await userModel.create({ email });
-    }
+    // Create or get existing user by email
+    const user = await userModel.createUser({ email, name });
     
     // Set session
     req.session.userId = user.id;
     
-    res.json(authUtils.sanitizeUser(user));
+    // Return sanitized user data
+    res.json({
+      success: true,
+      user: authUtils.sanitizeUser(user)
+    });
   } catch (error) {
-    console.error('Error logging in:', error);
-    res.status(500).json({ error: 'Failed to log in' });
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
 /**
- * Logout user
- * POST /api/logout
- */
-router.post('/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Error destroying session:', err);
-      return res.status(500).json({ error: 'Failed to log out' });
-    }
-    
-    res.json({ message: 'Logged out successfully' });
-  });
-});
-
-/**
- * Admin login
+ * Admin login endpoint
  * POST /api/admin/login
  */
-router.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required' });
-  }
-  
-  // Verify admin credentials
-  if (authUtils.verifyAdminCredentials(username, password)) {
+router.post('/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    // Verify admin credentials
+    const isValid = await userModel.verifyAdminCredentials(username, password);
+    
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    // Set admin session
     req.session.isAdmin = true;
-    return res.json({ message: 'Admin logged in successfully' });
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ error: 'Admin login failed' });
   }
-  
-  res.status(401).json({ error: 'Invalid admin credentials' });
 });
 
 /**
@@ -126,12 +70,29 @@ router.post('/admin/login', (req, res) => {
  */
 router.get('/admin/users', authUtils.ensureAdmin, async (req, res) => {
   try {
-    const users = await userModel.getAll();
+    const users = await userModel.getAllUsers();
+    
+    // Return sanitized users data
     res.json(users.map(user => authUtils.sanitizeUser(user)));
   } catch (error) {
-    console.error('Error getting all users:', error);
+    console.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to get users' });
   }
+});
+
+/**
+ * User logout endpoint
+ * POST /api/logout
+ */
+router.post('/logout', (req, res) => {
+  // Destroy session
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    
+    res.json({ success: true });
+  });
 });
 
 module.exports = router;

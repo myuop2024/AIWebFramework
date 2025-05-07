@@ -1,136 +1,158 @@
 /**
- * Didit.me integration service
- * Handles communication with the Didit.me API
+ * Service for interacting with the Didit.me API
  */
 const axios = require('axios');
 const configModel = require('../models/config');
-const { URL } = require('url');
-const querystring = require('querystring');
+const crypto = require('crypto');
 
 /**
- * Didit.me service for handling OAuth flow and API calls
+ * DiditService handles all interactions with the Didit.me API
  */
-const diditService = {
+class DiditService {
   /**
-   * Generate the authorization URL to redirect users for Didit.me verification
-   * 
-   * @param {string} state - A random string to validate the callback 
-   * @returns {string} The complete URL to redirect users to
+   * Get the current Didit.me configuration settings
+   * @returns {Promise<Object>} The configuration object
+   */
+  async getConfig() {
+    try {
+      return await configModel.getDiditConfig();
+    } catch (error) {
+      console.error('Error retrieving Didit config:', error);
+      throw new Error('Failed to retrieve Didit.me configuration');
+    }
+  }
+
+  /**
+   * Check if the Didit.me configuration is complete and valid
+   * @returns {Promise<boolean>} Whether the configuration is valid
+   */
+  async isConfigValid() {
+    try {
+      const config = await this.getConfig();
+      return !!(config.clientId && config.clientSecret);
+    } catch (error) {
+      console.error('Error checking Didit config validity:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get the authorization URL for the OAuth2 flow
+   * @param {string} state - The state parameter for CSRF protection
+   * @returns {Promise<string>} The authorization URL
    */
   async getAuthorizationUrl(state) {
     try {
-      const settings = await configModel.getDiditSettings();
+      const config = await this.getConfig();
       
-      // Validate required settings
-      if (!settings.clientId || !settings.redirectUri || !settings.authUrl) {
-        throw new Error('Missing required Didit.me configuration. Check settings in admin panel.');
+      // Use default values if not provided in the config
+      const authUrl = config.authUrl || 'https://auth.didit.me/oauth/authorize';
+      const redirectUri = config.redirectUri || 'http://localhost:3000/verification-callback';
+      
+      if (!config.clientId) {
+        throw new Error('Client ID is not configured');
       }
       
-      // Construct the auth URL with required parameters
-      const url = new URL(settings.authUrl);
-      
-      // Add query parameters
-      url.searchParams.append('client_id', settings.clientId);
-      url.searchParams.append('redirect_uri', settings.redirectUri);
+      // Build the authorization URL
+      const url = new URL(authUrl);
+      url.searchParams.append('client_id', config.clientId);
+      url.searchParams.append('redirect_uri', redirectUri);
       url.searchParams.append('response_type', 'code');
+      url.searchParams.append('scope', 'openid profile email');
       url.searchParams.append('state', state);
       
       return url.toString();
     } catch (error) {
       console.error('Error generating authorization URL:', error);
-      throw error;
+      throw new Error('Failed to generate authorization URL: ' + error.message);
     }
-  },
-  
+  }
+
   /**
    * Exchange an authorization code for an access token
-   * 
-   * @param {string} code - The authorization code from the OAuth callback
-   * @returns {Object} Token response with access_token, token_type, etc.
+   * @param {string} code - The authorization code from Didit.me
+   * @returns {Promise<Object>} The token response object
    */
   async exchangeCodeForToken(code) {
     try {
-      const settings = await configModel.getDiditSettings();
+      const config = await this.getConfig();
       
-      // Validate required settings
-      if (!settings.clientId || !settings.clientSecret || !settings.redirectUri || !settings.tokenUrl) {
-        throw new Error('Missing required Didit.me configuration. Check settings in admin panel.');
+      // Use default values if not provided in the config
+      const tokenUrl = config.tokenUrl || 'https://auth.didit.me/oauth/token';
+      const redirectUri = config.redirectUri || 'http://localhost:3000/verification-callback';
+      
+      if (!config.clientId || !config.clientSecret) {
+        throw new Error('Client credentials are not fully configured');
       }
       
-      // Prepare request data
-      const data = {
+      // Exchange the code for a token
+      const response = await axios.post(tokenUrl, {
         grant_type: 'authorization_code',
-        client_id: settings.clientId,
-        client_secret: settings.clientSecret,
+        client_id: config.clientId,
+        client_secret: config.clientSecret,
         code: code,
-        redirect_uri: settings.redirectUri
-      };
-      
-      // Make the token request
-      const response = await axios.post(settings.tokenUrl, querystring.stringify(data), {
+        redirect_uri: redirectUri
+      }, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
       
       return response.data;
     } catch (error) {
       console.error('Error exchanging code for token:', error.response?.data || error.message);
-      throw new Error('Failed to authenticate with Didit.me: ' + (error.response?.data?.error_description || error.message));
+      throw new Error('Failed to exchange authorization code for token');
     }
-  },
-  
+  }
+
   /**
    * Get user verification data from Didit.me
-   * 
-   * @param {string} accessToken - The OAuth access token
-   * @returns {Object} User verification details from Didit.me
+   * @param {string} accessToken - The OAuth2 access token
+   * @returns {Promise<Object>} The user verification data
    */
   async getUserVerificationData(accessToken) {
     try {
-      const settings = await configModel.getDiditSettings();
+      const config = await this.getConfig();
       
-      // Validate required settings
-      if (!settings.meUrl) {
-        throw new Error('Missing required Didit.me configuration. Check settings in admin panel.');
-      }
+      // Use default value if not provided in the config
+      const meUrl = config.meUrl || 'https://api.didit.me/v1/me';
       
-      // Make the API request to get user data
-      const response = await axios.get(settings.meUrl, {
+      // Get the user data
+      const response = await axios.get(meUrl, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
         }
       });
       
-      return response.data;
+      // Extract the verification data
+      const userData = response.data;
+      
+      // Build a structured verification object
+      return {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        verification_level: userData.verification_level || 'basic',
+        verified_at: new Date().toISOString(),
+        provider: 'didit.me',
+        raw_data: userData
+      };
     } catch (error) {
       console.error('Error getting user verification data:', error.response?.data || error.message);
-      throw new Error('Failed to get verification data from Didit.me: ' + (error.response?.data?.error || error.message));
-    }
-  },
-  
-  /**
-   * Validate the configuration is complete and valid
-   * 
-   * @returns {boolean} True if configuration is valid
-   */
-  async validateConfig() {
-    try {
-      const settings = await configModel.getDiditSettings();
-      
-      return !!(
-        settings.clientId && 
-        settings.clientSecret && 
-        settings.redirectUri && 
-        settings.authUrl && 
-        settings.tokenUrl && 
-        settings.meUrl
-      );
-    } catch (error) {
-      console.error('Error validating config:', error);
-      return false;
+      throw new Error('Failed to retrieve user verification data');
     }
   }
-};
 
-module.exports = diditService;
+  /**
+   * Generate a cryptographically secure random string for state parameter
+   * @returns {string} Random string
+   */
+  generateStateParam() {
+    return crypto.randomBytes(32).toString('hex');
+  }
+}
+
+module.exports = new DiditService();

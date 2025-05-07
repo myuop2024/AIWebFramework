@@ -1,104 +1,84 @@
 /**
- * Authentication utilities for the application
+ * Authentication utilities
  */
-const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
 /**
- * Authentication utilities
+ * Middleware to ensure user is authenticated
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-const authUtils = {
-  /**
-   * Check if user is authenticated as an admin
-   * 
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   * @param {Function} next - Express next function
-   */
-  ensureAdmin(req, res, next) {
-    if (req.session && req.session.isAdmin) {
-      return next();
-    }
-    res.status(401).json({ error: 'Unauthorized - Admin access required' });
-  },
-  
-  /**
-   * Check if user is authenticated
-   * 
-   * @param {Object} req - Express request object
-   * @param {Object} res - Express response object
-   * @param {Function} next - Express next function
-   */
-  ensureAuthenticated(req, res, next) {
-    if (req.session && req.session.userId) {
-      return next();
-    }
-    res.status(401).json({ error: 'Unauthorized - Authentication required' });
-  },
-  
-  /**
-   * Generate a random state value for OAuth
-   * This prevents CSRF attacks during OAuth flow
-   * 
-   * @returns {string} Random state value
-   */
-  generateState() {
-    return crypto.randomBytes(16).toString('hex');
-  },
-  
-  /**
-   * Hash a password
-   * 
-   * @param {string} password - The password to hash
-   * @returns {Promise<string>} Hashed password
-   */
-  async hashPassword(password) {
-    const saltRounds = 10;
-    return await bcrypt.hash(password, saltRounds);
-  },
-  
-  /**
-   * Compare a password with a hash
-   * 
-   * @param {string} password - The password to check
-   * @param {string} hash - The hash to compare against
-   * @returns {Promise<boolean>} True if password matches
-   */
-  async comparePassword(password, hash) {
-    return await bcrypt.compare(password, hash);
-  },
-  
-  /**
-   * Verify admin credentials
-   * 
-   * @param {string} username - Admin username
-   * @param {string} password - Admin password
-   * @returns {boolean} True if credentials are valid
-   */
-  verifyAdminCredentials(username, password) {
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'adminpassword';
-    
-    return username === adminUsername && password === adminPassword;
-  },
-  
-  /**
-   * Sanitize user object (remove sensitive data)
-   * 
-   * @param {Object} user - User object
-   * @returns {Object} Sanitized user object
-   */
-  sanitizeUser(user) {
-    if (!user) return null;
-    
-    // Create a copy of the user object
-    const sanitizedUser = { ...user };
-    
-    // Remove sensitive fields
-    delete sanitizedUser.password;
-    
-    return sanitizedUser;
+const ensureAuthenticated = (req, res, next) => {
+  if (req.session && req.session.userId) {
+    return next();
   }
+  
+  // Handle API vs. page requests differently
+  if (req.xhr || req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  // Redirect to login page
+  res.redirect('/login');
 };
 
-module.exports = authUtils;
+/**
+ * Middleware to ensure user is an admin
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const ensureAdmin = (req, res, next) => {
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+  
+  // Handle API vs. page requests differently
+  if (req.xhr || req.path.startsWith('/api/')) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  // Redirect to admin login page
+  res.redirect('/admin/settings');
+};
+
+/**
+ * Generate a cryptographically secure random string for state parameter
+ * @returns {string} Random string
+ */
+const generateState = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+/**
+ * Remove sensitive information from user object before sending to client
+ * @param {Object} user - The user object
+ * @returns {Object} The sanitized user object
+ */
+const sanitizeUser = (user) => {
+  if (!user) return null;
+  
+  // Create a copy of the user object
+  const sanitized = { ...user };
+  
+  // Remove sensitive fields if present
+  delete sanitized.password;
+  delete sanitized.passwordHash;
+  
+  // If verificationDetails exists, sanitize it too
+  if (sanitized.verificationDetails && sanitized.verificationDetails.raw_data) {
+    // Only include specific fields from raw_data
+    const { id, name, email, verification_level } = sanitized.verificationDetails.raw_data;
+    sanitized.verificationDetails.raw_data = { id, name, email, verification_level };
+  }
+  
+  return sanitized;
+};
+
+module.exports = {
+  ensureAuthenticated,
+  ensureAdmin,
+  generateState,
+  sanitizeUser
+};
