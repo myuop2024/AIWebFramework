@@ -33,10 +33,14 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
   
   // Additional validation that userId is a number
   if (typeof req.session.userId !== 'number') {
-    logger.error('Authentication error: userId exists but is not a number', {
-      sessionUserId: req.session.userId,
-      typeOfUserId: typeof req.session.userId
-    });
+    const metadata = {
+      sessionData: {
+        userId: req.session.userId,
+        typeOfUserId: typeof req.session.userId
+      },
+      requestPath: req.path
+    };
+    logger.error('Authentication error: userId exists but is not a number', new Error('Type validation failed'), metadata);
     return res.status(401).json({ 
       message: 'Unauthorized', 
       details: 'Invalid session format. Please log in again.' 

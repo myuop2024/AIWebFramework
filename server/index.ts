@@ -8,6 +8,9 @@ import MemoryStore from "memorystore";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
 import path from "path";
+import { requestLogger, errorMonitor } from "./middleware/error-monitoring";
+import logger from "./utils/logger";
+import { attachUser } from "./middleware/auth";
 
 /**
  * Initialize default data in the database
@@ -71,18 +74,45 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 // Make storage available to all routes via app.locals
 app.locals.storage = storage;
 
-// Set up session middleware
+// Set up session middleware with enhanced debugging
+const sessionStore = createSessionStore();
+
+// Log session store type
+logger.info('Using session store type: ' + (sessionStore.constructor ? sessionStore.constructor.name : 'Unknown'));
+
 app.use(session({
-  store: createSessionStore(),
+  store: sessionStore,
   secret: process.env.SESSION_SECRET || 'observer-session-secret',
-  resave: false,
+  resave: true, // Changed to true to ensure session is saved on each request
   saveUninitialized: false,
+  name: 'observer.sid', // Custom name to avoid conflicts
   cookie: { 
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    httpOnly: true,
+    sameSite: 'lax'
   }
 }));
 
+// Add session debug middleware
+app.use((req, res, next) => {
+  // Log session data on each request
+  logger.debug('Session state', { 
+    sessionId: req.sessionID,
+    hasUserId: !!req.session.userId,
+    path: req.path 
+  });
+  
+  next();
+});
+
+// Apply error monitoring middleware
+app.use(requestLogger);
+
+// Attach user information to request when available
+app.use(attachUser);
+
+// Original request logging middleware - will keep for now for backward compatibility
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -135,12 +165,30 @@ app.use((req, res, next) => {
     
     const server = await registerRoutes(app);
 
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Register error monitoring middleware
+    app.use(errorMonitor);
+    
+    // Fallback error handler (should be last)
+    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
 
-      res.status(status).json({ message });
-      console.error('Error caught by error handler:', err);
+      // Log the error with our enhanced logger
+      logger.error('Uncaught error', err, { 
+        path: req.path, 
+        method: req.method, 
+        userId: req.session?.userId 
+      });
+
+      // Send response if headers not sent already
+      if (!res.headersSent) {
+        res.status(status).json({ 
+          message, 
+          status,
+          timestamp: new Date().toISOString(),
+          path: req.path
+        });
+      }
     });
 
     // importantly only setup vite in development and after
