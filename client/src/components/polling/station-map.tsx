@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Navigation, Check, Clock } from "lucide-react";
-import { InteractiveMap } from "@/components/mapping/interactive-map";
+import InteractiveMap from "@/components/mapping/interactive-map";
 
 // We'd use a real map implementation like Google Maps or Leaflet in production
 // This is a simplified version for the demo
@@ -105,17 +105,12 @@ export default function StationMap({
             <div className="h-[300px] relative">
               {stations?.length > 0 && (
                 <InteractiveMap
-                  locations={stations.map(station => ({
-                    id: station.id,
+                  markers={stations.map((station, index) => ({
                     lat: station.latitude || parseCoordinates(station.coordinates || "{}").lat || 0,
                     lng: station.longitude || parseCoordinates(station.coordinates || "{}").lng || 0,
-                    label: station.name,
-                    // Determine risk level based on station status or criteria
-                    riskLevel: station.status === 'high_risk' ? 'high' :
-                              station.status === 'medium_risk' ? 'medium' :
-                              station.status === 'low_risk' ? 'low' : 'none'
+                    text: station.name
                   }))}
-                  onLocationSelect={(location) => onSelectStation?.(location.id as number)}
+                  onMarkerClick={(index) => onSelectStation?.(stations[index].id)}
                   showUserLocation={true}
                   height="300px"
                 />
