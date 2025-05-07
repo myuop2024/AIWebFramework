@@ -246,24 +246,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/auth/login', async (req, res) => {
     try {
+      console.log('Login attempt received');
+      
       // Parse login data including deviceId from client
       const { username, password, deviceId } = req.body; 
+      
+      if (!username || !password) {
+        console.warn('Login attempt with missing credentials');
+        return res.status(400).json({ message: 'Username and password are required' });
+      }
+      
+      console.log(`Login attempt for username: ${username}`);
       
       // Find user
       const user = await storage.getUserByUsername(username);
       if (!user) {
+        console.warn(`Login failed: User not found: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
       // Verify password
       const hashedPassword = createHash('sha256').update(password).digest('hex');
       if (user.password !== hashedPassword) {
+        console.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
+      
+      console.log(`User authenticated successfully: ${username} (ID: ${user.id})`);
       
       // Device binding security check
       // If the user has a registered device, verify it matches
       if (user.deviceId && deviceId && user.deviceId !== deviceId) {
+        console.warn(`Device mismatch for user ${username}: 
+          Expected: ${user.deviceId}, Received: ${deviceId}`);
+        
         // For security reasons, don't be specific about the reason for failure
         return res.status(401).json({ 
           message: 'Authentication failed. This account may be locked to another device.',
@@ -276,6 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUser(user.id, { deviceId });
         // Update the local user object with the new deviceId
         user.deviceId = deviceId;
+        console.log(`Device ID set for user ${username}: ${deviceId}`);
       }
       
       // Set session data
@@ -283,16 +300,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.observerId = user.observerId;
       req.session.role = user.role;
       
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
+      console.log('Session data set', {
+        userId: req.session.userId,
+        observerId: req.session.observerId,
+        role: req.session.role
+      });
       
-      res.status(200).json(userWithoutPassword);
+      // Save session explicitly to ensure it's persisted
+      req.session.save((err) => {
+        if (err) {
+          console.error('Error saving session:', err);
+          return res.status(500).json({ message: 'Session error. Please try again.' });
+        }
+        
+        console.log(`Login successful, session saved for user ${username}`);
+        
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = user;
+        
+        res.status(200).json(userWithoutPassword);
+      });
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(error).message });
+        console.error('Validation error during login:', error);
+        return res.status(400).json({ 
+          message: fromZodError(error).message,
+          details: 'Invalid login data format'
+        });
       }
       console.error('Login error:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
@@ -464,8 +504,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get('/api/users/assignments', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.userId as number;
+      console.log(`Fetching assignments for user ${userId}`);
+      
       const assignments = await storage.getAssignmentsByUserId(userId);
+      console.log(`Found ${assignments.length} assignments for user ${userId}`);
       
       // Get full station data
       const assignmentsWithStations = await Promise.all(
@@ -473,21 +516,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const station = await storage.getPollingStation(assignment.stationId);
           return {
             ...assignment,
-            station
+            station: station || null  // Ensure null instead of undefined
           };
         })
       );
       
       res.status(200).json(assignmentsWithStations);
     } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error fetching assignments:', error);
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
   app.get('/api/users/assignments/active', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.userId as number;
+      console.log(`Fetching active assignments for user ${userId}`);
+      
       const assignments = await storage.getActiveAssignments(userId);
+      console.log(`Found ${assignments.length} active assignments for user ${userId}`);
       
       // Get full station data
       const assignmentsWithStations = await Promise.all(
@@ -495,7 +545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const station = await storage.getPollingStation(assignment.stationId);
           return {
             ...assignment,
-            station
+            station: station || null  // Ensure null instead of undefined
           };
         })
       );
@@ -503,7 +553,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json(assignmentsWithStations);
     } catch (error) {
       console.error('Error fetching active assignments:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -542,22 +595,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
-      const userRole = req.session.userRole;
+      const userId = req.session.userId as number;
+      const role = req.session.role;
       const assignmentId = parseInt(req.params.id);
       
       if (isNaN(assignmentId)) {
         return res.status(400).json({ message: 'Invalid assignment ID' });
       }
       
+      console.log(`Fetching assignment ${assignmentId} for user ${userId} (role: ${role})`);
+      
       const assignment = await storage.getAssignment(assignmentId);
       if (!assignment) {
+        console.warn(`Assignment ${assignmentId} not found`);
         return res.status(404).json({ message: 'Assignment not found' });
       }
       
       // Security check - only allow users to view their own assignments 
       // unless they're an admin
-      if (assignment.userId !== userId && userRole !== 'admin') {
+      if (assignment.userId !== userId && role !== 'admin') {
+        console.warn(`Unauthorized access to assignment ${assignmentId} by user ${userId}`);
         return res.status(403).json({ message: 'Not authorized to access this assignment' });
       }
       
@@ -566,21 +623,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json({
         ...assignment,
-        station
+        station: station || null // Ensure null instead of undefined
       });
     } catch (error) {
       console.error('Error fetching assignment:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
   app.post('/api/assignments', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
-      const userRole = req.session.userRole;
+      const userId = req.session.userId as number;
+      const role = req.session.role;
+      
+      console.log(`Creating assignment by user ${userId} (role: ${role})`);
       
       // Basic validation
       if (!req.body.stationId || !req.body.startDate || !req.body.endDate) {
+        console.warn('Assignment creation missing required fields');
         return res.status(400).json({ 
           message: 'Missing required fields: stationId, startDate, and endDate are required' 
         });
@@ -592,17 +655,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        console.warn('Invalid date format in assignment creation');
         return res.status(400).json({ message: 'Invalid date format' });
       }
       
       if (startDate >= endDate) {
+        console.warn('End date not after start date in assignment creation');
         return res.status(400).json({ message: 'End date must be after start date' });
       }
       
       // Only allow admins to assign other users
-      const assignUserId = userRole === 'admin' && req.body.userId 
+      const assignUserId = role === 'admin' && req.body.userId 
         ? parseInt(req.body.userId) 
         : userId;
+      
+      console.log(`Assignment will be created for user ${assignUserId}`);
       
       // Create assignment with parsed dates
       const assignment = await storage.createAssignment({
@@ -612,12 +679,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endDate
       });
       
+      console.log(`Assignment created: ID ${assignment.id}`);
+      
       // Get station info
       const station = await storage.getPollingStation(assignment.stationId);
       
       res.status(201).json({
         ...assignment,
-        station
+        station: station || null // Ensure null instead of undefined
       });
     } catch (error) {
       console.error('Error creating assignment:', error);
@@ -631,7 +700,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: error.message });
         }
       }
-      res.status(500).json({ message: 'An error occurred while creating the assignment' });
+      res.status(500).json({ 
+        message: 'An error occurred while creating the assignment',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
