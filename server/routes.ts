@@ -351,11 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
-      if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
-      }
-
+      const userId = req.session.userId as number; // Type assertion (already verified in ensureAuthenticated)
       console.log(`Creating/updating profile for user ID: ${userId}`);
       
       try {
@@ -407,31 +403,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Document routes
   app.post('/api/documents', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
-      const documentData = insertDocumentSchema.parse(req.body);
+      const userId = req.session.userId as number; // Type assertion (verified in middleware)
       
-      const document = await storage.createDocument({
-        ...documentData,
-        userId
-      });
-      
-      res.status(201).json(document);
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return res.status(400).json({ message: fromZodError(error).message });
+      try {
+        const documentData = insertDocumentSchema.parse(req.body);
+        
+        const document = await storage.createDocument({
+          ...documentData,
+          userId
+        });
+        
+        console.log(`Document created: ID ${document.id} for user ${userId}`);
+        res.status(201).json(document);
+      } catch (validationError) {
+        if (validationError instanceof ZodError) {
+          console.error('Document data validation error:', validationError);
+          return res.status(400).json({ 
+            message: fromZodError(validationError).message,
+            errors: validationError.errors 
+          });
+        }
+        throw validationError; // Re-throw if not ZodError
       }
-      res.status(500).json({ message: 'Internal server error' });
+    } catch (error) {
+      console.error('Error creating document:', error);
+      res.status(500).json({ 
+        message: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
   app.get('/api/documents', ensureAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = req.session.userId as number; // Type assertion (verified in middleware)
+      console.log(`Fetching documents for user ${userId}`);
+      
       const documents = await storage.getDocumentsByUserId(userId);
+      console.log(`Found ${documents.length} documents for user ${userId}`);
       
       res.status(200).json(documents);
     } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
+      console.error('Error fetching documents:', error);
+      res.status(500).json({ 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
   
