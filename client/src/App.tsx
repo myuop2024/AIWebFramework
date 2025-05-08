@@ -26,6 +26,7 @@ import IdCardManagement from "@/pages/admin/id-cards";
 import UserImportsPage from "@/pages/admin/user-imports";
 import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import RoutePlanningPage from "@/pages/route-planning-page";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 
@@ -50,6 +51,7 @@ function Router() {
       <ProtectedRoute path="/assignments" component={Assignments} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
+      <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       
       {/* Admin Routes (require admin role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin"]} />

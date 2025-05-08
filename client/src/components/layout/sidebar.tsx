@@ -5,7 +5,7 @@ import {
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
-  UserCheck, GraduationCap
+  UserCheck, GraduationCap, Navigation
 } from "lucide-react";
 
 interface SidebarProps {
@@ -43,6 +43,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5 mr-3" /> },
     { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5 mr-3" /> },
     { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5 mr-3" /> },
+    { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5 mr-3" /> },
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
   ];
