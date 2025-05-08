@@ -54,13 +54,31 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
   ];
   
-  // Admin links (only shown to users with admin role)
-  const adminLinks = user?.role === 'admin' ? [
+  // Define role-based permissions
+  const isAdmin = ['admin', 'director'].includes(user?.role || '');
+  const isSupervisor = ['supervisor', 'admin', 'director'].includes(user?.role || '');
+  const isRovingObserver = ['roving_observer', 'supervisor', 'admin', 'director'].includes(user?.role || '');
+  
+  // Admin links (only shown to users with admin or director role)
+  const adminLinks = isAdmin ? [
     { path: "/admin", label: "Admin Panel", icon: <Settings className="h-5 w-5 mr-3" /> },
     { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
     { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5 mr-3" /> },
+  ] : [];
+  
+  // Supervisor links (only shown to supervisor, admin, or director)
+  const supervisorLinks = isSupervisor ? [
+    { path: "/supervisor/team-management", label: "Team Management", icon: <UserCheck className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5 mr-3" /> },
+  ] : [];
+  
+  // Roving observer links
+  const rovingObserverLinks = isRovingObserver ? [
+    { path: "/roving/station-schedule", label: "Station Schedule", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
+    { path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
   ] : [];
 
   const supportLinks = [
@@ -171,6 +189,48 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               </Link>
             );
           })}
+          
+          {/* Supervisor section */}
+          {supervisorLinks.length > 0 && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Supervisor</p>
+              {supervisorLinks.map((link) => (
+                <Link 
+                  key={link.path} 
+                  href={link.path}
+                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
+                    location === link.path 
+                      ? 'bg-primary-light/10 text-primary' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {link.icon}
+                  {link.label}
+                </Link>
+              ))}
+            </>
+          )}
+          
+          {/* Roving Observer section */}
+          {rovingObserverLinks.length > 0 && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Roving Observer</p>
+              {rovingObserverLinks.map((link) => (
+                <Link 
+                  key={link.path} 
+                  href={link.path}
+                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
+                    location === link.path 
+                      ? 'bg-primary-light/10 text-primary' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {link.icon}
+                  {link.label}
+                </Link>
+              ))}
+            </>
+          )}
           
           {/* Admin section - only visible to admin users */}
           {adminLinks.length > 0 && (

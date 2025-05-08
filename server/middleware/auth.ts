@@ -67,7 +67,7 @@ export const ensureAdmin = async (req: Request, res: Response, next: NextFunctio
   
   // Then check if the user has admin role
   const role = req.session.role;
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'director') { // Allow directors same access as admins
     logger.warn(`Admin access denied: User ${req.session.userId} with role ${role} attempted admin action`);
     return res.status(403).json({ 
       message: 'Forbidden', 
@@ -134,9 +134,98 @@ export const hasRole = (allowedRoles: string[]) => {
   };
 };
 
+/**
+ * Middleware to ensure user is a supervisor or higher role
+ */
+export const ensureSupervisor = async (req: Request, res: Response, next: NextFunction) => {
+  // First ensure the user is authenticated
+  if (!req.session || !req.session.userId) {
+    logger.warn('Supervisor check failed: No authenticated user');
+    return res.status(401).json({ 
+      message: 'Unauthorized', 
+      details: 'You must be logged in to access this resource' 
+    });
+  }
+  
+  // Then check if the user has supervisor or higher role
+  const role = req.session.role;
+  const allowedRoles = ['supervisor', 'admin', 'director'];
+  
+  if (!role || !allowedRoles.includes(role)) {
+    logger.warn(`Supervisor access denied: User ${req.session.userId} with role ${role} attempted supervisor action`);
+    return res.status(403).json({ 
+      message: 'Forbidden', 
+      details: 'You do not have permission to access this resource' 
+    });
+  }
+  
+  // Supervisor or higher, continue to next middleware or route handler
+  next();
+};
+
+/**
+ * Middleware to ensure user is a roving observer or higher role
+ */
+export const ensureRovingObserver = async (req: Request, res: Response, next: NextFunction) => {
+  // First ensure the user is authenticated
+  if (!req.session || !req.session.userId) {
+    logger.warn('Roving observer check failed: No authenticated user');
+    return res.status(401).json({ 
+      message: 'Unauthorized', 
+      details: 'You must be logged in to access this resource' 
+    });
+  }
+  
+  // Then check if the user has roving observer or higher role
+  const role = req.session.role;
+  const allowedRoles = ['roving_observer', 'supervisor', 'admin', 'director'];
+  
+  if (!role || !allowedRoles.includes(role)) {
+    logger.warn(`Roving observer access denied: User ${req.session.userId} with role ${role} attempted roving observer action`);
+    return res.status(403).json({ 
+      message: 'Forbidden', 
+      details: 'You do not have permission to access this resource' 
+    });
+  }
+  
+  // Roving observer or higher, continue to next middleware or route handler
+  next();
+};
+
+/**
+ * Middleware to ensure user is a director (highest role)
+ */
+export const ensureDirector = async (req: Request, res: Response, next: NextFunction) => {
+  // First ensure the user is authenticated
+  if (!req.session || !req.session.userId) {
+    logger.warn('Director check failed: No authenticated user');
+    return res.status(401).json({ 
+      message: 'Unauthorized', 
+      details: 'You must be logged in to access this resource' 
+    });
+  }
+  
+  // Then check if the user has director role
+  const role = req.session.role;
+  
+  if (role !== 'director') {
+    logger.warn(`Director access denied: User ${req.session.userId} with role ${role} attempted director-only action`);
+    return res.status(403).json({ 
+      message: 'Forbidden', 
+      details: 'You do not have permission to access this resource' 
+    });
+  }
+  
+  // Director, continue to next middleware or route handler
+  next();
+};
+
 export default {
   ensureAuthenticated,
   ensureAdmin,
+  ensureSupervisor,
+  ensureRovingObserver,
+  ensureDirector,
   attachUser,
   hasRole
 };
