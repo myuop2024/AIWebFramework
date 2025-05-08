@@ -16,6 +16,7 @@ import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
 import analyticsRoutes from './routes/analytics';
+import adminAnalyticsRoutes from './routes/admin-analytics';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
@@ -2114,6 +2115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI Analytics routes
   app.use('/api/analytics', analyticsRoutes);
+  
+  // Admin analytics routes (requires admin authentication)
+  app.use('/api/admin/analytics', adminAnalyticsRoutes);
 
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);
