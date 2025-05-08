@@ -43,39 +43,41 @@ export default function PollingStationsPage() {
             </button>
             
             <DropdownMenu>
-              <DropdownMenuTrigger className="h-9 w-9 p-2 rounded-md hover:bg-muted flex items-center justify-center">
-                <MoreHorizontal className="h-5 w-5" />
+              <DropdownMenuTrigger className="h-9 w-9 p-2 rounded-md hover:bg-muted flex items-center justify-center" asChild>
+                <button className="rounded-md hover:bg-muted flex items-center justify-center">
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Station Options</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Add Station */}}>
                   <FilePlus className="mr-2 h-4 w-4" />
                   Add New Station
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Import Stations */}}>
                   <Upload className="mr-2 h-4 w-4" />
                   Import Stations
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Export Stations */}}>
                   <Download className="mr-2 h-4 w-4" />
                   Export Stations
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Print Station List */}}>
                   <Printer className="mr-2 h-4 w-4" />
                   Print Station List
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Share Stations */}}>
                   <Share2 className="mr-2 h-4 w-4" />
                   Share Stations
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle View on Map */}}>
                   <Eye className="mr-2 h-4 w-4" />
                   View on Map
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {/* Handle Station Settings */}}>
                   <Settings className="mr-2 h-4 w-4" />
                   Station Settings
                 </DropdownMenuItem>
