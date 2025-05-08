@@ -42,8 +42,9 @@ router.get('/admin/analytics/news-enhanced-predictions', requireAdmin, async (re
     // Get the station ID if provided
     const pollingStationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
     
-    // Fetch all reports to analyze
-    const reports = await storage.getAllReports();
+    // Fetch reports to analyze - combine submitted and in-progress reports
+    const reports = [...await storage.getReportsByStatus('submitted'),
+                     ...await storage.getReportsByStatus('in_progress')];
     
     if (reports.length === 0) {
       return res.status(200).json({
