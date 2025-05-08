@@ -1,5 +1,5 @@
-// Import global shim first to enable Node.js libraries in browser
-import "@/lib/global-shim";
+// Import Node.js polyfills first to enable Node.js libraries in browser
+import "@/lib/node-polyfills";
 
 import { createRoot } from "react-dom/client";
 import App from "./App";

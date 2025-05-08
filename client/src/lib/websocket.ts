@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import Peer from "simple-peer";
 import { saveAs } from "file-saver";
 import { v4 as uuidv4 } from "uuid";
+import { WebRTCConnection } from "./webrtc-helper";
 
 // Message types
 export type MessageType = 'text' | 'file' | 'notification' | 'system';
@@ -77,7 +77,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const [activeCall, setActiveCall] = useState<CallInfo | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const peerRef = useRef<Peer.Instance | null>(null);
+  const webRTCRef = useRef<WebRTCConnection | null>(null);
   
   // File transfer state
   const [fileTransfers, setFileTransfers] = useState<Map<string, FileInfo>>(new Map());
