@@ -201,7 +201,7 @@ export class AIAnalyticsService {
           count: sql<number>`count(*)`,
         })
         .from(reports)
-        .where(dateFilter)
+        .where(dateFilter || sql`1=1`)
         .groupBy(reports.pollingStationId)
         .orderBy(sql`count(*) desc`)
         .limit(10);
@@ -252,7 +252,7 @@ export class AIAnalyticsService {
       const totalReportsQuery = await db
         .select({ count: sql<number>`count(*)` })
         .from(reports)
-        .where(dateFilter);
+        .where(dateFilter || sql`1=1`);
       
       const totalReports = totalReportsQuery[0]?.count || 0;
       
@@ -268,7 +268,7 @@ export class AIAnalyticsService {
           category: reports.category,
         })
         .from(reports)
-        .where(dateFilter);
+        .where(dateFilter || sql`1=1`);
       
       // Count reports by category
       for (const report of reportData) {
@@ -305,7 +305,7 @@ export class AIAnalyticsService {
           createdAt: reports.createdAt,
         })
         .from(reports)
-        .where(dateFilter);
+        .where(dateFilter || sql`1=1`);
       
       // Calculate previous period dates
       const now = new Date();
@@ -414,7 +414,7 @@ export class AIAnalyticsService {
           status: reports.status,
         })
         .from(reports)
-        .where(dateFilter)
+        .where(dateFilter || sql`1=1`)
         .orderBy(desc(reports.createdAt))
         .limit(100);
       
