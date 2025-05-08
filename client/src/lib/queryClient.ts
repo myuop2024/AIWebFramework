@@ -24,13 +24,22 @@ export async function apiRequest<T = any>(
   }
 ): Promise<Response> {
   const isMultipart = options?.multipart ?? false;
-  const headers = options?.headers || {};
+  
+  // Create headers object
+  const headers = new Headers();
+  
+  // Add user headers
+  if (options?.headers) {
+    Object.entries(options.headers).forEach(([key, value]) => {
+      headers.append(key, value);
+    });
+  }
   
   // Don't set Content-Type for multipart/form-data requests
   // Let the browser set it automatically with the boundary parameter
-  const contentTypeHeaders = !isMultipart && data && !(data instanceof FormData)
-    ? { "Content-Type": "application/json" }
-    : {};
+  if (!isMultipart && data && !(data instanceof FormData)) {
+    headers.append("Content-Type", "application/json");
+  }
   
   const requestBody = isMultipart || data instanceof FormData
     ? data
@@ -39,10 +48,7 @@ export async function apiRequest<T = any>(
   
   const res = await fetch(url, {
     method,
-    headers: {
-      ...contentTypeHeaders,
-      ...headers
-    },
+    headers,
     body: requestBody,
     credentials: "include",
   });
