@@ -231,8 +231,8 @@ router.post('/csv/confirm/:id', ensureAuthenticated, ensureAdmin, async (req, re
 
     // Perform the bulk import
     const importResult = await storage.bulkCreateUsers(users, {
-      defaultRole: options?.defaultRole || importLog.options?.defaultRole,
-      verificationStatus: options?.verificationStatus || importLog.options?.verificationStatus
+      defaultRole: options?.defaultRole || (importLog.options as any)?.defaultRole,
+      verificationStatus: options?.verificationStatus || (importLog.options as any)?.verificationStatus
     });
 
     // Update the import log with results

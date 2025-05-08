@@ -11,21 +11,39 @@ interface ApiRequestOptions {
   method?: string;
   data?: unknown;
   headers?: Record<string, string>;
+  multipart?: boolean;
 }
 
 export async function apiRequest<T = any>(
   method: string,
   url: string,
   data?: any,
-  headers?: Record<string, string>
+  options?: { 
+    multipart?: boolean;
+    headers?: Record<string, string>;
+  }
 ): Promise<Response> {
+  const isMultipart = options?.multipart ?? false;
+  const headers = options?.headers || {};
+  
+  // Don't set Content-Type for multipart/form-data requests
+  // Let the browser set it automatically with the boundary parameter
+  const contentTypeHeaders = !isMultipart && data && !(data instanceof FormData)
+    ? { "Content-Type": "application/json" }
+    : {};
+  
+  const requestBody = isMultipart || data instanceof FormData
+    ? data
+    : data ? JSON.stringify(data) 
+    : undefined;
+  
   const res = await fetch(url, {
     method,
     headers: {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(headers || {})
+      ...contentTypeHeaders,
+      ...headers
     },
-    body: data ? JSON.stringify(data) : undefined,
+    body: requestBody,
     credentials: "include",
   });
 

@@ -87,7 +87,7 @@ export default function UserImportCSV() {
         'POST',
         '/api/user-imports/csv',
         formData,
-        { multipart: true }
+        { multipart: true } as { multipart: boolean }
       );
 
       if (!response.ok) {
@@ -302,8 +302,8 @@ export default function UserImportCSV() {
 
               {/* Duplicate Warnings */}
               {processedData.duplicateWarnings.length > 0 && (
-                <Alert variant="warning">
-                  <AlertCircle className="h-4 w-4" />
+                <Alert>
+                  <AlertCircle className="h-4 w-4 text-yellow-500" />
                   <AlertTitle>Potential Duplicates Found</AlertTitle>
                   <AlertDescription>
                     We found {processedData.duplicateWarnings.length} potential duplicate users.
