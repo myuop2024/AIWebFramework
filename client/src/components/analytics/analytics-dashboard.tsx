@@ -146,30 +146,44 @@ export function AnalyticsDashboard() {
     enabled: true,
   });
 
-  // Fetch predictions based on station
+  const { toast } = useToast();
+
+  // Fetch news-enhanced predictions
   const { 
-    data: predictions, 
+    data: newsEnhancedPredictions, 
     isLoading: isPredictionsLoading,
+    error: predictionsError,
     refetch: refetchPredictions
-  } = useQuery({
-    queryKey: ['/api/analytics/predict-issues', stationId],
+  } = useQuery<NewsEnhancedPredictionResponse>({
+    queryKey: ['/api/admin/analytics/incident-predictions', stationId],
     queryFn: async () => {
-      const response = await fetch('/api/analytics/predict-issues', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ stationId }),
-      });
+      const params = new URLSearchParams();
+      if (stationId) {
+        params.append('stationId', stationId.toString());
+      }
+
+      const response = await fetch(`/api/admin/analytics/incident-predictions?${params}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch predictions');
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to fetch news-enhanced predictions');
       }
 
       return response.json();
     },
     enabled: activeTab === 'predictions',
   });
+  
+  // Show toast if there's an error with predictions
+  useEffect(() => {
+    if (predictionsError) {
+      toast({
+        title: "Failed to load predictions",
+        description: predictionsError instanceof Error ? predictionsError.message : "Unknown error",
+        variant: "destructive"
+      });
+    }
+  }, [predictionsError, toast]);
 
   // Apply date range filter
   const applyDateFilter = () => {
@@ -617,78 +631,178 @@ export function AnalyticsDashboard() {
 
             {/* Predictions Tab */}
             <TabsContent value="predictions">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Issue Predictions</CardTitle>
-                  <CardDescription>AI-predicted potential issues</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <Label htmlFor="stationId">Filter by Polling Station</Label>
-                    <Select 
-                      onValueChange={(value) => setStationId(value ? parseInt(value) : null)}
-                      value={stationId?.toString() || ''}
-                    >
-                      <SelectTrigger className="w-full md:w-[300px] mt-1">
-                        <SelectValue placeholder="All polling stations" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All polling stations</SelectItem>
-                        {data?.reportsByLocation?.map((location, index) => (
-                          <SelectItem key={index} value={location.locationName || `location-${index}`}>
-                            {location.locationName || `Location ${index + 1}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="col-span-1 md:col-span-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>
+                        <div className="flex items-center">
+                          <AlertCircle className="h-5 w-5 mr-2 text-blue-500" />
+                          News-Enhanced Election Issue Predictions
+                        </div>
+                      </CardTitle>
+                      <CardDescription>AI-predicted potential issues with Jamaican news context</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <Label htmlFor="stationId">Filter by Polling Station</Label>
+                        <Select 
+                          onValueChange={(value) => setStationId(value === 'all' ? null : parseInt(value))}
+                          value={stationId?.toString() || 'all'}
+                        >
+                          <SelectTrigger className="w-full md:w-[300px] mt-1">
+                            <SelectValue placeholder="All polling stations" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All polling stations</SelectItem>
+                            {data?.reportsByLocation?.map((location, index) => (
+                              <SelectItem key={index} value={location.locationName || `${index}`}>
+                                {location.locationName || `Location ${index + 1}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  {isPredictionsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <Spinner className="w-8 h-8" />
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {predictions?.map((prediction: any, index: number) => (
-                        <Card key={index} className={`border-l-4 ${
-                          prediction.probability > 0.7 
-                            ? 'border-l-red-500' 
-                            : prediction.probability > 0.4 
-                            ? 'border-l-yellow-500' 
-                            : 'border-l-green-500'
-                        }`}>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-lg flex items-center">
-                              <AlertTriangle className={`h-5 w-5 mr-2 ${
-                                prediction.probability > 0.7 
-                                  ? 'text-red-500' 
-                                  : prediction.probability > 0.4 
-                                  ? 'text-yellow-500' 
-                                  : 'text-green-500'
-                              }`} />
-                              {prediction.issueType}
-                            </CardTitle>
-                            <CardDescription>
-                              Probability: {Math.round(prediction.probability * 100)}%
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <h4 className="font-medium mb-1">Suggested Action:</h4>
-                            <p className="text-gray-700">{prediction.suggestedAction}</p>
-                          </CardContent>
-                        </Card>
-                      ))}
+                      {isPredictionsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <Spinner className="w-8 h-8" />
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {newsEnhancedPredictions?.predictions?.map((prediction, index) => (
+                            <Card key={index} className={`border-l-4 ${
+                              prediction.probability > 0.7 
+                                ? 'border-l-red-500' 
+                                : prediction.probability > 0.4 
+                                ? 'border-l-yellow-500' 
+                                : 'border-l-green-500'
+                            }`}>
+                              <CardHeader className="pb-2">
+                                <CardTitle className="text-lg flex items-center">
+                                  <AlertTriangle className={`h-5 w-5 mr-2 ${
+                                    prediction.probability > 0.7 
+                                      ? 'text-red-500' 
+                                      : prediction.probability > 0.4 
+                                      ? 'text-yellow-500' 
+                                      : 'text-green-500'
+                                  }`} />
+                                  {prediction.issueType}
+                                </CardTitle>
+                                <CardDescription className="flex justify-between">
+                                  <span>Probability: {Math.round(prediction.probability * 100)}%</span>
+                                  <span>Impact: {prediction.estimatedImpact[0].toUpperCase() + prediction.estimatedImpact.slice(1)}</span>
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-3">
+                                  <div>
+                                    <h4 className="font-medium">Reasoning:</h4>
+                                    <p className="text-gray-700 text-sm">{prediction.reasoning}</p>
+                                  </div>
+                                  
+                                  <div>
+                                    <h4 className="font-medium">Suggested Action:</h4>
+                                    <p className="text-gray-700 text-sm">{prediction.suggestedAction}</p>
+                                  </div>
+                                  
+                                  {prediction.preventativeMeasures && prediction.preventativeMeasures.length > 0 && (
+                                    <div>
+                                      <h4 className="font-medium">Preventative Measures:</h4>
+                                      <ul className="list-disc list-inside text-sm text-gray-700 pl-2">
+                                        {prediction.preventativeMeasures.map((measure, i) => (
+                                          <li key={i}>{measure}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  
+                                  {prediction.affectedStations && prediction.affectedStations.length > 0 && (
+                                    <div>
+                                      <h4 className="font-medium">Affected Stations:</h4>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {prediction.affectedStations.map((station, i) => (
+                                          <Badge key={i} variant="outline">{station}</Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
 
-                      {(!predictions || predictions.length === 0) && (
-                        <div className="py-8 text-center text-gray-500">
-                          <Info className="mx-auto h-8 w-8 mb-2 text-gray-400" />
-                          <p>No predictions available. Try changing your filters or collecting more data.</p>
+                          {(!newsEnhancedPredictions?.predictions || newsEnhancedPredictions.predictions.length === 0) && (
+                            <div className="py-8 text-center text-gray-500">
+                              <Info className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                              <p>No predictions available. Try changing your filters or collecting more data.</p>
+                              {newsEnhancedPredictions?.message && (
+                                <p className="mt-2 text-sm italic">{newsEnhancedPredictions.message}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                {/* News Articles Column */}
+                <div className="col-span-1">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Newspaper className="h-5 w-5 mr-2 text-blue-500" />
+                        Jamaican Political News
+                      </CardTitle>
+                      <CardDescription>Recent news informing predictions</CardDescription>
+                    </CardHeader>
+                    <CardContent className="max-h-[600px] overflow-y-auto">
+                      {isPredictionsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <Spinner className="w-6 h-6" />
+                        </div>
+                      ) : newsEnhancedPredictions?.newsArticles && newsEnhancedPredictions.newsArticles.length > 0 ? (
+                        <div className="space-y-4">
+                          {newsEnhancedPredictions.newsArticles.map((article, index) => (
+                            <div key={index} className="border-b pb-4 last:border-b-0">
+                              <h4 className="font-medium text-sm line-clamp-2">{article.title}</h4>
+                              <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                                <span>{article.source}</span>
+                                <span>{new Date(article.publishedAt).toLocaleDateString()}</span>
+                              </div>
+                              <p className="text-xs text-gray-700 mt-2 line-clamp-3">{article.summary}</p>
+                              <div className="mt-2 flex items-center justify-between">
+                                <div className="flex gap-1">
+                                  {article.locations.slice(0, 2).map((location, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">{location}</Badge>
+                                  ))}
+                                  {article.locations.length > 2 && (
+                                    <Badge variant="outline" className="text-xs">+{article.locations.length - 2}</Badge>
+                                  )}
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="px-2"
+                                  onClick={() => window.open(article.url, '_blank')}
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center text-gray-500">
+                          <Newspaper className="mx-auto h-8 w-8 mb-2 text-gray-400" />
+                          <p className="text-sm">No relevant news articles found</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
           </>
         )}
