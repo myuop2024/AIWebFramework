@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function QRCode() {
   const { user } = useAuth();
   const [qrSvg, setQrSvg] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const { data: qrData, isLoading, error } = useQuery<{observerId?: string}>({
     queryKey: ['/api/users/qrcode'],
@@ -145,7 +146,9 @@ export default function QRCode() {
       // Append to body, click, and clean up
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
+      if (link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading ID card:', error);
