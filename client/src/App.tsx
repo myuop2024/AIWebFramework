@@ -34,6 +34,7 @@ import Assignments from "@/pages/supervisor/assignments";
 import ReportsApproval from "@/pages/supervisor/reports-approval";
 import ScheduleMeeting from "@/pages/supervisor/schedule-meeting";
 import StationSchedulePage from "@/pages/roving/station-schedule";
+import AreaReportsPage from "@/pages/roving/area-reports";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 
@@ -103,7 +104,7 @@ function Router() {
       />
       <RoleProtectedRoute 
         path="/roving/area-reports" 
-        component={StationSchedulePage} 
+        component={AreaReportsPage} 
         allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
       />
       

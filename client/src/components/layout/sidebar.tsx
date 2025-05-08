@@ -5,7 +5,8 @@ import {
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
-  UserCheck, GraduationCap, Navigation, ChevronDown
+  UserCheck, GraduationCap, Navigation, ChevronDown,
+  Users, Shield, CalendarRange, PanelTop, Cog
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -61,25 +62,25 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   
   // Admin links (only shown to users with admin or director role)
   const adminLinks = isAdmin ? [
-    { path: "/admin", label: "Admin Panel", icon: <Settings className="h-5 w-5 mr-3" /> },
+    { path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5 mr-3" /> },
     { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
     { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5 mr-3" /> },
-    { path: "/admin/permissions", label: "Permission Management", icon: <UserCheck className="h-5 w-5 mr-3" /> },
+    { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5 mr-3" /> },
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
   const supervisorLinks = isSupervisor ? [
-    { path: "/supervisor/team-management", label: "Team Management", icon: <UserCheck className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5 mr-3" /> },
     { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5 mr-3" /> },
-    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <MessageSquare className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <CalendarRange className="h-5 w-5 mr-3" /> },
   ] : [];
   
   // Roving observer links
   const rovingObserverLinks = isRovingObserver ? [
-    { path: "/roving/station-schedule", label: "Station Schedule", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
+    { path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5 mr-3" /> },
     { path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
   ] : [];
 
