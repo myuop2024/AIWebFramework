@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share2, Trash, Filter, MoreHorizontal, Share, Map, CheckSquare, ExternalLink, Hourglass, ArrowDown } from "lucide-react";
+import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share2, Trash, Filter, MoreHorizontal, Share, Map, CheckSquare, ExternalLink, Hourglass, ArrowDown, Play, Pause, ArrowRight, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -78,6 +78,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   const [isPrinting, setIsPrinting] = useState(false);
   const [filterText, setFilterText] = useState<string>("");
   const [isNavigationMode, setIsNavigationMode] = useState(false);
+  const [navigationPaused, setNavigationPaused] = useState(false);
   const [currentNavPointIndex, setCurrentNavPointIndex] = useState(0);
   const [distanceToNextPoint, setDistanceToNextPoint] = useState<number | null>(null);
   const [estimatedTimeToArrival, setEstimatedTimeToArrival] = useState<number | null>(null);
@@ -846,15 +847,140 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                   </Button>
                 </div>
                 
-                <div className="h-[300px] rounded-md overflow-hidden">
+                <div className="h-[400px] rounded-md overflow-hidden">
                   <InteractiveMap 
                     markers={getRouteMarkers()}
                     center={userLocation || undefined}
                     height="100%"
                     width="100%"
                     showUserLocation={true}
+                    routePolyline={routeItinerary?.routePolyline}
+                    navigationMode={isNavigationMode}
                   />
                 </div>
+                
+                {/* Navigation Mode Toggle */}
+                <div className="mt-4 flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="navigation-mode"
+                      checked={isNavigationMode}
+                      onCheckedChange={(checked) => {
+                        setIsNavigationMode(checked);
+                        if (checked) {
+                          toast({
+                            title: "Navigation mode activated",
+                            description: "Your location will be tracked to guide you through the route.",
+                          });
+                          // Reset to first point when navigation starts
+                          setCurrentNavPointIndex(0);
+                          setNavigationPaused(false);
+                        } else {
+                          toast({
+                            title: "Navigation mode deactivated",
+                            description: "Location tracking has been stopped.",
+                          });
+                          setNavigationPaused(false);
+                        }
+                      }}
+                    />
+                    <Label htmlFor="navigation-mode" className="text-sm font-medium cursor-pointer">
+                      Live Navigation Mode
+                    </Label>
+                  </div>
+                  
+                  {isNavigationMode && (
+                    <div className="text-xs bg-muted p-2 rounded-md">
+                      <span className="font-medium">Status:</span> {navigationPaused ? "Paused" : "Active"} • 
+                      <span className="ml-2 font-medium">Distance to next:</span> {distanceToNextPoint ? formatDistance(distanceToNextPoint) : "Calculating..."}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Navigation Controls */}
+                {isNavigationMode && routeItinerary && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm">
+                        <span className="font-semibold">Current destination:</span> {currentNavPoint?.name}
+                      </span>
+                      {estimatedTimeToArrival !== null && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-md">
+                          ETA: {Math.ceil(estimatedTimeToArrival / 60)} minutes
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {/* Pause/Resume */}
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setNavigationPaused(!navigationPaused);
+                          if (navigationPaused) {
+                            // Resume tracking
+                            trackUserLocationForNavigation();
+                          } else if (locationWatchId !== null) {
+                            // Pause tracking
+                            navigator.geolocation.clearWatch(locationWatchId);
+                            setLocationWatchId(null);
+                          }
+                        }}
+                      >
+                        {navigationPaused ? (
+                          <>
+                            <Play className="mr-1 h-4 w-4" />
+                            Resume Navigation
+                          </>
+                        ) : (
+                          <>
+                            <Pause className="mr-1 h-4 w-4" />
+                            Pause Navigation
+                          </>
+                        )}
+                      </Button>
+                      
+                      {/* Next Destination */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentNavPointIndex >= routeItinerary.points.length - 1}
+                        onClick={() => {
+                          if (currentNavPointIndex < routeItinerary.points.length - 1) {
+                            setCurrentNavPointIndex(currentNavPointIndex + 1);
+                            toast({
+                              title: "Navigation updated",
+                              description: `Now navigating to ${routeItinerary.points[currentNavPointIndex + 1].name}`
+                            });
+                          }
+                        }}
+                      >
+                        <ArrowRight className="mr-1 h-4 w-4" />
+                        Next Destination
+                      </Button>
+                      
+                      {/* Previous Destination */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentNavPointIndex <= 0}
+                        onClick={() => {
+                          if (currentNavPointIndex > 0) {
+                            setCurrentNavPointIndex(currentNavPointIndex - 1);
+                            toast({
+                              title: "Navigation updated",
+                              description: `Now navigating to ${routeItinerary.points[currentNavPointIndex - 1].name}`
+                            });
+                          }
+                        }}
+                      >
+                        <ArrowLeft className="mr-1 h-4 w-4" />
+                        Previous Destination
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 
                 {/* Print-friendly section (hidden until print) */}
                 <div className="print-section hidden">
