@@ -230,7 +230,6 @@ export default function ObserverRoutePlanningPage() {
             <>
               <div className="h-[600px] relative">
                 <InteractiveMap
-                  ref={mapRef}
                   markers={[
                     // User's current location marker
                     ...(userLocation ? [{
@@ -263,7 +262,8 @@ export default function ObserverRoutePlanningPage() {
                   ] : []}
                   onMarkerClick={handleMapMarkerClick}
                   center={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined}
-                  initialZoom={11}
+                  zoom={11}
+                  ref={(mapInstance: any) => { mapRef.current = mapInstance; }}
                 />
               </div>
               
