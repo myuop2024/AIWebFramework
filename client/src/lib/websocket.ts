@@ -88,7 +88,9 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     
     try {
       // Create new Socket.io connection
-      const socket = io('/comms');
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const socket = io(`${protocol}//${host}/comms`);
       socketRef.current = socket;
       
       // Connection event handlers

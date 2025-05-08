@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, ForwardedRef } from "react";
 import { useHereMaps } from "@/lib/here-maps";
 import { Loader2 } from "lucide-react";
 
@@ -36,7 +36,7 @@ interface InteractiveMapProps {
   }) => void;
 }
 
-export function InteractiveMap({
+export const InteractiveMap = forwardRef(({
   markers = [],
   routes = [],
   centerLat = 18.0179, // Kingston, Jamaica default
@@ -49,7 +49,7 @@ export function InteractiveMap({
   onMapClick,
   showControls = true,
   onBoundsChanged,
-}: InteractiveMapProps) {
+}: InteractiveMapProps, ref: ForwardedRef<any>) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const { H, isLoaded, loadError } = useHereMaps();
   const [map, setMap] = useState<any>(null);
@@ -78,6 +78,15 @@ export function InteractiveMap({
         pixelRatio: window.devicePixelRatio || 1,
       }
     );
+    
+    // Expose map instance to parent component via ref
+    if (ref) {
+      if (typeof ref === 'function') {
+        ref(newMap);
+      } else {
+        ref.current = newMap;
+      }
+    }
 
     // Add map interaction and controls
     const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(newMap));
@@ -128,7 +137,7 @@ export function InteractiveMap({
       });
       newMap.dispose();
     };
-  }, [H, isLoaded, centerLat, centerLng, zoom, showControls]);
+  }, [H, isLoaded, centerLat, centerLng, zoom, showControls, ref]);
 
   // Add or update markers when they change
   useEffect(() => {
@@ -302,7 +311,7 @@ export function InteractiveMap({
       style={{ width, height }}
     />
   );
-}
+});
 
 // For backward compatibility
 export default InteractiveMap;
