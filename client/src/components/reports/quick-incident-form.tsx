@@ -69,6 +69,15 @@ export default function QuickIncidentForm({
   onOpenChange,
   onReportSubmitted,
 }: QuickIncidentFormProps) {
+  // Fetch the template for quick incident reporting
+  const { data: templates = [] } = useQuery<any[]>({
+    queryKey: ['/api/quick-reports/templates'],
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: open, // Only fetch when the form is open
+  });
+  
+  // Use the first active template or the first one available
+  const formTemplate = templates.find(t => t.isActive) || templates[0];
   const [imageCapture, setImageCapture] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
@@ -350,7 +359,7 @@ export default function QuickIncidentForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              {/* Polling Station Selection */}
+              {/* Always include Polling Station Selection regardless of template */}
               <div className="space-y-2">
                 <Label htmlFor="station">Polling Station <span className="text-red-500">*</span></Label>
                 <Select
