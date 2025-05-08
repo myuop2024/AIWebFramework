@@ -74,6 +74,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/supervisor/team-management", label: "Team Management", icon: <UserCheck className="h-5 w-5 mr-3" /> },
     { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <MessageSquare className="h-5 w-5 mr-3" /> },
   ] : [];
   
   // Roving observer links
