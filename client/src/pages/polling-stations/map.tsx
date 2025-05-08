@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { MapPin, Plus, Filter, List, Info } from "lucide-react";
 
 import PageHeader from "@/components/layout/page-header";
-import InteractiveMap from "@/components/mapping/interactive-map";
+import { InteractiveMap } from "@/components/mapping/interactive-map";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

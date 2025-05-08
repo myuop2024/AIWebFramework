@@ -36,7 +36,7 @@ interface InteractiveMapProps {
   }) => void;
 }
 
-export default function InteractiveMap({
+export function InteractiveMap({
   markers = [],
   routes = [],
   centerLat = 18.0179, // Kingston, Jamaica default
@@ -303,3 +303,6 @@ export default function InteractiveMap({
     />
   );
 }
+
+// For backward compatibility
+export default InteractiveMap;
