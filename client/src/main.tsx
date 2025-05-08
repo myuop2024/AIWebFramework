@@ -1,3 +1,6 @@
+// Import global shim first to enable Node.js libraries in browser
+import "@/lib/global-shim";
+
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";

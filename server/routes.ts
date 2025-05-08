@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+// For ESM compatibility
+import { Server as SocketIOServer } from 'socket.io';
 import { storage, IStorage } from "./storage";
 import { 
   loginUserSchema, 
@@ -75,71 +77,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(uploadsDir));
   console.log(`Serving static files from: ${uploadsDir}`);
 
-  // Set up WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-
-  wss.on('connection', (socket) => {
-    socket.on('message', (message) => {
+  // Set up Socket.io server
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+  
+  // Track online users and their socket connections
+  const onlineUsers = new Map();
+  
+  // Communication namespace
+  const commsNamespace = io.of('/comms');
+  
+  commsNamespace.on('connection', (socket) => {
+    let userId: number | null = null;
+    
+    // Authentication
+    socket.on('auth', (data) => {
+      userId = data.userId;
+      
+      // Store the user's socket connection
+      onlineUsers.set(userId, socket.id);
+      
+      // Join a personal room for direct messages
+      socket.join(`user:${userId}`);
+      
+      // Notify user of successful connection
+      socket.emit('notification', {
+        type: 'notification',
+        content: 'Connected to communication server',
+        timestamp: new Date()
+      });
+      
+      // Broadcast user online status to others
+      socket.broadcast.emit('user:status', {
+        userId,
+        status: 'online'
+      });
+      
+      // Send the current online users to the newly connected user
+      const onlineUserIds = Array.from(onlineUsers.keys());
+      socket.emit('online:users', onlineUserIds);
+    });
+    
+    // Handle text chat messages
+    socket.on('message', async (data) => {
       try {
-        const parsedMessage = JSON.parse(message.toString());
-
-        // Handle authentication message
-        if (parsedMessage.type === 'auth') {
-          const userId = parsedMessage.userId;
-          // Add to connected clients
-          connectedClients.push({ userId, socket });
-
-          // Send confirmation
-          socket.send(JSON.stringify({
-            type: 'notification',
-            content: 'Connected to chat server',
-            timestamp: new Date()
-          }));
+        const { receiverId, content } = data;
+        
+        if (!userId) {
+          socket.emit('error', { message: 'Not authenticated' });
+          return;
         }
-
-        // Handle chat message
-        else if (parsedMessage.type === 'message') {
-          const { senderId, receiverId, content } = parsedMessage;
-
-          // Save message to DB
-          storage.createMessage({
-            senderId,
-            receiverId,
-            content
-          }).then(message => {
-            // Send to recipient if online
-            const recipient = connectedClients.find(client => client.userId === receiverId);
-            if (recipient) {
-              recipient.socket.send(JSON.stringify({
-                type: 'message',
-                senderId,
-                receiverId,
-                content,
-                timestamp: message.sentAt
-              }));
-            }
-
-            // Send confirmation to sender
-            socket.send(JSON.stringify({
-              type: 'status',
-              content: 'Message sent',
-              messageId: message.id,
-              timestamp: message.sentAt
-            }));
-          });
+        
+        // Save message to database
+        const message = await storage.createMessage({
+          senderId: userId,
+          receiverId,
+          content
+        });
+        
+        // Prepare message data
+        const messageData = {
+          type: 'message',
+          messageId: message.id,
+          senderId: userId,
+          receiverId,
+          content,
+          timestamp: message.sentAt
+        };
+        
+        // Send to recipient if online
+        if (onlineUsers.has(receiverId)) {
+          socket.to(`user:${receiverId}`).emit('message', messageData);
         }
+        
+        // Send confirmation to sender
+        socket.emit('message:sent', {
+          type: 'status',
+          content: 'Message sent',
+          messageId: message.id,
+          timestamp: message.sentAt
+        });
       } catch (err) {
-        console.error('WebSocket message error:', err);
+        console.error('Message handling error:', err);
+        socket.emit('error', { message: 'Failed to send message' });
       }
     });
-
-    socket.on('close', () => {
-      // Remove from connected clients by identifying the correct client based on reference
-      const socketId = connectedClients.findIndex(client => 
-        client.socket === socket
-      );
-      if (socketId !== -1) {
-        connectedClients.splice(socketId, 1);
+    
+    // Handle video/audio call signaling
+    socket.on('call:init', (data) => {
+      const { receiverId, callType } = data;
+      
+      if (!userId) {
+        socket.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+      
+      // Forward call request to recipient
+      socket.to(`user:${receiverId}`).emit('call:incoming', {
+        callerId: userId,
+        callType // 'video' or 'audio'
+      });
+    });
+    
+    // Signal exchange for WebRTC
+    socket.on('signal', (data) => {
+      const { receiverId, signal } = data;
+      
+      if (!userId) {
+        socket.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+      
+      // Forward signaling data to the peer
+      socket.to(`user:${receiverId}`).emit('signal', {
+        senderId: userId,
+        signal
+      });
+    });
+    
+    // Call responses (accept/reject)
+    socket.on('call:response', (data) => {
+      const { callerId, accepted } = data;
+      
+      if (!userId) {
+        socket.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+      
+      // Forward response to caller
+      socket.to(`user:${callerId}`).emit('call:response', {
+        responderId: userId,
+        accepted
+      });
+    });
+    
+    // File sharing
+    socket.on('file:share', (data) => {
+      const { receiverId, fileInfo } = data;
+      
+      if (!userId) {
+        socket.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+      
+      // Forward file info to recipient
+      socket.to(`user:${receiverId}`).emit('file:incoming', {
+        senderId: userId,
+        fileInfo
+      });
+    });
+    
+    // Handle disconnection
+    socket.on('disconnect', () => {
+      if (userId) {
+        // Remove from online users
+        onlineUsers.delete(userId);
+        
+        // Broadcast offline status
+        socket.broadcast.emit('user:status', {
+          userId,
+          status: 'offline'
+        });
       }
     });
   });
