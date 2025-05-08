@@ -53,6 +53,10 @@ function Router() {
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/documents" component={Documents} />
       <ProtectedRoute path="/polling-stations" component={PollingStations} />
+      <ProtectedRoute path="/polling-stations/create" component={require("@/pages/polling-stations/create").default} />
+      <ProtectedRoute path="/polling-stations/import" component={require("@/pages/polling-stations/import").default} />
+      <ProtectedRoute path="/polling-stations/map" component={require("@/pages/polling-stations/map").default} />
+      <ProtectedRoute path="/polling-stations/export" component={require("@/pages/polling-stations/export").default} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />

@@ -16,6 +16,10 @@ interface InteractiveMapProps {
   navigationMode?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
   onMarkerClick?: (index: number) => void;
+  stations?: any[];
+  selectedStationId?: number | null;
+  onStationSelect?: (id: number) => void;
+  isSelectable?: boolean;
 }
 
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({ 
@@ -29,7 +33,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   routePolyline,
   navigationMode = false,
   onMapClick,
-  onMarkerClick
+  onMarkerClick,
+  stations = [],
+  selectedStationId = null,
+  onStationSelect = () => {},
+  isSelectable = false
 }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any | null>(null);

@@ -1,356 +1,368 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, MapPin } from "lucide-react";
-import { HereAutocompleteResult, hereMapsService } from "@/lib/here-maps";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 import AddressAutocomplete from "@/components/address/address-autocomplete";
-import InteractiveMap from "@/components/mapping/interactive-map";
-import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 
-// Create a schema for polling station form
-const pollingStationFormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  address: z.string().min(5, { message: "Please enter a valid address." }),
-  city: z.string().min(2, { message: "City is required." }),
-  state: z.string().min(2, { message: "State/Province is required." }),
-  zipCode: z.string().min(1, { message: "Postal code is required." }),
-  stationCode: z.string().min(2, { message: "Station code is required." }),
-  capacity: z.coerce.number().min(1, { message: "Capacity must be at least 1." }),
-  status: z.string().min(1, { message: "Status is required." }),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+// Form validation schema
+const pollingStationSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters"),
+  stationCode: z.string().min(2, "Station code is required"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State/Parish is required"),
+  zipCode: z.string().optional(),
+  latitude: z.coerce.number()
+    .min(-90, "Latitude must be between -90 and 90")
+    .max(90, "Latitude must be between -90 and 90")
+    .or(z.string().transform(val => parseFloat(val))),
+  longitude: z.coerce.number()
+    .min(-180, "Longitude must be between -180 and 180")
+    .max(180, "Longitude must be between -180 and 180")
+    .or(z.string().transform(val => parseFloat(val))),
+  capacity: z.coerce.number().min(1, "Capacity must be at least 1").optional(),
+  isActive: z.boolean().default(true),
+  notes: z.string().optional(),
 });
 
-// Define the form values type
-type PollingStationFormValues = z.infer<typeof pollingStationFormSchema>;
-
+// Define props for the component
 interface PollingStationFormProps {
-  initialData?: any;
-  onSubmit: (data: PollingStationFormValues) => void;
-  isSubmitting?: boolean;
+  initialData?: any; // Optional data for edit mode
+  onSubmit: (data: any) => void;
+  isSubmitting: boolean;
 }
 
 export default function PollingStationForm({
   initialData,
   onSubmit,
-  isSubmitting = false,
+  isSubmitting,
 }: PollingStationFormProps) {
-  const { toast } = useToast();
-  const [addressDetails, setAddressDetails] = useState<HereAutocompleteResult | null>(null);
-  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(
-    initialData?.latitude && initialData?.longitude
-      ? { lat: initialData.latitude, lng: initialData.longitude }
-      : null
-  );
+  const [useAddressAutocomplete, setUseAddressAutocomplete] = useState(false);
+  const [coordsFromMap, setCoordsFromMap] = useState<{lat: number, lng: number} | null>(null);
 
-  // Initialize the form
-  const form = useForm<PollingStationFormValues>({
-    resolver: zodResolver(pollingStationFormSchema),
-    defaultValues: {
-      name: initialData?.name || "",
-      address: initialData?.address || "",
-      city: initialData?.city || "",
-      state: initialData?.state || "",
-      zipCode: initialData?.zipCode || "",
-      stationCode: initialData?.stationCode || "",
-      capacity: initialData?.capacity || 5,
-      status: initialData?.status || "active",
-      latitude: initialData?.latitude || undefined,
-      longitude: initialData?.longitude || undefined,
+  // Initialize form with default values or data for editing
+  const form = useForm<z.infer<typeof pollingStationSchema>>({
+    resolver: zodResolver(pollingStationSchema),
+    defaultValues: initialData || {
+      name: "",
+      stationCode: "",
+      address: "",
+      city: "",
+      state: "",
+      zipCode: "",
+      latitude: coordsFromMap?.lat || "",
+      longitude: coordsFromMap?.lng || "",
+      capacity: "",
+      isActive: true,
+      notes: "",
     },
   });
 
-  // Handle address selection from autocomplete
-  const handleAddressSelect = async (address: string, details?: HereAutocompleteResult) => {
-    form.setValue("address", address);
-    
-    if (details) {
-      setAddressDetails(details);
-      form.setValue("city", details.address.city || "");
-      form.setValue("state", details.address.state || "");
-      form.setValue("zipCode", details.address.postalCode || "");
-      
-      if (details.position) {
-        form.setValue("latitude", details.position.lat);
-        form.setValue("longitude", details.position.lng);
-        setMapCoordinates({ lat: details.position.lat, lng: details.position.lng });
-      }
-    } else {
-      // If user manually typed an address, try to geocode it
-      try {
-        const result = await hereMapsService.geocodeAddress(address);
-        if (result) {
-          form.setValue("city", result.address.city || "");
-          form.setValue("state", result.address.state || "");
-          form.setValue("zipCode", result.address.postalCode || "");
-          
-          if (result.position) {
-            form.setValue("latitude", result.position.lat);
-            form.setValue("longitude", result.position.lng);
-            setMapCoordinates({ lat: result.position.lat, lng: result.position.lng });
-          }
-        }
-      } catch (error) {
-        console.error("Error geocoding address:", error);
-      }
-    }
-  };
-
-  // Handle map click to update location
+  // Handle when the map is clicked to set coordinates
   const handleMapClick = (lat: number, lng: number) => {
-    setMapCoordinates({ lat, lng });
+    setCoordsFromMap({lat, lng});
     form.setValue("latitude", lat);
     form.setValue("longitude", lng);
+  };
+
+  // Handle form submission
+  const handleFormSubmit = (data: z.infer<typeof pollingStationSchema>) => {
+    // Ensure data is properly formatted
+    const formattedData = {
+      ...data,
+      capacity: data.capacity || null,
+      notes: data.notes || null,
+      zipCode: data.zipCode || null,
+    };
     
-    // Reverse geocode to get address details
-    reverseGeocode(lat, lng);
-  };
-  
-  // Reverse geocode a location to get address
-  const reverseGeocode = async (lat: number, lng: number) => {
-    try {
-      const result = await hereMapsService.reverseGeocode(lat, lng);
-      if (result) {
-        form.setValue("address", result.address.label || "");
-        form.setValue("city", result.address.city || "");
-        form.setValue("state", result.address.state || "");
-        form.setValue("zipCode", result.address.postalCode || "");
-      }
-    } catch (error) {
-      console.error("Error reverse geocoding:", error);
-      toast({
-        title: "Geocoding Error",
-        description: "Could not retrieve address for selected location.",
-        variant: "destructive",
-      });
-    }
+    onSubmit(formattedData);
   };
 
-  // Form submission handler
-  const handleFormSubmit = async (data: PollingStationFormValues) => {
-    try {
-      // Ensure coordinates are present
-      if (!data.latitude || !data.longitude) {
-        toast({
-          title: "Location Required",
-          description: "Please select a location on the map or use the address search.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate address data
-      if (!data.address || !data.city || !data.state || !data.zipCode) {
-        toast({
-          title: "Address Required",
-          description: "Please ensure all address fields are filled out.",
-          variant: "destructive",
-        });
-        return;
-      }
+  // Handle address selection from autocomplete
+  const handleAddressSelect = (address: any) => {
+    if (address) {
+      form.setValue("address", address.street || "");
+      form.setValue("city", address.city || "");
+      form.setValue("state", address.state || "");
+      form.setValue("zipCode", address.postalCode || "");
       
-      await onSubmit(data);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create polling station",
-        variant: "destructive",
-      });
+      if (address.position) {
+        form.setValue("latitude", address.position.lat);
+        form.setValue("longitude", address.position.lng);
+      }
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Polling Station Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Kingston Central #24" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="stationCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Station Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. KC-024" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="name"
+                name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Station Name</FormLabel>
+                    <FormLabel>Capacity (voters)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter station name" {...field} />
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 500" 
+                        {...field}
+                        value={field.value || ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="space-y-4">
+              <div className="flex items-center space-x-2">
                 <FormField
                   control={form.control}
-                  name="address"
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Active</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Location</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Switch
+                  id="use-autocomplete"
+                  checked={useAddressAutocomplete}
+                  onCheckedChange={setUseAddressAutocomplete}
+                />
+                <Label htmlFor="use-autocomplete">Use address lookup</Label>
+              </div>
+
+              {useAddressAutocomplete ? (
+                <div className="mb-4">
+                  <Label>Search Address</Label>
+                  <AddressAutocomplete 
+                    onAddressSelect={handleAddressSelect}
+                  />
+                </div>
+              ) : null}
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. 22 Hope Road" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>City</FormLabel>
                       <FormControl>
-                        <AddressAutocomplete
-                          value={field.value}
-                          onChange={handleAddressSelect}
-                          placeholder="Search for an address"
-                        />
+                        <Input placeholder="e.g. Kingston" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parish</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. St. Andrew" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input placeholder="City" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State/Province</FormLabel>
-                        <FormControl>
-                          <Input placeholder="State/Province" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="zipCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Postal Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Postal Code" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="stationCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Station Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Station Code" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Capacity</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Observer Capacity" 
-                            {...field} 
-                            min={1}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <FormControl>
-                          <select
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            {...field}
-                          >
-                            <option value="active">Active</option>
-                            <option value="pending">Pending</option>
-                            <option value="closed">Closed</option>
-                          </select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Postal Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Optional" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {/* Hidden fields for coordinates */}
-              <input type="hidden" {...form.register("latitude")} />
-              <input type="hidden" {...form.register("longitude")} />
-            </div>
-
-            <div>
-              <Card className="p-4">
-                <div className="mb-3">
-                  <h3 className="text-sm font-medium mb-1">Select Location on Map</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Click on the map to set the exact location of the polling station
-                  </p>
-                </div>
-                <InteractiveMap
-                  center={mapCoordinates ? { lat: mapCoordinates.lat, lng: mapCoordinates.lng } : undefined}
-                  markers={mapCoordinates ? [{ lat: mapCoordinates.lat, lng: mapCoordinates.lng }] : []}
-                  height={300}
-                  zoom={15}
-                  onMapClick={handleMapClick}
-                  showUserLocation
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="latitude"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Latitude</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="text"
+                          placeholder="e.g. 18.0179" 
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
                 
-                {mapCoordinates && (
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    <div className="flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" />
-                      <span>
-                        Latitude: {mapCoordinates.lat.toFixed(6)}, Longitude: {mapCoordinates.lng.toFixed(6)}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </div>
-          </div>
+                <FormField
+                  control={form.control}
+                  name="longitude"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Longitude</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="text"
+                          placeholder="e.g. -76.8099" 
+                          {...field}
+                          value={field.value || ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {initialData ? "Update Polling Station" : "Create Polling Station"}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter any additional information about this polling station" 
+                        className="min-h-[120px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className="flex justify-end space-x-4 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => form.reset()}
+                disabled={isSubmitting}
+              >
+                Reset
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {initialData ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>{initialData ? "Update" : "Create"} Station</>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </form>
+    </Form>
   );
 }

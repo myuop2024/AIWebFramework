@@ -20,10 +20,12 @@ export async function apiRequest<T = any>(
   data?: any,
   options?: { 
     multipart?: boolean;
+    formData?: boolean;
     headers?: Record<string, string>;
   }
 ): Promise<Response> {
   const isMultipart = options?.multipart ?? false;
+  const isFormData = options?.formData ?? false;
   
   // Create headers object
   const headers = new Headers();
@@ -37,11 +39,11 @@ export async function apiRequest<T = any>(
   
   // Don't set Content-Type for multipart/form-data requests
   // Let the browser set it automatically with the boundary parameter
-  if (!isMultipart && data && !(data instanceof FormData)) {
+  if (!isMultipart && !isFormData && data && !(data instanceof FormData)) {
     headers.append("Content-Type", "application/json");
   }
   
-  const requestBody = isMultipart || data instanceof FormData
+  const requestBody = isMultipart || isFormData || data instanceof FormData
     ? data
     : data ? JSON.stringify(data) 
     : undefined;

@@ -1,214 +1,299 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Check, ChevronsUpDown, Loader2, MapPin } from "lucide-react";
-import { hereMapsService, HereAutocompleteResult } from "@/lib/here-maps";
+import { useHereMaps } from "@/lib/here-maps";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AddressAutocompleteProps {
-  value?: string;
-  onChange: (value: string, details?: HereAutocompleteResult) => void;
-  placeholder?: string;
-  label?: string;
-  required?: boolean;
-  error?: string;
-  disabled?: boolean;
+  onAddressSelect: (address: any) => void;
+  initialValue?: string;
   className?: string;
-  country?: string;
-  autoFocus?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
+type AddressSuggestion = {
+  title: string;
+  address: {
+    label: string;
+    countryCode: string;
+    countryName: string;
+    state: string;
+    county: string;
+    city: string;
+    district: string;
+    street: string;
+    postalCode: string;
+  };
+  position: {
+    lat: number;
+    lng: number;
+  };
+  id: string;
+};
+
 export default function AddressAutocomplete({
-  value = "",
-  onChange,
-  placeholder = "Search for an address...",
-  label,
-  required = false,
-  error,
-  disabled = false,
-  className,
-  country,
-  autoFocus = false,
+  onAddressSelect,
+  initialValue = '',
+  className = '',
+  placeholder = 'Enter address for search...',
+  disabled = false
 }: AddressAutocompleteProps) {
-  const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState(value);
-  const [suggestions, setSuggestions] = useState<HereAutocompleteResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<HereAutocompleteResult | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const { H, isLoaded, loadError } = useHereMaps();
+  const [inputValue, setInputValue] = useState(initialValue);
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const suggestionListRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync with external value
+  // Setup autocomplete service
   useEffect(() => {
-    if (value !== inputValue && !selectedItem) {
-      setInputValue(value);
-    }
-  }, [value, inputValue, selectedItem]);
-
-  // Verify API key on mount
-  useEffect(() => {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      setApiError("HERE Maps API key is missing. Address autocomplete is disabled.");
-    } else {
-      setApiError(null);
-    }
+    // Clean up timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
-  const fetchSuggestions = async (query: string) => {
-    if (!query || query.length < 3) {
+  // Handle input change with debounce
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Clear previous timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Don't search if input is empty
+    if (!value.trim()) {
       setSuggestions([]);
+      setIsSearching(false);
       return;
     }
+    
+    setIsSearching(true);
+    
+    // Debounce requests
+    timeoutRef.current = setTimeout(() => {
+      fetchAddressSuggestions(value);
+    }, 300);
+  };
 
-    if (!import.meta.env.VITE_HERE_API_KEY) {
-      setApiError("HERE Maps API key is missing. Address autocomplete is disabled.");
+  // Fetch address suggestions from HERE Geocoding API
+  const fetchAddressSuggestions = async (query: string) => {
+    if (!isLoaded || !H) {
+      console.error("HERE Maps not loaded");
+      setIsSearching(false);
       return;
     }
-
-    setIsLoading(true);
-    setSelectedItem(null);
+    
     try {
-      const results = await hereMapsService.autocompleteAddress(query, country);
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        console.error("HERE Maps API key is missing");
+        setIsSearching(false);
+        return;
+      }
+      
+      // Create a platform instance
+      const platform = new H.service.Platform({
+        apikey: apiKey
+      });
+      
+      // Get search service
+      const searchService = platform.getSearchService();
+      
+      // Create a promise to get autocomplete suggestions
+      const suggestionsPromise = new Promise<AddressSuggestion[]>((resolve, reject) => {
+        searchService.autosuggest(
+          {
+            q: query,
+            at: '18.0179,-76.8099', // Kingston, Jamaica as center point
+            limit: 5
+          },
+          (result: any) => {
+            if (result && result.items) {
+              const suggestions = result.items.map((item: any) => ({
+                title: item.title,
+                address: item.address || {},
+                position: item.position || { lat: 0, lng: 0 },
+                id: item.id || Math.random().toString(36).substring(2)
+              }));
+              resolve(suggestions);
+            } else {
+              resolve([]);
+            }
+          },
+          (error: any) => {
+            console.error("Error fetching suggestions:", error);
+            reject(error);
+          }
+        );
+      });
+      
+      const results = await suggestionsPromise;
       setSuggestions(results);
-      setApiError(null);
+      setShowSuggestions(results.length > 0);
     } catch (error) {
-      console.error("Error in autocompleteAddress:", error);
+      console.error("Error in autosuggest:", error);
       setSuggestions([]);
-      setApiError("Failed to fetch address suggestions. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
-
-  const handleInputChange = (query: string) => {
-    setInputValue(query);
-    setSelectedItem(null);
-    onChange(query); // Always update with raw text input
-
-    // Reset error
-    setApiError(null);
-
-    // Debounce API requests
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-
-    debounceTimer.current = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 350);
+  
+  // Handle selection of a suggestion
+  const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
+    setInputValue(suggestion.title);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    
+    // Get detailed information about the selected address
+    getAddressDetails(suggestion);
   };
+  
+  // Get detailed address information using geocoding
+  const getAddressDetails = async (suggestion: AddressSuggestion) => {
+    if (!isLoaded || !H) {
+      console.error("HERE Maps not loaded");
+      return;
+    }
+    
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        console.error("HERE Maps API key is missing");
+        return;
+      }
+      
+      // Create a platform instance
+      const platform = new H.service.Platform({
+        apikey: apiKey
+      });
+      
+      // Get geocoding service
+      const geocodingService = platform.getSearchService();
+      
+      // Create a promise to get detailed address information
+      const geocodePromise = new Promise<any>((resolve, reject) => {
+        geocodingService.geocode(
+          {
+            q: suggestion.title
+          },
+          (result: any) => {
+            if (result && result.items && result.items.length > 0) {
+              resolve(result.items[0]);
+            } else {
+              // If no detailed result, use the suggestion data
+              resolve({
+                title: suggestion.title,
+                position: suggestion.position,
+                address: suggestion.address
+              });
+            }
+          },
+          (error: any) => {
+            console.error("Error in geocode:", error);
+            reject(error);
+          }
+        );
+      });
+      
+      const addressDetails = await geocodePromise;
+      
+      // Format the address object for our application
+      const formattedAddress = {
+        fullAddress: suggestion.title,
+        street: addressDetails.address?.street || '',
+        city: addressDetails.address?.city || '',
+        state: addressDetails.address?.state || addressDetails.address?.county || '',
+        country: addressDetails.address?.countryName || '',
+        postalCode: addressDetails.address?.postalCode || '',
+        position: {
+          lat: addressDetails.position?.lat || suggestion.position.lat,
+          lng: addressDetails.position?.lng || suggestion.position.lng
+        }
+      };
+      
+      // Call callback with the address data
+      onAddressSelect(formattedAddress);
+    } catch (error) {
+      console.error("Error getting address details:", error);
+    }
+  };
+  
+  // Handle clicks outside the suggestion list to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionListRef.current &&
+        !suggestionListRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-  const handleSelectSuggestion = (item: HereAutocompleteResult) => {
-    setSelectedItem(item);
-    setInputValue(item.address.label);
-    onChange(item.address.label, item);
-    setOpen(false);
+  // Handle showing suggestions when input is focused
+  const handleInputFocus = () => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
-      {label && (
-        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          {label} {required && <span className="text-destructive">*</span>}
-        </label>
+    <div className="relative w-full">
+      <div className="relative">
+        <Input
+          ref={inputRef}
+          type="text"
+          className={cn(className)}
+          placeholder={placeholder}
+          value={inputValue}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          disabled={disabled || !isLoaded || !!loadError}
+        />
+        {isSearching && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+          </div>
+        )}
+      </div>
+
+      {showSuggestions && (
+        <div
+          ref={suggestionListRef}
+          className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto"
+        >
+          {suggestions.map((suggestion) => (
+            <div
+              key={suggestion.id}
+              className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+              onClick={() => handleSelectSuggestion(suggestion)}
+            >
+              {suggestion.title}
+            </div>
+          ))}
+        </div>
       )}
 
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <div className="flex w-full gap-2">
-            <div className="relative w-full">
-              <Input
-                value={inputValue}
-                onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={placeholder}
-                disabled={disabled}
-                className="pr-10"
-                autoFocus={autoFocus}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                type="button"
-                className="absolute right-0 top-0 h-full"
-                onClick={() => setOpen(!open)}
-              >
-                <ChevronsUpDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </div>
-          </div>
-        </PopoverTrigger>
-        <PopoverContent className="w-[350px] p-0" align="start">
-          <Command>
-            <CommandInput
-              placeholder="Search for an address..."
-              value={inputValue}
-              onValueChange={handleInputChange}
-              autoFocus={autoFocus}
-              className="h-9"
-            />
-            {isLoading && (
-              <div className="py-6 text-center">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                <p className="text-sm text-muted-foreground mt-2">
-                  Searching addresses...
-                </p>
-              </div>
-            )}
-            {!isLoading && (
-              <CommandList>
-                <CommandEmpty>No addresses found</CommandEmpty>
-                <CommandGroup>
-                  {suggestions.map((item) => (
-                    <CommandItem
-                      key={item.id}
-                      value={item.address.label}
-                      onSelect={() => handleSelectSuggestion(item)}
-                    >
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 shrink-0 mt-0.5 opacity-70" />
-                        <div className="overflow-hidden">
-                          <p className="truncate">{item.address.label}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {[
-                              item.address.city,
-                              item.address.state,
-                              item.address.countryName,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </p>
-                        </div>
-                      </div>
-                      <Check
-                        className={cn(
-                          "ml-auto h-4 w-4",
-                          selectedItem?.id === item.id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            )}
-          </Command>
-        </PopoverContent>
-      </Popover>
-
-      {/* Removed hidden input as we now use the visible one */}
-
-      {error && <p className="text-sm text-destructive mt-1">{error}</p>}
+      {loadError && (
+        <div className="mt-1 text-sm text-red-500">
+          Error loading maps: {loadError.message}
+        </div>
+      )}
     </div>
   );
 }
