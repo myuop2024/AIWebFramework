@@ -188,6 +188,20 @@ interface ReportData {
 }
 
 /**
+ * Interface for news data
+ */
+export interface NewsData {
+  title: string;
+  source: string;
+  publishedAt: string;
+  summary: string;
+  url: string;
+  relevanceScore: number;
+  keywords: string[];
+  locations: string[];
+}
+
+/**
  * Interface for Incident prediction
  */
 export interface IncidentPrediction {
@@ -198,15 +212,18 @@ export interface IncidentPrediction {
   affectedStations?: string[];
   estimatedImpact: 'low' | 'medium' | 'high';
   preventativeMeasures: string[];
+  relatedNewsArticles?: string[]; // References to news articles that informed this prediction
 }
 
 /**
  * Analyze incident reports to generate advanced predictions
  * This uses Google's Gemini model to analyze patterns in election observation data
+ * and incorporate relevant news from Jamaica's political landscape
  */
 export async function analyzeIncidentPatternsWithGemini(
   reports: ReportData[],
-  pollingStationId?: number
+  pollingStationId?: number,
+  newsArticles?: NewsData[]
 ): Promise<IncidentPrediction[]> {
   try {
     // Prepare contextual data for the query
@@ -234,37 +251,68 @@ export async function analyzeIncidentPatternsWithGemini(
       };
     });
     
-    // Create context for the AI
+    // Create context for the AI with or without news data
+    let newsContext = '';
+    
+    if (newsArticles && newsArticles.length > 0) {
+      // Only include highly relevant news (relevanceScore > 0.5)
+      const relevantNews = newsArticles
+        .filter(article => article.relevanceScore > 0.5)
+        .map(article => ({
+          title: article.title,
+          source: article.source,
+          date: article.publishedAt,
+          summary: article.summary.slice(0, 250) + (article.summary.length > 250 ? '...' : ''), // Truncate long summaries
+          locations: article.locations.join(', '),
+          keywords: article.keywords.join(', ')
+        }))
+        .slice(0, 10); // Limit to 10 articles to avoid token limits
+      
+      if (relevantNews.length > 0) {
+        newsContext = `
+Recent News from Jamaica:
+${JSON.stringify(relevantNews, null, 2)}
+
+When analyzing the data, consider how these recent news events may relate to or impact potential election issues.
+Look for connections between news articles mentioning specific regions and reports from those areas.
+`;
+      }
+    }
+    
+    // Create the complete prompt
     const prompt = `
-You are an advanced election analytics AI assistant helping election officials predict potential issues at polling stations based on past incident reports.
+You are an advanced election analytics AI assistant helping election officials in Jamaica predict potential issues at polling stations based on past incident reports and current news events.
 ${stationSpecificText}
 
 Analyze the following election observer reports to identify patterns and make predictions:
 
 Historical Reports Data:
 ${JSON.stringify(cleanedReports, null, 2)}
+${newsContext}
 
-Based on these reports, identify:
+Based on this information, identify:
 1. The top 3-5 most likely issues that may occur in the upcoming days
 2. For each issue, provide:
    - Issue type/category
    - Probability (as a decimal between 0 and 1)
-   - Reasoning based on patterns in the data
+   - Reasoning based on patterns in the data and current news context
    - Suggested preventative action
    - List of polling stations most likely to be affected (if applicable)
    - Estimated impact (low/medium/high)
    - 2-3 concrete preventative measures
+   - References to any news articles that informed this prediction
 
 Return ONLY a JSON array with each item containing these fields:
 - issueType (string)
 - probability (number between 0 and 1)
 - suggestedAction (string with concise recommendation)
-- reasoning (string explaining the pattern analysis)
+- reasoning (string explaining the pattern analysis including news influences)
 - affectedStations (array of station names, if applicable)
 - estimatedImpact (string: 'low', 'medium', or 'high')
 - preventativeMeasures (array of strings with specific measures)
+- relatedNewsArticles (array of article titles, if news data was provided and relevant)
 
-If there's not enough data for meaningful predictions, provide generic but useful predictions for common election issues.
+If there's not enough data for meaningful predictions, provide generic but useful predictions for common election issues in Jamaica.
 `;
 
     // Generate content with the Gemini model
