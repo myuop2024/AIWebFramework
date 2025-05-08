@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
-import MainLayout from "@/components/layout/main-layout";
 
 export function ProtectedRoute({
   path,
@@ -30,12 +29,11 @@ export function ProtectedRoute({
     );
   }
 
-  // Wrap the component with the MainLayout
+  // Don't wrap the component with MainLayout
+  // The component should include its own layout if needed
   return (
     <Route path={path}>
-      <MainLayout>
-        <Component />
-      </MainLayout>
+      <Component />
     </Route>
   );
 }
@@ -78,12 +76,11 @@ export function RoleProtectedRoute({
     );
   }
 
-  // Wrap the component with the MainLayout
+  // Don't wrap the component with MainLayout
+  // The component should include its own layout if needed
   return (
     <Route path={path}>
-      <MainLayout>
-        <Component />
-      </MainLayout>
+      <Component />
     </Route>
   );
 }

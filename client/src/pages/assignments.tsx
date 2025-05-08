@@ -14,6 +14,7 @@ import { CalendarIcon, CheckCircle, ClipboardList, Clock, MapPin, Plus } from "l
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { formatDateRange, assignmentStatusColors } from '@/lib/utils';
 import { AssignmentScheduler, AssignmentCard } from '@/components/assignments/assignment-scheduler';
+import MainLayout from "@/components/layout/main-layout";
 
 export default function AssignmentsPage() {
   const { toast } = useToast();
