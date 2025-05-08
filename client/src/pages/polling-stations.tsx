@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { RotateCw, MoreHorizontal, FilePlus, Download, Upload, MapPin, Printer, Share2, Settings, Eye } from "lucide-react";
 import PollingStationsList from "@/components/polling-stations/polling-stations-list";
-import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -15,11 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function PollingStationsPage() {
-  const { user } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  // Since we're using ProtectedRoute, we don't need to check for user again
   return (
     <div className="container py-6 space-y-6 max-w-6xl">
       <div className="flex flex-col space-y-2">
