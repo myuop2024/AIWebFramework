@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { FileText, Upload, MapPin, Calendar, ChevronRight } from "lucide-react";
+import { FileText, Upload, MapPin, Calendar, ChevronRight, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import QuickIncidentButton from "@/components/reports/quick-incident-button";
 
 interface QuickAccessItem {
   id: string;
@@ -53,6 +54,15 @@ export default function QuickAccess() {
         <CardTitle className="text-lg font-medium">Quick Access</CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
+        {/* Quick Incident Report Button */}
+        <QuickIncidentButton
+          variant="destructive"
+          className="w-full justify-between px-3 py-3 h-auto"
+          showIcon={true}
+          label="Report Incident"
+        />
+        
+        {/* Regular Quick Access Items */}
         {quickAccessItems.map((item) => (
           <Button
             key={item.id}
