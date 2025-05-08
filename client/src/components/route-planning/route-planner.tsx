@@ -31,6 +31,19 @@ interface RoutePlannerProps {
 }
 
 export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
+  // Mobile responsive detection
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+  
+  // Check viewport size on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedStations, setSelectedStations] = useState<PollingStation[]>([]);
@@ -158,6 +171,43 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
       text: `${point.visitOrder}: ${point.name}`
     }));
   };
+  
+  // Create CSS for print mode
+  useEffect(() => {
+    if (isPrinting) {
+      const style = document.createElement('style');
+      style.id = 'print-style';
+      style.innerHTML = `
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-section, .print-section * {
+            visibility: visible;
+          }
+          .print-section {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          .print-section .no-print {
+            display: none !important;
+          }
+          @page {
+            size: portrait;
+            margin: 1cm;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        const styleElem = document.getElementById('print-style');
+        if (styleElem) styleElem.remove();
+      };
+    }
+  }, [isPrinting]);
   
   return (
     <Card className="w-full">
@@ -320,7 +370,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                     </div>
                   </div>
                   
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
                       Departure: {formatTime(routeItinerary.departureTime)}
@@ -330,6 +380,177 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                       Return: {formatTime(routeItinerary.returnTime)}
                     </Badge>
                   </div>
+                </div>
+
+                {/* Save/Export Actions - Responsive for mobile */}
+                <div className={`${isMobile ? 'grid grid-cols-2' : 'flex flex-wrap'} gap-2`}>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Route
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Save Route</h4>
+                        <div className="space-y-2">
+                          <Label htmlFor="routeName">Route Name</Label>
+                          <Input
+                            id="routeName"
+                            placeholder="Enter a name for this route"
+                            value={routeName}
+                            onChange={(e) => setRouteName(e.target.value)}
+                          />
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            if (!routeName.trim()) {
+                              toast({
+                                title: "Name required",
+                                description: "Please enter a name for your route",
+                                variant: "destructive"
+                              });
+                              return;
+                            }
+                            
+                            setSavedRoutes(prev => [
+                              ...prev, 
+                              { name: routeName, itinerary: routeItinerary! }
+                            ]);
+                            
+                            setRouteName("");
+                            
+                            toast({
+                              title: "Route saved",
+                              description: "Your route has been saved successfully"
+                            });
+                          }}
+                          className="w-full"
+                        >
+                          Save
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FolderOpen className="h-4 w-4 mr-2" />
+                        Load Route
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-4">
+                        <h4 className="font-medium">Saved Routes</h4>
+                        {savedRoutes.length === 0 ? (
+                          <div className="text-sm text-muted-foreground text-center py-4">
+                            No saved routes found
+                          </div>
+                        ) : (
+                          <div className="max-h-[200px] overflow-y-auto">
+                            {savedRoutes.map((saved, index) => (
+                              <div 
+                                key={`saved-${index}`}
+                                className="flex items-center justify-between p-2 hover:bg-accent rounded-md cursor-pointer"
+                                onClick={() => {
+                                  setRouteItinerary(saved.itinerary);
+                                  
+                                  // Find the stations that are part of this route
+                                  const stationIds = saved.itinerary.points
+                                    .filter(p => typeof p.id === 'number' || (typeof p.id === 'string' && !['start', 'end'].includes(p.id)))
+                                    .map(p => typeof p.id === 'number' ? p.id : parseInt(String(p.id)));
+                                  
+                                  const stations = pollingStations.filter(s => 
+                                    stationIds.includes(s.id)
+                                  );
+                                  
+                                  setSelectedStations(stations);
+                                  
+                                  toast({
+                                    title: "Route loaded",
+                                    description: `Loaded route: ${saved.name}`
+                                  });
+                                }}
+                              >
+                                <div>
+                                  <div className="font-medium">{saved.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {saved.itinerary.points.length} stations • 
+                                    {formatDistance(saved.itinerary.totalDistance)}
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSavedRoutes(prev => 
+                                      prev.filter((_, i) => i !== index)
+                                    );
+                                  }}
+                                >
+                                  <Trash className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setIsPrinting(true);
+                      setTimeout(() => {
+                        window.print();
+                        setIsPrinting(false);
+                      }, 500);
+                    }}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print/Export
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Create shareable URL with route data
+                      const routeData = encodeURIComponent(JSON.stringify({
+                        stations: selectedStations.map(s => s.id),
+                        options: routeOptions
+                      }));
+                      
+                      // Create URL with query params
+                      const shareUrl = `${window.location.origin}/route-planning?data=${routeData}`;
+                      
+                      // Copy to clipboard
+                      navigator.clipboard.writeText(shareUrl).then(
+                        () => {
+                          toast({
+                            title: "Link copied",
+                            description: "Share link copied to clipboard"
+                          });
+                        },
+                        (err) => {
+                          console.error('Could not copy text: ', err);
+                          toast({
+                            title: "Failed to copy",
+                            description: "Could not copy link to clipboard",
+                            variant: "destructive"
+                          });
+                        }
+                      );
+                    }}
+                  >
+                    <Share className="h-4 w-4 mr-2" />
+                    Share Route
+                  </Button>
                 </div>
                 
                 <div className="h-[300px] rounded-md overflow-hidden">
@@ -342,10 +563,90 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                   />
                 </div>
                 
+                {/* Print-friendly section (hidden until print) */}
+                <div className="print-section hidden">
+                  <div className="p-6 space-y-6">
+                    <div className="text-center border-b pb-4">
+                      <h1 className="text-2xl font-bold">Election Observer Route Plan</h1>
+                      <p className="text-muted-foreground">Generated on {new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-semibold">Route Summary</h2>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <div>
+                          <span className="font-medium">Total stations:</span> {routeItinerary.points.length}
+                        </div>
+                        <div>
+                          <span className="font-medium">Total distance:</span> {formatDistance(routeItinerary.totalDistance)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Total duration:</span> {formatDuration(routeItinerary.totalDuration)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Transport mode:</span> {routeOptions.transportMode}
+                        </div>
+                        <div>
+                          <span className="font-medium">Departure time:</span> {formatTime(routeItinerary.departureTime)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Return time:</span> {formatTime(routeItinerary.returnTime)}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-semibold">Detailed Itinerary</h2>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">#</th>
+                            <th className="text-left py-2">Station</th>
+                            <th className="text-left py-2">Address</th>
+                            <th className="text-left py-2">Arrival</th>
+                            <th className="text-left py-2">Departure</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {routeItinerary.points.map((point, index) => (
+                            <tr key={`print-${index}`} className="border-b">
+                              <td className="py-2">{point.visitOrder}</td>
+                              <td className="py-2 font-medium">{point.name}</td>
+                              <td className="py-2">{point.address}</td>
+                              <td className="py-2">{point.estimatedArrival ? formatTime(point.estimatedArrival) : '-'}</td>
+                              <td className="py-2">{point.estimatedDeparture ? formatTime(point.estimatedDeparture) : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div className="mt-8 pt-4 border-t text-sm text-muted-foreground">
+                      <p>Notes: Visit duration at each polling station is {routeOptions.visitDuration} minutes. Observer should follow the official election observation guidelines.</p>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Itinerary</h3>
+                  <div className="flex justify-between items-center flex-wrap gap-2">
+                    <h3 className="text-sm font-medium">Itinerary</h3>
+                    <div className="relative">
+                      <Input
+                        placeholder="Filter stops..."
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        className={`${isMobile ? 'w-36' : 'w-48'} h-8 pl-8`}
+                      />
+                      <Filter className="h-4 w-4 absolute left-2 top-2 text-muted-foreground" />
+                    </div>
+                  </div>
                   <div className="rounded-md border max-h-[200px] overflow-y-auto">
-                    {routeItinerary.points.map((point, index) => (
+                    {routeItinerary.points
+                      .filter(point => 
+                        point.name.toLowerCase().includes(filterText.toLowerCase()) ||
+                        (point.address && point.address.toLowerCase().includes(filterText.toLowerCase()))
+                      )
+                      .map((point, index) => (
                       <div key={`route-${point.id}-${index}`} className="border-b last:border-0">
                         <div 
                           className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent"
