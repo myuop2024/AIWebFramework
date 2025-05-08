@@ -24,6 +24,7 @@ import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
 import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
+import permissionRoutes from './routes/permission-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 

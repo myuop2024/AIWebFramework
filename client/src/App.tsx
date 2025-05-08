@@ -27,6 +27,10 @@ import UserImportsPage from "@/pages/admin/user-imports";
 import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import RoutePlanningPage from "@/pages/route-planning-page";
+// New role-specific pages
+import PermissionManagement from "@/pages/admin/permission-management";
+import TeamManagement from "@/pages/supervisor/team-management";
+import StationSchedule from "@/pages/roving/station-schedule";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 
@@ -53,17 +57,47 @@ function Router() {
       <ProtectedRoute path="/chat" component={Chat} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       
-      {/* Admin Routes (require admin role) */}
-      <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin" component={Admin} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin-dashboard" component={AdminDashboard} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/verification" component={VerificationPage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/training-integrations" component={TrainingIntegrationsAdmin} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/registration-forms" component={RegistrationFormsAdmin} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/id-cards" component={IdCardManagement} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/user-imports" component={UserImportsPage} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin"]} />
-      <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin"]} />
+      {/* Admin Routes (require admin or director role) */}
+      <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin" component={Admin} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin-dashboard" component={AdminDashboard} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/verification" component={VerificationPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/training-integrations" component={TrainingIntegrationsAdmin} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/registration-forms" component={RegistrationFormsAdmin} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/id-cards" component={IdCardManagement} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/user-imports" component={UserImportsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
+      
+      {/* Supervisor Routes */}
+      <RoleProtectedRoute 
+        path="/supervisor/team-management" 
+        component={TeamManagement} 
+        allowedRoles={["supervisor", "admin", "director"]} 
+      />
+      <RoleProtectedRoute 
+        path="/supervisor/assignments" 
+        component={TeamManagement} 
+        allowedRoles={["supervisor", "admin", "director"]} 
+      />
+      <RoleProtectedRoute 
+        path="/supervisor/reports-approval" 
+        component={TeamManagement} 
+        allowedRoles={["supervisor", "admin", "director"]} 
+      />
+      
+      {/* Roving Observer Routes */}
+      <RoleProtectedRoute 
+        path="/roving/station-schedule" 
+        component={StationSchedule} 
+        allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
+      />
+      <RoleProtectedRoute 
+        path="/roving/area-reports" 
+        component={StationSchedule} 
+        allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
+      />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
