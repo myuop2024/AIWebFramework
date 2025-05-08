@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, MapPin, Navigation, RotateCw } from "lucide-react";
+import { Loader2, MapPin, Navigation, RotateCw, Map, Pause, Play, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHereMaps } from "@/lib/here-maps";
 
@@ -12,6 +12,8 @@ interface InteractiveMapProps {
   width?: string | number;
   showUserLocation?: boolean;
   showControls?: boolean;
+  routePolyline?: string;
+  navigationMode?: boolean;
   onMapClick?: (lat: number, lng: number) => void;
   onMarkerClick?: (index: number) => void;
 }
@@ -24,6 +26,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   width = "100%", 
   showUserLocation = false, 
   showControls = true,
+  routePolyline,
+  navigationMode = false,
   onMapClick,
   onMarkerClick
 }: InteractiveMapProps) => {
@@ -32,6 +36,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [navigationPaused, setNavigationPaused] = useState(false);
+  const [selectedMarkerIndex, setSelectedMarkerIndex] = useState(0);
+  const [estimatedTime, setEstimatedTime] = useState("10 mins"); // Will be dynamically calculated
   const { H, isLoaded, loadError } = useHereMaps();
 
 
@@ -140,6 +147,42 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         if (showUserLocation) {
           getUserLocation();
         }
+        
+        // Add route polyline if provided
+        if (routePolyline && map) {
+          try {
+            // Parse the polyline string using HERE Maps utility
+            const lineString = H.geo.LineString.fromFlexiblePolyline(routePolyline);
+            
+            // Create a polyline object for the route
+            const routeLine = new H.map.Polyline(lineString, {
+              style: {
+                lineWidth: navigationMode ? 7 : 5,
+                strokeColor: navigationMode ? '#0078D4' : '#36B37E',
+                lineDash: navigationMode ? undefined : [2, 2]
+              }
+            });
+            
+            // Add it to the map
+            map.addObject(routeLine);
+            
+            // Adjust the viewport to fit the route when first added
+            if (lineString.getPointCount() > 1) {
+              map.getViewModel().setLookAtData({
+                bounds: routeLine.getBoundingBox()
+              });
+            }
+          } catch (err) {
+            console.error("Error rendering route polyline:", err);
+          }
+        }
+        
+        // If in navigation mode, set map in tracking mode and higher zoom
+        if (navigationMode && showUserLocation && userLocation) {
+          // Center on user location with higher zoom level
+          map.setCenter(userLocation);
+          map.setZoom(16); // Higher zoom for navigation
+        }
 
         setLoading(false);
 
@@ -170,7 +213,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       setError("Failed to get HERE Maps API key. Please check your environment variables.");
       setLoading(false);
     }
-  }, [center, zoom, markers, showUserLocation, H, isLoaded, loadError, onMapClick, onMarkerClick]);
+  }, [center, zoom, markers, showUserLocation, routePolyline, navigationMode, H, isLoaded, loadError, onMapClick, onMarkerClick]);
 
   // Get user location
   const getUserLocation = () => {
@@ -204,6 +247,55 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (!mapInstance.current || !center) return;
     mapInstance.current.setCenter(center);
     mapInstance.current.setZoom(zoom);
+  };
+  
+  // Toggle navigation pause state
+  const toggleNavigationPause = () => {
+    setNavigationPaused(!navigationPaused);
+    // In a full implementation, this would pause/resume the real-time tracking and location updates
+  };
+  
+  // Go to previous marker/destination in the route
+  const goToPreviousDestination = () => {
+    if (markers.length === 0) return;
+    
+    const newIndex = selectedMarkerIndex > 0 
+      ? selectedMarkerIndex - 1 
+      : markers.length - 1; // Loop back to the end if at the beginning
+      
+    setSelectedMarkerIndex(newIndex);
+    
+    // Center map on the selected marker
+    if (mapInstance.current && markers[newIndex]) {
+      mapInstance.current.setCenter({
+        lat: markers[newIndex].lat,
+        lng: markers[newIndex].lng
+      });
+      mapInstance.current.setZoom(15);
+      
+      // In a full implementation, this would recalculate routes from current position
+      // to the newly selected destination
+    }
+  };
+  
+  // Go to next marker/destination in the route
+  const goToNextDestination = () => {
+    if (markers.length === 0) return;
+    
+    const newIndex = (selectedMarkerIndex + 1) % markers.length; // Loop back to start if at the end
+    setSelectedMarkerIndex(newIndex);
+    
+    // Center map on the selected marker
+    if (mapInstance.current && markers[newIndex]) {
+      mapInstance.current.setCenter({
+        lat: markers[newIndex].lat,
+        lng: markers[newIndex].lng
+      });
+      mapInstance.current.setZoom(15);
+      
+      // In a full implementation, this would recalculate routes from current position
+      // to the newly selected destination
+    }
   };
 
   return (
@@ -256,7 +348,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             </Button>
           )}
 
-          {center && (
+          {center && !navigationMode && (
             <Button
               variant="secondary"
               size="icon"
@@ -267,6 +359,48 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <MapPin className="h-5 w-5" />
             </Button>
           )}
+        </div>
+      )}
+      
+      {/* Navigation Mode Controls */}
+      {navigationMode && !loading && !error && (
+        <div className="absolute bottom-3 left-3 right-3 flex justify-center items-center">
+          <div className="bg-background rounded-md shadow-lg p-3 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              title="Previous destination"
+            >
+              <SkipForward className="h-4 w-4 rotate-180" />
+            </Button>
+            
+            <Button
+              variant="default"
+              size="icon"
+              className="h-12 w-12 rounded-full bg-primary"
+              title="Pause/Resume navigation"
+            >
+              <Play className="h-6 w-6 text-primary-foreground" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              title="Next destination"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+            
+            <div className="ml-2 bg-muted p-2 rounded-md text-xs">
+              <div className="font-medium">Next destination</div>
+              <div className="text-muted-foreground truncate max-w-[150px]">
+                {markers[0]?.text || "Polling Station"}
+              </div>
+              <div className="mt-1 text-primary font-semibold">ETA: 10 mins</div>
+            </div>
+          </div>
         </div>
       )}
     </div>
