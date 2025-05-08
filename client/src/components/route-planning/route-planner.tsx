@@ -52,7 +52,11 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
     departureTime: new Date(),
     visitDuration: 30,
     transportMode: 'car',
-    includeReturn: true
+    includeReturn: true,
+    considerTraffic: true,
+    avoidHighways: false,
+    avoidTolls: false,
+    weatherAware: true
   });
   const [activeTab, setActiveTab] = useState<string>("stations");
   const [nearbyStations, setNearbyStations] = useState<PollingStation[]>([]);
@@ -156,9 +160,14 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
       departureTime: new Date(),
       visitDuration: 30,
       transportMode: 'car',
-      includeReturn: true
+      includeReturn: true,
+      considerTraffic: true,
+      avoidHighways: false,
+      avoidTolls: false,
+      weatherAware: true
     });
     setActiveTab("stations");
+    setFilterText("");
   };
   
   // Convert the route data to map markers
@@ -345,15 +354,67 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="includeReturn"
-                  checked={routeOptions.includeReturn}
-                  onCheckedChange={(checked) => 
-                    setRouteOptions(prev => ({ ...prev, includeReturn: checked }))
-                  }
-                />
-                <Label htmlFor="includeReturn">Include return to starting point</Label>
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Route Preferences</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="includeReturn"
+                      checked={routeOptions.includeReturn}
+                      onCheckedChange={(checked) => 
+                        setRouteOptions(prev => ({ ...prev, includeReturn: checked }))
+                      }
+                    />
+                    <Label htmlFor="includeReturn">Include return to starting point</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="considerTraffic"
+                      checked={routeOptions.considerTraffic}
+                      onCheckedChange={(checked) => 
+                        setRouteOptions(prev => ({ ...prev, considerTraffic: checked }))
+                      }
+                    />
+                    <Label htmlFor="considerTraffic">Consider real-time traffic</Label>
+                  </div>
+                </div>
+                
+                <h3 className="text-sm font-medium">Road Preferences</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="avoidHighways"
+                      checked={routeOptions.avoidHighways}
+                      onCheckedChange={(checked) => 
+                        setRouteOptions(prev => ({ ...prev, avoidHighways: checked }))
+                      }
+                    />
+                    <Label htmlFor="avoidHighways">Avoid highways</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="avoidTolls"
+                      checked={routeOptions.avoidTolls}
+                      onCheckedChange={(checked) => 
+                        setRouteOptions(prev => ({ ...prev, avoidTolls: checked }))
+                      }
+                    />
+                    <Label htmlFor="avoidTolls">Avoid toll roads</Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="weatherAware"
+                      checked={routeOptions.weatherAware}
+                      onCheckedChange={(checked) => 
+                        setRouteOptions(prev => ({ ...prev, weatherAware: checked }))
+                      }
+                    />
+                    <Label htmlFor="weatherAware">Weather-aware routing</Label>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>

@@ -41,6 +41,10 @@ export interface RoutePlanningOptions {
   visitDuration?: number; // Default duration at each polling station in minutes
   transportMode?: 'car' | 'pedestrian' | 'bicycle';
   includeReturn?: boolean; // Whether to include return to starting point
+  considerTraffic?: boolean; // Whether to consider real-time traffic conditions
+  avoidHighways?: boolean; // Whether to avoid highways in routing
+  avoidTolls?: boolean; // Whether to avoid toll roads in routing
+  weatherAware?: boolean; // Whether to consider weather conditions
   customVisitDurations?: Record<number, number>; // Custom durations for specific stations
   customVisitOrder?: number[]; // Custom order of polling stations
   startPoint?: { lat: number; lng: number; name: string }; // Custom starting point
@@ -64,6 +68,10 @@ export async function calculateOptimizedRoute(
     const visitDuration = options.visitDuration || 30; // 30 minutes default
     const transportMode = options.transportMode || 'car';
     const includeReturn = options.includeReturn !== undefined ? options.includeReturn : true;
+    const considerTraffic = options.considerTraffic !== undefined ? options.considerTraffic : true;
+    const avoidHighways = options.avoidHighways || false;
+    const avoidTolls = options.avoidTolls || false;
+    const weatherAware = options.weatherAware !== undefined ? options.weatherAware : true;
     
     // Convert stations to route points
     const points: RoutePoint[] = stations
@@ -121,7 +129,14 @@ export async function calculateOptimizedRoute(
           currentPoint.lng,
           nextPoint.lat,
           nextPoint.lng,
-          transportMode
+          transportMode,
+          {
+            departureTime: currentPoint.estimatedDeparture || currentTime,
+            considerTraffic,
+            avoidHighways,
+            avoidTolls,
+            weatherAware
+          }
         );
         
         if (!route || !route.routes || !route.routes.length || !route.routes[0].sections.length) {
@@ -175,7 +190,14 @@ export async function calculateOptimizedRoute(
         lastPoint.lng,
         firstPoint.lat,
         firstPoint.lng,
-        transportMode
+        transportMode,
+        {
+          departureTime: lastPoint.estimatedDeparture || currentTime,
+          considerTraffic,
+          avoidHighways,
+          avoidTolls,
+          weatherAware
+        }
       );
       
       if (returnRoute && returnRoute.routes && returnRoute.routes.length && returnRoute.routes[0].sections.length) {

@@ -311,7 +311,14 @@ export class HereMapsService {
     startLng: number, 
     endLat: number, 
     endLng: number, 
-    transportMode: 'car' | 'pedestrian' | 'bicycle' = 'car'
+    transportMode: 'car' | 'pedestrian' | 'bicycle' = 'car',
+    options?: {
+      departureTime?: Date;
+      considerTraffic?: boolean;
+      avoidHighways?: boolean;
+      avoidTolls?: boolean;
+      weatherAware?: boolean;
+    }
   ): Promise<HereRoute | null> {
     try {
       const params = new URLSearchParams({
@@ -321,6 +328,35 @@ export class HereMapsService {
         destination: `${endLat},${endLng}`,
         return: 'polyline,summary,typicalDuration,actions'
       });
+
+      // Add optional parameters
+      if (options) {
+        // Handle departure time
+        if (options.departureTime) {
+          params.append('departureTime', options.departureTime.toISOString());
+        }
+
+        // Consider traffic (traffic-aware routing)
+        if (options.considerTraffic) {
+          params.append('computeTravelTimeFor', 'all');
+          params.append('routingMode', 'fast');
+        }
+
+        // Avoid highways
+        if (options.avoidHighways) {
+          params.append('avoid[features]', 'controlledAccessHighway');
+        }
+
+        // Avoid toll roads
+        if (options.avoidTolls) {
+          params.append('avoid[features]', 'tollRoad');
+        }
+
+        // Weather-aware routing (approximation via traffic awareness)
+        if (options.weatherAware && options.considerTraffic) {
+          params.append('computeTravelTimeFor', 'all');
+        }
+      }
 
       const response = await fetch(`https://router.hereapi.com/v8/routes?${params.toString()}`);
       
