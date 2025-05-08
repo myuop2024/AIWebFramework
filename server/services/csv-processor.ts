@@ -15,7 +15,7 @@ interface CSVUserData {
   email: string;
   username: string;
   password: string;
-  phoneNumber?: string;
+  phoneNumber?: string | null;
   role?: string;
 }
 

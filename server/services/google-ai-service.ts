@@ -19,13 +19,15 @@ const model = genAI.getGenerativeModel({
   ],
 });
 
+// This interface should match what's in the database/schema
 interface UserData {
+  id?: number;
   firstName: string;
   lastName: string;
   email: string;
   username?: string;
   password?: string;
-  phoneNumber?: string;
+  phoneNumber?: string | null;
   role?: string;
 }
 
