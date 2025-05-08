@@ -76,7 +76,7 @@ router.get('/summary', ensureAdmin, async (req: Request, res: Response) => {
       .where(
         and(
           eq(assignments.status, 'scheduled'),
-          gte(assignments.startDate, startDate.toISOString())
+          sql`${assignments.startDate} >= ${startDate.toISOString()}`
         )
       ).then(result => result[0]?.count || 0);
     
@@ -89,8 +89,8 @@ router.get('/summary', ensureAdmin, async (req: Request, res: Response) => {
       .from(reports)
       .where(
         and(
-          eq(reports.severity, 'critical'),
-          gte(reports.submittedAt, startDate.toISOString())
+          sql`${reports.content}->>'severity' = 'critical'`,
+          sql`${reports.submittedAt} >= ${startDate.toISOString()}`
         )
       ).then(result => result[0]?.count || 0);
     
@@ -331,7 +331,7 @@ router.get('/stations/issues', ensureAdmin, async (req: Request, res: Response) 
             and(
               eq(reports.stationId, station.id),
               eq(reports.severity, 'critical'),
-              gte(reports.submittedAt, startDate.toISOString())
+              sql`${reports.submittedAt} >= ${startDate.toISOString()}`
             )
           ).then(result => result[0]?.count || 0);
         
@@ -342,7 +342,7 @@ router.get('/stations/issues', ensureAdmin, async (req: Request, res: Response) 
           .where(
             and(
               eq(reports.stationId, station.id),
-              gte(reports.submittedAt, startDate.toISOString())
+              sql`${reports.submittedAt} >= ${startDate.toISOString()}`
             )
           )
           .orderBy(sql`${reports.submittedAt} DESC`)
@@ -438,7 +438,7 @@ router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) =
         .from(users)
         .where(
           and(
-            gte(users.createdAt, dateString),
+            sql`${users.createdAt} >= ${dateString}`,
             sql`${users.createdAt} < ${nextDate.toISOString()}`
           )
         ).then(result => result[0]?.count || 0);
@@ -449,7 +449,7 @@ router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) =
         .from(reports)
         .where(
           and(
-            gte(reports.submittedAt, dateString),
+            sql`${reports.submittedAt} >= ${dateString}`,
             sql`${reports.submittedAt} < ${nextDate.toISOString()}`
           )
         ).then(result => result[0]?.count || 0);
@@ -460,7 +460,7 @@ router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) =
         .from(assignments)
         .where(
           and(
-            gte(assignments.startDate, dateString),
+            sql`${assignments.startDate} >= ${dateString}`,
             sql`${assignments.startDate} < ${nextDate.toISOString()}`
           )
         ).then(result => Number(result[0]?.count) || 0);
