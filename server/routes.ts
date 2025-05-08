@@ -25,6 +25,7 @@ import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
 import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
 import permissionRoutes from './routes/permission-routes';
+import supervisorRoutes from './routes/supervisor-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 
