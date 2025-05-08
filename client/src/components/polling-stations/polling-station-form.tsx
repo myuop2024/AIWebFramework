@@ -132,18 +132,37 @@ export default function PollingStationForm({
   };
 
   // Form submission handler
-  const handleFormSubmit = (data: PollingStationFormValues) => {
-    // Ensure coordinates are present
-    if (!data.latitude || !data.longitude) {
+  const handleFormSubmit = async (data: PollingStationFormValues) => {
+    try {
+      // Ensure coordinates are present
+      if (!data.latitude || !data.longitude) {
+        toast({
+          title: "Location Required",
+          description: "Please select a location on the map or use the address search.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate address data
+      if (!data.address || !data.city || !data.state || !data.zipCode) {
+        toast({
+          title: "Address Required",
+          description: "Please ensure all address fields are filled out.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await onSubmit(data);
+    } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
-        title: "Location Required",
-        description: "Please select a location on the map or use the address search.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create polling station",
         variant: "destructive",
       });
-      return;
     }
-    
-    onSubmit(data);
   };
 
   return (

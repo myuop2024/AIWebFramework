@@ -217,7 +217,7 @@ export class HereMapsService {
   constructor() {
     this.apiKey = import.meta.env.VITE_HERE_API_KEY;
     if (!this.apiKey) {
-      console.error('HERE Maps API key is missing');
+      throw new Error('HERE Maps API key is missing');
     }
     this.baseUrl = 'https://autocomplete.search.hereapi.com/v1';
   }
