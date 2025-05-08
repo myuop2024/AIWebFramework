@@ -185,11 +185,16 @@ export default function QuickIncidentForm({
     // Create FormData to handle file upload
     const formData = new FormData();
     
-    // Add form values
+    // Add standard form values (always include stationId)
     formData.append("stationId", values.stationId);
-    formData.append("incidentType", values.incidentType);
-    formData.append("description", values.description);
-    formData.append("severity", values.severity);
+    
+    // Add all form values dynamically based on the keys in the values object
+    // This ensures we capture all template-based fields
+    Object.entries(values).forEach(([key, value]) => {
+      if (key !== 'stationId' && value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
     
     // Add location if available
     if (location) {
@@ -382,64 +387,204 @@ export default function QuickIncidentForm({
                 )}
               </div>
               
-              {/* Incident Type */}
-              <div className="space-y-2">
-                <Label htmlFor="incidentType">Incident Type <span className="text-red-500">*</span></Label>
-                <Select
-                  value={incidentType}
-                  onValueChange={(value) => setValue("incidentType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select incident type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {incidentTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        <div className="flex items-center gap-2">
-                          {type.name}
-                          <Badge
-                            variant={
-                              type.severity === 'high' 
-                                ? 'destructive' 
-                                : type.severity === 'medium' 
-                                  ? 'warning' 
-                                  : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {type.severity}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.incidentType && (
-                  <p className="text-sm text-red-500">{errors.incidentType.message}</p>
-                )}
-              </div>
-              
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">
-                  Description <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the incident with details..."
-                  className="h-32 resize-none"
-                  {...register("description", { 
-                    required: "Description is required",
-                    minLength: {
-                      value: 10,
-                      message: "Description must be at least 10 characters"
+              {/* Render form fields based on template if available */}
+              {formTemplate?.fields ? (
+                // Render dynamic fields from template
+                formTemplate.fields
+                  .filter((field: any) => !['location', 'image'].includes(field.type))
+                  .map((field: any) => {
+                    // Skip location and image fields as they're handled separately
+                    if (field.name === 'location' || field.name === 'image') {
+                      return null;
                     }
-                  })}
-                />
-                {errors.description && (
-                  <p className="text-sm text-red-500">{errors.description.message}</p>
-                )}
-              </div>
+                    
+                    // Always use the incidentType field from the API for consistency
+                    if (field.name === 'incidentType') {
+                      return (
+                        <div key={field.name} className="space-y-2">
+                          <Label htmlFor={field.name}>
+                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                          </Label>
+                          <Select
+                            value={incidentType}
+                            onValueChange={(value) => setValue("incidentType", value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {incidentTypes.map((type) => (
+                                <SelectItem key={type.id} value={type.id}>
+                                  <div className="flex items-center gap-2">
+                                    {type.name}
+                                    <Badge
+                                      variant={
+                                        type.severity === 'high' 
+                                          ? 'destructive' 
+                                          : type.severity === 'medium' 
+                                            ? 'warning' 
+                                            : 'outline'
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {type.severity}
+                                    </Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {errors.incidentType && (
+                            <p className="text-sm text-red-500">{errors.incidentType.message}</p>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    // Render different field types based on template
+                    switch (field.type) {
+                      case 'textarea':
+                        return (
+                          <div key={field.name} className="space-y-2">
+                            <Label htmlFor={field.name}>
+                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </Label>
+                            <Textarea 
+                              id={field.name}
+                              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
+                              className="h-32 resize-none"
+                              {...register(field.name as keyof IncidentFormValues, { 
+                                required: field.required ? `${field.label} is required` : false,
+                                minLength: field.minLength ? {
+                                  value: field.minLength,
+                                  message: `${field.label} must be at least ${field.minLength} characters`
+                                } : undefined
+                              })}
+                            />
+                            {errors[field.name as keyof IncidentFormValues] && (
+                              <p className="text-sm text-red-500">
+                                {errors[field.name as keyof IncidentFormValues]?.message}
+                              </p>
+                            )}
+                          </div>
+                        );
+                        
+                      case 'select':
+                        return (
+                          <div key={field.name} className="space-y-2">
+                            <Label htmlFor={field.name}>
+                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </Label>
+                            <Select
+                              value={watch(field.name as keyof IncidentFormValues) as string}
+                              onValueChange={(value) => setValue(field.name as keyof IncidentFormValues, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {field.options?.map((option: any) => (
+                                  <SelectItem key={option.id || option.value} value={option.id || option.value}>
+                                    {option.name || option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {errors[field.name as keyof IncidentFormValues] && (
+                              <p className="text-sm text-red-500">
+                                {errors[field.name as keyof IncidentFormValues]?.message}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      
+                      case 'text':
+                      default:
+                        return (
+                          <div key={field.name} className="space-y-2">
+                            <Label htmlFor={field.name}>
+                              {field.label} {field.required && <span className="text-red-500">*</span>}
+                            </Label>
+                            <Input
+                              id={field.name}
+                              type="text"
+                              placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
+                              {...register(field.name as keyof IncidentFormValues, { 
+                                required: field.required ? `${field.label} is required` : false
+                              })}
+                            />
+                            {errors[field.name as keyof IncidentFormValues] && (
+                              <p className="text-sm text-red-500">
+                                {errors[field.name as keyof IncidentFormValues]?.message}
+                              </p>
+                            )}
+                          </div>
+                        );
+                    }
+                  })
+              ) : (
+                // Fallback to hard-coded fields if no template available
+                <>
+                  {/* Incident Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="incidentType">Incident Type <span className="text-red-500">*</span></Label>
+                    <Select
+                      value={incidentType}
+                      onValueChange={(value) => setValue("incidentType", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select incident type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {incidentTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            <div className="flex items-center gap-2">
+                              {type.name}
+                              <Badge
+                                variant={
+                                  type.severity === 'high' 
+                                    ? 'destructive' 
+                                    : type.severity === 'medium' 
+                                      ? 'warning' 
+                                      : 'outline'
+                                }
+                                className="text-xs"
+                              >
+                                {type.severity}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.incidentType && (
+                      <p className="text-sm text-red-500">{errors.incidentType.message}</p>
+                    )}
+                  </div>
+                  
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description">
+                      Description <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Describe the incident with details..."
+                      className="h-32 resize-none"
+                      {...register("description", { 
+                        required: "Description is required",
+                        minLength: {
+                          value: 10,
+                          message: "Description must be at least 10 characters"
+                        }
+                      })}
+                    />
+                    {errors.description && (
+                      <p className="text-sm text-red-500">{errors.description.message}</p>
+                    )}
+                  </div>
+                </>
+              )}
               
               {/* Location */}
               <div className="space-y-2">

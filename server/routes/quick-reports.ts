@@ -75,8 +75,8 @@ router.post('/', ensureAuthenticated, upload.single('image'), async (req, res) =
       return res.status(404).json({ message: 'Polling station not found' });
     }
     
-    // Generate content object for the report
-    const reportContent = {
+    // Generate content object for the report, capturing all dynamic form fields
+    const reportContent: Record<string, any> = {
       incidentType,
       description,
       severity: severity || 'medium',
@@ -85,6 +85,15 @@ router.post('/', ensureAuthenticated, upload.single('image'), async (req, res) =
       submittedVia: 'quick-report',
       timestamp: new Date().toISOString()
     };
+    
+    // Add any additional dynamic fields from the form template
+    // This captures all custom fields that might be in the template
+    Object.keys(req.body).forEach(key => {
+      // Skip fields we've already processed or that are part of the report structure
+      if (!['stationId', 'incidentType', 'description', 'severity', 'locationLat', 'locationLng'].includes(key)) {
+        reportContent[key] = req.body[key];
+      }
+    });
     
     // Create hash for content integrity
     const contentHashValue = storage.generateContentHash(reportContent);
