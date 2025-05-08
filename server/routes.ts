@@ -19,6 +19,7 @@ import analyticsRoutes from './routes/analytics';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
+import pollingStationsRoutes from './routes/polling-stations';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 
@@ -814,15 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Polling station routes
-  app.get('/api/polling-stations', ensureAuthenticated, async (req, res) => {
-    try {
-      const stations = await storage.getAllPollingStations();
-      res.status(200).json(stations);
-    } catch (error) {
-      res.status(500).json({ message: 'Internal server error' });
-    }
-  });
+  // Polling station routes are now handled by pollingStationsRoutes
 
   app.get('/api/users/assignments', ensureAuthenticated, async (req, res) => {
     try {
@@ -2128,6 +2121,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add Didit.me verification routes
   app.use('/api/verification', diditVerificationRoutes);
+
+  // Add polling stations routes
+  app.use('/api/polling-stations', pollingStationsRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
