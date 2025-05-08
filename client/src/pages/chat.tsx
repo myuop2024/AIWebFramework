@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
 import ChatInterface from "@/components/chat/chat-interface";
+import MainLayout from "@/components/layout/main-layout";
 
 export default function Chat() {
   const { user, isLoading } = useAuth();
