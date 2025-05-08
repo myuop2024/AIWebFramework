@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share2, Trash, Filter, MoreHorizontal, Share, Map, CheckSquare, ExternalLink, Hourglass, ArrowDown, Play, Pause, ArrowRight, ArrowLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -339,15 +340,32 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
     setFilterText("");
   };
   
-  // Convert the route data to map markers
+  // Convert the route data to map markers with visual indicators for navigation state
   const getRouteMarkers = () => {
     if (!routeItinerary) return [];
     
-    return routeItinerary.points.map(point => ({
-      lat: point.lat,
-      lng: point.lng,
-      text: `${point.visitOrder}: ${point.name}`
-    }));
+    return routeItinerary.points.map((point, index) => {
+      // Create the base text for the marker
+      let markerText = `${point.visitOrder}: ${point.name}`;
+      
+      // Enhance the text based on navigation state
+      if (isNavigationMode) {
+        if (index === currentNavPointIndex) {
+          markerText = `📍 CURRENT: ${markerText}`;
+        } else if (visitedPoints.includes(index)) {
+          markerText = `✓ VISITED: ${markerText}`;
+        } else if (index > currentNavPointIndex) {
+          markerText = `⏱️ PENDING: ${markerText}`;
+        }
+      }
+      
+      return {
+        lat: point.lat,
+        lng: point.lng,
+        text: markerText,
+        // We could add more properties for custom styling in the future
+      };
+    });
   };
   
   // Create CSS for print mode
@@ -856,6 +874,16 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                     showUserLocation={true}
                     routePolyline={routeItinerary?.routePolyline}
                     navigationMode={isNavigationMode}
+                    onMarkerClick={(index) => {
+                      // Handle marker click to navigate to that destination
+                      if (routeItinerary && index < routeItinerary.points.length) {
+                        setCurrentNavPointIndex(index);
+                        toast({
+                          title: "Destination changed",
+                          description: `Now navigating to ${routeItinerary.points[index].name}`
+                        });
+                      }
+                    }}
                   />
                 </div>
                 
@@ -891,8 +919,40 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                   
                   {isNavigationMode && (
                     <div className="text-xs bg-muted p-2 rounded-md">
-                      <span className="font-medium">Status:</span> {navigationPaused ? "Paused" : "Active"} • 
-                      <span className="ml-2 font-medium">Distance to next:</span> {distanceToNextPoint ? formatDistance(distanceToNextPoint) : "Calculating..."}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        <div>
+                          <span className="font-medium">Status:</span> 
+                          <span className={cn(
+                            "ml-1",
+                            navigationPaused ? "text-warning" : "text-success"
+                          )}>
+                            {navigationPaused ? "Paused" : "Active"}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <span className="font-medium">Distance:</span> 
+                          <span className="ml-1">
+                            {distanceToNextPoint ? formatDistance(distanceToNextPoint) : "Calculating..."}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <span className="font-medium">ETA:</span> 
+                          <span className="ml-1">
+                            {estimatedTimeToArrival !== null 
+                              ? `${Math.ceil(estimatedTimeToArrival / 60)} min` 
+                              : "Calculating..."}
+                          </span>
+                        </div>
+                        
+                        <div>
+                          <span className="font-medium">Progress:</span> 
+                          <span className="ml-1">
+                            {visitedPoints.length}/{routeItinerary.points.length} stations
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -914,17 +974,25 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                     <div className="flex flex-wrap gap-2">
                       {/* Pause/Resume */}
                       <Button 
-                        variant="outline" 
+                        variant={navigationPaused ? "secondary" : "outline"}
                         size="sm"
                         onClick={() => {
                           setNavigationPaused(!navigationPaused);
                           if (navigationPaused) {
                             // Resume tracking
                             trackUserLocationForNavigation();
+                            toast({
+                              title: "Navigation resumed",
+                              description: "Location tracking and navigation has resumed."
+                            });
                           } else if (locationWatchId !== null) {
                             // Pause tracking
                             navigator.geolocation.clearWatch(locationWatchId);
                             setLocationWatchId(null);
+                            toast({
+                              title: "Navigation paused",
+                              description: "Location tracking and navigation is paused."
+                            });
                           }
                         }}
                       >
@@ -941,42 +1009,86 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                         )}
                       </Button>
                       
-                      {/* Next Destination */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={currentNavPointIndex >= routeItinerary.points.length - 1}
-                        onClick={() => {
-                          if (currentNavPointIndex < routeItinerary.points.length - 1) {
-                            setCurrentNavPointIndex(currentNavPointIndex + 1);
-                            toast({
-                              title: "Navigation updated",
-                              description: `Now navigating to ${routeItinerary.points[currentNavPointIndex + 1].name}`
-                            });
-                          }
-                        }}
-                      >
-                        <ArrowRight className="mr-1 h-4 w-4" />
-                        Next Destination
-                      </Button>
+                      {/* Navigation point controls */}
+                      <div className="flex items-center space-x-1 bg-muted rounded-md p-1">
+                        {/* Previous Destination */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2"
+                          disabled={currentNavPointIndex <= 0}
+                          onClick={() => {
+                            if (currentNavPointIndex > 0) {
+                              const newIndex = currentNavPointIndex - 1;
+                              setCurrentNavPointIndex(newIndex);
+                              const pointName = routeItinerary.points[newIndex].name;
+                              toast({
+                                title: "Previous destination",
+                                description: `Now navigating to ${pointName}`
+                              });
+                            }
+                          }}
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        
+                        <div className="px-2 text-sm font-medium">
+                          {currentNavPointIndex + 1} of {routeItinerary.points.length}
+                          {visitedPoints.length > 0 && ` (${visitedPoints.length} visited)`}
+                        </div>
+                        
+                        {/* Next Destination */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2"
+                          disabled={currentNavPointIndex >= routeItinerary.points.length - 1}
+                          onClick={() => {
+                            if (currentNavPointIndex < routeItinerary.points.length - 1) {
+                              const newIndex = currentNavPointIndex + 1;
+                              setCurrentNavPointIndex(newIndex);
+                              const pointName = routeItinerary.points[newIndex].name;
+                              toast({
+                                title: "Next destination",
+                                description: `Now navigating to ${pointName}`
+                              });
+                            }
+                          }}
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                        </Button>
+                      </div>
                       
-                      {/* Previous Destination */}
+                      {/* Mark as visited button */}
                       <Button
-                        variant="outline"
+                        variant={visitedPoints.includes(currentNavPointIndex) ? "secondary" : "outline"}
+                        className={visitedPoints.includes(currentNavPointIndex) ? "bg-green-100 hover:bg-green-200 text-green-800 border-green-300" : ""}
                         size="sm"
-                        disabled={currentNavPointIndex <= 0}
                         onClick={() => {
-                          if (currentNavPointIndex > 0) {
-                            setCurrentNavPointIndex(currentNavPointIndex - 1);
+                          if (visitedPoints.includes(currentNavPointIndex)) {
+                            // Remove from visited
+                            setVisitedPoints(prev => prev.filter(i => i !== currentNavPointIndex));
                             toast({
-                              title: "Navigation updated",
-                              description: `Now navigating to ${routeItinerary.points[currentNavPointIndex - 1].name}`
+                              title: "Mark as not visited",
+                              description: `Removed ${routeItinerary.points[currentNavPointIndex].name} from visited locations.`
                             });
+                          } else {
+                            // Mark as visited
+                            markPointAsVisited(currentNavPointIndex);
                           }
                         }}
                       >
-                        <ArrowLeft className="mr-1 h-4 w-4" />
-                        Previous Destination
+                        {visitedPoints.includes(currentNavPointIndex) ? (
+                          <>
+                            <Check className="mr-1 h-4 w-4" />
+                            Marked as Visited
+                          </>
+                        ) : (
+                          <>
+                            <CheckSquare className="mr-1 h-4 w-4" />
+                            Mark as Visited
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1066,25 +1178,100 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                         (point.address && point.address.toLowerCase().includes(filterText.toLowerCase()))
                       )
                       .map((point, index) => (
-                      <div key={`route-${point.id}-${index}`} className="border-b last:border-0">
+                      <div 
+                        key={`route-${point.id}-${index}`} 
+                        className={cn(
+                          "border-b last:border-0",
+                          isNavigationMode && index === currentNavPointIndex && "bg-primary/10",
+                          isNavigationMode && visitedPoints.includes(index) && "bg-success/10"
+                        )}
+                      >
                         <div 
                           className="flex items-center justify-between p-2 cursor-pointer hover:bg-accent"
-                          onClick={() => setExpandedPointId(expandedPointId === point.id ? null : point.id)}
+                          onClick={() => {
+                            // If in navigation mode, clicking sets this as current destination
+                            if (isNavigationMode) {
+                              setCurrentNavPointIndex(index);
+                              toast({
+                                title: "Destination changed",
+                                description: `Now navigating to ${point.name}`
+                              });
+                            } else {
+                              // Otherwise just expand/collapse details
+                              setExpandedPointId(expandedPointId === point.id ? null : point.id);
+                            }
+                          }}
                         >
                           <div className="flex items-center">
-                            <Badge className="mr-2" variant="outline">
+                            <Badge 
+                              className="mr-2" 
+                              variant={
+                                isNavigationMode && index === currentNavPointIndex 
+                                  ? "default" 
+                                  : isNavigationMode && visitedPoints.includes(index)
+                                    ? "success" 
+                                    : "outline"
+                              }
+                            >
                               {point.visitOrder}
+                              {isNavigationMode && index === currentNavPointIndex && " 📍"}
+                              {isNavigationMode && visitedPoints.includes(index) && " ✓"}
                             </Badge>
                             <div>
-                              <div className="font-medium">{point.name}</div>
+                              <div className="font-medium">
+                                {point.name}
+                                {isNavigationMode && (
+                                  <>
+                                    {index === currentNavPointIndex && (
+                                      <span className="ml-2 text-xs text-primary font-normal">
+                                        (Current destination)
+                                      </span>
+                                    )}
+                                    {visitedPoints.includes(index) && (
+                                      <span className="ml-2 text-xs text-success font-normal">
+                                        (Visited)
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                               {point.estimatedArrival && (
                                 <div className="text-xs text-muted-foreground">
                                   Arrival: {formatTime(point.estimatedArrival)}
+                                  {index === currentNavPointIndex && estimatedTimeToArrival !== null && (
+                                    <span className="ml-2 font-medium text-primary">
+                                      ETA: {Math.ceil(estimatedTimeToArrival / 60)} min
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </div>
                           </div>
-                          <div>
+                          <div className="flex items-center">
+                            {isNavigationMode && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 mr-1"
+                                title={visitedPoints.includes(index) ? "Mark as not visited" : "Mark as visited"}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent triggering the parent click
+                                  if (visitedPoints.includes(index)) {
+                                    // Remove from visited points
+                                    setVisitedPoints(prev => prev.filter(i => i !== index));
+                                  } else {
+                                    // Add to visited points
+                                    markPointAsVisited(index);
+                                  }
+                                }}
+                              >
+                                {visitedPoints.includes(index) ? (
+                                  <X className="h-4 w-4" />
+                                ) : (
+                                  <Check className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
                             {expandedPointId === point.id ? (
                               <ChevronUp className="h-4 w-4" />
                             ) : (
