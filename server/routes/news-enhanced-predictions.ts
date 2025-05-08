@@ -11,36 +11,21 @@ import { storage } from '../storage';
 import { analyzeIncidentPatternsWithGemini } from '../services/google-ai-service';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
 import * as logger from '../utils/logger';
+import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
 
 const router = Router();
-
-// Authentication middleware for protected routes
-const requireAuthentication = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-  next();
-};
-
-// Admin middleware for admin-only routes
-const requireAdmin = (req, res, next) => {
-  if (!req.isAuthenticated() || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Not authorized' });
-  }
-  next();
-};
 
 /**
  * GET /api/admin/analytics/news-enhanced-predictions
  * Get election issue predictions enhanced with Jamaican political news data
  * Admin-only endpoint
  */
-router.get('/news-enhanced-predictions', requireAdmin, async (req, res) => {
+router.get('/news-enhanced-predictions', ensureAdmin, async (req, res) => {
   try {
     logger.info('Generating news-enhanced predictions');
     
     // Get the station ID if provided
-    const pollingStationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
+    const stationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
     
     // Fetch reports to analyze - combine submitted and in-progress reports
     const reports = [...await storage.getReportsByStatus('submitted'),
@@ -78,7 +63,7 @@ router.get('/news-enhanced-predictions', requireAdmin, async (req, res) => {
     // Generate predictions with news data
     const predictions = await analyzeIncidentPatternsWithGemini(
       enrichedReports, 
-      pollingStationId,
+      stationId,
       newsArticles
     );
     
@@ -110,7 +95,7 @@ router.get('/news-enhanced-predictions', requireAdmin, async (req, res) => {
  * Get latest Jamaican political news (without predictions)
  * Admin-only endpoint
  */
-router.get('/news/jamaica', requireAdmin, async (req, res) => {
+router.get('/news/jamaica', ensureAdmin, async (req, res) => {
   try {
     // Number of days to look back
     const days = req.query.days ? parseInt(req.query.days as string) : 7;
