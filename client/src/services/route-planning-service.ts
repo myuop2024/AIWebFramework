@@ -1,4 +1,3 @@
-import { formatDistance } from "@/lib/here-maps";
 import axios from 'axios';
 
 /**
@@ -94,6 +93,19 @@ export interface RouteItinerary {
   summary: RouteSummary;
   waypoints: RouteWaypoint[];
   segments: RouteSegment[];
+  points?: RoutePoint[];
+}
+
+export interface RoutePoint {
+  id: number | string;
+  name: string;
+  lat: number;
+  lng: number;
+  address?: string;
+  arrivalTime?: string;
+  departureTime?: string;
+  stayDuration?: number;
+  visitStatus?: 'pending' | 'visited' | 'active';
 }
 
 export interface RoutePlanningOptions {
@@ -105,6 +117,10 @@ export interface RoutePlanningOptions {
   avoidTolls?: boolean;
   avoidFerries?: boolean;
   avoidHighways?: boolean;
+  visitDuration?: number;
+  includeReturn?: boolean;
+  considerTraffic?: boolean;
+  weatherAware?: boolean;
 }
 
 
@@ -409,6 +425,116 @@ function decodeFlexiPolyline(encodedPolyline: string): Array<{ lat: number; lng:
  * @param maxDistance Maximum distance in kilometers
  * @returns Array of nearest polling stations with distances
  */
+/**
+ * Get the nearest polling stations to a location
+ * @param stations Array of polling stations 
+ * @param latitude Current latitude
+ * @param longitude Current longitude
+ * @param limit Maximum number of stations to return
+ * @returns Array of stations sorted by distance
+ */
+export function getNearestStations(
+  stations: any[],
+  latitude: number,
+  longitude: number,
+  limit: number = 5
+): any[] {
+  if (!stations || stations.length === 0) {
+    return [];
+  }
+
+  // Calculate distance for each station
+  const stationsWithDistance = stations.map(station => {
+    // Skip stations without coordinates
+    if (!station.latitude || !station.longitude) {
+      return { ...station, distance: Infinity };
+    }
+    
+    const distance = calculateHaversineDistance(
+      latitude,
+      longitude,
+      station.latitude,
+      station.longitude
+    );
+    
+    return { ...station, distance };
+  });
+  
+  // Sort by distance and limit results
+  return stationsWithDistance
+    .filter(station => station.distance !== Infinity)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit);
+}
+
+/**
+ * Calculate an optimized visit order for stations (legacy version)
+ */
+function _legacyCalculateOptimizedVisitOrder(
+  startPoint: { lat: number; lng: number },
+  stations: Array<{ id: number | string; latitude: number; longitude: number; name?: string }>,
+  returnToStart: boolean = true
+): Array<{ id: number | string; lat: number; lng: number; name?: string; order: number }> {
+  if (!stations || stations.length === 0) {
+    return [];
+  }
+  
+  // Create a distance matrix
+  const allPoints = [
+    { id: 'start', lat: startPoint.lat, lng: startPoint.lng, name: 'Start Location' },
+    ...stations.map(s => ({ 
+      id: s.id, 
+      lat: s.latitude, 
+      lng: s.longitude, 
+      name: s.name || `Station ${s.id}`
+    }))
+  ];
+  
+  // Use a simple nearest neighbor algorithm for now
+  const visitOrder: number[] = [];
+  const unvisited = new Set(stations.map((_, i) => i + 1)); // +1 because 0 is start
+  let currentPoint = 0; // start
+  
+  while (unvisited.size > 0) {
+    let nearestIdx = -1;
+    let minDistance = Infinity;
+    
+    // Find the nearest unvisited point
+    for (const idx of unvisited) {
+      const distance = calculateHaversineDistance(
+        allPoints[currentPoint].lat,
+        allPoints[currentPoint].lng,
+        allPoints[idx].lat,
+        allPoints[idx].lng
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestIdx = idx;
+      }
+    }
+    
+    // Add to visit order and mark as visited
+    visitOrder.push(nearestIdx);
+    unvisited.delete(nearestIdx);
+    currentPoint = nearestIdx;
+  }
+  
+  // Add return to start if requested
+  if (returnToStart) {
+    visitOrder.push(0);
+  }
+  
+  // Create ordered result
+  return visitOrder.map((idx, order) => ({
+    id: allPoints[idx].id,
+    lat: allPoints[idx].lat,
+    lng: allPoints[idx].lng,
+    name: allPoints[idx].name,
+    order: order + 1
+  }));
+}
+
 export function findNearestPollingStations(
   currentLocation: { lat: number; lng: number },
   pollingStations: Array<{ id: number | string; lat: number; lng: number; name?: string }>,
@@ -602,21 +728,16 @@ function nearestNeighborTSP(
 
 
 /**
- * Interface for route planning options
- */
-export interface RoutePlanningOptions {
-  startLocationId?: string;
-  destinations: string[];
-  transportMode: 'car' | 'walk' | 'bike' | 'publicTransport';
-  optimizeRoute: boolean;
-}
-
-/**
  * Get an optimized route between multiple polling stations
  * @param options Route planning options
  * @returns Promise with the route data
  */
-export async function getOptimizedRoute(options: RoutePlanningOptions) {
+export async function getOptimizedRoute(options: {
+  startLocationId?: string;
+  destinations: string[];
+  transportMode: 'car' | 'pedestrian' | 'bicycle' | 'publicTransport';
+  optimizeRoute: boolean;
+}) {
   try {
     const response = await axios.post('/api/route-planning/optimize', options);
     return response.data;
