@@ -419,10 +419,14 @@ export default function FormTemplatesPage() {
     ? templates.filter((template: FormTemplate) => template.category === categoryFilter)
     : templates;
 
-  // Get unique categories
-  const categories = Array.from(
+  // Get unique categories from existing templates
+  const templateCategories = Array.from(
     new Set(templates.map((template: FormTemplate) => template.category))
   );
+  
+  // Make sure we include all standard categories even if no templates exist for them yet
+  const standardCategories = ['polling', 'incident', 'observation', 'checklist', 'evaluation'];
+  const categories = Array.from(new Set([...templateCategories, ...standardCategories]));
 
   const renderFieldEditor = () => {
     if (!editingField) return null;

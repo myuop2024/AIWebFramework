@@ -77,7 +77,7 @@ export default function QuickIncidentForm({
   });
   
   // Use the first active template or the first one available
-  const formTemplate = templates.find(t => t.isActive) || templates[0];
+  const formTemplate = templates.find(t => t.isActive) || templates[0] || null;
   const [imageCapture, setImageCapture] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureError, setCaptureError] = useState<string | null>(null);
@@ -391,12 +391,13 @@ export default function QuickIncidentForm({
               {formTemplate?.fields ? (
                 // Render dynamic fields from template
                 formTemplate.fields
-                  .filter((field: any) => !['location', 'image'].includes(field.type))
-                  .map((field: any) => {
+                  .filter((field: any) => {
                     // Skip location and image fields as they're handled separately
-                    if (field.name === 'location' || field.name === 'image') {
-                      return null;
-                    }
+                    return !['location', 'image'].includes(field.type) && 
+                           field.name !== 'location' && 
+                           field.name !== 'image';
+                  })
+                  .map((field: any) => {
                     
                     // Always use the incidentType field from the API for consistency
                     if (field.name === 'incidentType') {
