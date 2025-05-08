@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Card, 
   CardContent, 
@@ -35,7 +36,19 @@ import { Progress } from '@/components/ui/progress';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon, TrendingDown, TrendingUp, Minus, AlertTriangle, Check, Info, FileText } from 'lucide-react';
+import { 
+  Calendar as CalendarIcon, 
+  TrendingDown, 
+  TrendingUp, 
+  Minus, 
+  AlertTriangle, 
+  Check, 
+  Info, 
+  FileText,
+  Newspaper,
+  AlertCircle,
+  ExternalLink
+} from 'lucide-react';
 
 type TabValue = 'overview' | 'locations' | 'trends' | 'insights' | 'predictions';
 
@@ -74,6 +87,34 @@ type AnalyticsData = {
     count: number;
     percentage: number;
   }[];
+};
+
+// News-enhanced prediction types
+type NewsArticle = {
+  title: string;
+  source: string;
+  publishedAt: string;
+  summary: string;
+  url: string;
+  relevanceScore: number;
+  locations: string[];
+};
+
+type IncidentPrediction = {
+  issueType: string;
+  probability: number;
+  suggestedAction: string;
+  reasoning: string;
+  affectedStations?: string[];
+  estimatedImpact: 'low' | 'medium' | 'high';
+  preventativeMeasures: string[];
+  relatedNewsArticles?: string[];
+};
+
+type NewsEnhancedPredictionResponse = {
+  predictions: IncidentPrediction[];
+  newsArticles: NewsArticle[];
+  message?: string;
 };
 
 export function AnalyticsDashboard() {
