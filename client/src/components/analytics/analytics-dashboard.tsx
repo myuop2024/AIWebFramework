@@ -155,17 +155,19 @@ export function AnalyticsDashboard() {
     error: predictionsError,
     refetch: refetchPredictions
   } = useQuery<NewsEnhancedPredictionResponse>({
-    queryKey: ['/api/admin/analytics/incident-predictions', stationId],
+    queryKey: ['/api/admin/analytics/news-enhanced-predictions', stationId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (stationId) {
         params.append('stationId', stationId.toString());
       }
 
-      const response = await fetch(`/api/admin/analytics/incident-predictions?${params}`);
+      // Use the correct endpoint from news-enhanced-predictions.ts
+      const response = await fetch(`/api/admin/analytics/news-enhanced-predictions?${params}`);
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Prediction fetch error:", errorText);
         throw new Error(errorText || 'Failed to fetch news-enhanced predictions');
       }
 

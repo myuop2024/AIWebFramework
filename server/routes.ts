@@ -2133,8 +2133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/polling-stations', pollingStationsRoutes);
   
   // News Enhanced Predictions - for Jamaica electoral news data integration
-  // Register news enhanced predictions routes
-  app.use('/api', newsEnhancedPredictionsRoutes);
+  // Register news enhanced predictions routes with specific path
+  app.use('/api/admin/analytics', newsEnhancedPredictionsRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used

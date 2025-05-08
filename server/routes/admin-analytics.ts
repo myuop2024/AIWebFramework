@@ -492,8 +492,9 @@ router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Respo
     const stationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
     
     // Fetch all relevant reports from storage
-    const reports = await storage.getReportsByStatus('submitted')
-      .concat(await storage.getReportsByStatus('in_progress'));
+    const submittedReports = await storage.getReportsByStatus('submitted');
+    const inProgressReports = await storage.getReportsByStatus('in_progress');
+    const reports = [...submittedReports, ...inProgressReports];
     
     if (reports.length === 0) {
       return res.status(200).json({
@@ -505,11 +506,11 @@ router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Respo
     
     // Enrich reports with station names for better context in predictions
     const enrichedReports = await Promise.all(reports.map(async (report) => {
-      if (report.pollingStationId) {
-        const station = await storage.getPollingStation(report.pollingStationId);
+      if (report.stationId) {
+        const station = await storage.getPollingStation(report.stationId);
         return {
           ...report,
-          stationName: station ? station.name : `Station ${report.pollingStationId}`
+          stationName: station ? station.name : `Station ${report.stationId}`
         };
       }
       return report;

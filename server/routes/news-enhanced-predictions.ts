@@ -35,7 +35,7 @@ const requireAdmin = (req, res, next) => {
  * Get election issue predictions enhanced with Jamaican political news data
  * Admin-only endpoint
  */
-router.get('/admin/analytics/news-enhanced-predictions', requireAdmin, async (req, res) => {
+router.get('/news-enhanced-predictions', requireAdmin, async (req, res) => {
   try {
     logger.info('Generating news-enhanced predictions');
     
@@ -56,11 +56,11 @@ router.get('/admin/analytics/news-enhanced-predictions', requireAdmin, async (re
     
     // Enrich reports with station names
     const enrichedReports = await Promise.all(reports.map(async (report) => {
-      if (report.pollingStationId) {
-        const station = await storage.getPollingStation(report.pollingStationId);
+      if (report.stationId) {
+        const station = await storage.getPollingStation(report.stationId);
         return {
           ...report,
-          stationName: station ? station.name : `Station ${report.pollingStationId}`
+          stationName: station ? station.name : `Station ${report.stationId}`
         };
       }
       return report;
@@ -110,7 +110,7 @@ router.get('/admin/analytics/news-enhanced-predictions', requireAdmin, async (re
  * Get latest Jamaican political news (without predictions)
  * Admin-only endpoint
  */
-router.get('/admin/news/jamaica', requireAdmin, async (req, res) => {
+router.get('/news/jamaica', requireAdmin, async (req, res) => {
   try {
     // Number of days to look back
     const days = req.query.days ? parseInt(req.query.days as string) : 7;
