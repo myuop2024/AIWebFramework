@@ -5,6 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Plus, Search, MapPin, Users, ClipboardList, Loader2, Edit, Trash } from "lucide-react";
 import InteractiveMap from "@/components/mapping/interactive-map";
 import { Separator } from "@/components/ui/separator";
@@ -246,24 +254,29 @@ export default function PollingStationsList() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() => {
-                                        setSelectedStation(station);
-                                        setShowEditDialog(true);
-                                      }}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() => handleDelete(station.id)}
-                                    >
-                                      <Trash className="h-4 w-4" />
-                                    </Button>
+                                  <div className="flex justify-end">
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => {
+                                          setSelectedStation(station);
+                                          setShowEditDialog(true);
+                                        }}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Edit Station
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDelete(station.id)}>
+                                          <Trash className="mr-2 h-4 w-4" />
+                                          Delete Station
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </div>
                                 </TableCell>
                               </TableRow>
