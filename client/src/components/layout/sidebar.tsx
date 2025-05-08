@@ -6,7 +6,8 @@ import {
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
   UserCheck, GraduationCap, Navigation, ChevronDown,
-  Users, Shield, CalendarRange, PanelTop, Cog
+  Users, Shield, CalendarRange, PanelTop, Cog,
+  Map as MapIcon
 } from "lucide-react";
 import {
   DropdownMenu,

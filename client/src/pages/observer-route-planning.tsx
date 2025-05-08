@@ -71,8 +71,9 @@ export default function ObserverRoutePlanningPage() {
       setOptimizedRoute(optimized);
       
       // Focus map on first location in the route
-      if (mapRef.current && optimized.length > 0) {
-        mapRef.current.centerOnCoordinates(optimized[0].lat, optimized[0].lng, 12);
+      if (mapRef.current && optimized.length > 0 && mapRef.current.setCenter) {
+        mapRef.current.setCenter({ lat: optimized[0].lat, lng: optimized[0].lng });
+        mapRef.current.setZoom(12);
       }
       
       toast({
@@ -261,7 +262,8 @@ export default function ObserverRoutePlanningPage() {
                     }
                   ] : []}
                   onMarkerClick={handleMapMarkerClick}
-                  center={userLocation ? { lat: userLocation.lat, lng: userLocation.lng } : undefined}
+                  centerLat={userLocation ? userLocation.lat : 18.0179}
+                  centerLng={userLocation ? userLocation.lng : -76.8099}
                   zoom={11}
                   ref={(mapInstance: any) => { mapRef.current = mapInstance; }}
                 />
