@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-
+import MainLayout from "@/components/layout/main-layout";
 import ChatInterface from "@/components/chat/chat-interface";
 
 export default function Chat() {
@@ -16,6 +16,8 @@ export default function Chat() {
   }, [user, isLoading, navigate]);
 
   return (
-    <ChatInterface />
+    <MainLayout>
+      <ChatInterface />
+    </MainLayout>
   );
 }
