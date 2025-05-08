@@ -617,6 +617,7 @@ export class AIAnalyticsService {
       let stationReports = [];
       
       if (stationId) {
+        // Get station-specific reports
         stationReports = await db
           .select({
             id: reports.id,
@@ -626,10 +627,30 @@ export class AIAnalyticsService {
             severity: reports.severity,
             status: reports.status,
             createdAt: reports.createdAt,
+            pollingStationId: reports.pollingStationId,
           })
           .from(reports)
           .where(sql`${reports.pollingStationId} = ${stationId}`)
           .orderBy(desc(reports.createdAt));
+          
+        // Get station name for better context
+        if (stationReports.length > 0) {
+          const stationData = await db
+            .select({
+              name: pollingStations.name,
+            })
+            .from(pollingStations)
+            .where(eq(pollingStations.id, stationId))
+            .limit(1);
+            
+          if (stationData.length > 0) {
+            // Add station name to all reports
+            stationReports = stationReports.map(report => ({
+              ...report,
+              stationName: stationData[0].name
+            }));
+          }
+        }
       } else {
         // Get system-wide reports for general predictions
         stationReports = await db
@@ -641,16 +662,76 @@ export class AIAnalyticsService {
             severity: reports.severity,
             status: reports.status,
             createdAt: reports.createdAt,
+            pollingStationId: reports.pollingStationId,
           })
           .from(reports)
           .orderBy(desc(reports.createdAt))
           .limit(100);
+          
+        // Enrich with station names
+        const stationIds = [...new Set(stationReports
+          .map(r => r.pollingStationId)
+          .filter(id => id !== null && id !== undefined))];
+          
+        if (stationIds.length > 0) {
+          // Use a fallback query that handles empty arrays gracefully
+          const stationIdList = stationIds.join(',');
+          const stationNamesQuery = stationIdList ? 
+            sql`${pollingStations.id} IN (${stationIdList})` : 
+            sql`1=0`; // This ensures the query runs even with empty arrays
+          
+          const stationNames = await db
+            .select({
+              id: pollingStations.id,
+              name: pollingStations.name,
+            })
+            .from(pollingStations)
+            .where(stationNamesQuery);
+            
+          const stationMap = new Map(stationNames.map(s => [s.id, s.name]));
+          
+          stationReports = stationReports.map(report => ({
+            ...report,
+            stationName: report.pollingStationId ? 
+              stationMap.get(report.pollingStationId) || `Station ${report.pollingStationId}` : 
+              'Unknown station'
+          }));
+        }
       }
       
-      if (stationReports.length === 0) {
-        return this.getGenericPredictions();
+      // If no reports are found, return generic predictions
+      if (!stationReports || stationReports.length === 0) {
+        console.log('No reports found, using generic predictions');
+        return this.getLegacyGenericPredictions();
       }
       
+      try {
+        console.log(`Using Google Gemini for pattern analysis with ${stationReports.length} reports`);
+        // Use Google's Gemini model for advanced predictions with more context and reasoning
+        const enhancedPredictions = await analyzeIncidentPatternsWithGemini(stationReports, stationId);
+        
+        // Convert the IncidentPrediction type to PredictedIssue type for backward compatibility
+        return enhancedPredictions.map(prediction => ({
+          issueType: prediction.issueType,
+          probability: prediction.probability,
+          suggestedAction: `${prediction.suggestedAction} ${prediction.estimatedImpact === 'high' ? '(HIGH PRIORITY)' : ''}`
+        }));
+      } catch (aiError) {
+        console.error('Error using Gemini for predictions, falling back to traditional analysis:', aiError);
+        
+        // Fall back to our simpler analysis approach
+        return this.generateFallbackPredictions(stationReports);
+      }
+    } catch (error) {
+      console.error('Error predicting issues:', error);
+      return this.getLegacyGenericPredictions();
+    }
+  }
+  
+  // Generate fallback predictions using simpler pattern analysis
+  private async generateFallbackPredictions(stationReports: any[]): Promise<PredictedIssue[]> {
+    try {
+      console.log('Using fallback prediction algorithm');
       // Analyze patterns in reports
       const categoryCounts: Record<string, number> = {};
       const severityCounts: Record<string, number> = {};
@@ -703,7 +784,7 @@ export class AIAnalyticsService {
       
       // If we don't have enough predictions, add generic ones
       if (predictions.length < 3) {
-        const genericPredictions = this.getGenericPredictions()
+        const genericPredictions = this.getLegacyGenericPredictions()
           .filter(p => !sortedCategories.includes(p.issueType.toLowerCase()));
         
         predictions.push(...genericPredictions.slice(0, 3 - predictions.length));
@@ -711,13 +792,13 @@ export class AIAnalyticsService {
       
       return predictions.sort((a, b) => b.probability - a.probability);
     } catch (error) {
-      console.error('Error predicting issues:', error);
-      return this.getGenericPredictions();
+      console.error('Error in fallback prediction mechanism:', error);
+      return this.getLegacyGenericPredictions();
     }
   }
   
-  // Generate fallback generic predictions
-  private getGenericPredictions(): PredictedIssue[] {
+  // Generate legacy generic predictions (for backward compatibility)
+  private getLegacyGenericPredictions(): PredictedIssue[] {
     return [
       {
         issueType: 'Voter verification delays',
