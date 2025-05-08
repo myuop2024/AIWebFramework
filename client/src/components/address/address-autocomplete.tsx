@@ -126,19 +126,25 @@ export default function AddressAutocomplete({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <div className="flex w-full gap-2">
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
-              disabled={disabled}
-            >
-              <div className="flex items-center gap-2 truncate">
-                <MapPin className="h-4 w-4 shrink-0 opacity-50" />
-                <span className="truncate">{inputValue || placeholder}</span>
-              </div>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+            <div className="relative w-full">
+              <Input
+                value={inputValue}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={placeholder}
+                disabled={disabled}
+                className="pr-10"
+                autoFocus={autoFocus}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className="absolute right-0 top-0 h-full"
+                onClick={() => setOpen(!open)}
+              >
+                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </div>
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-[350px] p-0" align="start">
@@ -200,16 +206,7 @@ export default function AddressAutocomplete({
         </PopoverContent>
       </Popover>
 
-      {/* Alternative input for keyboard entry */}
-      <div className="relative">
-        <Input
-          value={inputValue}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="hidden"
-        />
-      </div>
+      {/* Removed hidden input as we now use the visible one */}
 
       {error && <p className="text-sm text-destructive mt-1">{error}</p>}
     </div>

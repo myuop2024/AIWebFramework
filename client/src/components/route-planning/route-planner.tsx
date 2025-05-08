@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share, Trash, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 
 import InteractiveMap from "@/components/mapping/interactive-map";
@@ -43,6 +44,10 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   const [activeTab, setActiveTab] = useState<string>("stations");
   const [nearbyStations, setNearbyStations] = useState<PollingStation[]>([]);
   const [expandedPointId, setExpandedPointId] = useState<number | null>(null);
+  const [savedRoutes, setSavedRoutes] = useState<{ name: string; itinerary: RouteItinerary }[]>([]);
+  const [routeName, setRouteName] = useState<string>("");
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [filterText, setFilterText] = useState<string>("");
   
   const { toast } = useToast();
   
