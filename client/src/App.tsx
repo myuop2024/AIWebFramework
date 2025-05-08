@@ -53,10 +53,10 @@ function Router() {
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/documents" component={Documents} />
       <ProtectedRoute path="/polling-stations" component={PollingStations} />
-      <ProtectedRoute path="/polling-stations/create" component={require("@/pages/polling-stations/create").default} />
-      <ProtectedRoute path="/polling-stations/import" component={require("@/pages/polling-stations/import").default} />
-      <ProtectedRoute path="/polling-stations/map" component={require("@/pages/polling-stations/map").default} />
-      <ProtectedRoute path="/polling-stations/export" component={require("@/pages/polling-stations/export").default} />
+      <ProtectedRoute path="/polling-stations/create" component={() => import("@/pages/polling-stations/create").then(module => module.default)} />
+      <ProtectedRoute path="/polling-stations/import" component={() => import("@/pages/polling-stations/import").then(module => module.default)} />
+      <ProtectedRoute path="/polling-stations/map" component={() => import("@/pages/polling-stations/map").then(module => module.default)} />
+      <ProtectedRoute path="/polling-stations/export" component={() => import("@/pages/polling-stations/export").then(module => module.default)} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />
