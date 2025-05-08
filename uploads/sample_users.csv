@@ -1,0 +1,6 @@
+firstName,lastName,email,username,password,phoneNumber,role
+John,Doe,john.doe@example.com,johndoe,SecurePass123,+1234567890,observer
+Jane,Smith,jane.smith@example.com,janesmith,SecurePass123,+0987654321,supervisor
+Robert,Johnson,robert.j@example.com,rjohnson,SecurePass123,,observer
+Emily,Williams,emily.w@example.com,ewilliams,SecurePass123,+1122334455,
+Michael,Brown,m.brown@example.com,mbrown,SecurePass123,,
