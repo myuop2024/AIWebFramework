@@ -284,8 +284,8 @@ export default function ChatInterface() {
   }, [localStream, remoteStream]);
 
   return (
-    <>
-      <Card className="flex flex-col h-[calc(100vh-180px)]">
+    <div className="container mx-auto py-6">
+      <Card className="flex flex-col h-[calc(100vh-200px)]">
         <CardHeader className="pb-3">
           <CardTitle>Communication Center</CardTitle>
         </CardHeader>
@@ -674,6 +674,6 @@ export default function ChatInterface() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
