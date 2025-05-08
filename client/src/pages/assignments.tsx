@@ -12,9 +12,23 @@ import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, CheckCircle, ClipboardList, Clock, MapPin, Plus } from "lucide-react";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
-import { formatDateRange, assignmentStatusColors } from '@/lib/utils';
+import { assignmentStatusColors } from '@/lib/utils';
 import { AssignmentScheduler, AssignmentCard } from '@/components/assignments/assignment-scheduler';
 import MainLayout from "@/components/layout/main-layout";
+
+// Helper function to format date range
+const formatDateRange = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Same day
+  if (start.toDateString() === end.toDateString()) {
+    return `${format(start, 'MMM d, yyyy')} · ${format(start, 'h:mm a')} - ${format(end, 'h:mm a')}`;
+  }
+  
+  // Different days
+  return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+};
 
 export default function AssignmentsPage() {
   const { toast } = useToast();
