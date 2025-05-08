@@ -265,7 +265,7 @@ export default function ObserverRoutePlanningPage() {
                   centerLat={userLocation ? userLocation.lat : 18.0179}
                   centerLng={userLocation ? userLocation.lng : -76.8099}
                   zoom={11}
-                  ref={(mapInstance: any) => { mapRef.current = mapInstance; }}
+                  ref={mapRef}
                 />
               </div>
               
