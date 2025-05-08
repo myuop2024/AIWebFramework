@@ -594,8 +594,8 @@ export function AnalyticsDashboard() {
                       <SelectContent>
                         <SelectItem value="all">All polling stations</SelectItem>
                         {data?.reportsByLocation?.map((location, index) => (
-                          <SelectItem key={index} value={location.locationName}>
-                            {location.locationName}
+                          <SelectItem key={index} value={location.locationName || `location-${index}`}>
+                            {location.locationName || `Location ${index + 1}`}
                           </SelectItem>
                         ))}
                       </SelectContent>
