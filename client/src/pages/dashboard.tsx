@@ -2,7 +2,6 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import MainLayout from "@/components/layout/main-layout";
 import AlertBanner from "@/components/dashboard/alert-banner";
 import StatusCards from "@/components/dashboard/status-cards";
 import UpcomingEvents from "@/components/dashboard/upcoming-events";
@@ -23,32 +22,30 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <div className="animate-pulse space-y-6">
-          <div className="h-16 bg-gray-200 rounded-md"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-40 bg-gray-200 rounded-md"></div>
-            ))}
+      <div className="animate-pulse space-y-6">
+        <div className="h-16 bg-gray-200 rounded-md"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-40 bg-gray-200 rounded-md"></div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-80 bg-gray-200 rounded-md"></div>
+            <div className="h-80 bg-gray-200 rounded-md"></div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="h-80 bg-gray-200 rounded-md"></div>
-              <div className="h-80 bg-gray-200 rounded-md"></div>
-            </div>
-            <div className="space-y-6">
-              <div className="h-60 bg-gray-200 rounded-md"></div>
-              <div className="h-60 bg-gray-200 rounded-md"></div>
-              <div className="h-60 bg-gray-200 rounded-md"></div>
-            </div>
+          <div className="space-y-6">
+            <div className="h-60 bg-gray-200 rounded-md"></div>
+            <div className="h-60 bg-gray-200 rounded-md"></div>
+            <div className="h-60 bg-gray-200 rounded-md"></div>
           </div>
         </div>
-      </MainLayout>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       {/* Alert Banner */}
       <AlertBanner />
 
@@ -78,6 +75,6 @@ export default function Dashboard() {
           <LatestNews />
         </div>
       </div>
-    </MainLayout>
+    </>
   );
 }

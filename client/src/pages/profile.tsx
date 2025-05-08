@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import MainLayout from "@/components/layout/main-layout";
 import ProfileForm from "@/components/profile/profile-form";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,17 +100,15 @@ export default function Profile() {
 
   if (isLoading || isProfileLoading) {
     return (
-      <MainLayout>
-        <div className="animate-pulse space-y-6">
-          <div className="h-40 bg-gray-200 rounded-md"></div>
-          <div className="h-80 bg-gray-200 rounded-md"></div>
-        </div>
-      </MainLayout>
+      <div className="animate-pulse space-y-6">
+        <div className="h-40 bg-gray-200 rounded-md"></div>
+        <div className="h-80 bg-gray-200 rounded-md"></div>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       {/* Profile Header */}
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -387,6 +384,6 @@ export default function Profile() {
           </Card>
         </TabsContent>
       </Tabs>
-    </MainLayout>
+    </>
   );
 }
