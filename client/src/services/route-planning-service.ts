@@ -249,8 +249,9 @@ export function findNearestPollingStations(
   stations: PollingStation[], 
   currentLat: number, 
   currentLng: number,
-  limit: number = 5
-): PollingStation[] {
+  limit: number = 5,
+  maxDistanceKm?: number
+): { station: PollingStation; distance: number }[] {
   if (!stations.length) return [];
   
   // Filter out stations without coordinates
@@ -275,10 +276,28 @@ export function findNearestPollingStations(
     };
   });
   
+  // Filter by max distance if provided (convert km to meters)
+  const filteredStations = maxDistanceKm
+    ? stationsWithDistance.filter(item => item.distance <= maxDistanceKm * 1000)
+    : stationsWithDistance;
+  
   // Sort by distance and return the nearest ones
-  return stationsWithDistance
+  return filteredStations
     .sort((a, b) => a.distance - b.distance)
-    .slice(0, limit)
+    .slice(0, limit);
+}
+
+/**
+ * Get only the stations without the distance information
+ */
+export function getNearestStations(
+  stations: PollingStation[], 
+  currentLat: number, 
+  currentLng: number,
+  limit: number = 5,
+  maxDistanceKm?: number
+): PollingStation[] {
+  return findNearestPollingStations(stations, currentLat, currentLng, limit, maxDistanceKm)
     .map(item => item.station);
 }
 
@@ -286,7 +305,7 @@ export function findNearestPollingStations(
  * Calculate distance between two points using Haversine formula
  * Returns distance in meters
  */
-function calculateHaversineDistance(
+export function calculateHaversineDistance(
   lat1: number, 
   lng1: number, 
   lat2: number, 
@@ -339,5 +358,136 @@ export function formatDistance(meters: number): string {
     return `${Math.round(meters)} m`;
   } else {
     return `${(meters / 1000).toFixed(1)} km`;
+  }
+}
+
+/**
+ * Get estimated time to arrival at a polling station
+ * Returns ETA in minutes
+ */
+export function getEstimatedTimeToArrival(
+  currentLat: number,
+  currentLng: number,
+  targetLat: number,
+  targetLng: number,
+  travelMode: 'car' | 'pedestrian' | 'bicycle' = 'car'
+): Promise<number> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Average speeds in meters per second
+      const averageSpeeds = {
+        car: 13.9, // ~50km/h
+        pedestrian: 1.4, // ~5km/h
+        bicycle: 4.2  // ~15km/h 
+      };
+      
+      // First, calculate straight-line distance
+      const directDistance = calculateHaversineDistance(
+        currentLat, 
+        currentLng,
+        targetLat,
+        targetLng
+      );
+      
+      // For very short distances, just use the direct calculation
+      if (directDistance < 500) {
+        const estimatedTimeSeconds = directDistance / averageSpeeds[travelMode];
+        resolve(Math.ceil(estimatedTimeSeconds / 60));
+        return;
+      }
+      
+      // For longer distances, try to get a route from the API
+      const route = await hereMapsService.calculateRoute(
+        currentLat,
+        currentLng,
+        targetLat,
+        targetLng,
+        travelMode,
+        { considerTraffic: true }
+      );
+      
+      if (route && route.routes && route.routes.length > 0 && route.routes[0].sections.length > 0) {
+        // Use the actual route duration from the API
+        const durationSeconds = route.routes[0].sections[0].summary.duration;
+        resolve(Math.ceil(durationSeconds / 60));
+      } else {
+        // Fallback to direct distance with a detour factor
+        const detourFactor = travelMode === 'car' ? 1.3 : 1.2;
+        const estimatedDistance = directDistance * detourFactor;
+        const estimatedTimeSeconds = estimatedDistance / averageSpeeds[travelMode];
+        resolve(Math.ceil(estimatedTimeSeconds / 60));
+      }
+    } catch (error) {
+      console.error('Error calculating ETA:', error);
+      // Fallback to a very simple estimate
+      const directDistance = calculateHaversineDistance(
+        currentLat, 
+        currentLng,
+        targetLat,
+        targetLng
+      );
+      const averageSpeed = travelMode === 'car' ? 13.9 : travelMode === 'bicycle' ? 4.2 : 1.4;
+      const estimatedTimeSeconds = directDistance / averageSpeed;
+      resolve(Math.ceil(estimatedTimeSeconds / 60));
+    }
+  });
+}
+
+/**
+ * Calculate optimized order for visiting polling stations based on proximity
+ * to starting location and each other
+ */
+export async function calculateOptimizedVisitOrder(
+  stations: PollingStation[],
+  startLat: number,
+  startLng: number,
+  transportMode: 'car' | 'pedestrian' | 'bicycle' = 'car'
+): Promise<number[]> {
+  if (!stations.length) return [];
+  if (stations.length === 1) return [stations[0].id];
+  
+  // Filter stations without coordinates
+  const validStations = stations.filter(
+    station => station.latitude && station.longitude
+  );
+  
+  if (!validStations.length) return [];
+  
+  try {
+    // Simple greedy algorithm - start at current location and always go to the closest next station
+    const remaining = [...validStations];
+    const result: number[] = [];
+    
+    let currentLat = startLat;
+    let currentLng = startLng;
+    
+    while (remaining.length > 0) {
+      // Find nearest station to current position
+      const stationsWithDistance = remaining.map(station => ({
+        station,
+        distance: calculateHaversineDistance(
+          currentLat,
+          currentLng,
+          station.latitude!, 
+          station.longitude!
+        )
+      }));
+      
+      const nearest = stationsWithDistance.sort((a, b) => a.distance - b.distance)[0];
+      
+      // Add to result and remove from remaining
+      result.push(nearest.station.id);
+      remaining.splice(remaining.findIndex(s => s.id === nearest.station.id), 1);
+      
+      // Update current position
+      currentLat = nearest.station.latitude!;
+      currentLng = nearest.station.longitude!;
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error calculating optimized visit order:', error);
+    // Fallback to original order
+    return validStations.map(station => station.id);
   }
 }

@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share2, Trash, Filter, MoreHorizontal, Share } from "lucide-react";
+import { Loader2, MapPin, Navigation, Car, Calendar, Clock, AlertCircle, RotateCw, Check, X, ChevronDown, ChevronUp, Save, FolderOpen, Printer, Share2, Trash, Filter, MoreHorizontal, Share, Map, CheckSquare, ExternalLink, Hourglass, ArrowDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -25,13 +25,17 @@ import InteractiveMap from "@/components/mapping/interactive-map";
 import { PollingStation } from "@shared/schema";
 import {
   calculateOptimizedRoute,
+  getNearestStations,
   findNearestPollingStations,
+  getEstimatedTimeToArrival,
+  calculateOptimizedVisitOrder,
   formatDistance,
   formatDuration,
   formatTime,
   RouteItinerary,
   RoutePoint,
-  RoutePlanningOptions
+  RoutePlanningOptions,
+  calculateHaversineDistance
 } from "@/services/route-planning-service";
 
 interface RoutePlannerProps {
@@ -73,8 +77,17 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   const [routeName, setRouteName] = useState<string>("");
   const [isPrinting, setIsPrinting] = useState(false);
   const [filterText, setFilterText] = useState<string>("");
+  const [isNavigationMode, setIsNavigationMode] = useState(false);
+  const [currentNavPointIndex, setCurrentNavPointIndex] = useState(0);
+  const [distanceToNextPoint, setDistanceToNextPoint] = useState<number | null>(null);
+  const [estimatedTimeToArrival, setEstimatedTimeToArrival] = useState<number | null>(null);
+  const [visitedPoints, setVisitedPoints] = useState<number[]>([]);
+  const [locationWatchId, setLocationWatchId] = useState<number | null>(null);
   
   const { toast } = useToast();
+  
+  // Get current navigation point
+  const currentNavPoint = routeItinerary && routeItinerary.points[currentNavPointIndex];
   
   // Get user's current location when component mounts
   useEffect(() => {
@@ -98,7 +111,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
         setUserLocation({ lat: latitude, lng: longitude });
         
         // Find nearby polling stations
-        const nearby = findNearestPollingStations(pollingStations, latitude, longitude, 5);
+        const nearby = getNearestStations(pollingStations, latitude, longitude, 5);
         setNearbyStations(nearby);
       },
       (error) => {
@@ -147,6 +160,8 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
       }
       
       setRouteItinerary(itinerary);
+      setCurrentNavPointIndex(0);
+      setVisitedPoints([]);
       setActiveTab("map");
     } catch (error) {
       console.error("Route planning error:", error);
@@ -159,6 +174,151 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
       setIsLoading(false);
     }
   };
+  
+  // Start tracking user location for live navigation
+  const trackUserLocationForNavigation = () => {
+    // Clear any existing watch
+    if (locationWatchId !== null) {
+      navigator.geolocation.clearWatch(locationWatchId);
+    }
+    
+    // Only proceed if we have a route and navigation mode is active
+    if (!routeItinerary || !isNavigationMode) return;
+    
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation not supported",
+        description: "Your browser doesn't support geolocation tracking.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Start watching position
+    const watchId = navigator.geolocation.watchPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        
+        // Only update navigation info if we have a current navigation point
+        if (currentNavPoint) {
+          // Calculate distance to next point
+          const distance = calculateHaversineDistance(
+            latitude,
+            longitude,
+            currentNavPoint.lat,
+            currentNavPoint.lng
+          );
+          
+          setDistanceToNextPoint(distance);
+          
+          // Recalculate ETA
+          try {
+            const eta = await getEstimatedTimeToArrival(
+              latitude,
+              longitude,
+              currentNavPoint.lat,
+              currentNavPoint.lng,
+              routeOptions.transportMode
+            );
+            
+            setEstimatedTimeToArrival(eta);
+            
+            // Auto-advance to next point if very close (within 50 meters)
+            if (distance < 50 && !visitedPoints.includes(currentNavPointIndex)) {
+              markPointAsVisited(currentNavPointIndex);
+            }
+          } catch (error) {
+            console.error("Error calculating ETA:", error);
+          }
+        }
+      },
+      (error) => {
+        console.error("Location tracking error:", error);
+        toast({
+          title: "Location error",
+          description: `Could not track your location: ${error.message}`,
+          variant: "destructive"
+        });
+      },
+      { 
+        enableHighAccuracy: true,
+        maximumAge: 10000,  // 10 seconds
+        timeout: 60000      // 1 minute
+      }
+    );
+    
+    setLocationWatchId(watchId);
+    
+    toast({
+      title: "Location tracking started",
+      description: "Your location is now being tracked for navigation."
+    });
+  };
+  
+  // Mark a point as visited and move to the next one
+  const markPointAsVisited = (index: number) => {
+    if (!routeItinerary) return;
+    
+    // Add to visited points if not already there
+    if (!visitedPoints.includes(index)) {
+      setVisitedPoints(prev => [...prev, index]);
+      
+      // Auto-advance to next point if not the last one
+      if (index < routeItinerary.points.length - 1) {
+        setCurrentNavPointIndex(index + 1);
+      }
+      
+      toast({
+        title: "Point marked as visited",
+        description: `${routeItinerary.points[index].name} marked as visited.`
+      });
+    }
+  };
+  
+  // Effect to start/stop location tracking when navigation mode changes
+  useEffect(() => {
+    if (isNavigationMode) {
+      trackUserLocationForNavigation();
+    } else if (locationWatchId !== null) {
+      navigator.geolocation.clearWatch(locationWatchId);
+      setLocationWatchId(null);
+    }
+    
+    return () => {
+      if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+      }
+    };
+  }, [isNavigationMode]);
+  
+  // Effect to update navigation info when current point changes
+  useEffect(() => {
+    if (isNavigationMode && userLocation && currentNavPoint) {
+      // Calculate initial distance
+      const distance = calculateHaversineDistance(
+        userLocation.lat,
+        userLocation.lng,
+        currentNavPoint.lat,
+        currentNavPoint.lng
+      );
+      
+      setDistanceToNextPoint(distance);
+      
+      // Calculate initial ETA
+      getEstimatedTimeToArrival(
+        userLocation.lat,
+        userLocation.lng,
+        currentNavPoint.lat,
+        currentNavPoint.lng,
+        routeOptions.transportMode
+      ).then(eta => {
+        setEstimatedTimeToArrival(eta);
+      }).catch(error => {
+        console.error("Error calculating initial ETA:", error);
+      });
+    }
+  }, [currentNavPointIndex, isNavigationMode, userLocation]);
   
   // Reset the route planner
   const resetRoutePlanner = () => {
