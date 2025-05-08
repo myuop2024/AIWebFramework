@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, CheckCircle, ClipboardList, Clock, MapPin, Plus } from "lucide-react";
-import MainLayout from "@/components/layout/main-layout";
+
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { formatDateRange, assignmentStatusColors } from '@/lib/utils';
 import { AssignmentScheduler, AssignmentCard } from '@/components/assignments/assignment-scheduler';

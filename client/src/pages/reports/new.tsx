@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import MainLayout from "@/components/layout/main-layout";
+
 import ReportForm from "@/components/polling/report-form";
 
 export default function NewReport() {

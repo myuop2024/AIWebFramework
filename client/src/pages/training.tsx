@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import MainLayout from "@/components/layout/main-layout";
+
 import { TrainingModule } from "@/components/training/training-module";
 import { Skeleton } from "@/components/ui/skeleton";
 
