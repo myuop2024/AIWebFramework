@@ -205,11 +205,11 @@ export const ensureDirector = async (req: Request, res: Response, next: NextFunc
     });
   }
   
-  // Then check if the user has director role
+  // Then check if the user has director role or admin role (admin has highest permissions)
   const role = req.session.role;
   
-  if (role !== 'director') {
-    logger.warn(`Director access denied: User ${req.session.userId} with role ${role} attempted director-only action`);
+  if (role !== 'director' && role !== 'admin') {
+    logger.warn(`Director/admin access denied: User ${req.session.userId} with role ${role} attempted privileged action`);
     return res.status(403).json({ 
       message: 'Forbidden', 
       details: 'You do not have permission to access this resource' 
