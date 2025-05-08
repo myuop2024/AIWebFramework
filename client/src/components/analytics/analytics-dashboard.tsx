@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DropdownMenu } from '@/components/ui/dropdown-menu'; // Added import
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -94,7 +95,7 @@ export function AnalyticsDashboard() {
         params.append('startDate', timeRange.startDate.toISOString());
         params.append('endDate', timeRange.endDate.toISOString());
       }
-      
+
       const response = await fetch(`/api/analytics/dashboard?${params}`);
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data');
@@ -119,11 +120,11 @@ export function AnalyticsDashboard() {
         },
         body: JSON.stringify({ stationId }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch predictions');
       }
-      
+
       return response.json();
     },
     enabled: activeTab === 'predictions',
@@ -151,7 +152,7 @@ export function AnalyticsDashboard() {
     const now = new Date();
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    
+
     setDateFrom(oneMonthAgo);
     setDateTo(now);
     setTimeRange({
@@ -163,10 +164,10 @@ export function AnalyticsDashboard() {
   // Generate a comprehensive report
   const generateReport = async () => {
     if (!dateFrom || !dateTo) return;
-    
+
     setIsGeneratingReport(true);
     setReportContent(null);
-    
+
     try {
       const response = await fetch('/api/analytics/generate-report', {
         method: 'POST',
@@ -178,11 +179,11 @@ export function AnalyticsDashboard() {
           endDate: dateTo.toISOString(),
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to generate report');
       }
-      
+
       const data = await response.json();
       setReportContent(data.report);
     } catch (error) {
@@ -235,7 +236,7 @@ export function AnalyticsDashboard() {
         <p className="text-gray-500 mb-4">
           AI-powered insights and analytics for election observation
         </p>
-        
+
         <div className="flex flex-wrap gap-4 mb-4">
           {/* Date filter controls */}
           <div className="flex flex-wrap items-center gap-2">
@@ -265,9 +266,9 @@ export function AnalyticsDashboard() {
                     />
                   </PopoverContent>
                 </Popover>
-                
+
                 <span className="self-center">to</span>
-                
+
                 <Popover open={showCalendar === 'to'} onOpenChange={(open) => !open && setShowCalendar(null)}>
                   <PopoverTrigger asChild>
                     <Button
@@ -291,13 +292,13 @@ export function AnalyticsDashboard() {
                     />
                   </PopoverContent>
                 </Popover>
-                
+
                 <Button onClick={applyDateFilter} size="sm">Apply</Button>
                 <Button onClick={clearDateFilter} variant="outline" size="sm">Clear</Button>
               </div>
             </div>
           </div>
-          
+
           <div className="ml-auto">
             <Button
               onClick={generateReport}
@@ -319,7 +320,7 @@ export function AnalyticsDashboard() {
           </div>
         </div>
       </div>
-      
+
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -328,7 +329,7 @@ export function AnalyticsDashboard() {
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
           <TabsTrigger value="predictions">Predictions</TabsTrigger>
         </TabsList>
-        
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Spinner className="w-12 h-12" />
@@ -348,7 +349,7 @@ export function AnalyticsDashboard() {
                         <div className="text-3xl font-bold">{data.reportStats.totalReports}</div>
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Pending Review</CardTitle>
@@ -361,7 +362,7 @@ export function AnalyticsDashboard() {
                         />
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Reviewed</CardTitle>
@@ -374,7 +375,7 @@ export function AnalyticsDashboard() {
                         />
                       </CardContent>
                     </Card>
-                    
+
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Critical Issues</CardTitle>
@@ -390,7 +391,7 @@ export function AnalyticsDashboard() {
                   </>
                 )}
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Top Issues Categories */}
                 <Card className="col-span-1">
@@ -412,7 +413,7 @@ export function AnalyticsDashboard() {
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 {/* Recent AI Insights */}
                 <Card className="col-span-1">
                   <CardHeader>
@@ -451,7 +452,7 @@ export function AnalyticsDashboard() {
                 </Card>
               </div>
             </TabsContent>
-            
+
             {/* Locations Tab */}
             <TabsContent value="locations">
               <Card>
@@ -485,7 +486,7 @@ export function AnalyticsDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Trends Tab */}
             <TabsContent value="trends">
               <Card>
@@ -532,7 +533,7 @@ export function AnalyticsDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* AI Insights Tab */}
             <TabsContent value="insights">
               <Card>
@@ -572,7 +573,7 @@ export function AnalyticsDashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             {/* Predictions Tab */}
             <TabsContent value="predictions">
               <Card>
@@ -591,7 +592,7 @@ export function AnalyticsDashboard() {
                         <SelectValue placeholder="All polling stations" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All polling stations</SelectItem>
+                        <SelectItem value="all">All polling stations</SelectItem>
                         {data?.reportsByLocation?.map((location, index) => (
                           <SelectItem key={index} value={location.locationName}>
                             {location.locationName}
@@ -600,7 +601,7 @@ export function AnalyticsDashboard() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {isPredictionsLoading ? (
                     <div className="flex justify-center py-8">
                       <Spinner className="w-8 h-8" />
@@ -636,7 +637,7 @@ export function AnalyticsDashboard() {
                           </CardContent>
                         </Card>
                       ))}
-                      
+
                       {(!predictions || predictions.length === 0) && (
                         <div className="py-8 text-center text-gray-500">
                           <Info className="mx-auto h-8 w-8 mb-2 text-gray-400" />
@@ -651,7 +652,7 @@ export function AnalyticsDashboard() {
           </>
         )}
       </Tabs>
-      
+
       {/* Report Generation Result */}
       {reportContent && (
         <Card className="mt-8">

@@ -627,7 +627,7 @@ export class AIAnalyticsService {
             createdAt: reports.createdAt,
           })
           .from(reports)
-          .where(eq(reports.pollingStationId, stationId))
+          .where(sql`${reports.pollingStationId} = ${stationId}`)
           .orderBy(desc(reports.createdAt));
       } else {
         // Get system-wide reports for general predictions

@@ -37,6 +37,9 @@ export default function PollingStationsList() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [view, setView] = useState<"map" | "list">("list");
+  
+  // Import missing MoreHorizontal icon
+  import { MoreHorizontal } from "lucide-react";
 
   // Fetch polling stations
   const { data: pollingStations, isLoading } = useQuery({
