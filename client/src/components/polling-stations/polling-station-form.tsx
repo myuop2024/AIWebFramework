@@ -1,366 +1,368 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
 import AddressAutocomplete from "@/components/address/address-autocomplete";
+import InteractiveMap from "@/components/mapping/interactive-map";
+import { formatDecimalCoordinates } from "@/lib/here-maps";
 
-// Form validation schema
-const pollingStationSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
-  stationCode: z.string().min(2, "Station code is required"),
-  address: z.string().min(5, "Address is required"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State/Parish is required"),
+// Define form schema with Zod
+const pollingStationFormSchema = z.object({
+  id: z.number().optional(),
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  stationCode: z.string().min(2, { message: "Station code is required" }),
+  capacity: z.coerce.number().int().positive().optional(),
+  contactPerson: z.string().optional(),
+  contactPhone: z.string().optional(),
+  address: z.string().min(5, { message: "Address is required" }),
+  city: z.string().min(2, { message: "City is required" }),
+  state: z.string().min(2, { message: "State/Parish is required" }),
   zipCode: z.string().optional(),
-  latitude: z.coerce.number()
-    .min(-90, "Latitude must be between -90 and 90")
-    .max(90, "Latitude must be between -90 and 90")
-    .or(z.string().transform(val => parseFloat(val))),
-  longitude: z.coerce.number()
-    .min(-180, "Longitude must be between -180 and 180")
-    .max(180, "Longitude must be between -180 and 180")
-    .or(z.string().transform(val => parseFloat(val))),
-  capacity: z.coerce.number().min(1, "Capacity must be at least 1").optional(),
-  isActive: z.boolean().default(true),
   notes: z.string().optional(),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  accessibilityFeatures: z.array(z.string()).optional(),
+  isActive: z.boolean().default(true)
 });
 
-// Define props for the component
+export type PollingStationFormData = z.infer<typeof pollingStationFormSchema>;
+
 interface PollingStationFormProps {
-  initialData?: any; // Optional data for edit mode
-  onSubmit: (data: any) => void;
-  isSubmitting: boolean;
+  initialData?: Partial<PollingStationFormData>;
+  onSubmit: (data: PollingStationFormData) => void;
+  isLoading?: boolean;
 }
 
 export default function PollingStationForm({
   initialData,
   onSubmit,
-  isSubmitting,
+  isLoading = false
 }: PollingStationFormProps) {
-  const [useAddressAutocomplete, setUseAddressAutocomplete] = useState(false);
-  const [coordsFromMap, setCoordsFromMap] = useState<{lat: number, lng: number} | null>(null);
-
-  // Initialize form with default values or data for editing
-  const form = useForm<z.infer<typeof pollingStationSchema>>({
-    resolver: zodResolver(pollingStationSchema),
-    defaultValues: initialData || {
-      name: "",
-      stationCode: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      latitude: coordsFromMap?.lat || "",
-      longitude: coordsFromMap?.lng || "",
-      capacity: "",
-      isActive: true,
-      notes: "",
-    },
+  const [mapMarker, setMapMarker] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // Initialize form with default values or initial data
+  const form = useForm<PollingStationFormData>({
+    resolver: zodResolver(pollingStationFormSchema),
+    defaultValues: {
+      id: initialData?.id,
+      name: initialData?.name || "",
+      stationCode: initialData?.stationCode || "",
+      capacity: initialData?.capacity || undefined,
+      contactPerson: initialData?.contactPerson || "",
+      contactPhone: initialData?.contactPhone || "",
+      address: initialData?.address || "",
+      city: initialData?.city || "",
+      state: initialData?.state || "",
+      zipCode: initialData?.zipCode || "",
+      notes: initialData?.notes || "",
+      latitude: initialData?.latitude || 18.0179, // Default to Kingston, Jamaica
+      longitude: initialData?.longitude || -76.8099,
+      accessibilityFeatures: initialData?.accessibilityFeatures || [],
+      isActive: initialData?.isActive !== undefined ? initialData.isActive : true
+    }
   });
-
-  // Handle when the map is clicked to set coordinates
-  const handleMapClick = (lat: number, lng: number) => {
-    setCoordsFromMap({lat, lng});
-    form.setValue("latitude", lat);
-    form.setValue("longitude", lng);
-  };
-
-  // Handle form submission
-  const handleFormSubmit = (data: z.infer<typeof pollingStationSchema>) => {
-    // Ensure data is properly formatted
-    const formattedData = {
-      ...data,
-      capacity: data.capacity || null,
-      notes: data.notes || null,
-      zipCode: data.zipCode || null,
-    };
-    
-    onSubmit(formattedData);
-  };
-
+  
+  // Update map marker when latitude/longitude changes
+  useEffect(() => {
+    const { latitude, longitude } = form.watch();
+    if (latitude && longitude) {
+      setMapMarker({ lat: latitude, lng: longitude });
+    }
+  }, [form.watch("latitude"), form.watch("longitude")]);
+  
   // Handle address selection from autocomplete
   const handleAddressSelect = (address: any) => {
-    if (address) {
-      form.setValue("address", address.street || "");
-      form.setValue("city", address.city || "");
-      form.setValue("state", address.state || "");
-      form.setValue("zipCode", address.postalCode || "");
-      
-      if (address.position) {
-        form.setValue("latitude", address.position.lat);
-        form.setValue("longitude", address.position.lng);
-      }
-    }
+    form.setValue("address", address.street || address.fullAddress);
+    form.setValue("city", address.city);
+    form.setValue("state", address.state);
+    form.setValue("zipCode", address.postalCode);
+    form.setValue("latitude", address.position.lat);
+    form.setValue("longitude", address.position.lng);
+    
+    setMapMarker({
+      lat: address.position.lat,
+      lng: address.position.lng
+    });
   };
-
+  
+  // Handle map click to update location
+  const handleMapClick = (lat: number, lng: number) => {
+    form.setValue("latitude", lat);
+    form.setValue("longitude", lng);
+    setMapMarker({ lat, lng });
+  };
+  
+  // Submit handler
+  const handleSubmit = (data: PollingStationFormData) => {
+    onSubmit(data);
+  };
+  
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Polling Station Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Kingston Central #24" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="stationCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Station Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. KC-024" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium">Basic Information</h2>
+            
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Polling Station Name*</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. Kingston Central #24" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="stationCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Station Code*</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. KC-024" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="capacity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capacity (voters)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      {...field} 
+                      placeholder="e.g. 500"
+                      value={field.value || ""} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contactPerson"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Person</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. John Smith" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="contactPhone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Phone</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g. 876-123-4567" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          {/* Location Information */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-medium">Location</h2>
+            
+            <FormItem>
+              <FormLabel>Search Address</FormLabel>
+              <AddressAutocomplete
+                onAddressSelect={handleAddressSelect}
+                initialValue={form.getValues("address")}
+                placeholder="Type to search for address..."
+              />
+            </FormItem>
+            
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Street Address*</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Street address" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="capacity"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity (voters)</FormLabel>
+                    <FormLabel>City*</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="City" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="state"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parish*</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Parish" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="zipCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Postal/Zip Code</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Postal code" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="latitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latitude*</FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        placeholder="e.g. 500" 
-                        {...field}
-                        value={field.value || ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex items-center space-x-2">
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel>Active</FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Location</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <Switch
-                  id="use-autocomplete"
-                  checked={useAddressAutocomplete}
-                  onCheckedChange={setUseAddressAutocomplete}
-                />
-                <Label htmlFor="use-autocomplete">Use address lookup</Label>
-              </div>
-
-              {useAddressAutocomplete ? (
-                <div className="mb-4">
-                  <Label>Search Address</Label>
-                  <AddressAutocomplete 
-                    onAddressSelect={handleAddressSelect}
-                  />
-                </div>
-              ) : null}
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Street Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 22 Hope Road" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Kingston" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Parish</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. St. Andrew" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="zipCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Postal Code</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Optional" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Latitude</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="text"
-                          placeholder="e.g. 18.0179" 
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Longitude</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="text"
-                          placeholder="e.g. -76.8099" 
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Additional Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Enter any additional information about this polling station" 
-                        className="min-h-[120px]"
                         {...field} 
+                        type="number" 
+                        step="0.000001"
+                        placeholder="e.g. 18.0179" 
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </CardContent>
-            <CardFooter className="flex justify-end space-x-4 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => form.reset()}
-                disabled={isSubmitting}
-              >
-                Reset
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {initialData ? "Updating..." : "Creating..."}
-                  </>
-                ) : (
-                  <>{initialData ? "Update" : "Create"} Station</>
+              
+              <FormField
+                control={form.control}
+                name="longitude"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Longitude*</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        step="0.000001"
+                        placeholder="e.g. -76.8099" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-            </CardFooter>
-          </Card>
+              />
+            </div>
+            
+            {mapMarker && (
+              <div className="text-sm text-muted-foreground mt-1">
+                Coordinates: {formatDecimalCoordinates(mapMarker.lat, mapMarker.lng)}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Map Preview */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">Map Location</h2>
+          <div className="border rounded-md overflow-hidden">
+            <InteractiveMap
+              height="300px"
+              markers={mapMarker ? [
+                { 
+                  lat: mapMarker.lat, 
+                  lng: mapMarker.lng,
+                  text: "📍",
+                  type: "selected" 
+                }
+              ] : []}
+              centerLat={mapMarker?.lat || 18.0179}
+              centerLng={mapMarker?.lng || -76.8099}
+              zoom={15}
+              onMapClick={handleMapClick}
+            />
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Click on the map to set the precise location of the polling station
+          </div>
+        </div>
+        
+        {/* Additional Information */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">Additional Information</h2>
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    {...field}
+                    placeholder="Additional information about this polling station"
+                    className="min-h-[120px]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="pt-6 flex justify-end space-x-4">
+          <Button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full md:w-auto"
+          >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {initialData && "id" in initialData ? "Update Polling Station" : "Create Polling Station"}
+          </Button>
         </div>
       </form>
     </Form>

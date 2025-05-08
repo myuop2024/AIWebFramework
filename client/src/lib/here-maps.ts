@@ -1,183 +1,236 @@
 import { useEffect, useState } from "react";
 
-// Define the window as having the H property
-declare global {
-  interface Window {
-    H?: any;
-  }
+// Type definitions for HERE Maps API
+interface HereMapsApi {
+  Map: any;
+  service: {
+    Platform: any;
+    SearchService: any;
+    RoutingService: any;
+  };
+  mapevents: {
+    MapEvents: any;
+    Behavior: any;
+  };
+  ui: {
+    UI: {
+      createDefault: (map: any, defaultLayers: any) => any;
+    };
+  };
+  map: {
+    Marker: any;
+    DomMarker: any;
+    Group: any;
+    Polyline: any;
+  };
+  geo: {
+    LineString: any;
+    Polygon: any;
+  };
+  data: {
+    AbstractProvider: any;
+    geojson: {
+      Reader: any;
+    };
+    Marker: any;
+  };
 }
 
-// Hook to load and use HERE Maps JS SDK
-export function useHereMaps() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [loadError, setLoadError] = useState<Error | null>(null);
+interface UseHereMapsResult {
+  H: HereMapsApi | null;
+  isLoaded: boolean;
+  loadError: Error | null;
+}
 
-  useEffect(() => {
-    // Skip if HERE Maps is already loaded
-    if (window.H) {
-      setIsLoaded(true);
+// Global variables to track loading state
+let isHereMapsLoaded = false;
+let hereMapsLoadError: Error | null = null;
+let hereMapsLoadPromise: Promise<void> | null = null;
+
+// Function to load HERE Maps script
+function loadHereMapsScript(): Promise<void> {
+  if (hereMapsLoadPromise) {
+    return hereMapsLoadPromise;
+  }
+
+  hereMapsLoadPromise = new Promise((resolve, reject) => {
+    // Skip if already loaded
+    if (isHereMapsLoaded) {
+      resolve();
       return;
     }
 
-    // Skip if API key is not available
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      setLoadError(new Error("HERE Maps API key is missing (VITE_HERE_API_KEY)"));
+    // Skip if already errored
+    if (hereMapsLoadError) {
+      reject(hereMapsLoadError);
       return;
     }
 
-    // Create script elements for HERE Maps SDK
-    const loadCore = () => {
-      return new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = "https://js.api.here.com/v3/3.1/mapsjs-core.js";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = (error) => reject(new Error("Failed to load HERE Maps Core: " + error));
-        document.head.appendChild(script);
-      });
-    };
+    try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY as string;
+      
+      if (!apiKey) {
+        const error = new Error("HERE Maps API key is missing");
+        hereMapsLoadError = error;
+        reject(error);
+        return;
+      }
 
-    const loadService = () => {
-      return new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = "https://js.api.here.com/v3/3.1/mapsjs-service.js";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = (error) => reject(new Error("Failed to load HERE Maps Service: " + error));
-        document.head.appendChild(script);
-      });
-    };
+      // Check if script already exists
+      const existingScript = document.getElementById("here-maps-script");
+      if (existingScript) {
+        resolve();
+        return;
+      }
 
-    const loadMapEvents = () => {
-      return new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = "https://js.api.here.com/v3/3.1/mapsjs-mapevents.js";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = (error) => reject(new Error("Failed to load HERE Maps Events: " + error));
-        document.head.appendChild(script);
-      });
-    };
+      // Create script element
+      const script = document.createElement("script");
+      script.id = "here-maps-script";
+      script.type = "text/javascript";
+      script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
+      script.async = true;
+      script.defer = true;
+      
+      // Track loading state
+      let scriptsLoaded = 0;
+      const totalScripts = 5;
+      
+      const onScriptLoad = () => {
+        scriptsLoaded++;
+        if (scriptsLoaded === totalScripts) {
+          isHereMapsLoaded = true;
+          resolve();
+        }
+      };
+      
+      const onScriptError = (e: Event) => {
+        const error = new Error("Failed to load HERE Maps API");
+        hereMapsLoadError = error;
+        reject(error);
+      };
 
-    const loadUI = () => {
-      return new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = "https://js.api.here.com/v3/3.1/mapsjs-ui.js";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = (error) => reject(new Error("Failed to load HERE Maps UI: " + error));
-        document.head.appendChild(script);
-      });
-    };
-
-    const loadUICSS = () => {
-      return new Promise<void>((resolve) => {
+      script.addEventListener("load", () => {
+        // Load additional scripts after the core is loaded
+        const scripts = [
+          "mapsjs-service.js",
+          "mapsjs-mapevents.js",
+          "mapsjs-ui.js",
+          "mapsjs-clustering.js"
+        ];
+        
+        // Create a link for CSS
         const link = document.createElement("link");
         link.rel = "stylesheet";
         link.type = "text/css";
         link.href = "https://js.api.here.com/v3/3.1/mapsjs-ui.css";
         document.head.appendChild(link);
-        resolve();
+        
+        // Load each script sequentially
+        scripts.forEach(scriptSrc => {
+          const additionalScript = document.createElement("script");
+          additionalScript.type = "text/javascript";
+          additionalScript.src = `https://js.api.here.com/v3/3.1/${scriptSrc}`;
+          additionalScript.async = true;
+          additionalScript.defer = true;
+          additionalScript.addEventListener("load", onScriptLoad);
+          additionalScript.addEventListener("error", onScriptError);
+          document.body.appendChild(additionalScript);
+        });
+
+        // Count the core script as loaded
+        onScriptLoad();
       });
-    };
+      
+      script.addEventListener("error", onScriptError);
+      
+      // Append script to document
+      document.body.appendChild(script);
+    } catch (error) {
+      hereMapsLoadError = error as Error;
+      reject(error);
+    }
+  });
 
-    // Load all HERE Maps scripts and CSS in sequence
-    Promise.resolve()
-      .then(loadCore)
-      .then(loadService)
-      .then(loadMapEvents)
-      .then(loadUI)
-      .then(loadUICSS)
-      .then(() => {
-        setIsLoaded(true);
-      })
-      .catch((error) => {
-        console.error("Error loading HERE Maps SDK:", error);
-        setLoadError(error);
-      });
-
-    // Cleanup function
-    return () => {
-      // No cleanup needed as scripts stay loaded
-    };
-  }, []);
-
-  return {
-    H: window.H,
-    isLoaded,
-    loadError,
-  };
+  return hereMapsLoadPromise;
 }
 
-// Haversine formula to calculate distance between two geo coordinates
-export function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371; // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+// React hook to use HERE Maps
+export function useHereMaps(): UseHereMapsResult {
+  const [H, setH] = useState<HereMapsApi | null>(null);
+  const [isLoaded, setIsLoaded] = useState<boolean>(isHereMapsLoaded);
+  const [loadError, setLoadError] = useState<Error | null>(hereMapsLoadError);
 
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+  useEffect(() => {
+    let isMounted = true;
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in km
-
-  return distance;
-}
-
-// Get current geo position (promisified)
-export function getCurrentPosition(): Promise<GeolocationPosition> {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocation is not supported by your browser"));
+    // If already loaded, set state accordingly
+    if (isHereMapsLoaded && window.H) {
+      setH(window.H as HereMapsApi);
+      setIsLoaded(true);
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0,
-    });
-  });
+    // If already errored, set error state
+    if (hereMapsLoadError) {
+      setLoadError(hereMapsLoadError);
+      return;
+    }
+
+    // Load the HERE Maps script
+    loadHereMapsScript()
+      .then(() => {
+        if (isMounted) {
+          setH(window.H as HereMapsApi);
+          setIsLoaded(true);
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          setLoadError(error);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { H, isLoaded, loadError };
 }
 
-// Format coordinates into a consistent display format
-export function formatCoordinates(lat: number, lng: number): string {
-  const latDir = lat >= 0 ? "N" : "S";
-  const lngDir = lng >= 0 ? "E" : "W";
-  
-  const latAbs = Math.abs(lat);
-  const lngAbs = Math.abs(lng);
-  
-  const latDeg = Math.floor(latAbs);
-  const latMin = Math.floor((latAbs - latDeg) * 60);
-  const latSec = ((latAbs - latDeg - latMin / 60) * 3600).toFixed(2);
-  
-  const lngDeg = Math.floor(lngAbs);
-  const lngMin = Math.floor((lngAbs - lngDeg) * 60);
-  const lngSec = ((lngAbs - lngDeg - lngMin / 60) * 3600).toFixed(2);
-  
-  return `${latDeg}°${latMin}'${latSec}"${latDir}, ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`;
-}
-
-// Format decimal coordinates into simplified format for display
+// Format coordinates in a human-readable format
 export function formatDecimalCoordinates(lat: number, lng: number): string {
-  return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  const latDirection = lat >= 0 ? "N" : "S";
+  const lngDirection = lng >= 0 ? "E" : "W";
+  
+  const formatCoordinate = (value: number, isLat: boolean) => {
+    const absValue = Math.abs(value);
+    const degrees = Math.floor(absValue);
+    const minutesDecimal = (absValue - degrees) * 60;
+    const minutes = Math.floor(minutesDecimal);
+    const secondsDecimal = (minutesDecimal - minutes) * 60;
+    const seconds = Math.round(secondsDecimal * 100) / 100;
+    
+    return `${degrees}° ${minutes}' ${seconds}" ${isLat ? latDirection : lngDirection}`;
+  };
+  
+  return `${formatCoordinate(lat, true)}, ${formatCoordinate(lng, false)}`;
+}
+
+// Note: calculateHaversineDistance has been moved to route-planning-service.ts
+
+// Format distance in a human-readable format
+export function formatDistance(distance: number): string {
+  if (distance < 1) {
+    return `${Math.round(distance * 1000)} m`;
+  } else {
+    return `${Math.round(distance * 10) / 10} km`;
+  }
+}
+
+// Augment window interface to include HERE Maps
+declare global {
+  interface Window {
+    H: HereMapsApi;
+  }
 }

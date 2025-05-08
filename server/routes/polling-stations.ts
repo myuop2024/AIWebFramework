@@ -1,124 +1,182 @@
-import { Router } from "express";
-import { storage } from "../storage";
-import { insertPollingStationSchema } from "@shared/schema";
-import { z } from "zod";
+import express from "express";
 import { hasRole } from "../middleware/auth";
+import { storage } from "../storage";
+import { z } from "zod";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { parse } from 'csv-parse';
 
-const router = Router();
+const router = express.Router();
+
+// Multer setup for CSV file uploads
+const upload = multer({
+  dest: "uploads/",
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept only CSV files
+    if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only CSV files are allowed"));
+    }
+  },
+});
+
+// Validation schemas
+const createPollingStationSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters" }),
+  stationCode: z.string().min(2, { message: "Station code is required" }),
+  capacity: z.coerce.number().int().positive().optional(),
+  contactPerson: z.string().optional(),
+  contactPhone: z.string().optional(),
+  address: z.string().min(5, { message: "Address is required" }),
+  city: z.string().min(2, { message: "City is required" }),
+  state: z.string().min(2, { message: "State/Parish is required" }),
+  zipCode: z.string().optional(),
+  notes: z.string().optional(),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  accessibilityFeatures: z.array(z.string()).optional(),
+  isActive: z.boolean().default(true)
+});
+
+const updatePollingStationSchema = createPollingStationSchema.partial().extend({
+  id: z.number()
+});
 
 // Get all polling stations
-router.get("/", async (req, res) => {
+router.get("/", hasRole(["observer", "admin", "supervisor", "roving"]), async (req, res) => {
   try {
-    const pollingStations = await storage.getAllPollingStations();
-    res.json(pollingStations);
+    const stations = await storage.getAllPollingStations();
+    res.json(stations);
   } catch (error) {
     console.error("Error fetching polling stations:", error);
     res.status(500).json({ error: "Failed to fetch polling stations" });
   }
 });
 
-// Get a single polling station by ID
-router.get("/:id", async (req, res) => {
+// Get single polling station by ID
+router.get("/:id", hasRole(["observer", "admin", "supervisor", "roving"]), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const pollingStation = await storage.getPollingStation(id);
-    
-    if (!pollingStation) {
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
+    const station = await storage.getPollingStation(id);
+    if (!station) {
       return res.status(404).json({ error: "Polling station not found" });
     }
-    
-    res.json(pollingStation);
+
+    res.json(station);
   } catch (error) {
     console.error("Error fetching polling station:", error);
     res.status(500).json({ error: "Failed to fetch polling station" });
   }
 });
 
-// Create a new polling station (admin only)
-router.post("/", hasRole(["admin"]), async (req, res) => {
+// Create a new polling station
+router.post("/", hasRole(["admin", "supervisor"]), async (req, res) => {
   try {
-    // Validate the request body
-    const stationData = insertPollingStationSchema.parse(req.body);
-    
-    // Create the polling station
-    const newStation = await storage.createPollingStation(stationData);
-    
-    res.status(201).json(newStation);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    const validationResult = createPollingStationSchema.safeParse(req.body);
+    if (!validationResult.success) {
       return res.status(400).json({ 
-        error: "Invalid polling station data", 
-        details: error.errors 
+        error: "Validation failed", 
+        details: validationResult.error.format() 
       });
     }
+
+    // Map validated data to the schema fields
+    const stationData = {
+      name: validationResult.data.name,
+      stationCode: validationResult.data.stationCode,
+      address: validationResult.data.address,
+      city: validationResult.data.city,
+      state: validationResult.data.state,
+      zipCode: validationResult.data.zipCode || "",
+      capacity: validationResult.data.capacity || null,
+      latitude: validationResult.data.latitude || null,
+      longitude: validationResult.data.longitude || null,
+      status: validationResult.data.isActive ? "active" : "inactive"
+    };
     
+    const newStation = await storage.createPollingStation(stationData);
+
+    res.status(201).json(newStation);
+  } catch (error) {
     console.error("Error creating polling station:", error);
     res.status(500).json({ error: "Failed to create polling station" });
   }
 });
 
-// Update a polling station (admin only)
-router.patch("/:id", hasRole(["admin"]), async (req, res) => {
+// Update a polling station
+router.patch("/:id", hasRole(["admin", "supervisor"]), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
-    // Check if polling station exists
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
+    // First check if the station exists
     const existingStation = await storage.getPollingStation(id);
-    
     if (!existingStation) {
       return res.status(404).json({ error: "Polling station not found" });
     }
+
+    // Validate the update data
+    const validationResult = updatePollingStationSchema.safeParse({
+      ...req.body,
+      id
+    });
     
-    // Validate the request body (partial update allowed)
-    const updateData = insertPollingStationSchema.partial().parse(req.body);
-    
-    // Update the polling station
-    const updatedStation = await storage.updatePollingStation(id, updateData);
-    
-    res.json(updatedStation);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (!validationResult.success) {
       return res.status(400).json({ 
-        error: "Invalid polling station data", 
-        details: error.errors 
+        error: "Validation failed", 
+        details: validationResult.error.format() 
       });
     }
+
+    // Map validated data to the schema fields
+    const updateData: any = {};
     
+    if (validationResult.data.name !== undefined) updateData.name = validationResult.data.name;
+    if (validationResult.data.stationCode !== undefined) updateData.stationCode = validationResult.data.stationCode;
+    if (validationResult.data.address !== undefined) updateData.address = validationResult.data.address;
+    if (validationResult.data.city !== undefined) updateData.city = validationResult.data.city;
+    if (validationResult.data.state !== undefined) updateData.state = validationResult.data.state;
+    if (validationResult.data.zipCode !== undefined) updateData.zipCode = validationResult.data.zipCode;
+    if (validationResult.data.capacity !== undefined) updateData.capacity = validationResult.data.capacity;
+    if (validationResult.data.latitude !== undefined) updateData.latitude = validationResult.data.latitude;
+    if (validationResult.data.longitude !== undefined) updateData.longitude = validationResult.data.longitude;
+    if (validationResult.data.isActive !== undefined) updateData.status = validationResult.data.isActive ? "active" : "inactive";
+    
+    // Update the station
+    const updatedStation = await storage.updatePollingStation(id, updateData);
+
+    res.json(updatedStation);
+  } catch (error) {
     console.error("Error updating polling station:", error);
     res.status(500).json({ error: "Failed to update polling station" });
   }
 });
 
-// Delete a polling station (admin only)
+// Delete a polling station
 router.delete("/:id", hasRole(["admin"]), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
-    // Check if polling station exists
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid ID format" });
+    }
+
+    // Check if the station exists
     const existingStation = await storage.getPollingStation(id);
-    
     if (!existingStation) {
       return res.status(404).json({ error: "Polling station not found" });
     }
-    
-    // Check if there are active assignments
-    const assignments = await storage.getAssignmentsByStationId(id);
-    
-    if (assignments.length > 0) {
-      const activeAssignments = assignments.filter(a => 
-        a.status === 'active' || a.status === 'scheduled'
-      );
-      
-      if (activeAssignments.length > 0) {
-        return res.status(400).json({ 
-          error: "Cannot delete polling station with active assignments" 
-        });
-      }
-    }
-    
-    // Delete the polling station
+
+    // Delete the station
     const success = await storage.deletePollingStation(id);
-    
     if (success) {
       res.status(204).send();
     } else {
@@ -130,141 +188,125 @@ router.delete("/:id", hasRole(["admin"]), async (req, res) => {
   }
 });
 
-// Get nearby polling stations based on location (requires lat/lng)
-router.get("/nearby", async (req, res) => {
+// Import polling stations from CSV
+router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), async (req, res) => {
   try {
-    const { lat, lng, radius = 10 } = req.query; // radius in km
-    
-    if (!lat || !lng) {
-      return res.status(400).json({ 
-        error: "Latitude and longitude are required" 
-      });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
     }
-    
-    const latitude = parseFloat(lat as string);
-    const longitude = parseFloat(lng as string);
-    const radiusKm = parseFloat(radius as string);
-    
-    if (isNaN(latitude) || isNaN(longitude) || isNaN(radiusKm)) {
-      return res.status(400).json({ 
-        error: "Invalid location parameters" 
+
+    const filePath = path.join(process.cwd(), req.file.path);
+    const fileContent = fs.readFileSync(filePath, { encoding: 'utf-8' });
+
+    // Parse CSV
+    parse(fileContent, {
+      columns: true,
+      trim: true,
+      skip_empty_lines: true
+    }, async (err, records) => {
+      if (err) {
+        console.error("Error parsing CSV:", err);
+        return res.status(400).json({ error: "Invalid CSV format" });
+      }
+
+      const createdStations = [];
+      const errors = [];
+
+      for (let i = 0; i < records.length; i++) {
+        const record = records[i];
+        
+        try {
+          // Transform CSV record to match our schema
+          const stationData = {
+            name: record.name,
+            stationCode: record.stationCode || record.code,
+            address: record.address,
+            city: record.city,
+            state: record.state || record.parish,
+            zipCode: record.zipCode || record.postalCode || "",
+            capacity: record.capacity ? parseInt(record.capacity) : 5,
+            latitude: record.latitude ? parseFloat(record.latitude) : null,
+            longitude: record.longitude ? parseFloat(record.longitude) : null,
+            status: record.status || record.isActive === "true" || record.isActive === "1" ? "active" : "inactive",
+            coordinates: record.coordinates || null
+          };
+
+          // Validate the data
+          const validationResult = createPollingStationSchema.safeParse(stationData);
+          if (!validationResult.success) {
+            errors.push({
+              row: i + 2, // +2 because of 0-indexing and header row
+              stationCode: record.stationCode || record.code,
+              errors: validationResult.error.format()
+            });
+            continue;
+          }
+
+          // Create the station
+          const newStation = await storage.createPollingStation(stationData);
+          createdStations.push(newStation);
+        } catch (error) {
+          console.error(`Error processing row ${i + 2}:`, error);
+          errors.push({
+            row: i + 2,
+            stationCode: record.stationCode || record.code,
+            error: "Failed to process this record"
+          });
+        }
+      }
+
+      // Clean up the uploaded file
+      fs.unlinkSync(filePath);
+
+      res.status(200).json({
+        message: `Imported ${createdStations.length} polling stations`,
+        success: createdStations.length,
+        failed: errors.length,
+        errors: errors.length > 0 ? errors : undefined,
+        stations: createdStations
       });
-    }
-    
-    // Get all polling stations and filter by distance
-    const allStations = await storage.getAllPollingStations();
-    
-    // Filter stations within the radius using Haversine formula
-    const nearbyStations = allStations.filter(station => {
-      if (!station.latitude || !station.longitude) return false;
-      
-      const distance = calculateDistance(
-        latitude, 
-        longitude, 
-        station.latitude, 
-        station.longitude
-      );
-      
-      return distance <= radiusKm;
     });
-    
-    // Add distance to each station
-    const stationsWithDistance = nearbyStations.map(station => ({
-      ...station,
-      distance: calculateDistance(
-        latitude, 
-        longitude, 
-        station.latitude!, 
-        station.longitude!
-      )
-    }));
-    
-    // Sort by distance
-    stationsWithDistance.sort((a, b) => a.distance - b.distance);
-    
-    res.json(stationsWithDistance);
   } catch (error) {
-    console.error("Error finding nearby polling stations:", error);
-    res.status(500).json({ error: "Failed to find nearby polling stations" });
+    console.error("Error importing polling stations:", error);
+    res.status(500).json({ error: "Failed to import polling stations" });
   }
 });
 
-// Get stations with available capacity
-router.get("/available", async (req, res) => {
+// Export polling stations to CSV
+router.get("/export", hasRole(["admin", "supervisor"]), async (req, res) => {
   try {
-    const { date } = req.query;
+    const stations = await storage.getAllPollingStations();
     
-    if (!date) {
-      return res.status(400).json({ 
-        error: "Date parameter is required (YYYY-MM-DD)" 
-      });
-    }
+    // Convert to CSV format
+    const header = "id,name,stationCode,address,city,state,zipCode,capacity,latitude,longitude,status,coordinates\n";
+    const rows = stations.map(station => {
+      return [
+        station.id,
+        station.name ? `"${station.name.replace(/"/g, '""')}"` : '',
+        station.stationCode,
+        station.address ? `"${station.address.replace(/"/g, '""')}"` : '',
+        station.city ? `"${station.city.replace(/"/g, '""')}"` : '',
+        station.state ? `"${station.state.replace(/"/g, '""')}"` : '',
+        station.zipCode || '',
+        station.capacity || '',
+        station.latitude || '',
+        station.longitude || '',
+        station.status || 'active',
+        station.coordinates || ''
+      ].join(',');
+    }).join('\n');
+
+    const csv = header + rows;
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=polling-stations.csv');
     
-    // Parse the date and create a date range for the whole day
-    const targetDate = new Date(date as string);
-    
-    if (isNaN(targetDate.getTime())) {
-      return res.status(400).json({ 
-        error: "Invalid date format. Use YYYY-MM-DD" 
-      });
-    }
-    
-    const startDate = new Date(targetDate);
-    startDate.setHours(0, 0, 0, 0);
-    
-    const endDate = new Date(targetDate);
-    endDate.setHours(23, 59, 59, 999);
-    
-    // Get all stations
-    const allStations = await storage.getAllPollingStations();
-    
-    // Check capacity for each station
-    const availableStations = await Promise.all(
-      allStations.map(async station => {
-        const activeAssignments = await storage.getActiveAssignmentsForStation(
-          station.id,
-          startDate,
-          endDate
-        );
-        
-        const availableCapacity = Math.max(0, (station.capacity || 5) - activeAssignments.length);
-        
-        return {
-          ...station,
-          availableCapacity,
-          totalCapacity: station.capacity || 5,
-          activeAssignments: activeAssignments.length
-        };
-      })
-    );
-    
-    // Filter to only include stations with available capacity
-    const stationsWithCapacity = availableStations.filter(
-      station => station.availableCapacity > 0
-    );
-    
-    res.json(stationsWithCapacity);
+    res.send(csv);
   } catch (error) {
-    console.error("Error finding available polling stations:", error);
-    res.status(500).json({ error: "Failed to find available polling stations" });
+    console.error("Error exporting polling stations:", error);
+    res.status(500).json({ error: "Failed to export polling stations" });
   }
 });
-
-// Helper function to calculate distance between two points using Haversine formula
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distance = R * c; // Distance in km
-  
-  return distance;
-}
 
 export default router;
