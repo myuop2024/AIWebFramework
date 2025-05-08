@@ -2136,6 +2136,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // News Enhanced Predictions - for Jamaica electoral news data integration
   // Register news enhanced predictions routes with specific path
   app.use('/api/admin/analytics', newsEnhancedPredictionsRoutes);
+  
+  // Permission management routes - properly secured for role-based access
+  app.use('/api', permissionRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used

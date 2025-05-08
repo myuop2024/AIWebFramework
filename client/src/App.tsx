@@ -30,7 +30,7 @@ import RoutePlanningPage from "@/pages/route-planning-page";
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
-import StationSchedule from "@/pages/roving/station-schedule";
+import StationSchedulePage from "@/pages/roving/station-schedule";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 
@@ -90,12 +90,12 @@ function Router() {
       {/* Roving Observer Routes */}
       <RoleProtectedRoute 
         path="/roving/station-schedule" 
-        component={StationSchedule} 
+        component={StationSchedulePage} 
         allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
       />
       <RoleProtectedRoute 
         path="/roving/area-reports" 
-        component={StationSchedule} 
+        component={StationSchedulePage} 
         allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
       />
       

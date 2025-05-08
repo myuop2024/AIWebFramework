@@ -66,6 +66,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
     { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
     { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5 mr-3" /> },
+    { path: "/admin/permissions", label: "Permission Management", icon: <UserCheck className="h-5 w-5 mr-3" /> },
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
