@@ -145,15 +145,7 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {user?.profilePhoto ? (
-                  <img 
-                    src={user.profilePhoto} 
-                    alt={`${user.firstName} ${user.lastName}`} 
-                    className="h-full w-full object-cover" 
-                  />
-                ) : (
-                  <User className="h-5 w-5 text-gray-600" />
-                )}
+                <User className="h-5 w-5 text-gray-600" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
