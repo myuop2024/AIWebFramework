@@ -9,6 +9,9 @@ import {
   pollingStations,
   assignments,
 } from '@shared/schema';
+import { analyzeIncidentPatternsWithGemini } from '../services/google-ai-service';
+import { getLatestJamaicanPoliticalNews } from '../services/news-service';
+import * as logger from '../utils/logger';
 
 const router = Router();
 
@@ -477,6 +480,119 @@ router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) =
   } catch (error) {
     console.error('Error fetching daily activity data:', error);
     res.status(500).json({ error: 'Failed to fetch daily activity data' });
+  }
+});
+
+// Get incident predictions with news integration
+router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    logger.info('Admin requested incident predictions with Jamaican news integration');
+    
+    // Get polling station ID if provided
+    const stationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
+    
+    // Fetch all relevant reports from storage
+    const reports = await storage.getReportsByStatus('submitted')
+      .concat(await storage.getReportsByStatus('in_progress'));
+    
+    if (reports.length === 0) {
+      return res.status(200).json({
+        predictions: [],
+        newsArticles: [],
+        message: 'Insufficient data for analysis. No active reports found.'
+      });
+    }
+    
+    // Enrich reports with station names for better context in predictions
+    const enrichedReports = await Promise.all(reports.map(async (report) => {
+      if (report.pollingStationId) {
+        const station = await storage.getPollingStation(report.pollingStationId);
+        return {
+          ...report,
+          stationName: station ? station.name : `Station ${report.pollingStationId}`
+        };
+      }
+      return report;
+    }));
+    
+    // Fetch recent news about Jamaican politics (last 14 days)
+    const newsArticles = await getLatestJamaicanPoliticalNews(14);
+    
+    if (newsArticles.length === 0) {
+      logger.warn('No news articles found for enhanced predictions');
+    } else {
+      logger.info(`Found ${newsArticles.length} news articles for enhanced predictions`);
+    }
+    
+    // Generate predictions using Google Gemini with news integration
+    const predictions = await analyzeIncidentPatternsWithGemini(
+      enrichedReports,
+      stationId,
+      newsArticles
+    );
+    
+    // Return both predictions and the news articles that informed them
+    return res.status(200).json({
+      predictions,
+      // Only return the most relevant news articles (relevanceScore > 0.3)
+      newsArticles: newsArticles
+        .filter(article => article.relevanceScore > 0.3)
+        .slice(0, 10) // Limit to 10 articles
+        .map(article => ({
+          title: article.title,
+          source: article.source,
+          publishedAt: article.publishedAt,
+          summary: article.summary,
+          url: article.url,
+          relevanceScore: article.relevanceScore,
+          locations: article.locations
+        }))
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error generating incident predictions with news integration:', errorMessage);
+    res.status(500).json({ 
+      message: 'Failed to generate predictions', 
+      error: errorMessage 
+    });
+  }
+});
+
+// Get latest Jamaican political news
+router.get('/news/jamaica', ensureAdmin, async (req: Request, res: Response) => {
+  try {
+    // Get days parameter (default to 7 days)
+    const days = req.query.days ? parseInt(req.query.days as string) : 7;
+    
+    // Fetch news articles
+    const newsArticles = await getLatestJamaicanPoliticalNews(days);
+    
+    // Filter and format for response
+    const formattedArticles = newsArticles
+      .filter(article => article.relevanceScore > 0.2) // Only return somewhat relevant articles
+      .map(article => ({
+        title: article.title,
+        source: article.source,
+        publishedAt: article.publishedAt,
+        summary: article.summary,
+        url: article.url,
+        relevanceScore: article.relevanceScore,
+        keywords: article.keywords,
+        locations: article.locations
+      }));
+    
+    return res.status(200).json({
+      articles: formattedArticles,
+      totalCount: formattedArticles.length,
+      searchDays: days
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error fetching Jamaican political news:', errorMessage);
+    res.status(500).json({ 
+      message: 'Failed to fetch news', 
+      error: errorMessage 
+    });
   }
 });
 

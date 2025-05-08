@@ -23,6 +23,7 @@ import diditVerificationRoutes from './routes/didit-verification';
 import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
+import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 
@@ -2130,6 +2131,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Add polling stations routes
   app.use('/api/polling-stations', pollingStationsRoutes);
+  
+  // News Enhanced Predictions - for Jamaica electoral news data integration
+  app.use('/api', newsEnhancedPredictionsRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
