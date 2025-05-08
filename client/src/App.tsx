@@ -27,6 +27,7 @@ import UserImportsPage from "@/pages/admin/user-imports";
 import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import RoutePlanningPage from "@/pages/route-planning-page";
+import ObserverRoutePlanningPage from "@/pages/observer-route-planning";
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
@@ -64,6 +65,7 @@ function Router() {
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
+      <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       
       {/* Admin Routes (require admin or director role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
