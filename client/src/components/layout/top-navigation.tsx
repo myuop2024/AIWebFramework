@@ -21,7 +21,7 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
-  
+
   // Set page title based on location
   useEffect(() => {
     const path = location.split("/")[1];
@@ -48,9 +48,9 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
         setPageTitle("Dashboard");
     }
   }, [location]);
-  
+
   const [, navigate] = useLocation();
-  
+
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -59,15 +59,16 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
       console.error("Logout failed:", error);
     }
   };
-  
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-30">
       <div className="flex justify-between items-center px-4 py-3">
         <div className="flex items-center">
           <button 
             id="menu-toggle" 
-            onClick={toggleSidebar}
-            className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100"
+            onClick={() => toggleSidebar()}
+            type="button"
+            className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -78,7 +79,7 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           {/* Search */}
           <div className="hidden md:block relative">
@@ -89,10 +90,10 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
             />
             <Search className="h-5 w-5 text-gray-400 absolute left-2.5 top-2.5" />
           </div>
-          
+
           {/* Performance Settings */}
           <PerformanceToggle />
-          
+
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -126,14 +127,14 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
+
           {/* Chat */}
           <Link href="/chat">
             <button className="p-1.5 rounded-full text-gray-600 hover:bg-gray-100">
               <MessageSquare className="h-6 w-6" />
             </button>
           </Link>
-          
+
           {/* Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
