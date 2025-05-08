@@ -20,6 +20,8 @@ import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
 import pollingStationsRoutes from './routes/polling-stations';
+import reportAttachmentsRoutes from './routes/report-attachments';
+import quickReportsRoutes from './routes/quick-reports';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 
