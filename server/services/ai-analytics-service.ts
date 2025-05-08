@@ -4,6 +4,7 @@ import { reports, users, pollingStations } from '@shared/schema';
 import { eq, and, or, sql, desc, gte, lte } from 'drizzle-orm';
 import crypto from 'crypto';
 import type { Report } from '@shared/schema';
+import { analyzeIncidentPatternsWithGemini, IncidentPrediction } from './google-ai-service';
 
 // Initialize Hugging Face client with API token
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
