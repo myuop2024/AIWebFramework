@@ -10,72 +10,113 @@ declare global {
   }
 }
 
+/**
+ * Load HERE Maps scripts in sequence (non-async) to ensure proper dependency loading
+ * This solves issues with script loading order and dependencies
+ */
+const loadHereMapsScripts = (callback: () => void) => {
+  const apiKey = import.meta.env.VITE_HERE_API_KEY;
+  if (!apiKey) {
+    console.error('HERE Maps API key is missing in environment variables');
+    return;
+  }
+
+  // Track loaded scripts
+  const scripts = [
+    'https://js.api.here.com/v3/3.1/mapsjs-core.js',
+    'https://js.api.here.com/v3/3.1/mapsjs-service.js',
+    'https://js.api.here.com/v3/3.1/mapsjs-mapevents.js',
+    'https://js.api.here.com/v3/3.1/mapsjs-ui.js'
+  ];
+  
+  // Load CSS
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.type = 'text/css';
+  link.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+  document.head.appendChild(link);
+  
+  // Load scripts in sequence
+  let loaded = 0;
+  function loadScript(index: number) {
+    if (index >= scripts.length) {
+      callback();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = scripts[index];
+    script.onload = () => loadScript(index + 1); // Load next script when this one loads
+    script.onerror = (e) => console.error('Error loading HERE Maps script:', e);
+    document.head.appendChild(script);
+  }
+  
+  // Start loading the first script
+  loadScript(0);
+};
+
+// Global variable to track if loading has started
+let isLoadingStarted = false;
+// Global variable to track if loading is complete
+let isHereMapsLoaded = false;
+// Callbacks to execute when loading is complete
+const loadCallbacks: Array<() => void> = [];
+
+/**
+ * Start the loading process and register a callback
+ */
+function initHereMaps(callback: () => void) {
+  // Add this callback to the queue
+  loadCallbacks.push(callback);
+  
+  // If already loaded, execute callback immediately
+  if (isHereMapsLoaded) {
+    callback();
+    return;
+  }
+  
+  // If loading is already in progress, just wait
+  if (isLoadingStarted) {
+    return;
+  }
+  
+  // Start loading
+  isLoadingStarted = true;
+  loadHereMapsScripts(() => {
+    isHereMapsLoaded = true;
+    // Execute all callbacks
+    loadCallbacks.forEach(cb => cb());
+  });
+}
+
+/**
+ * React Hook for using HERE Maps in components
+ */
 export function useHereMaps() {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(isHereMapsLoaded);
   const [loadError, setLoadError] = useState<Error | null>(null);
-  const apiKey = import.meta.env.VITE_HERE_API_KEY || '';
+  const apiKey = import.meta.env.VITE_HERE_API_KEY;
 
   useEffect(() => {
-    // Check if the API is already loaded
-    if (window.H) {
+    // If already loaded, update state
+    if (isHereMapsLoaded) {
       setIsLoaded(true);
       return;
     }
 
-    // Load the HERE Maps JavaScript API
-    const loadAPI = async () => {
-      try {
-        // Load core module
-        const coreScript = document.createElement('script');
-        coreScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-core.js';
-        coreScript.async = true;
-        
-        // Load service module
-        const serviceScript = document.createElement('script');
-        serviceScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-service.js';
-        serviceScript.async = true;
-        
-        // Load events module (for map interactivity)
-        const eventsScript = document.createElement('script');
-        eventsScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-mapevents.js';
-        eventsScript.async = true;
-        
-        // Load UI module (for controls)
-        const uiScript = document.createElement('script');
-        uiScript.src = 'https://js.api.here.com/v3/3.1/mapsjs-ui.js';
-        uiScript.async = true;
-        
-        // Load UI CSS
-        const uiCss = document.createElement('link');
-        uiCss.rel = 'stylesheet';
-        uiCss.type = 'text/css';
-        uiCss.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
-        
-        // Append scripts to document head
-        document.head.appendChild(coreScript);
-        document.head.appendChild(serviceScript);
-        document.head.appendChild(eventsScript);
-        document.head.appendChild(uiScript);
-        document.head.appendChild(uiCss);
-        
-        // Wait for all scripts to load
-        await Promise.all([
-          new Promise<void>((resolve) => { coreScript.onload = () => resolve(); }),
-          new Promise<void>((resolve) => { serviceScript.onload = () => resolve(); }),
-          new Promise<void>((resolve) => { eventsScript.onload = () => resolve(); }),
-          new Promise<void>((resolve) => { uiScript.onload = () => resolve(); }),
-        ]);
-        
-        setIsLoaded(true);
-      } catch (error) {
-        console.error('Failed to load HERE Maps API:', error);
-        setLoadError(error instanceof Error ? error : new Error('Failed to load HERE Maps API'));
-      }
+    // If API key is missing, set error
+    if (!apiKey) {
+      setLoadError(new Error('HERE Maps API key is missing in environment variables'));
+      return;
+    }
+
+    // Load HERE Maps
+    const handleLoad = () => {
+      setIsLoaded(true);
     };
     
-    loadAPI();
+    initHereMaps(handleLoad);
     
-    // Cleanup function
     return () => {
       // No cleanup needed for script tags
     };
@@ -84,7 +125,8 @@ export function useHereMaps() {
   return { 
     H: window.H,
     isLoaded,
-    loadError
+    loadError,
+    apiKey
   };
 }
 

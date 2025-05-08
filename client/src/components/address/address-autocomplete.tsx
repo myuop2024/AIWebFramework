@@ -44,6 +44,7 @@ export default function AddressAutocomplete({
   const [suggestions, setSuggestions] = useState<HereAutocompleteResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState<HereAutocompleteResult | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Sync with external value
@@ -51,11 +52,26 @@ export default function AddressAutocomplete({
     if (value !== inputValue && !selectedItem) {
       setInputValue(value);
     }
-  }, [value]);
+  }, [value, inputValue, selectedItem]);
+
+  // Verify API key on mount
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      setApiError("HERE Maps API key is missing. Address autocomplete is disabled.");
+    } else {
+      setApiError(null);
+    }
+  }, []);
 
   const fetchSuggestions = async (query: string) => {
     if (!query || query.length < 3) {
       setSuggestions([]);
+      return;
+    }
+
+    if (!import.meta.env.VITE_HERE_API_KEY) {
+      setApiError("HERE Maps API key is missing. Address autocomplete is disabled.");
       return;
     }
 
@@ -64,9 +80,11 @@ export default function AddressAutocomplete({
     try {
       const results = await hereMapsService.autocompleteAddress(query, country);
       setSuggestions(results);
+      setApiError(null);
     } catch (error) {
-      console.error("Error fetching address suggestions:", error);
+      console.error("Error in autocompleteAddress:", error);
       setSuggestions([]);
+      setApiError("Failed to fetch address suggestions. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +94,9 @@ export default function AddressAutocomplete({
     setInputValue(query);
     setSelectedItem(null);
     onChange(query); // Always update with raw text input
+
+    // Reset error
+    setApiError(null);
 
     // Debounce API requests
     if (debounceTimer.current) {
