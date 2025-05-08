@@ -84,9 +84,10 @@ router.post('/', ensureAuthenticated, upload.single('file'), async (req, res) =>
     });
     
     res.status(201).json(attachment);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error uploading report attachment:', error);
-    res.status(500).json({ message: 'Failed to upload attachment', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Failed to upload attachment', error: errorMessage });
   }
 });
 
@@ -113,9 +114,10 @@ router.get('/report/:reportId', ensureAuthenticated, async (req, res) => {
     
     const attachments = await storage.getAttachmentsByReportId(reportId);
     res.status(200).json(attachments);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching report attachments:', error);
-    res.status(500).json({ message: 'Failed to get attachments', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Failed to get attachments', error: errorMessage });
   }
 });
 
@@ -163,9 +165,10 @@ router.delete('/:attachmentId', ensureAuthenticated, async (req, res) => {
     } else {
       res.status(500).json({ message: 'Failed to delete attachment from database' });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error deleting report attachment:', error);
-    res.status(500).json({ message: 'Failed to delete attachment', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Failed to delete attachment', error: errorMessage });
   }
 });
 
@@ -208,9 +211,10 @@ router.get('/:attachmentId', ensureAuthenticated, async (req, res) => {
     
     const fileStream = fs.createReadStream(attachment.filePath);
     fileStream.pipe(res);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error downloading report attachment:', error);
-    res.status(500).json({ message: 'Failed to download attachment', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Failed to download attachment', error: errorMessage });
   }
 });
 
@@ -243,9 +247,10 @@ router.post('/:attachmentId/ocr', ensureAuthenticated, async (req, res) => {
     });
     
     res.status(200).json(updatedAttachment);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error processing OCR for attachment:', error);
-    res.status(500).json({ message: 'Failed to process OCR', error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    res.status(500).json({ message: 'Failed to process OCR', error: errorMessage });
   }
 });
 
