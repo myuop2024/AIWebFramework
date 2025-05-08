@@ -2140,6 +2140,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Permission management routes - properly secured for role-based access
   app.use('/api', permissionRoutes);
+  
+  // Add supervisor routes
+  app.use('/api', supervisorRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used

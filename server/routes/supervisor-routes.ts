@@ -31,11 +31,12 @@ router.get('/api/supervisor/team', ensureAuthenticated, ensureSupervisor, async 
     });
 
     res.status(200).json(observers);
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     logger.error('Error in GET /api/supervisor/team:', error);
     res.status(500).json({ 
       message: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 });
@@ -48,11 +49,12 @@ router.get('/api/supervisor/pending-reports', ensureAuthenticated, ensureSupervi
     // In a real implementation, fetch reports that need supervisor approval
     // For now, return empty array
     res.status(200).json([]);
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     logger.error('Error in GET /api/supervisor/pending-reports:', error);
     res.status(500).json({ 
       message: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 });
@@ -65,11 +67,12 @@ router.get('/api/supervisor/assignments', ensureAuthenticated, ensureSupervisor,
     // In a real implementation, fetch assignments for this supervisor's team
     // For now, return empty array
     res.status(200).json([]);
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     logger.error('Error in GET /api/supervisor/assignments:', error);
     res.status(500).json({ 
       message: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 });
@@ -100,19 +103,20 @@ router.post('/api/assignments', ensureAuthenticated, ensureSupervisor, async (re
     // Create assignment
     const assignment = await storage.createAssignment({
       userId: observerId,
-      pollingStationId: stationId,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      status: 'pending',
-      createdBy: req.session.userId as number
+      stationId: stationId, // Use stationId instead of pollingStationId
+      startDate: new Date(startTime), // Use startDate instead of startTime
+      endDate: new Date(endTime), // Use endDate instead of endTime
+      status: 'pending'
+      // createdBy is not in the assignment schema, so remove it
     });
 
     res.status(201).json(assignment);
-  } catch (error) {
+  } catch (err) {
+    const error = err as Error;
     logger.error('Error in POST /api/assignments:', error);
     res.status(500).json({ 
       message: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 });
