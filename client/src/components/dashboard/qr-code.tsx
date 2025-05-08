@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export default function QRCode() {
   const { user } = useAuth();
@@ -117,9 +118,43 @@ export default function QRCode() {
     }
   };
 
-  const handleDownload = () => {
-    // In a real application, this would create and download a PDF ID card
-    alert("ID Card download would be implemented here");
+  const handleDownload = async () => {
+    try {
+      // Set loading state if needed
+      const response = await fetch('/api/id-cards/download', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf',
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download ID card');
+      }
+      
+      // Create blob from response
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `observer-id-card.pdf`);
+      
+      // Append to body, click, and clean up
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading ID card:', error);
+      toast({
+        title: "Download Failed",
+        description: "There was a problem downloading your ID card. Please try again later.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoading) {
