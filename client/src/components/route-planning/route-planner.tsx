@@ -1204,13 +1204,14 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                         >
                           <div className="flex items-center">
                             <Badge 
-                              className="mr-2" 
+                              className={cn(
+                                "mr-2",
+                                isNavigationMode && visitedPoints.includes(index) && "bg-green-100 text-green-800 hover:bg-green-200"
+                              )}
                               variant={
                                 isNavigationMode && index === currentNavPointIndex 
                                   ? "default" 
-                                  : isNavigationMode && visitedPoints.includes(index)
-                                    ? "success" 
-                                    : "outline"
+                                  : "outline"
                               }
                             >
                               {point.visitOrder}
