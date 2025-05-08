@@ -219,15 +219,79 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   }, [isPrinting]);
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Navigation className="mr-2 h-5 w-5" />
-          Route Planner
-        </CardTitle>
-        <CardDescription>
-          Plan your observation route between polling stations
-        </CardDescription>
+    <Card className="w-full max-w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="flex items-center">
+            <Navigation className="mr-2 h-5 w-5" />
+            Route Planner
+          </CardTitle>
+          <CardDescription>
+            Plan your observation route between polling stations
+          </CardDescription>
+        </div>
+        <div className="flex items-center space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Route Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => {
+                setIsPrinting(true);
+                setTimeout(() => {
+                  window.print();
+                  setIsPrinting(false);
+                }, 500);
+              }}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print Route
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                // Copy to clipboard
+                if (routeItinerary) {
+                  const routeData = encodeURIComponent(JSON.stringify({
+                    stations: selectedStations.map(s => s.id),
+                    options: routeOptions
+                  }));
+                  
+                  // Create URL with query params
+                  const shareUrl = `${window.location.origin}/route-planning?data=${routeData}`;
+                  
+                  // Copy to clipboard
+                  navigator.clipboard.writeText(shareUrl).then(
+                    () => {
+                      toast({
+                        title: "Link copied",
+                        description: "Share link copied to clipboard"
+                      });
+                    },
+                    (err) => {
+                      console.error('Could not copy text: ', err);
+                      toast({
+                        title: "Failed to copy",
+                        description: "Could not copy link to clipboard",
+                        variant: "destructive"
+                      });
+                    }
+                  );
+                } else {
+                  toast({
+                    title: "No route available",
+                    description: "Please generate a route first",
+                    variant: "destructive"
+                  });
+                }
+              }}>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Route
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardHeader>
       
       <CardContent>

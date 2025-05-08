@@ -32,6 +32,9 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
       case "polling-stations":
         setPageTitle("Polling Stations");
         break;
+      case "route-planning":
+        setPageTitle("Route Planning");
+        break;
       case "reports":
         setPageTitle("Reports");
         break;

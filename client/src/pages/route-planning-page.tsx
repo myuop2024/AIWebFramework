@@ -3,7 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import { PollingStation } from "@shared/schema";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, MapPin, Navigation } from "lucide-react";
+import { AlertCircle, MapPin, Navigation, MoreHorizontal, Download, Share2, Printer, Settings } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import RoutePlanner from "@/components/route-planning/route-planner";
 
 export default function RoutePlanningPage() {
@@ -17,9 +26,37 @@ export default function RoutePlanningPage() {
   return (
     <div className="container py-6 space-y-6 max-w-6xl">
       <div className="flex flex-col space-y-2">
-        <div className="flex items-center space-x-2">
-          <Navigation className="h-6 w-6" />
-          <h1 className="text-2xl font-bold tracking-tight">Route Planning</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Navigation className="h-6 w-6" />
+            <h1 className="text-2xl font-bold tracking-tight">Route Planning</h1>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="h-9 w-9 p-2 rounded-md hover:bg-muted flex items-center justify-center">
+              <MoreHorizontal className="h-5 w-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Route Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Download className="mr-2 h-4 w-4" />
+                Export Routes as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Share2 className="mr-2 h-4 w-4" />
+                Share Route
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Printer className="mr-2 h-4 w-4" />
+                Print Route
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Route Settings
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <p className="text-muted-foreground">
           Plan efficient routes between polling stations for your election observation duties
