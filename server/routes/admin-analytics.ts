@@ -330,7 +330,7 @@ router.get('/stations/issues', ensureAdmin, async (req: Request, res: Response) 
           .where(
             and(
               eq(reports.stationId, station.id),
-              eq(reports.severity, 'critical'),
+              sql`${reports.content}->>'severity' = 'critical'`,
               sql`${reports.submittedAt} >= ${startDate.toISOString()}`
             )
           ).then(result => result[0]?.count || 0);
