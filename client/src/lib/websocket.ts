@@ -212,14 +212,13 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Handle WebRTC signaling
       socket.on('signal', async (data) => {
         try {
-          if (!peerRef.current) {
-            // If receiving signal before peer is created, create it
+          // We don't need to manually handle the signal - 
+          // WebRTCConnection handles it for us via socket events
+          if (!webRTCRef.current) {
+            // If receiving signal before WebRTC is created, create it
             if (activeCall && activeCall.status === 'accepted') {
               await initializePeerConnection(data.senderId, activeCall.callType, data.signal);
             }
-          } else {
-            // If peer exists, signal it
-            peerRef.current.signal(data.signal);
           }
         } catch (err) {
           console.error('Signaling error:', err);
@@ -429,18 +428,18 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
     
     try {
-      // Stop media streams
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        setLocalStream(null);
-      }
-      
-      setRemoteStream(null);
-      
-      // Close peer connection
-      if (peerRef.current) {
-        peerRef.current.destroy();
-        peerRef.current = null;
+      // Close WebRTC connection - it handles media stream cleanup
+      if (webRTCRef.current) {
+        webRTCRef.current.endCall();
+        webRTCRef.current = null;
+      } else {
+        // Manual cleanup if WebRTC not initialized
+        if (localStream) {
+          localStream.getTracks().forEach(track => track.stop());
+          setLocalStream(null);
+        }
+        
+        setRemoteStream(null);
       }
       
       // Update call status
@@ -474,55 +473,29 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     incomingSignal?: any
   ): Promise<boolean> => {
     try {
-      // Get user media based on call type
-      const constraints = {
-        audio: true,
-        video: callType === 'video'
-      };
+      if (!socketRef.current) {
+        setError('Socket connection not established');
+        return false;
+      }
       
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      // Create WebRTC connection
+      const webRTC = new WebRTCConnection(socketRef.current);
+      webRTCRef.current = webRTC;
+      
+      // Initialize the call
+      const stream = await webRTC.initializeCall(
+        peerId, 
+        callType, 
+        !incomingSignal // isInitiator if there's no incoming signal
+      );
+      
+      // Store local stream
       setLocalStream(stream);
       
-      // Create peer connection
-      const peer = new Peer({
-        initiator: !incomingSignal,
-        trickle: false,
-        stream
+      // Handle remote stream
+      webRTC.onRemoteStream((remoteMediaStream) => {
+        setRemoteStream(remoteMediaStream);
       });
-      
-      peerRef.current = peer;
-      
-      // Handle peer signals
-      peer.on('signal', (signal) => {
-        if (socketRef.current) {
-          socketRef.current.emit('signal', {
-            receiverId: peerId,
-            signal
-          });
-        }
-      });
-      
-      // Handle receiving the remote stream
-      peer.on('stream', (stream) => {
-        setRemoteStream(stream);
-      });
-      
-      // Handle peer errors
-      peer.on('error', (err) => {
-        console.error('Peer connection error:', err);
-        setError('Call connection error');
-        endCall();
-      });
-      
-      // Handle peer close
-      peer.on('close', () => {
-        endCall();
-      });
-      
-      // Signal the peer if we received an incoming signal
-      if (incomingSignal) {
-        peer.signal(incomingSignal);
-      }
       
       return true;
     } catch (err) {
