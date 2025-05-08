@@ -232,6 +232,78 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       }
     );
   };
+  
+  // Set up continuous location tracking for navigation mode
+  useEffect(() => {
+    if (!navigationMode || !showUserLocation || navigationPaused) {
+      return; // Don't track if not in navigation mode or paused
+    }
+    
+    // Initialize with current location
+    getUserLocation();
+    
+    // Set up interval for continuous tracking
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const newLocation = { lat: latitude, lng: longitude };
+        setUserLocation(newLocation);
+        
+        // Update map view to follow user in navigation mode
+        if (mapInstance.current) {
+          mapInstance.current.setCenter(newLocation);
+        }
+        
+        // Update ETA dynamically based on new position
+        // This would be based on distance to destination and average speed
+        if (markers.length > 0 && selectedMarkerIndex < markers.length) {
+          const destination = markers[selectedMarkerIndex];
+          
+          // Simple calculation for demo purposes (in a real app, this would use the routing service)
+          // Calculate distance and estimate arrival time
+          updateArrivalEstimate(newLocation, destination);
+        }
+      },
+      (error) => {
+        console.warn("Error tracking location:", error.message);
+      },
+      { 
+        enableHighAccuracy: true, 
+        maximumAge: 10000,  // Accept positions from last 10 seconds
+        timeout: 5000       // Time to wait for a position
+      }
+    );
+    
+    // Clean up function to stop tracking when component unmounts or mode changes
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [navigationMode, showUserLocation, navigationPaused, selectedMarkerIndex, markers]);
+  
+  // Update the ETA based on current position and destination
+  const updateArrivalEstimate = (current: { lat: number, lng: number }, destination: { lat: number, lng: number }) => {
+    if (!current || !destination) return;
+    
+    // Simple distance calculation (Haversine formula)
+    const R = 6371; // Earth radius in km
+    const dLat = (destination.lat - current.lat) * Math.PI / 180;
+    const dLon = (destination.lng - current.lng) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(current.lat * Math.PI / 180) * Math.cos(destination.lat * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in km
+    
+    // Estimate time based on average walking/driving speed
+    // Assume average speed of 30 km/h for demonstration
+    const speed = 30; // km/h
+    const timeHours = distance / speed;
+    const timeMinutes = Math.round(timeHours * 60);
+    
+    // Update the ETA state
+    setEstimatedTime(`${timeMinutes} mins`);
+  };
 
     // Center on user location
   const centerOnUserLocation = () => {
@@ -371,6 +443,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               size="icon"
               className="h-9 w-9"
               title="Previous destination"
+              onClick={goToPreviousDestination}
             >
               <SkipForward className="h-4 w-4 rotate-180" />
             </Button>
@@ -380,8 +453,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               size="icon"
               className="h-12 w-12 rounded-full bg-primary"
               title="Pause/Resume navigation"
+              onClick={toggleNavigationPause}
             >
-              <Play className="h-6 w-6 text-primary-foreground" />
+              {navigationPaused ? (
+                <Play className="h-6 w-6 text-primary-foreground" />
+              ) : (
+                <Pause className="h-6 w-6 text-primary-foreground" />
+              )}
             </Button>
             
             <Button
@@ -389,6 +467,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               size="icon"
               className="h-9 w-9"
               title="Next destination"
+              onClick={goToNextDestination}
             >
               <SkipForward className="h-4 w-4" />
             </Button>
@@ -396,9 +475,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <div className="ml-2 bg-muted p-2 rounded-md text-xs">
               <div className="font-medium">Next destination</div>
               <div className="text-muted-foreground truncate max-w-[150px]">
-                {markers[0]?.text || "Polling Station"}
+                {markers[selectedMarkerIndex]?.text || "Polling Station"}
               </div>
-              <div className="mt-1 text-primary font-semibold">ETA: 10 mins</div>
+              <div className="mt-1 text-primary font-semibold">ETA: {estimatedTime}</div>
             </div>
           </div>
         </div>
