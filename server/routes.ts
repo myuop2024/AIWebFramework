@@ -1510,7 +1510,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       return res.status(200).json(settings);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating verification settings:', error);
       if (error.errors) {
         return res.status(400).json({ message: 'Invalid verification settings', errors: error.errors });

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, MapPin, Users, ClipboardList, Loader2, Edit, Trash } from "lucide-react";
+import { Plus, Search, MapPin, Users, ClipboardList, Loader2, Edit, Trash, MoreHorizontal } from "lucide-react";
 import InteractiveMap from "@/components/mapping/interactive-map";
 import { Separator } from "@/components/ui/separator";
 import { PollingStation } from "@shared/schema";

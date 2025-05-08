@@ -5,8 +5,14 @@ import {
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
-  UserCheck, GraduationCap, Navigation
+  UserCheck, GraduationCap, Navigation, ChevronDown
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -105,20 +111,66 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         <nav>
           <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Main</p>
           
-          {navLinks.map((link) => (
-            <Link 
-              key={link.path} 
-              href={link.path}
-              className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                location === link.path 
-                  ? 'bg-primary-light/10 text-primary' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            // Special case for Polling Stations - show dropdown
+            if (link.path === "/polling-stations") {
+              const isActive = location.startsWith("/polling-stations");
+              return (
+                <div key={link.path}>
+                  <div 
+                    className={`flex items-center justify-between py-2 px-3 mb-1 rounded-lg ${
+                      isActive
+                        ? 'bg-primary-light/10 text-primary' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Link 
+                      href={link.path}
+                      className="flex items-center flex-1"
+                    >
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="focus:outline-none">
+                        <ChevronDown className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href="/polling-stations/create">Create New Station</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/polling-stations/import">Import Stations</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/polling-stations/map">Station Map</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/polling-stations/export">Export Stations</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Regular links
+            return (
+              <Link 
+                key={link.path} 
+                href={link.path}
+                className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
+                  location === link.path 
+                    ? 'bg-primary-light/10 text-primary' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {link.icon}
+                {link.label}
+              </Link>
+            );
+          })}
           
           {/* Admin section - only visible to admin users */}
           {adminLinks.length > 0 && (
