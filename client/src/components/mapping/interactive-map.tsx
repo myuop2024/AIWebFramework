@@ -51,8 +51,13 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
 
     try {
+      const apiKey = import.meta.env.VITE_HERE_API_KEY;
+      if (!apiKey) {
+        throw new Error('HERE Maps API key is missing');
+      }
+      
       const platform = new H.service.Platform({
-        apikey: import.meta.env.VITE_HERE_API_KEY || ''
+        apikey: apiKey
       });
 
       const defaultLayers = platform.createDefaultLayers();

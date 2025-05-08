@@ -54,12 +54,13 @@ export default function AddressAutocomplete({
   }, [value]);
 
   const fetchSuggestions = async (query: string) => {
-    if (query.length < 3) {
+    if (!query || query.length < 3) {
       setSuggestions([]);
       return;
     }
 
     setIsLoading(true);
+    setSelectedItem(null);
     try {
       const results = await hereMapsService.autocompleteAddress(query, country);
       setSuggestions(results);
