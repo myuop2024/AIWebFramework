@@ -168,7 +168,7 @@ export default function PermissionManagementPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Permission Management</h1>
-        <Button disabled={user?.role !== 'director'}>
+        <Button disabled={user?.role !== 'admin' && user?.role !== 'director'}>
           <UserPlus className="mr-2 h-4 w-4" />
           Add New User
         </Button>
@@ -178,7 +178,7 @@ export default function PermissionManagementPage() {
         <CardHeader>
           <CardTitle>User Permissions</CardTitle>
           <CardDescription>
-            Manage user roles and permissions. Only Directors can change roles.
+            Manage user roles and permissions. Only Admins and Directors can change roles.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -267,7 +267,7 @@ export default function PermissionManagementPage() {
                           variant="outline" 
                           size="sm"
                           onClick={() => openRoleDialog(user.id, user.role)}
-                          disabled={user?.role !== 'director'}
+                          disabled={user?.role !== 'admin' && user?.role !== 'director'}
                         >
                           <UserCheck className="mr-2 h-4 w-4" />
                           Change Role
@@ -292,7 +292,7 @@ export default function PermissionManagementPage() {
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline">Export Permissions</Button>
-          {user?.role === 'director' && (
+          {(user?.role === 'director' || user?.role === 'admin') && (
             <Button variant="destructive">
               <ShieldAlert className="mr-2 h-4 w-4" />
               Reset All Permissions
@@ -306,7 +306,7 @@ export default function PermissionManagementPage() {
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
-              This will update the user's role and permissions. This action can only be performed by Directors.
+              This will update the user's role and permissions. This action can only be performed by Admins and Directors.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
