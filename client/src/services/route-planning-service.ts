@@ -1,27 +1,54 @@
 import { formatDistance } from "@/lib/here-maps";
+import axios from 'axios';
 
-// Calculate distance between two geographic coordinates using the Haversine formula
+/**
+ * Calculate the Haversine distance between two points on the Earth
+ * @param lat1 Latitude of point 1 (in degrees)
+ * @param lon1 Longitude of point 1 (in degrees)
+ * @param lat2 Latitude of point 2 (in degrees)
+ * @param lon2 Longitude of point 2 (in degrees)
+ * @returns Distance in kilometers
+ */
 export function calculateHaversineDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
-    
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const R = 6371; // Radius of the Earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
   const distance = R * c; // Distance in km
-  
   return distance;
+}
+
+/**
+ * Format distance in a human-readable way
+ * @param distance Distance in kilometers
+ * @returns Formatted distance string
+ */
+export function formatDistance(distance: number): string {
+  if (distance < 1) {
+    // Convert to meters if less than 1 km
+    return `${Math.round(distance * 1000)}m`;
+  }
+
+  // Otherwise return in kilometers with 1 decimal place
+  return `${distance.toFixed(1)}km`;
+}
+
+/**
+ * Convert degrees to radians
+ * @param deg Angle in degrees
+ * @returns Angle in radians
+ */
+function deg2rad(deg: number): number {
+  return deg * (Math.PI/180);
 }
 
 // Type definitions
@@ -79,6 +106,7 @@ export interface RoutePlanningOptions {
   avoidFerries?: boolean;
   avoidHighways?: boolean;
 }
+
 
 // Utility functions
 export function formatTime(date: Date): string {
@@ -570,4 +598,63 @@ function nearestNeighborTSP(
   }
   
   return route;
+}
+
+
+/**
+ * Interface for route planning options
+ */
+export interface RoutePlanningOptions {
+  startLocationId?: string;
+  destinations: string[];
+  transportMode: 'car' | 'walk' | 'bike' | 'publicTransport';
+  optimizeRoute: boolean;
+}
+
+/**
+ * Get an optimized route between multiple polling stations
+ * @param options Route planning options
+ * @returns Promise with the route data
+ */
+export async function getOptimizedRoute(options: RoutePlanningOptions) {
+  try {
+    const response = await axios.post('/api/route-planning/optimize', options);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting optimized route:', error);
+    throw new Error('Failed to get optimized route');
+  }
+}
+
+/**
+ * Save a route plan to the user's account
+ * @param name Name of the route plan
+ * @param routeData Route data to save
+ * @returns Promise with the saved route data
+ */
+export async function saveRoutePlan(name: string, routeData: any) {
+  try {
+    const response = await axios.post('/api/route-planning/save', {
+      name,
+      routeData
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error saving route plan:', error);
+    throw new Error('Failed to save route plan');
+  }
+}
+
+/**
+ * Get saved route plans for the current user
+ * @returns Promise with the user's saved routes
+ */
+export async function getSavedRoutePlans() {
+  try {
+    const response = await axios.get('/api/route-planning/saved');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting saved route plans:', error);
+    throw new Error('Failed to get saved route plans');
+  }
 }
