@@ -37,7 +37,7 @@ export default function PollingStationsList() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [view, setView] = useState<"map" | "list">("list");
-  
+
   // Fetch polling stations
   const { data: pollingStations, isLoading } = useQuery({
     queryKey: ["/api/polling-stations"],

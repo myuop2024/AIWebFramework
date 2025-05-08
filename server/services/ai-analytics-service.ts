@@ -117,17 +117,17 @@ export class AIAnalyticsService {
   private buildDateFilter(startDate?: Date, endDate?: Date) {
     if (startDate && endDate) {
       return and(
-        gte(reports.createdAt, startDate),
-        lte(reports.createdAt, endDate)
+        sql`${reports.createdAt} >= ${startDate}`,
+        sql`${reports.createdAt} <= ${endDate}`
       );
     }
     
     if (startDate) {
-      return gte(reports.createdAt, startDate);
+      return sql`${reports.createdAt} >= ${startDate}`;
     }
     
     if (endDate) {
-      return lte(reports.createdAt, endDate);
+      return sql`${reports.createdAt} <= ${endDate}`;
     }
     
     return undefined;
@@ -140,34 +140,34 @@ export class AIAnalyticsService {
       const totalReportsQuery = await db
         .select({ count: sql<number>`count(*)` })
         .from(reports)
-        .where(dateFilter);
+        .where(dateFilter || sql`1=1`);
       
       // Get pending reports
       const pendingReportsQuery = await db
         .select({ count: sql<number>`count(*)` })
         .from(reports)
-        .where(and(
-          eq(reports.status, 'pending'),
-          dateFilter
-        ));
+        .where(dateFilter ? 
+          and(eq(reports.status, 'pending'), dateFilter) : 
+          eq(reports.status, 'pending')
+        );
       
       // Get reviewed reports
       const reviewedReportsQuery = await db
         .select({ count: sql<number>`count(*)` })
         .from(reports)
-        .where(and(
-          eq(reports.status, 'reviewed'),
-          dateFilter
-        ));
+        .where(dateFilter ? 
+          and(eq(reports.status, 'reviewed'), dateFilter) : 
+          eq(reports.status, 'reviewed')
+        );
       
       // Get critical reports
       const criticalReportsQuery = await db
         .select({ count: sql<number>`count(*)` })
         .from(reports)
-        .where(and(
-          eq(reports.severity, 'critical'),
-          dateFilter
-        ));
+        .where(dateFilter ? 
+          and(eq(reports.severity, 'critical'), dateFilter) : 
+          eq(reports.severity, 'critical')
+        );
       
       const totalReports = totalReportsQuery[0]?.count || 0;
       const pendingReports = pendingReportsQuery[0]?.count || 0;
