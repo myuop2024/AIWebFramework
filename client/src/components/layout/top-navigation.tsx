@@ -66,7 +66,10 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
         <div className="flex items-center">
           <button 
             id="menu-toggle" 
-            onClick={() => toggleSidebar()}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleSidebar();
+            }}
             type="button"
             className="md:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
           >

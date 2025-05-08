@@ -25,7 +25,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       
       if (window.innerWidth < 768 && isOpen) {
         if (sidebar && !sidebar.contains(event.target as Node) && 
-            menuToggle && event.target !== menuToggle) {
+            menuToggle && !menuToggle.contains(event.target as Node)) {
           toggleSidebar();
         }
       }
