@@ -11,7 +11,7 @@ import PollingStations from "@/pages/polling-stations";
 import Reports from "@/pages/reports";
 import NewReport from "@/pages/reports/new";
 import ReportDetail from "@/pages/reports/[id]";
-import Assignments from "@/pages/assignments";
+import AssignmentsPage from "@/pages/assignments";
 import Training from "@/pages/training";
 import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
@@ -30,6 +30,9 @@ import RoutePlanningPage from "@/pages/route-planning-page";
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
+import Assignments from "@/pages/supervisor/assignments";
+import ReportsApproval from "@/pages/supervisor/reports-approval";
+import ScheduleMeeting from "@/pages/supervisor/schedule-meeting";
 import StationSchedulePage from "@/pages/roving/station-schedule";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
@@ -52,7 +55,7 @@ function Router() {
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />
-      <ProtectedRoute path="/assignments" component={Assignments} />
+      <ProtectedRoute path="/assignments" component={AssignmentsPage} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
@@ -78,12 +81,17 @@ function Router() {
       />
       <RoleProtectedRoute 
         path="/supervisor/assignments" 
-        component={TeamManagement} 
+        component={Assignments} 
         allowedRoles={["supervisor", "admin", "director"]} 
       />
       <RoleProtectedRoute 
         path="/supervisor/reports-approval" 
-        component={TeamManagement} 
+        component={ReportsApproval} 
+        allowedRoles={["supervisor", "admin", "director"]} 
+      />
+      <RoleProtectedRoute 
+        path="/supervisor/schedule-meeting" 
+        component={ScheduleMeeting} 
         allowedRoles={["supervisor", "admin", "director"]} 
       />
       
