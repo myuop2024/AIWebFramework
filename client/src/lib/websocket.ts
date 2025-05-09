@@ -82,14 +82,24 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   // File transfer state
   const [fileTransfers, setFileTransfers] = useState<Map<string, FileInfo>>(new Map());
   
-  // Connect to the Socket.io server with improved error handling
+  // Connect to the Socket.io server with improved error handling and connection management
   const connect = useCallback(() => {
-    if (!userId) return;
+    // Don't proceed if no user ID is available
+    if (!userId) {
+      console.debug('Not connecting: No userId available');
+      return;
+    }
+    
+    // Don't create a new connection if one already exists
+    if (socketRef.current) {
+      console.debug('Not connecting: Socket already exists');
+      return;
+    }
     
     try {
       // Create new Socket.io connection
       // Match server configuration (path /socket.io with namespace /comms)
-      console.log('Creating Socket.io connection with namespace /comms and path /socket.io');
+      console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
       
       // Create a function to handle socket creation with better error handling
       const createSocket = () => {
@@ -107,20 +117,21 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
           console.log(`Using transport order: [${transports.join(', ')}]`);
           
           // Initialize Socket.io with the namespace directly and enhanced options
+          // Note: We're setting autoConnect to false to manually manage the connection
           const socket = io('/comms', {
             path: '/socket.io', // Must match the server's Socket.io path
             transports, // Use determined transport order
-            reconnectionAttempts: 20, // Increased reconnection attempts for better resilience
-            reconnectionDelay: 1000, // Start with a 1 second delay
-            reconnectionDelayMax: 15000, // Maximum delay between reconnection attempts
-            timeout: 90000, // 90 seconds connection timeout for slower networks
-            autoConnect: true,
+            reconnectionAttempts: 5, // Limit reconnection attempts to prevent endless loops
+            reconnectionDelay: 2000, // Start with a 2 second delay
+            reconnectionDelayMax: 10000, // Maximum delay between reconnection attempts
+            timeout: 20000, // 20 seconds connection timeout
+            autoConnect: false, // Important: We'll manually connect after setup
             forceNew: true, // Force a new connection to avoid reusing problematic connections
             randomizationFactor: 0.5, // Add randomization to reconnection attempts
-            reconnection: true, // Explicitly enable reconnection
+            reconnection: false, // We'll handle reconnection ourselves
             upgrade: true, // Enable transport upgrades
             rememberUpgrade: true, // Remember successful transport upgrades
-            extraHeaders: {}, // No extra headers needed, but included for future extension
+            extraHeaders: {}, // No extra headers needed
             query: { clientTime: Date.now() } // Add timestamp to help with debugging
           });
           
@@ -537,14 +548,10 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       endCall();
     }
     
-    // Disconnect socket
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
-    
+    // Use the safe disconnect method
+    safeDisconnectSocket();
     setIsConnected(false);
-  }, [activeCall]);
+  }, [activeCall, safeDisconnectSocket]);
   
   // Send a text message
   const sendMessage = useCallback((receiverId: number, content: string): boolean => {
@@ -874,61 +881,83 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   // Manage connection state and debounce connections to prevent rapid reconnects
   const isConnectingRef = useRef(false);
   const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptRef = useRef(0);
+  const maxReconnectAttempts = 3;
   
   // Function to safely cleanup any pending connection attempts
-  const cleanupPendingConnections = () => {
+  const cleanupPendingConnections = useCallback(() => {
     if (connectTimeoutRef.current) {
       clearTimeout(connectTimeoutRef.current);
       connectTimeoutRef.current = null;
     }
-  };
+  }, []);
+  
+  // Reset connection status
+  const resetConnectionState = useCallback(() => {
+    isConnectingRef.current = false;
+    reconnectAttemptRef.current = 0;
+    cleanupPendingConnections();
+  }, [cleanupPendingConnections]);
+  
+  // Create a safe disconnect function for the socketRef
+  const safeDisconnectSocket = useCallback(() => {
+    try {
+      if (socketRef.current) {
+        // Explicitly adding type assertion to avoid TypeScript error
+        (socketRef.current as any).disconnect?.();
+        socketRef.current = null;
+      }
+    } catch (err) {
+      console.error('Error safely disconnecting socket:', err);
+    }
+  }, []);
   
   // Connect and disconnect based on user ID changes with connection tracking
   useEffect(() => {
-    // Return early if already connecting or we have a pending connect attempt
-    if (isConnectingRef.current || connectTimeoutRef.current) {
-      return;
-    }
-    
-    // Only attempt connection if userId exists and we're not already connected
-    if (userId && !isConnected && !socketRef.current) {
-      // Set connecting flag to prevent multiple connection attempts
-      isConnectingRef.current = true;
-      
-      // Clean up any existing socket to ensure fresh connection
-      if (socketRef.current) {
-        try {
-          socketRef.current.disconnect();
-          socketRef.current = null;
-        } catch (err) {
-          console.error('Error cleaning up existing socket:', err);
-        }
+    // Only attempt connection if userId exists
+    if (userId) {
+      // Don't attempt if already connecting or connected with a valid socket
+      if (!isConnectingRef.current && !isConnected && !socketRef.current) {
+        console.log('Initializing socket connection');
+        
+        // Set connecting flag to prevent multiple connection attempts
+        isConnectingRef.current = true;
+        
+        // Schedule a connection attempt with delay to prevent rapid reconnection
+        connectTimeoutRef.current = setTimeout(() => {
+          try {
+            // Create socket and register events, but don't connect yet
+            connect();
+            
+            // Manually connect after all event handlers are registered
+            if (socketRef.current) {
+              console.log('Manually connecting socket');
+              // Type assertion for TypeScript
+              (socketRef.current as any).connect?.();
+            }
+          } catch (err) {
+            console.error('Connection error in useEffect:', err);
+            isConnectingRef.current = false;
+          } finally {
+            // Clear the timeout reference
+            connectTimeoutRef.current = null;
+          }
+        }, 1000); // 1 second delay to debounce connection attempts
       }
-      
-      // Delay connection attempt slightly to prevent rapid reconnection cycles
-      connectTimeoutRef.current = setTimeout(() => {
-        try {
-          connect();
-        } catch (err) {
-          console.error('Connection error in useEffect:', err);
-        } finally {
-          // Reset connecting flag regardless of success/failure
-          isConnectingRef.current = false;
-          connectTimeoutRef.current = null;
-        }
-      }, 500); // Half-second delay to debounce connection attempts
-    } else if (!userId) {
-      // If no userId, ensure we're disconnected
+    } else {
+      // If no userId, ensure we're disconnected and clean up
       cleanupPendingConnections();
-      disconnect();
+      safeDisconnectSocket();
+      resetConnectionState();
     }
     
     // Cleanup on component unmount
     return () => {
       cleanupPendingConnections();
-      disconnect();
+      safeDisconnectSocket();
+      resetConnectionState();
     };
-  }, [userId, isConnected, connect, disconnect]);
+  }, [userId, isConnected, connect, disconnect, cleanupPendingConnections, resetConnectionState, safeDisconnectSocket]);
   
   return {
     isConnected,
