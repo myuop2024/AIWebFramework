@@ -493,6 +493,40 @@ export type Event = typeof events.$inferSelect;
 export type InsertEventParticipation = z.infer<typeof insertEventParticipationSchema>;
 export type EventParticipation = typeof eventParticipation.$inferSelect;
 
+// Error logging system
+export const errorLogs = pgTable("error_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  source: text("source").notNull(), // 'client', 'server', 'socket', 'webrtc', etc.
+  level: text("level").notNull().default("error"), // 'error', 'warning', 'info'
+  message: text("message").notNull(),
+  code: text("code"),
+  stack: text("stack"),
+  url: text("url"), // For client-side errors
+  userAgent: text("user_agent"),
+  path: text("path"), // Route or API endpoint
+  method: text("method"), // HTTP method
+  context: jsonb("context"), // Additional contextual data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  resolved: boolean("resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolutionNotes: text("resolution_notes"),
+});
+
+export const insertErrorLogSchema = createInsertSchema(errorLogs)
+  .omit({
+    id: true,
+    createdAt: true,
+    resolved: true,
+    resolvedAt: true,
+    resolvedBy: true,
+    resolutionNotes: true,
+  });
+
+export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
+export type ErrorLog = typeof errorLogs.$inferSelect;
+
 export type InsertFaq = z.infer<typeof insertFaqSchema>;
 export type Faq = typeof faqEntries.$inferSelect;
 
