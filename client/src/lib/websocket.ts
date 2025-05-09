@@ -89,7 +89,10 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     try {
       // Create new Socket.io connection
       // Match server configuration (path /socket.io with namespace /comms)
-      const socket = io('/comms', {
+      console.log('Creating Socket.io connection with namespace /comms and path /socket.io');
+      
+      // Explicitly construct the Socket.io client with the right URL and namespace
+      const socket = io(window.location.origin + '/comms', {
         path: '/socket.io', // Must match the server's Socket.io path
         transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
         reconnectionAttempts: 5, // Try to reconnect 5 times
@@ -97,6 +100,9 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         timeout: 10000, // 10 seconds connection timeout
         autoConnect: true
       });
+      
+      // Debug connection URL
+      console.log('Socket.io connection URL:', window.location.origin + '/comms');
       
       // Log that we're attempting to connect
       console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
@@ -112,11 +118,14 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       
       // Connection event handlers
       socket.on('connect', () => {
+        console.log('Socket.io connection successful, socketId:', socket.id);
         setIsConnected(true);
         setError(null);
         
         // Authenticate with user ID
+        console.log(`Sending auth event with userId: ${userId}`);
         socket.emit('auth', { userId });
+        console.log('Auth event sent');
       });
       
       // Handle disconnect
@@ -132,6 +141,17 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Handle connection errors
       socket.on('connect_error', (err) => {
         console.error('Socket.io connection error:', err);
+        console.error('Socket.io connection error details:', {
+          message: err.message,
+          type: err.type,
+          description: err.description,
+          context: err.context,
+          stack: err.stack,
+          socketId: socket.id,
+          connected: socket.connected,
+          disconnected: socket.disconnected,
+          url: socket.io.uri
+        });
         setError(`Connection error: ${err.message}`);
       });
       

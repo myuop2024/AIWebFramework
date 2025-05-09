@@ -84,13 +84,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log('Initializing Socket.io server with path: /socket.io');
   
   const io = new SocketIOServer(httpServer, {
+    path: '/socket.io',
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
     },
-    path: "/socket.io", // Make sure the path is explicitly set
+    transports: ['websocket', 'polling'],
     serveClient: false, // Don't serve the client library
-    connectTimeout: 10000, // Longer connection timeout (10s)
+    connectTimeout: 20000, // Longer connection timeout (20s)
     pingTimeout: 5000, // How long without a pong packet to consider the connection closed
     pingInterval: 10000 // How often to ping the client (10s)
   });
