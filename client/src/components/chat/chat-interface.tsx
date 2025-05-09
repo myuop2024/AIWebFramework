@@ -75,7 +75,7 @@ export default function ChatInterface() {
     shareFile,
     downloadFile
   } = useCommunication({
-    userId: user?.id || null,
+    userId: user ? user.id : undefined,
     onMessage: (message) => {
       // Check if this message is related to the selected contact
       if (message.type === "text" || message.type === "file") {
