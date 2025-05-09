@@ -50,14 +50,14 @@ function ErrorLogsPage() {
   React.useEffect(() => {
     // Update filters based on active tab
     if (activeTab === 'resolved') {
-      setFilters(f => ({ ...f, status: 'resolved' }));
+      setFilters(f => ({ ...f, resolved: 'true' }));
     } else if (activeTab === 'unresolved') {
-      setFilters(f => ({ ...f, status: 'open' }));
+      setFilters(f => ({ ...f, resolved: 'false' }));
     } else {
-      // For 'all' tab, remove status filter
+      // For 'all' tab, remove resolved filter
       setFilters(f => {
         const newFilters = { ...f };
-        delete newFilters.status;
+        delete newFilters.resolved;
         return newFilters;
       });
     }
