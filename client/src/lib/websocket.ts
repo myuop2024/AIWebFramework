@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { io, Socket } from "socket.io-client";
 import { saveAs } from "file-saver";
 import { v4 as uuidv4 } from "uuid";
 import { PeerJSConnection } from "./peerjs-helper";
@@ -55,8 +54,8 @@ interface UseCommunicationOptions {
   autoReconnect?: boolean;
 }
 
-// Define a more specific socket type to help TypeScript
-type SocketIOType = Socket<any, any>;
+// Define our WebSocket type for our use case
+type WebSocketType = WebSocket;
 
 export function useCommunication(options: UseCommunicationOptions = {}) {
   const {
@@ -74,7 +73,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
   
   // Socket reference
-  const socketRef = useRef<SocketIOType | null>(null);
+  const socketRef = useRef<WebSocketType | null>(null);
   
   // Call state
   const [activeCall, setActiveCall] = useState<CallInfo | null>(null);
@@ -110,7 +109,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const safeDisconnectSocket = useCallback(() => {
     try {
       if (socketRef.current) {
-        socketRef.current.disconnect();
+        // Check if WebSocket is still open or connecting
+        if (socketRef.current.readyState === WebSocket.OPEN || 
+            socketRef.current.readyState === WebSocket.CONNECTING) {
+          console.log('Closing WebSocket connection...');
+          socketRef.current.close();
+        }
         socketRef.current = null;
       }
     } catch (err) {
@@ -595,10 +599,11 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       setActiveCall(updatedCall);
       
       // Send rejection to caller
-      socketRef.current.emit('call:response', {
+      socketRef.current.send(JSON.stringify({
+        type: 'call:response',
         callerId: activeCall.callerId,
         accepted: false
-      });
+      }));
       
       if (onCallState) {
         onCallState(updatedCall);
@@ -648,10 +653,11 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       fileInfo.data = fileData;
       
       // Send file data to recipient
-      socketRef.current.emit('file:share', {
+      socketRef.current.send(JSON.stringify({
+        type: 'file:share',
         receiverId,
         fileInfo
-      });
+      }));
       
       // Add to local file transfers
       setFileTransfers(prev => {
@@ -777,15 +783,14 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         // Create socket and register events
         connect();
         
-        // Manually connect after all event handlers are registered
+        // With native WebSockets, connection is automatic after creation
         if (socketRef.current) {
-          console.log('Manually connecting socket');
-          socketRef.current.connect();
+          console.log('WebSocket connecting automatically');
           
           // Set a timeout to check if connection succeeded
           setTimeout(() => {
-            if (socketRef.current && !socketRef.current.connected) {
-              console.log('Connection timeout - socket did not connect within expected timeframe');
+            if (socketRef.current && socketRef.current.readyState !== WebSocket.OPEN) {
+              console.log('Connection timeout - WebSocket did not connect within expected timeframe');
               safeDisconnectSocket();
               
               // If we're still mounting, try again
