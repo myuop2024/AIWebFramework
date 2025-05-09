@@ -95,11 +95,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Initialize Socket.io with the namespace directly, not with a URL
       const socket = io('/comms', {
         path: '/socket.io', // Must match the server's Socket.io path
-        transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-        reconnectionAttempts: 5, // Try to reconnect 5 times
+        transports: ['polling', 'websocket'], // Try polling first, then websocket for more reliable connection
+        reconnectionAttempts: 10, // Increased reconnection attempts
         reconnectionDelay: 1000, // Start with a 1 second delay
-        timeout: 20000, // 20 seconds connection timeout (increased from 10s)
-        autoConnect: true
+        timeout: 30000, // 30 seconds connection timeout (increased from 20s)
+        autoConnect: true,
+        forceNew: true // Force a new connection to avoid reusing problematic connections
       });
       
       // Debug connection details
