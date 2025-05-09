@@ -1,4 +1,4 @@
-import { eq, desc, and, gt, lt, or, between, sql } from "drizzle-orm";
+import { eq, desc, and, gt, lt, or, between, sql, asc, isNull, not } from "drizzle-orm";
 import { IStorage } from "./storage";
 import { db } from "./db";
 import {
@@ -20,6 +20,7 @@ import {
   idCardTemplates, IdCardTemplate, InsertIdCardTemplate,
   photoApprovals, PhotoApproval, InsertPhotoApproval,
   systemSettings, SystemSetting, InsertSystemSetting,
+  errorLogs, ErrorLog, InsertErrorLog, ErrorLogQueryOptions, ErrorLogDeleteCriteria,
   BulkUserImport, RegistrationField
 } from "@shared/schema";
 import crypto from "crypto";
@@ -1290,6 +1291,184 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error rejecting photo:', error);
       return undefined;
+    }
+  }
+
+  // Error log operations
+  async getErrorLog(id: number): Promise<ErrorLog | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(errorLogs)
+        .where(eq(errorLogs.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching error log:', error);
+      return undefined;
+    }
+  }
+  
+  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<ErrorLog[]> {
+    try {
+      let query = db.select().from(errorLogs);
+      
+      // Apply filters if options are provided
+      if (options) {
+        const conditions = [];
+        
+        if (options.status) {
+          conditions.push(eq(errorLogs.resolved, options.status === 'resolved'));
+        }
+        
+        if (options.level) {
+          conditions.push(eq(errorLogs.level, options.level));
+        }
+        
+        if (options.source) {
+          conditions.push(eq(errorLogs.source, options.source));
+        }
+        
+        if (options.search) {
+          conditions.push(
+            or(
+              sql`${errorLogs.message} ILIKE ${'%' + options.search + '%'}`,
+              sql`${errorLogs.stack} ILIKE ${'%' + options.search + '%'}`,
+              sql`${errorLogs.context}::text ILIKE ${'%' + options.search + '%'}`
+            )
+          );
+        }
+        
+        if (options.startDate && options.endDate) {
+          conditions.push(
+            between(
+              errorLogs.createdAt,
+              new Date(options.startDate),
+              new Date(options.endDate)
+            )
+          );
+        }
+        
+        // Apply all conditions if any exist
+        if (conditions.length > 0) {
+          query = query.where(and(...conditions));
+        }
+        
+        // Sort by creation date descending (newest first) by default
+        query = query.orderBy(desc(errorLogs.createdAt));
+        
+        // Apply pagination
+        if (options.page !== undefined && options.limit !== undefined) {
+          const offset = (options.page - 1) * options.limit;
+          query = query.limit(options.limit).offset(offset);
+        }
+      } else {
+        // Default ordering if no options provided
+        query = query.orderBy(desc(errorLogs.createdAt));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Error fetching error logs:', error);
+      return [];
+    }
+  }
+  
+  async createErrorLog(errorLog: InsertErrorLog): Promise<ErrorLog> {
+    try {
+      const [result] = await db
+        .insert(errorLogs)
+        .values({
+          ...errorLog,
+          resolved: false
+        })
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating error log:', error);
+      throw new Error('Failed to create error log');
+    }
+  }
+  
+  async updateErrorLog(id: number, data: Partial<ErrorLog>): Promise<ErrorLog | undefined> {
+    try {
+      const [updated] = await db
+        .update(errorLogs)
+        .set(data)
+        .where(eq(errorLogs.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating error log:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteErrorLog(id: number): Promise<boolean> {
+    try {
+      await db
+        .delete(errorLogs)
+        .where(eq(errorLogs.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting error log:', error);
+      return false;
+    }
+  }
+  
+  async markErrorLogAsResolved(id: number, resolvedBy?: number): Promise<ErrorLog | undefined> {
+    try {
+      const [updated] = await db
+        .update(errorLogs)
+        .set({
+          resolved: true,
+          resolvedAt: new Date(),
+          resolvedBy: resolvedBy || null
+        })
+        .where(eq(errorLogs.id, id))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error('Error marking error log as resolved:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteErrorLogs(criteria: ErrorLogDeleteCriteria): Promise<number> {
+    try {
+      let query = db.delete(errorLogs);
+      const conditions = [];
+      
+      if (criteria.ids && criteria.ids.length > 0) {
+        conditions.push(sql`${errorLogs.id} IN (${criteria.ids.join(',')})`);
+      }
+      
+      if (criteria.status) {
+        conditions.push(eq(errorLogs.resolved, criteria.status === 'resolved'));
+      }
+      
+      if (criteria.level) {
+        conditions.push(eq(errorLogs.level, criteria.level));
+      }
+      
+      if (criteria.source) {
+        conditions.push(eq(errorLogs.source, criteria.source));
+      }
+      
+      if (criteria.olderThan) {
+        conditions.push(lt(errorLogs.createdAt, new Date(criteria.olderThan)));
+      }
+      
+      // Apply all conditions
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      const result = await query.returning({ id: errorLogs.id });
+      return result.length;
+    } catch (error) {
+      console.error('Error bulk deleting error logs:', error);
+      return 0;
     }
   }
 }
