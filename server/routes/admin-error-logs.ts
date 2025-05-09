@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { errorLogs } from '@shared/schema';
-import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull, inArray as in_ } from 'drizzle-orm';
 import { ensureAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -83,7 +83,7 @@ router.get('/error-logs', async (req, res) => {
     const logs = await query.limit(limit).offset(offset);
     
     // Get total count for pagination
-    const countQuery = db.select({ count: db.fn.count() })
+    const countQuery = db.select({ count: db.$selectNoTypeCheck('count(*)') })
       .from(errorLogs);
     
     if (filters.length > 0) {
@@ -209,9 +209,12 @@ router.delete('/error-logs', async (req, res) => {
     
     // Filter by IDs
     if (ids && Array.isArray(ids) && ids.length > 0) {
-      deleteQuery = deleteQuery.where(
-        errorLogs.id.in(ids.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id)))
-      );
+      const validIds = ids.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
+      if (validIds.length > 0) {
+        deleteQuery = deleteQuery.where(
+          in_(errorLogs.id, validIds)
+        );
+      }
     }
     
     // Filter by age
