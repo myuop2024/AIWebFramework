@@ -27,6 +27,11 @@ export class WebRTCConnection {
   private iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Free TURN servers from Twilio or similar services can be added here if needed
+    // { urls: 'turn:..', username: '..', credential: '..' },
   ];
 
   constructor(socket: Socket) {
@@ -41,6 +46,11 @@ export class WebRTCConnection {
           await this.handleAnswer(data.signal);
         } else if (data.signal?.candidate) {
           this.handleCandidate(data.signal.candidate);
+        } else if (data.signal?.type === 'ice-restart-request') {
+          // Handle the ice restart request from the peer
+          console.log('Received ICE restart request from peer');
+          this.peerId = data.senderId;
+          this.createOffer(true); // Create a new offer with ICE restart
         }
       } catch (err) {
         console.error('WebRTC signaling error:', err);
@@ -100,9 +110,31 @@ export class WebRTCConnection {
         }
       };
       
-      // Handle connection state changes
+      // Handle connection state changes with enhanced logging and recovery
       this.peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', this.peerConnection?.connectionState);
+        const state = this.peerConnection?.connectionState;
+        console.log('WebRTC connection state changed:', state);
+        
+        // Add appropriate handling for different connection states
+        if (state === 'disconnected') {
+          console.warn('WebRTC connection disconnected - attempting recovery');
+          // Let ICE reconnection happen naturally first
+          setTimeout(() => {
+            if (this.peerConnection?.connectionState === 'disconnected' && isInitiator) {
+              console.log('Attempting to restore disconnected connection');
+              this.createOffer(); // Try to renegotiate
+            }
+          }, 5000);
+        } else if (state === 'failed') {
+          console.error('WebRTC connection failed - attempting to restart ICE');
+          this.restartIce(isInitiator);
+        }
+      };
+      
+      // Add ICE connection state monitoring
+      this.peerConnection.oniceconnectionstatechange = () => {
+        const state = this.peerConnection?.iceConnectionState;
+        console.log('ICE connection state changed:', state);
       };
       
       // Create and send offer if initiator
@@ -118,11 +150,18 @@ export class WebRTCConnection {
   }
   
   // Create and send an offer
-  private async createOffer() {
+  private async createOffer(iceRestart = false) {
     try {
       if (!this.peerConnection) return;
       
-      const offer = await this.peerConnection.createOffer();
+      const offerOptions: RTCOfferOptions = {};
+      
+      // Set iceRestart: true if we're trying to recover a failed connection
+      if (iceRestart) {
+        offerOptions.iceRestart = true;
+      }
+      
+      const offer = await this.peerConnection.createOffer(offerOptions);
       await this.peerConnection.setLocalDescription(offer);
       
       this.sendSignal({
@@ -131,6 +170,20 @@ export class WebRTCConnection {
       });
     } catch (err) {
       console.error('Error creating offer:', err);
+    }
+  }
+  
+  // Restart ICE negotiation when connection fails
+  private async restartIce(isInitiator: boolean) {
+    console.log('Attempting to restart ICE negotiation');
+    
+    if (isInitiator) {
+      await this.createOffer(true); // Create offer with iceRestart flag
+    } else {
+      // For non-initiators, we can't restart ICE directly, but can signal to initiator
+      this.sendSignal({
+        type: 'ice-restart-request'
+      });
     }
   }
   
