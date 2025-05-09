@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import RoutePlanner from "@/components/route-planning/route-planner";
+import MainLayout from "@/components/layout/main-layout";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function RoutePlanningPage() {
   const [tab, setTab] = useState("planner");
@@ -24,13 +26,15 @@ export default function RoutePlanningPage() {
   });
 
   return (
-    <div className="container py-6 space-y-6 max-w-6xl">
-      <div className="flex flex-col space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Navigation className="h-6 w-6" />
-            <h1 className="text-2xl font-bold tracking-tight">Route Planning</h1>
-          </div>
+    <AuthGuard>
+      <MainLayout>
+        <div className="container py-6 space-y-6 max-w-6xl">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Navigation className="h-6 w-6" />
+                <h1 className="text-2xl font-bold tracking-tight">Route Planning</h1>
+              </div>
           <DropdownMenu>
             <DropdownMenuTrigger className="h-9 w-9 p-2 rounded-md hover:bg-muted flex items-center justify-center">
               <MoreHorizontal className="h-5 w-5" />
@@ -110,5 +114,7 @@ export default function RoutePlanningPage() {
         </TabsContent>
       </Tabs>
     </div>
+      </MainLayout>
+    </AuthGuard>
   );
 }
