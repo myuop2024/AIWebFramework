@@ -182,6 +182,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
           endCall();
         }
         
+        // Skip reconnection for voluntary disconnects to prevent reconnection loops
+        if (reason === 'io client disconnect') {
+          console.log('Client-initiated disconnect, not attempting reconnection');
+          return;
+        }
+        
         // Handle specific disconnect reasons with custom recovery strategies
         // See: https://socket.io/docs/v4/client-socket-instance/#disconnect
         if (reason === 'io server disconnect') {
