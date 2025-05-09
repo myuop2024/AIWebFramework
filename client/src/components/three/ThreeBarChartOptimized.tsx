@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -14,11 +14,11 @@ interface ThreeBarChartProps {
   width?: number;
   height?: number;
   title?: string;
-  enabled?: boolean; // New prop to enable/disable 3D rendering
+  enabled?: boolean; // Prop to enable/disable 3D rendering
 }
 
 // Fallback 2D chart when 3D is disabled
-const TwoDBarChart = ({ data, width = 500, height = 300, title }: Omit<ThreeBarChartProps, 'enabled'>) => {
+const TwoDBarChart = memo(({ data, width = 500, height = 300, title }: Omit<ThreeBarChartProps, 'enabled'>) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -83,15 +83,16 @@ const TwoDBarChart = ({ data, width = 500, height = 300, title }: Omit<ThreeBarC
       <canvas ref={canvasRef} width={width} height={height} />
     </div>
   );
-};
+});
 
-export function ThreeBarChart({ 
+// Main ThreeBarChart component with memoization
+const ThreeBarChartComponent = ({ 
   data, 
   width = 500, 
   height = 300,
   title,
   enabled = true // Default to enabled for backwards compatibility
-}: ThreeBarChartProps) {
+}: ThreeBarChartProps) => {
   // Use 2D fallback if 3D is disabled
   if (!enabled) {
     return <TwoDBarChart data={data} width={width} height={height} title={title} />;
@@ -113,92 +114,94 @@ export function ThreeBarChart({
     setIsLowPerfDevice(isLowPerf);
   }, []);
   
-  // Initialize the chart when the component mounts or data changes
-  useEffect(() => {
-    if (!containerRef.current) return;
+  // Initialize the scene - memoized with useCallback to prevent recreation
+  const initializeScene = useCallback(() => {
+    if (!containerRef.current || sceneRef.current) return;
     
-    // Initialize scene if it doesn't exist
-    if (!sceneRef.current) {
-      // Create Three.js scene, camera, renderer
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf8f9fa);
-      
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      camera.position.set(0, 5, 15);
-      
-      const pixelRatio = Math.min(window.devicePixelRatio, 1.5); // Cap pixel ratio
-      const renderer = new THREE.WebGLRenderer({ 
-        antialias: !isLowPerfDevice, // Disable antialiasing on low-perf devices
-        powerPreference: 'low-power'
-      });
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(pixelRatio);
-      
-      // Only enable shadows on high-performance devices
-      if (!isLowPerfDevice) {
-        renderer.shadowMap.enabled = true;
-      }
-      
-      containerRef.current.appendChild(renderer.domElement);
-      
-      // Add lighting to the scene
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-      
-      // Use simple lighting on low-perf devices
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(5, 10, 7);
-      
-      if (!isLowPerfDevice) {
-        directionalLight.castShadow = true;
-        directionalLight.shadow.camera.near = 0.5;
-        directionalLight.shadow.camera.far = 500;
-        directionalLight.shadow.mapSize.width = 512; // Reduced shadow map size
-        directionalLight.shadow.mapSize.height = 512;
-      }
-      
-      scene.add(directionalLight);
-      
-      // Add orbit controls with reduced sensitivity
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.1;
-      controls.enableZoom = true;
-      controls.enablePan = false;
-      controls.maxPolarAngle = Math.PI / 2.2;
-      controls.rotateSpeed = 0.5; // Slower rotation for smoother performance
-      
-      // Create a floor plane (simpler on low-perf devices)
-      const floorGeometry = new THREE.PlaneGeometry(30, 30);
-      const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xf0f0f0,
-        roughness: 0.8,
-        metalness: 0.2,
-        side: THREE.DoubleSide
-      });
-      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.y = -0.1;
-      
-      if (!isLowPerfDevice) {
-        floor.receiveShadow = true;
-      }
-      
-      scene.add(floor);
-      
-      // Add grid helper (only for high-perf devices)
-      if (!isLowPerfDevice) {
-        const gridHelper = new THREE.GridHelper(30, 15, 0xaaaaaa, 0xdedede); // Fewer grid lines
-        gridHelper.position.y = 0;
-        scene.add(gridHelper);
-      }
-      
-      // Store references
-      sceneRef.current = scene;
-      cameraRef.current = camera;
-      rendererRef.current = renderer;
-      controlsRef.current = controls;
+    // Create Three.js scene, camera, renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8f9fa);
+    
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 5, 15);
+    
+    const pixelRatio = Math.min(window.devicePixelRatio, 1.5); // Cap pixel ratio
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: !isLowPerfDevice, // Disable antialiasing on low-perf devices
+      powerPreference: 'low-power'
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(pixelRatio);
+    
+    // Only enable shadows on high-performance devices
+    if (!isLowPerfDevice) {
+      renderer.shadowMap.enabled = true;
     }
+    
+    containerRef.current.appendChild(renderer.domElement);
+    
+    // Add lighting to the scene
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    // Use simple lighting on low-perf devices
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 10, 7);
+    
+    if (!isLowPerfDevice) {
+      directionalLight.castShadow = true;
+      directionalLight.shadow.camera.near = 0.5;
+      directionalLight.shadow.camera.far = 500;
+      directionalLight.shadow.mapSize.width = 512; // Reduced shadow map size
+      directionalLight.shadow.mapSize.height = 512;
+    }
+    
+    scene.add(directionalLight);
+    
+    // Add orbit controls with reduced sensitivity
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.1;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.maxPolarAngle = Math.PI / 2.2;
+    controls.rotateSpeed = 0.5; // Slower rotation for smoother performance
+    
+    // Create a floor plane (simpler on low-perf devices)
+    const floorGeometry = new THREE.PlaneGeometry(30, 30);
+    const floorMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xf0f0f0,
+      roughness: 0.8,
+      metalness: 0.2,
+      side: THREE.DoubleSide
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.1;
+    
+    if (!isLowPerfDevice) {
+      floor.receiveShadow = true;
+    }
+    
+    scene.add(floor);
+    
+    // Add grid helper (only for high-perf devices)
+    if (!isLowPerfDevice) {
+      const gridHelper = new THREE.GridHelper(30, 15, 0xaaaaaa, 0xdedede); // Fewer grid lines
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
+    }
+    
+    // Store references
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+    rendererRef.current = renderer;
+    controlsRef.current = controls;
+  }, [width, height, isLowPerfDevice]);
+  
+  // Update the bars - memoized with useCallback
+  const updateBars = useCallback(() => {
+    if (!sceneRef.current || !data.length) return;
     
     // Clear any existing bars
     if (barsRef.current.length > 0) {
@@ -215,8 +218,6 @@ export function ThreeBarChart({
       });
       barsRef.current = [];
     }
-    
-    if (!data.length || !sceneRef.current) return;
     
     // Find the maximum value for normalization
     const maxValue = Math.max(...data.map(d => d.value));
@@ -293,6 +294,13 @@ export function ThreeBarChart({
         barsRef.current.push(labelMesh); // Add to reference for cleanup
       }
     });
+  }, [data, isLowPerfDevice]);
+  
+  // Animation function - memoized with useCallback
+  const startAnimation = useCallback(() => {
+    if (!rendererRef.current || !sceneRef.current || !cameraRef.current || !controlsRef.current) {
+      return;
+    }
     
     // Frame timing variables for throttling
     const frameInterval = isLowPerfDevice ? 1000 / 24 : 1000 / 30; // 24fps for low-perf, 30fps for others
@@ -302,15 +310,13 @@ export function ThreeBarChart({
     const animate = (currentTime: number) => {
       frameIdRef.current = requestAnimationFrame(animate);
       
-      if (!rendererRef.current || !sceneRef.current || !cameraRef.current || !controlsRef.current) {
-        return;
-      }
-      
       // Throttle frame rate
       if (currentTime - lastFrameTime < frameInterval) return;
       lastFrameTime = currentTime;
       
-      controlsRef.current.update();
+      if (controlsRef.current) {
+        controlsRef.current.update();
+      }
       
       // Animate bars slightly (only if not a low-perf device)
       if (!isLowPerfDevice) {
@@ -321,18 +327,35 @@ export function ThreeBarChart({
         });
       }
       
-      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      if (rendererRef.current && sceneRef.current && cameraRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraRef.current);
+      }
     };
     
     animate(0);
     
-    // Cleanup on unmount
     return () => {
       if (frameIdRef.current !== null) {
         cancelAnimationFrame(frameIdRef.current);
+        frameIdRef.current = null;
       }
     };
-  }, [data, width, height, isLowPerfDevice]);
+  }, [isLowPerfDevice]);
+  
+  // Initialize the chart when the component mounts or data changes
+  useEffect(() => {
+    // Set up scene if needed
+    initializeScene();
+    
+    // Update bars with the data
+    updateBars();
+    
+    // Start animation
+    const cleanup = startAnimation();
+    
+    // Cleanup on unmount or data change
+    return cleanup;
+  }, [data, initializeScene, updateBars, startAnimation]);
   
   // Handle window resize with debouncing
   useEffect(() => {
@@ -360,7 +383,13 @@ export function ThreeBarChart({
   // Cleanup resources when component unmounts
   useEffect(() => {
     return () => {
+      if (frameIdRef.current !== null) {
+        cancelAnimationFrame(frameIdRef.current);
+      }
+      
       if (rendererRef.current) {
+        const domElement = rendererRef.current.domElement;
+        domElement.parentNode?.removeChild(domElement);
         rendererRef.current.dispose();
       }
       
@@ -375,6 +404,7 @@ export function ThreeBarChart({
             }
           }
         });
+        barsRef.current = [];
       }
     };
   }, []);
@@ -385,4 +415,7 @@ export function ThreeBarChart({
       <div ref={containerRef} style={{ width, height }} />
     </div>
   );
-}
+};
+
+// Export a memoized version of the component
+export const ThreeBarChart = memo(ThreeBarChartComponent);
