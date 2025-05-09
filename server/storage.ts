@@ -1440,6 +1440,139 @@ export class MemStorage implements IStorage {
     this.photoApprovals.set(id, updatedApproval);
     return updatedApproval;
   }
+  
+  // Error log operations
+  async getErrorLog(id: number): Promise<ErrorLog | undefined> {
+    return this.errorLogs.get(id);
+  }
+  
+  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<ErrorLog[]> {
+    let results = Array.from(this.errorLogs.values());
+    
+    // Apply filters if options are provided
+    if (options) {
+      if (options.status) {
+        results = results.filter(log => log.status === options.status);
+      }
+      
+      if (options.level) {
+        results = results.filter(log => log.level === options.level);
+      }
+      
+      if (options.source) {
+        results = results.filter(log => log.source === options.source);
+      }
+      
+      if (options.search) {
+        const searchLower = options.search.toLowerCase();
+        results = results.filter(log => 
+          log.message.toLowerCase().includes(searchLower) || 
+          (log.stack && log.stack.toLowerCase().includes(searchLower)) ||
+          (log.context && log.context.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      if (options.startDate && options.endDate) {
+        results = results.filter(log => {
+          const timestamp = new Date(log.timestamp);
+          return timestamp >= new Date(options.startDate!) && 
+                 timestamp <= new Date(options.endDate!);
+        });
+      }
+      
+      // Sort by timestamp descending (newest first) by default
+      results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      
+      // Apply pagination
+      if (options.page !== undefined && options.limit !== undefined) {
+        const start = (options.page - 1) * options.limit;
+        results = results.slice(start, start + options.limit);
+      }
+    }
+    
+    return results;
+  }
+  
+  async createErrorLog(errorLog: InsertErrorLog): Promise<ErrorLog> {
+    const id = this.errorLogIdCounter++;
+    
+    const newErrorLog: ErrorLog = {
+      ...errorLog,
+      id,
+      reportedAt: errorLog.reportedAt || new Date(),
+      resolvedAt: null,
+      resolvedBy: null,
+      status: errorLog.status || "open"
+    };
+    
+    this.errorLogs.set(id, newErrorLog);
+    return newErrorLog;
+  }
+  
+  async updateErrorLog(id: number, data: Partial<ErrorLog>): Promise<ErrorLog | undefined> {
+    const errorLog = await this.getErrorLog(id);
+    if (!errorLog) return undefined;
+    
+    const updatedErrorLog = { ...errorLog, ...data };
+    this.errorLogs.set(id, updatedErrorLog);
+    return updatedErrorLog;
+  }
+  
+  async deleteErrorLog(id: number): Promise<boolean> {
+    return this.errorLogs.delete(id);
+  }
+  
+  async markErrorLogAsResolved(id: number, resolvedBy?: number): Promise<ErrorLog | undefined> {
+    const errorLog = await this.getErrorLog(id);
+    if (!errorLog) return undefined;
+    
+    const now = new Date();
+    const updatedErrorLog: ErrorLog = {
+      ...errorLog,
+      status: "resolved",
+      resolvedAt: now,
+      resolvedBy: resolvedBy || null
+    };
+    
+    this.errorLogs.set(id, updatedErrorLog);
+    return updatedErrorLog;
+  }
+  
+  async deleteErrorLogs(criteria: ErrorLogDeleteCriteria): Promise<number> {
+    let count = 0;
+    let logsToCheck = Array.from(this.errorLogs.values());
+    
+    // Filter logs based on criteria
+    if (criteria.ids && criteria.ids.length > 0) {
+      logsToCheck = logsToCheck.filter(log => criteria.ids!.includes(log.id));
+    }
+    
+    if (criteria.status) {
+      logsToCheck = logsToCheck.filter(log => log.status === criteria.status);
+    }
+    
+    if (criteria.level) {
+      logsToCheck = logsToCheck.filter(log => log.level === criteria.level);
+    }
+    
+    if (criteria.source) {
+      logsToCheck = logsToCheck.filter(log => log.source === criteria.source);
+    }
+    
+    if (criteria.olderThan) {
+      const cutoffDate = new Date(criteria.olderThan);
+      logsToCheck = logsToCheck.filter(log => new Date(log.timestamp) < cutoffDate);
+    }
+    
+    // Delete the filtered logs
+    for (const log of logsToCheck) {
+      if (this.errorLogs.delete(log.id)) {
+        count++;
+      }
+    }
+    
+    return count;
+  }
 }
 
 // Import and use DatabaseStorage
