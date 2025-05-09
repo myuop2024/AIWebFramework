@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { errorLogs } from '@shared/schema';
-import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull, inArray as in_ } from 'drizzle-orm';
+import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull, inArray as in_, sql } from 'drizzle-orm';
 import { ensureAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -82,23 +82,20 @@ router.get('/error-logs', async (req, res) => {
     // Apply pagination
     const logs = await query.limit(limit).offset(offset);
     
-    // Get total count for pagination
-    const countQuery = db.select({ count: db.$selectNoTypeCheck('count(*)') })
-      .from(errorLogs);
+    // Get total count for pagination - simplify by using count() directly on the error logs array
+    const allLogs = await db.select()
+      .from(errorLogs)
+      .where(filters.length > 0 ? and(...filters) : undefined);
     
-    if (filters.length > 0) {
-      countQuery.where(and(...filters));
-    }
-    
-    const [{ count }] = await countQuery;
+    const count = allLogs.length;
     
     res.json({
       data: logs,
       pagination: {
         page,
         limit,
-        totalItems: Number(count),
-        totalPages: Math.ceil(Number(count) / limit)
+        totalItems: count,
+        totalPages: Math.ceil(count / limit)
       }
     });
   } catch (error) {
@@ -205,15 +202,14 @@ router.delete('/error-logs', async (req, res) => {
       });
     }
     
-    let deleteQuery = db.delete(errorLogs);
+    // Build up where conditions
+    const conditions = [];
     
     // Filter by IDs
     if (ids && Array.isArray(ids) && ids.length > 0) {
       const validIds = ids.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
       if (validIds.length > 0) {
-        deleteQuery = deleteQuery.where(
-          in_(errorLogs.id, validIds)
-        );
+        conditions.push(in_(errorLogs.id, validIds));
       }
     }
     
@@ -221,15 +217,21 @@ router.delete('/error-logs', async (req, res) => {
     if (olderThan) {
       const date = new Date();
       date.setDate(date.getDate() - parseInt(olderThan));
-      deleteQuery = deleteQuery.where(lte(errorLogs.createdAt, date));
+      conditions.push(lte(errorLogs.createdAt, date));
     }
     
     // Filter by resolution status
     if (allResolved) {
-      deleteQuery = deleteQuery.where(eq(errorLogs.resolved, true));
+      conditions.push(eq(errorLogs.resolved, true));
     }
     
-    await deleteQuery;
+    // Apply all conditions
+    if (conditions.length > 0) {
+      await db.delete(errorLogs).where(and(...conditions));
+    } else {
+      // This should not happen due to the earlier check, but just in case
+      return res.status(400).json({ message: 'No valid filter criteria provided' });
+    }
     
     res.json({ message: 'Error logs deleted successfully' });
   } catch (error) {
