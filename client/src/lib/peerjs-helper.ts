@@ -51,7 +51,7 @@ export class PeerJSConnection {
     try {
       this.remoteId = remoteUserId;
       
-      // Create PeerJS instance
+      // Create PeerJS instance with enhanced configuration
       this.peer = new Peer(this.peerId, {
         debug: this.debugMode ? 3 : 0,
         config: {
@@ -61,8 +61,16 @@ export class PeerJSConnection {
             { urls: 'stun:stun2.l.google.com:19302' },
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
-          ]
-        }
+            { urls: 'stun:global.stun.twilio.com:3478' }
+          ],
+          iceTransportPolicy: 'all',
+          sdpSemantics: 'unified-plan'
+        },
+        // Set less aggressive timeouts and connection settings
+        host: window.location.hostname,
+        path: '/peerjs',
+        secure: window.location.protocol === 'https:',
+        pingInterval: 5000,
       });
 
       // Listen for errors
@@ -71,13 +79,33 @@ export class PeerJSConnection {
         this.notifyError(`PeerJS error: ${err.type}`);
       });
       
-      // Get local media stream
+      // Get local media stream with enhanced constraints
       const mediaConstraints = {
-        audio: true,
-        video: callType === 'video'
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+        video: callType === 'video' ? {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: 'user'
+        } : false
       };
       
-      this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      try {
+        this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      } catch (mediaError) {
+        // If detailed constraints fail, try simple ones as fallback
+        this.debug('Detailed media constraints failed, trying fallback:', mediaError);
+        
+        const fallbackConstraints = {
+          audio: true,
+          video: callType === 'video'
+        };
+        
+        this.localStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+      }
       this.debug('Local stream obtained:', this.localStream.id);
       
       // Setup call handlers
