@@ -202,22 +202,31 @@ export class PeerJSConnection {
         debug: this.debugMode ? 3 : 0,
         config: {
           iceServers: [
+            // Google STUN servers
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:global.stun.twilio.com:3478' }
+            // Additional public STUN servers for redundancy
+            { urls: 'stun:global.stun.twilio.com:3478' },
+            { urls: 'stun:stun.stunprotocol.org:3478' },
+            { urls: 'stun:stun.voip.blackberry.com:3478' },
+            { urls: 'stun:stun.nextcloud.com:443' },
+            { urls: 'stun:openrelay.metered.ca:80' }
           ],
           iceTransportPolicy: 'all',
-          sdpSemantics: 'unified-plan'
+          sdpSemantics: 'unified-plan',
+          iceCandidatePoolSize: 10, // Increase candidate pool for better connectivity
+          bundlePolicy: 'max-bundle' // Improve connection reliability
         },
         // Set optimized connection settings
         host: window.location.hostname,
         path: '/peerjs',
         secure: window.location.protocol === 'https:',
         pingInterval: 3000, // More frequent pings
-        // Custom options - removing invalid retryTimes
+        // Custom options
+        token: this.connectionId, // Use connectionId for the token to help with debugging
       });
 
       // Listen for errors with retry logic

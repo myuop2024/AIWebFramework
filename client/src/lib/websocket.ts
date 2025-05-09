@@ -91,17 +91,38 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Match server configuration (path /socket.io with namespace /comms)
       console.log('Creating Socket.io connection with namespace /comms and path /socket.io');
       
-      // Explicitly construct the Socket.io client with the right URL and namespace
-      // Initialize Socket.io with the namespace directly, not with a URL
-      const socket = io('/comms', {
-        path: '/socket.io', // Must match the server's Socket.io path
-        transports: ['polling', 'websocket'], // Try polling first, then websocket for more reliable connection
-        reconnectionAttempts: 10, // Increased reconnection attempts
-        reconnectionDelay: 1000, // Start with a 1 second delay
-        timeout: 30000, // 30 seconds connection timeout (increased from 20s)
-        autoConnect: true,
-        forceNew: true // Force a new connection to avoid reusing problematic connections
-      });
+      // Create a function to handle socket creation with better error handling
+      const createSocket = () => {
+        try {
+          // Initialize Socket.io with the namespace directly
+          const socket = io('/comms', {
+            path: '/socket.io', // Must match the server's Socket.io path
+            transports: ['websocket', 'polling'], // Try websocket first, then fallback to polling
+            reconnectionAttempts: 15, // More reconnection attempts for resilience
+            reconnectionDelay: 1000, // Start with a 1 second delay
+            reconnectionDelayMax: 10000, // Maximum delay between reconnection attempts
+            timeout: 60000, // 60 seconds connection timeout for slower networks
+            autoConnect: true, 
+            forceNew: true, // Force a new connection to avoid reusing problematic connections
+            randomizationFactor: 0.5 // Add randomization to reconnection attempts
+          });
+          
+          return socket;
+        } catch (err) {
+          console.error('Error creating socket connection:', err);
+          setError(`Failed to create connection: ${err instanceof Error ? err.message : String(err)}`);
+          return null;
+        }
+      };
+      
+      // Create socket with error handling
+      const socket = createSocket();
+      
+      // If socket creation fails, abort
+      if (!socket) {
+        console.error('Failed to create socket, aborting connection');
+        return;
+      }
       
       // Debug connection details
       console.log('Socket.io connection details:', {
@@ -144,7 +165,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         }
       });
       
-      // Handle connection errors
+      // Handle connection errors with enhanced recovery
       socket.on('connect_error', (err) => {
         console.error('Socket.io connection error:', err);
         
@@ -163,8 +184,52 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         
         console.error('Socket.io connection error details:', errorDetails);
         
-        // Set a user-friendly error message
-        setError(`Connection error: ${errorDetails.message}`);
+        // Check for specific HTTP 502 errors
+        const is502Error = 
+          errorDetails.description === 502 || 
+          (errorDetails.message && errorDetails.message.includes('502')) ||
+          (errorDetails.context && 
+           typeof errorDetails.context === 'object' && 
+           errorDetails.context.chobitsuRequest && 
+           errorDetails.context.chobitsuRequest.description === 502);
+        
+        if (is502Error) {
+          console.log('Detected HTTP 502 error, implementing special recovery strategy');
+          
+          // For 502 errors, we'll force a new connection approach
+          // First, attempt to close the current connection if it exists
+          try {
+            if (!socket.disconnected) {
+              socket.disconnect();
+            }
+          } catch (closeErr) {
+            console.error('Error closing socket during 502 recovery:', closeErr);
+          }
+          
+          // Set a more specific error message
+          setError('Connection issue detected. Attempting to reconnect...');
+          
+          // Instead of letting socket.io handle reconnection automatically,
+          // we'll manually reconnect after a brief delay to give the server time to recover
+          setTimeout(() => {
+            try {
+              // Force reconnection with a different transport order
+              // This can help bypass issues with the current transport method
+              socket.io.opts.transports = ['websocket'];
+              socket.connect();
+              
+              console.log('Manual reconnection attempt initiated after 502 error');
+            } catch (reconnectErr) {
+              console.error('Error during manual reconnection:', reconnectErr);
+              
+              // If manual reconnection fails, provide user with instructions
+              setError('Connection issues persist. You may need to refresh the page.');
+            }
+          }, 3000); // 3 second delay before reconnection attempt
+        } else {
+          // For other errors, use standard error handling
+          setError(`Connection error: ${errorDetails.message}`);
+        }
       });
       
       // Add more detailed connection event logging
