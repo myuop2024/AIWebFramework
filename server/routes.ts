@@ -120,10 +120,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`New connection established to /comms namespace, socketId: ${socket.id}`);
     let userId: number | null = null;
     
-    // Authentication
+    // Authentication with improved user tracking
     socket.on('auth', (data) => {
       console.log(`Socket.io auth event received, userId: ${data.userId}`);
       userId = data.userId;
+      
+      // Store userId in socket.data for reference in other event handlers
+      socket.data.userId = userId;
       
       // Store the user's socket connection
       onlineUsers.set(userId, socket.id);
@@ -296,17 +299,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Handle disconnection
-    socket.on('disconnect', () => {
+    // Handle disconnection with improved logging
+    socket.on('disconnect', (reason) => {
+      console.log(`Socket ${socket.id} disconnected, reason: ${reason}`);
+      
       if (userId) {
-        // Remove from online users
-        onlineUsers.delete(userId);
+        console.log(`User ${userId} disconnected from socket ${socket.id}`);
         
-        // Broadcast offline status
-        socket.broadcast.emit('user:status', {
-          userId,
-          status: 'offline'
-        });
+        // Check if the user has other active connections
+        const stillHasActiveConnection = Array.from(commsNamespace.sockets.values()).some(
+          s => s.id !== socket.id && s.data.userId === userId
+        );
+        
+        // Only remove from online users if no other active connections
+        if (!stillHasActiveConnection) {
+          console.log(`User ${userId} has no other active connections, marking as offline`);
+          onlineUsers.delete(userId);
+          
+          // Broadcast offline status
+          socket.broadcast.emit('user:status', {
+            userId,
+            status: 'offline'
+          });
+        } else {
+          console.log(`User ${userId} still has other active connections, keeping online status`);
+        }
       }
     });
   });

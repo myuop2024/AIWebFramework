@@ -246,21 +246,18 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       console.log(`Using transport order: [${transports.join(', ')}]`);
       
       // Initialize Socket.io with the namespace directly and enhanced options
-      // Note: We're setting autoConnect to false to manually manage the connection
+      // Use fewer options to reduce complexity and potential conflicts
       const socket = io('/comms', {
         path: '/socket.io',
         transports,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
         timeout: 20000,
         autoConnect: false,  // Important: We'll manually connect after setup
-        forceNew: true,
-        randomizationFactor: 0.5,
         reconnection: false,  // We'll handle reconnection ourselves
-        upgrade: true,
-        rememberUpgrade: true,
-        query: { clientTime: Date.now() }
+        forceNew: true,      // Create a new connection each time
+        query: { 
+          userId: userId,    // Send userId with initial connection
+          clientTime: Date.now() 
+        }
       });
       
       // Debug connection details
