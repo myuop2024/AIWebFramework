@@ -9,6 +9,8 @@ import RecentReports from "@/components/dashboard/recent-reports";
 import QuickAccess from "@/components/dashboard/quick-access";
 import QRCode from "@/components/dashboard/qr-code";
 import LatestNews from "@/components/dashboard/latest-news";
+import MainLayout from "@/components/layout/main-layout";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -45,36 +47,40 @@ export default function Dashboard() {
   }
 
   return (
-    <>
-      {/* Alert Banner */}
-      <AlertBanner />
+    <AuthGuard>
+      <MainLayout>
+        <div className="container mx-auto px-4 py-6">
+          {/* Alert Banner */}
+          <AlertBanner />
 
-      {/* Status Cards */}
-      <StatusCards />
+          {/* Status Cards */}
+          <StatusCards />
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Upcoming Events */}
-          <UpcomingEvents />
+          {/* Main Content Area */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Upcoming Events */}
+              <UpcomingEvents />
 
-          {/* Recent Reports */}
-          <RecentReports />
+              {/* Recent Reports */}
+              <RecentReports />
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Quick Access */}
+              <QuickAccess />
+
+              {/* QR Code */}
+              <QRCode />
+
+              {/* Latest News */}
+              <LatestNews />
+            </div>
+          </div>
         </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Quick Access */}
-          <QuickAccess />
-
-          {/* QR Code */}
-          <QRCode />
-
-          {/* Latest News */}
-          <LatestNews />
-        </div>
-      </div>
-    </>
+      </MainLayout>
+    </AuthGuard>
   );
 }
