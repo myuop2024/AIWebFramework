@@ -524,8 +524,7 @@ export const insertErrorLogSchema = createInsertSchema(errorLogs)
     resolutionNotes: true,
   });
 
-export type ErrorLog = typeof errorLogs.$inferSelect;
-export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
+//ErrorLog types moved to line 722
 
 export type InsertFaq = z.infer<typeof insertFaqSchema>;
 export type Faq = typeof faqEntries.$inferSelect;
