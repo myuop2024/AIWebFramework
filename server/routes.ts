@@ -102,20 +102,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const onlineUsers = new Map();
   
   // Communication namespace
+  console.log('Setting up Socket.io namespace: /comms');
   const commsNamespace = io.of('/comms');
+
+  // Log all namespace connection attempts
+  commsNamespace.use((socket, next) => {
+    console.log(`Socket.io connection attempt to /comms namespace from ${socket.handshake.address}`);
+    next();
+  });
   
   commsNamespace.on('connection', (socket) => {
+    console.log(`New connection established to /comms namespace, socketId: ${socket.id}`);
     let userId: number | null = null;
     
     // Authentication
     socket.on('auth', (data) => {
+      console.log(`Socket.io auth event received, userId: ${data.userId}`);
       userId = data.userId;
       
       // Store the user's socket connection
       onlineUsers.set(userId, socket.id);
+      console.log(`User ${userId} added to online users map, socket: ${socket.id}`);
       
       // Join a personal room for direct messages
       socket.join(`user:${userId}`);
+      console.log(`User ${userId} joined room: user:${userId}`);
       
       // Notify user of successful connection
       socket.emit('notification', {
