@@ -279,7 +279,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         }
       });
       
-      // Handle PeerJS signaling
+      // Handle PeerJS signaling with enhanced error handling
       socket.on('peerjs-signal', async (data) => {
         try {
           console.log('Received PeerJS signal from user', data.senderId, 'type:', data.type || 'unknown');
@@ -300,6 +300,64 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         } catch (err) {
           console.error('PeerJS signaling error:', err);
           setError('Failed to establish call connection');
+        }
+      });
+      
+      // Handle PeerJS signal errors
+      socket.on('peerjs-signal-error', (data) => {
+        console.error('PeerJS signal error:', data);
+        
+        // Notify user of error based on type
+        if (data.type === 'receiver-offline') {
+          // User is offline
+          if (activeCall) {
+            const updatedCall: CallInfo = {
+              ...activeCall,
+              status: 'missed',
+              endTime: new Date()
+            };
+            
+            setActiveCall(updatedCall);
+            
+            if (onCallState) {
+              onCallState(updatedCall);
+            }
+          }
+          
+          // Notify error state
+          setError(`Call failed: User is offline`);
+          
+          // Clean up call resources
+          if (peerJSRef.current) {
+            peerJSRef.current.endCall();
+          }
+          setLocalStream(null);
+          setRemoteStream(null);
+        } else if (data.type === 'forward-failed') {
+          // Signal forwarding failed
+          setError(`Call failed: Connection error`);
+          
+          // End the call
+          if (activeCall) {
+            const updatedCall: CallInfo = {
+              ...activeCall,
+              status: 'ended',
+              endTime: new Date()
+            };
+            
+            setActiveCall(updatedCall);
+            
+            if (onCallState) {
+              onCallState(updatedCall);
+            }
+          }
+          
+          // Clean up call resources
+          if (peerJSRef.current) {
+            peerJSRef.current.endCall();
+          }
+          setLocalStream(null);
+          setRemoteStream(null);
         }
       });
       

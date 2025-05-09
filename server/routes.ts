@@ -105,6 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Communication namespace
   console.log('Setting up Socket.io namespace: /comms');
   const commsNamespace = io.of('/comms');
+  
+  // Setup PeerJS signaling through Socket.io
+  // This avoids needing a separate PeerJS server
+  console.log('Setting up PeerJS signaling through Socket.io');
 
   // Log all namespace connection attempts
   commsNamespace.use((socket, next) => {
@@ -210,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // PeerJS is now used for all WebRTC communications
     
-    // Signal exchange for PeerJS
+    // Signal exchange for PeerJS with enhanced error handling
     socket.on('peerjs-signal', (data) => {
       const { receiverId } = data;
       
@@ -219,17 +223,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       
-      // Forward PeerJS signaling data to the peer
-      socket.to(`user:${receiverId}`).emit('peerjs-signal', {
-        ...data,
-        senderId: userId
-      });
+      // Validate receiverId
+      if (!receiverId || typeof receiverId !== 'number') {
+        socket.emit('error', { message: 'Invalid receiver ID', details: 'Missing or invalid receiverId' });
+        return;
+      }
       
-      console.debug('PeerJS signal forwarded:', {
-        from: userId,
-        to: receiverId,
-        type: data.type || 'unknown'
-      });
+      // Check if the receiver is online
+      const receiverSocketId = onlineUsers.get(receiverId);
+      if (!receiverSocketId) {
+        // Receiver is offline, notify sender
+        socket.emit('peerjs-signal-error', {
+          type: 'receiver-offline',
+          receiverId,
+          originalSignal: data.type
+        });
+        return;
+      }
+      
+      // Forward PeerJS signaling data to the peer with detailed logging
+      try {
+        socket.to(`user:${receiverId}`).emit('peerjs-signal', {
+          ...data,
+          senderId: userId
+        });
+        
+        console.debug('PeerJS signal forwarded:', {
+          from: userId,
+          to: receiverId,
+          type: data.type || 'unknown',
+          connectionId: data.connectionId || 'none'
+        });
+      } catch (err) {
+        console.error('Failed to forward PeerJS signal:', err);
+        socket.emit('peerjs-signal-error', {
+          type: 'forward-failed',
+          receiverId,
+          originalSignal: data.type
+        });
+      }
     });
     
     // Call responses (accept/reject)
