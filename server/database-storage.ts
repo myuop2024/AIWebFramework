@@ -1434,6 +1434,26 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
+  async resolveErrorLog(id: number, resolvedBy: number, notes?: string): Promise<ErrorLog | undefined> {
+    try {
+      const [updated] = await db
+        .update(errorLogs)
+        .set({
+          resolved: true,
+          resolvedAt: new Date(),
+          resolvedBy: resolvedBy,
+          resolutionNotes: notes || null
+        })
+        .where(eq(errorLogs.id, id))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error('Error resolving error log:', error);
+      return undefined;
+    }
+  }
+  
   async deleteErrorLogs(criteria: ErrorLogDeleteCriteria): Promise<number> {
     try {
       let query = db.delete(errorLogs);

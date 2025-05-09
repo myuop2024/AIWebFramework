@@ -524,8 +524,8 @@ export const insertErrorLogSchema = createInsertSchema(errorLogs)
     resolutionNotes: true,
   });
 
-export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
 export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
 
 export type InsertFaq = z.infer<typeof insertFaqSchema>;
 export type Faq = typeof faqEntries.$inferSelect;
@@ -718,3 +718,29 @@ export type InsertPhotoApproval = z.infer<typeof insertPhotoApprovalSchema>;
 // System setting types
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+
+// Error log types
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
+
+// Error log query options
+export interface ErrorLogQueryOptions {
+  status?: 'open' | 'resolved';
+  level?: string;
+  source?: string;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+  page?: number;
+  limit?: number;
+  userId?: number;
+}
+
+// Error log delete criteria
+export interface ErrorLogDeleteCriteria {
+  ids?: number[];
+  status?: 'open' | 'resolved';
+  level?: string;
+  source?: string;
+  olderThan?: Date;
+}
