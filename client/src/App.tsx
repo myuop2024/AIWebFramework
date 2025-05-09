@@ -37,6 +37,7 @@ import ReportsApproval from "@/pages/supervisor/reports-approval";
 import ScheduleMeeting from "@/pages/supervisor/schedule-meeting";
 import StationSchedulePage from "@/pages/roving/station-schedule";
 import AreaReportsPage from "@/pages/roving/area-reports";
+import ErrorLogsPage from "@/pages/admin/error-logs";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -82,6 +83,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
       
       {/* Supervisor Routes */}
       <RoleProtectedRoute 

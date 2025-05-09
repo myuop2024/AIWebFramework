@@ -29,6 +29,7 @@ import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
 import permissionRoutes from './routes/permission-routes';
 import supervisorRoutes from './routes/supervisor-routes';
 import errorLogRoutes from './routes/error-logs';
+import adminErrorLogRoutes from './routes/admin-error-logs';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
@@ -2253,6 +2254,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register error logging routes
   app.use('/api', errorLogRoutes);
+  
+  // Register admin error logs routes
+  app.use('/api/admin', adminErrorLogRoutes);
   
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());
