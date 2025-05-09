@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCommunication, type ChatMessage, type UserStatus, type FileInfo, type CallInfo } from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";

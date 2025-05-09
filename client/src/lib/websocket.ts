@@ -47,7 +47,7 @@ export interface CallInfo {
 
 // Communication hook options
 interface UseCommunicationOptions {
-  userId?: number | null;
+  userId?: number | undefined;
   onMessage?: (message: ChatMessage) => void;
   onStatusChange?: (status: UserStatus) => void;
   onCallState?: (callInfo: CallInfo) => void;
@@ -816,7 +816,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         onMessage({
           id: uuidv4(),
           type: 'file',
-          senderId: userId,
+          senderId: userId || undefined,
           receiverId,
           content: `You shared a file: ${file.name}`,
           timestamp: new Date(),

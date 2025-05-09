@@ -104,7 +104,7 @@ export class PeerJSConnection {
       return stream;
     } catch (err) {
       console.error('Failed to initialize call:', err);
-      this.notifyError(`Could not establish call: ${err.message || err}`);
+      this.notifyError(`Could not establish call: ${err instanceof Error ? err.message : String(err)}`);
       throw err;
     }
   }
@@ -578,7 +578,7 @@ export class PeerJSConnection {
         hasMediaConnection: Boolean(this.mediaConnection),
         hasLocalStream: Boolean(this.localStream),
         localStreamTracks: this.localStream ? this.localStream.getTracks().length : 0,
-        peerConnectionState: this.peer?.connectionState || 'none',
+        peerConnectionsCount: this.peer && this.peer.connections ? Object.keys(this.peer.connections).length : 0,
         retryCount: this.retryCount,
         hasTimeout: Boolean(this.connectionAttemptTimeout)
       };
