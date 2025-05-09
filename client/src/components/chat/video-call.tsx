@@ -3,6 +3,7 @@ import { Phone, Video, Mic, MicOff, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCommunication } from '@/lib/websocket-peerjs';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface VideoCallProps {
   receiverId: number;
@@ -21,10 +22,12 @@ const VideoCall: React.FC<VideoCallProps> = ({
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(callType === 'video');
+  const [isConnecting, setIsConnecting] = useState(true);
   const { toast } = useToast();
   
-  // Get user ID from globally stored auth data
-  const userId = 2; // This should be replaced with actual logged in user ID
+  // Get user ID from auth context
+  const { user } = useAuth();
+  const userId = user?.id;
   
   // Initialize useCommunication hook
   const {
@@ -42,6 +45,38 @@ const VideoCall: React.FC<VideoCallProps> = ({
     }
   });
   
+  // Initiate or handle call on component mount
+  useEffect(() => {
+    const initializeCall = async () => {
+      setIsConnecting(true);
+      
+      try {
+        // Initialization happens automatically through the useCommunication hook
+        console.log(`${isInitiator ? 'Initiating' : 'Receiving'} ${callType} call with user ${receiverId}`);
+        
+        // The connection will be established through the PeerJS signaling mechanism
+        setTimeout(() => {
+          setIsConnecting(false);
+        }, 1500);
+      } catch (err) {
+        console.error('Failed to initialize call:', err);
+        toast({
+          title: 'Call Error',
+          description: 'Failed to initialize call connection',
+          variant: 'destructive'
+        });
+        onEndCall();
+      }
+    };
+    
+    initializeCall();
+    
+    // Clean up on unmount
+    return () => {
+      endCall();
+    };
+  }, [receiverId, callType, isInitiator, onEndCall]);
+  
   // Set up media stream refs
   useEffect(() => {
     if (localStream && localVideoRef.current) {
@@ -50,6 +85,7 @@ const VideoCall: React.FC<VideoCallProps> = ({
     
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
+      setIsConnecting(false);
     }
   }, [localStream, remoteStream]);
   

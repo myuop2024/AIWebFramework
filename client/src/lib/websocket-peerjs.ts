@@ -281,8 +281,21 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Handle PeerJS signaling
       socket.on('peerjs-signal', async (data) => {
         try {
-          // Process the PeerJS signal - we'll rely on the PeerJSConnection to handle this
-          console.log('Received PeerJS signal', data.senderId);
+          console.log('Received PeerJS signal from user', data.senderId, 'type:', data.type || 'unknown');
+          
+          // Forward the signal to the PeerJS connection helper if it exists
+          if (peerJSRef.current) {
+            peerJSRef.current.handleSignal(data);
+          } else {
+            console.warn('Received PeerJS signal but no active PeerJS connection exists');
+            
+            // If we get a signal but don't have a PeerJS connection and we have an active call
+            // it might be necessary to initialize the connection
+            if (activeCall && !localStream) {
+              console.log('Attempting to initialize peer connection for incoming call');
+              initializePeerConnection(data.senderId, activeCall.callType, false);
+            }
+          }
         } catch (err) {
           console.error('PeerJS signaling error:', err);
           setError('Failed to establish call connection');

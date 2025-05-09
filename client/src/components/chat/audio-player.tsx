@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ringtoneSrc from '@assets/sounds/ringtone.mp3';
 
 interface AudioPlayerProps {
   play: boolean;
@@ -13,30 +14,51 @@ interface AudioPlayerProps {
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ 
   play, 
   loop = false, 
-  src = "/sounds/ringtone.ogg" 
+  src = ringtoneSrc // Default to the imported ringtone
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [audioLoaded, setAudioLoaded] = useState(false);
 
   // Create audio element on component mount
   useEffect(() => {
-    // Create audio element
-    const audio = new Audio(src);
-    audio.loop = loop;
-    audioRef.current = audio;
+    try {
+      // Create audio element
+      const audio = new Audio(src);
+      audio.loop = loop;
+      audio.preload = 'auto';
 
-    // Clean up on unmount
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-    };
+      // Handle audio load events
+      audio.oncanplaythrough = () => {
+        setAudioLoaded(true);
+        console.debug('Audio loaded successfully');
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio loading error:', e);
+        setAudioLoaded(false);
+      };
+
+      audioRef.current = audio;
+
+      // Clean up on unmount
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.oncanplaythrough = null;
+          audioRef.current.onerror = null;
+          audioRef.current = null;
+        }
+      };
+    } catch (error) {
+      console.error('Error initializing audio:', error);
+      setAudioLoaded(false);
+    }
   }, [src, loop]);
 
   // Handle play state changes
   useEffect(() => {
-    if (!audioRef.current) return;
+    if (!audioRef.current || !audioLoaded) return;
 
     if (play && !isPlaying) {
       // Try to play the sound
@@ -47,6 +69,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         playPromise
           .then(() => {
             setIsPlaying(true);
+            console.debug('Audio playback started successfully');
           })
           .catch(error => {
             console.warn('Audio playback failed:', error);
@@ -63,8 +86,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioRef.current.currentTime = 0;
       }
       setIsPlaying(false);
+      console.debug('Audio playback stopped');
     }
-  }, [play, isPlaying, loop]);
+  }, [play, isPlaying, loop, audioLoaded]);
 
   // This component doesn't render anything visible
   return null;
