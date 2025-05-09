@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import DynamicRegister from "@/pages/dynamic-register";
@@ -58,10 +58,10 @@ function Router() {
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/documents" component={Documents} />
       <ProtectedRoute path="/polling-stations" component={PollingStations} />
-      <ProtectedRoute path="/polling-stations/create" component={() => import("@/pages/polling-stations/create").then(module => module.default)} />
-      <ProtectedRoute path="/polling-stations/import" component={() => import("@/pages/polling-stations/import").then(module => module.default)} />
-      <ProtectedRoute path="/polling-stations/map" component={() => import("@/pages/polling-stations/map").then(module => module.default)} />
-      <ProtectedRoute path="/polling-stations/export" component={() => import("@/pages/polling-stations/export").then(module => module.default)} />
+      <ProtectedRoute path="/polling-stations/create" component={React.lazy(() => import("@/pages/polling-stations/create"))} />
+      <ProtectedRoute path="/polling-stations/import" component={React.lazy(() => import("@/pages/polling-stations/import"))} />
+      <ProtectedRoute path="/polling-stations/map" component={React.lazy(() => import("@/pages/polling-stations/map"))} />
+      <ProtectedRoute path="/polling-stations/export" component={React.lazy(() => import("@/pages/polling-stations/export"))} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />

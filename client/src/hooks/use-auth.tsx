@@ -57,20 +57,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation<User, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Login failed');
+      // Try the standard auth endpoint first
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(credentials),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Login failed');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        // If the standard endpoint fails, try the alternative endpoint
+        console.log('Trying alternative login endpoint');
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(credentials),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Login failed');
+        }
+        
+        return await res.json();
       }
-      
-      return res.json();
     },
     onSuccess: (userData: User) => {
       queryClient.setQueryData(['/api/user'], userData);
@@ -90,20 +110,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation<User, Error, RegisterData>({
     mutationFn: async (userData: RegisterData) => {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Registration failed');
+      try {
+        // Try the standard auth endpoint first
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Registration failed');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        // If the standard endpoint fails, try the alternative endpoint
+        console.log('Trying alternative register endpoint');
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || 'Registration failed');
+        }
+        
+        return await res.json();
       }
-      
-      return res.json();
     },
     onSuccess: (userData: User) => {
       queryClient.setQueryData(['/api/user'], userData);
@@ -123,12 +163,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation<void, Error, void>({
     mutationFn: async () => {
-      const res = await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-      
-      if (!res.ok) {
-        throw new Error('Logout failed');
+      try {
+        // Try the standard auth endpoint first
+        const res = await fetch('/api/auth/logout', {
+          method: 'POST',
+        });
+        
+        if (!res.ok) {
+          throw new Error('Logout failed');
+        }
+      } catch (error) {
+        // If the standard endpoint fails, try the alternative endpoint
+        console.log('Trying alternative logout endpoint');
+        const res = await fetch('/api/logout', {
+          method: 'POST',
+        });
+        
+        if (!res.ok) {
+          throw new Error('Logout failed');
+        }
       }
     },
     onSuccess: () => {
