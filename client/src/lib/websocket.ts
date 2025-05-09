@@ -82,7 +82,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   // File transfer state
   const [fileTransfers, setFileTransfers] = useState<Map<string, FileInfo>>(new Map());
   
-  // Connect to the Socket.io server
+  // Connect to the Socket.io server with improved error handling
   const connect = useCallback(() => {
     if (!userId) return;
     
@@ -94,17 +94,34 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Create a function to handle socket creation with better error handling
       const createSocket = () => {
         try {
-          // Initialize Socket.io with the namespace directly
+          // Determine best transport order based on browser capabilities
+          // Some environments perform better with specific transport orders
+          const supportsWebSockets = 'WebSocket' in window && 
+                                    window.WebSocket.CLOSING === 2; // Check for proper WebSocket implementation
+          
+          // Determine the appropriate transport order based on capabilities and previous errors
+          const transports = supportsWebSockets ? 
+            ['websocket', 'polling'] : // Prefer WebSocket if properly supported
+            ['polling', 'websocket']; // Fall back to polling first otherwise
+          
+          console.log(`Using transport order: [${transports.join(', ')}]`);
+          
+          // Initialize Socket.io with the namespace directly and enhanced options
           const socket = io('/comms', {
             path: '/socket.io', // Must match the server's Socket.io path
-            transports: ['websocket', 'polling'], // Try websocket first, then fallback to polling
-            reconnectionAttempts: 15, // More reconnection attempts for resilience
+            transports, // Use determined transport order
+            reconnectionAttempts: 20, // Increased reconnection attempts for better resilience
             reconnectionDelay: 1000, // Start with a 1 second delay
-            reconnectionDelayMax: 10000, // Maximum delay between reconnection attempts
-            timeout: 60000, // 60 seconds connection timeout for slower networks
-            autoConnect: true, 
+            reconnectionDelayMax: 15000, // Maximum delay between reconnection attempts
+            timeout: 90000, // 90 seconds connection timeout for slower networks
+            autoConnect: true,
             forceNew: true, // Force a new connection to avoid reusing problematic connections
-            randomizationFactor: 0.5 // Add randomization to reconnection attempts
+            randomizationFactor: 0.5, // Add randomization to reconnection attempts
+            reconnection: true, // Explicitly enable reconnection
+            upgrade: true, // Enable transport upgrades
+            rememberUpgrade: true, // Remember successful transport upgrades
+            extraHeaders: {}, // No extra headers needed, but included for future extension
+            query: { clientTime: Date.now() } // Add timestamp to help with debugging
           });
           
           return socket;
@@ -155,13 +172,56 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         console.log('Auth event sent');
       });
       
-      // Handle disconnect
-      socket.on('disconnect', () => {
+      // Handle disconnect with enhanced reconnection
+      socket.on('disconnect', (reason) => {
+        console.log('Socket.io disconnected, reason:', reason);
         setIsConnected(false);
         
         // Clean up any active calls
         if (activeCall) {
           endCall();
+        }
+        
+        // Handle specific disconnect reasons with custom recovery strategies
+        // See: https://socket.io/docs/v4/client-socket-instance/#disconnect
+        if (reason === 'io server disconnect') {
+          // Server has forcefully disconnected us, we need to manually reconnect
+          console.log('Server forced disconnect, attempting manual reconnection...');
+          
+          // Add delay to avoid immediate reconnection attempts which may fail
+          setTimeout(() => {
+            try {
+              socket.connect();
+            } catch (reconnectErr) {
+              console.error('Error during manual reconnection after server disconnect:', reconnectErr);
+              setError('Connection lost. Please refresh the page to reconnect.');
+            }
+          }, 2000); // 2 second delay
+        } else if (reason === 'transport error') {
+          // Transport errors may need special handling
+          console.log('Transport error detected, attempting to switch transports');
+          
+          // Try to recover with different transport
+          if (socket.io.opts && socket.io.opts.transports) {
+            const currentTransports = socket.io.opts.transports as string[];
+            
+            // Check if websocket is the first transport
+            if (currentTransports.indexOf('websocket') === 0) {
+              console.log('Switching from WebSocket-first to polling-first transport');
+              socket.io.opts.transports = ['polling', 'websocket'] as any;
+            } else {
+              console.log('Switching from polling-first to WebSocket-only transport');
+              socket.io.opts.transports = ['websocket'] as any;
+            }
+          }
+          
+          // Socket.io will try to reconnect automatically for "transport error"
+        } else if (reason === 'ping timeout') {
+          // Ping timeout may indicate network instability
+          console.log('Ping timeout detected, connection may be unstable');
+          setError('Connection unstable. Attempting to reconnect...');
+          
+          // Socket.io will try to reconnect automatically for "ping timeout"
         }
       });
       

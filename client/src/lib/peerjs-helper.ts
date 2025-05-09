@@ -565,55 +565,142 @@ export class PeerJSConnection {
   /**
    * End the call and clean up resources with enhanced cleanup
    */
+  /**
+   * End the call and clean up resources with comprehensive resource management
+   */
   endCall(): void {
-    this.debug('Ending call');
+    this.debug('Ending call and cleaning up resources');
     
-    // Clear any pending timeouts
-    if (this.connectionAttemptTimeout) {
-      clearTimeout(this.connectionAttemptTimeout);
-      this.connectionAttemptTimeout = null;
-    }
-    
-    // Close the media connection
-    if (this.mediaConnection) {
-      try {
-        this.mediaConnection.close();
-      } catch (err) {
-        this.debug('Error closing media connection:', err);
+    try {
+      // Store current state before cleanup for better debugging
+      const currentState = {
+        hasPeer: Boolean(this.peer),
+        hasMediaConnection: Boolean(this.mediaConnection),
+        hasLocalStream: Boolean(this.localStream),
+        localStreamTracks: this.localStream ? this.localStream.getTracks().length : 0,
+        peerConnectionState: this.peer?.connectionState || 'none',
+        retryCount: this.retryCount,
+        hasTimeout: Boolean(this.connectionAttemptTimeout)
+      };
+      
+      this.debug('Current state before cleanup:', currentState);
+      
+      // Clear any pending timeouts first
+      if (this.connectionAttemptTimeout) {
+        clearTimeout(this.connectionAttemptTimeout);
+        this.connectionAttemptTimeout = null;
       }
-      this.mediaConnection = null;
-    }
-    
-    // Stop local stream
-    if (this.localStream) {
-      try {
-        this.localStream.getTracks().forEach(track => {
+      
+      // Handle the media connection cleanup with enhanced error handling
+      if (this.mediaConnection) {
+        try {
+          // Remove all listeners before closing to prevent stray events
+          this.mediaConnection.removeAllListeners('stream');
+          this.mediaConnection.removeAllListeners('close');
+          this.mediaConnection.removeAllListeners('error');
+          
+          // Close the connection
+          this.mediaConnection.close();
+          this.debug('Media connection closed successfully');
+        } catch (mediaErr) {
+          console.error('Error closing media connection:', mediaErr);
+        } finally {
+          this.mediaConnection = null;
+        }
+      }
+      
+      // Clean up local stream tracks individually with error handling
+      if (this.localStream) {
+        try {
+          const tracks = this.localStream.getTracks();
+          this.debug(`Stopping ${tracks.length} tracks from local stream`);
+          
+          tracks.forEach((track, index) => {
+            try {
+              // Check if track is already stopped
+              if (track.readyState !== 'ended') {
+                track.stop();
+                this.debug(`Stopped track ${index} (${track.kind})`);
+              } else {
+                this.debug(`Track ${index} (${track.kind}) already ended`);
+              }
+            } catch (trackErr) {
+              console.error(`Error stopping track ${index}:`, trackErr);
+            }
+          });
+          
+          // Ensure all tracks are properly released
           try {
-            track.stop();
-          } catch (trackErr) {
-            this.debug('Error stopping media track:', trackErr);
+            tracks.forEach(track => {
+              try {
+                // This method exists in some browsers to properly detach tracks
+                if (typeof this.localStream?.removeTrack === 'function') {
+                  this.localStream?.removeTrack(track);
+                }
+              } catch (removeErr) {
+                // This might fail in some browsers, but we still try
+                this.debug(`Could not remove track from stream:`, removeErr);
+              }
+            });
+          } catch (tracksErr) {
+            this.debug('Error iterating through tracks for removal:', tracksErr);
           }
-        });
-      } catch (streamErr) {
-        this.debug('Error stopping local stream:', streamErr);
+          
+        } catch (streamErr) {
+          console.error('Error cleaning up local stream:', streamErr);
+        } finally {
+          this.localStream = null;
+        }
       }
-      this.localStream = null;
-    }
-    
-    // Close the PeerJS connection
-    if (this.peer) {
-      try {
-        this.peer.destroy();
-      } catch (peerErr) {
-        this.debug('Error destroying peer connection:', peerErr);
+      
+      // Clean up the PeerJS connection with enhanced error handling
+      if (this.peer) {
+        try {
+          // Remove all listeners before destroying
+          this.peer.removeAllListeners('open');
+          this.peer.removeAllListeners('call');
+          this.peer.removeAllListeners('error');
+          this.peer.removeAllListeners('connection');
+          this.peer.removeAllListeners('disconnected');
+          
+          // Destroy the peer connection
+          this.peer.destroy();
+          this.debug('Peer connection destroyed successfully');
+        } catch (peerErr) {
+          console.error('Error destroying peer connection:', peerErr);
+        } finally {
+          this.peer = null;
+        }
       }
-      this.peer = null;
+      
+      // Reset all state variables and callbacks
+      this.retryCount = 0;
+      this.peerCreationInProgress = false;
+      this.remoteStreamCallback = null;
+      
+      // Release the remote ID reference
+      this.remoteId = null;
+      
+      // Generate a new connection ID for any future connections to avoid stale references
+      this.connectionId = uuidv4();
+      
+      this.debug('Call resources cleaned up successfully');
+      
+      // Force garbage collection if the browser supports it (rare, but worth trying)
+      // Note: window.gc is non-standard and primarily available in debug builds of browsers
+      // TypeScript doesn't know about it so we have to use the any type
+      const win = window as any;
+      if (typeof win.gc === 'function') {
+        try {
+          win.gc();
+          this.debug('Manual garbage collection triggered');
+        } catch (gcErr) {
+          this.debug('Manual garbage collection failed:', gcErr);
+        }
+      }
+    } catch (err) {
+      console.error('Unexpected error during call cleanup:', err);
     }
-    
-    // Reset state and callbacks
-    this.retryCount = 0;
-    this.peerCreationInProgress = false;
-    this.remoteStreamCallback = null;
   }
   
   /**
