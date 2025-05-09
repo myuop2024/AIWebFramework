@@ -90,24 +90,52 @@ function ErrorLogsPage() {
   // Mutation for resolving an error log
   const resolveMutation = useMutation({
     mutationFn: async ({ id, notes }: { id: number; notes: string }) => {
-      const res = await apiRequest('POST', `/api/admin/error-logs/${id}/resolve`, {
-        notes
-      });
-      return await res.json();
+      try {
+        const res = await apiRequest('POST', `/api/admin/error-logs/${id}/resolve`, {
+          notes
+        });
+        return await res.json();
+      } catch (error) {
+        console.error('Error resolving log:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/error-logs'] });
       setIsDialogOpen(false);
+    },
+    onError: (error) => {
+      console.error('Failed to resolve error log:', error);
+      // Display an error toast
+      toast({
+        title: "Error",
+        description: "Failed to mark error as resolved. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
   // Mutation for deleting error logs
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/admin/error-logs/${id}`);
+      try {
+        await apiRequest('DELETE', `/api/admin/error-logs/${id}`);
+      } catch (error) {
+        console.error('Error deleting log:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/error-logs'] });
+    },
+    onError: (error) => {
+      console.error('Failed to delete error log:', error);
+      // Display an error toast
+      toast({
+        title: "Error",
+        description: "Failed to delete error log. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -222,8 +250,17 @@ function ErrorLogsPage() {
 
   // Handle viewing error details
   const handleViewDetails = (log: ErrorLog) => {
-    setSelectedLog(log);
-    setIsDialogOpen(true);
+    try {
+      setSelectedLog(log);
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error viewing log details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open error details. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (error) {
@@ -465,8 +502,17 @@ function ErrorLogsPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                if (confirm('Are you sure you want to delete this error log?')) {
-                                  deleteMutation.mutate(log.id);
+                                try {
+                                  if (window.confirm('Are you sure you want to delete this error log?')) {
+                                    deleteMutation.mutate(log.id);
+                                  }
+                                } catch (error) {
+                                  console.error('Error during delete operation:', error);
+                                  toast({
+                                    title: "Error",
+                                    description: "Failed to delete error log. Please try again.",
+                                    variant: "destructive",
+                                  });
                                 }
                               }}
                               title="Delete Log"
@@ -706,10 +752,25 @@ function ErrorLogsPage() {
                 </Button>
                 <Button 
                   onClick={() => {
-                    resolveMutation.mutate({
-                      id: selectedLog.id,
-                      notes: (document.getElementById('resolution-notes') as HTMLInputElement)?.value || ''
-                    });
+                    try {
+                      if (!selectedLog) {
+                        throw new Error('No error log selected');
+                      }
+                      const notesElement = document.getElementById('resolution-notes') as HTMLInputElement;
+                      const notes = notesElement?.value || '';
+                      
+                      resolveMutation.mutate({
+                        id: selectedLog.id,
+                        notes: notes
+                      });
+                    } catch (error) {
+                      console.error('Error resolving log:', error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to mark error as resolved. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
                   }}
                   disabled={resolveMutation.isPending}
                 >

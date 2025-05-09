@@ -19,25 +19,25 @@ router.get('/error-logs', async (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 100); // Limit max records to 100
     const offset = (page - 1) * limit;
-    
+
     // Parse filter parameters
     const filters: any[] = [];
-    
+
     // Source filter
     if (req.query.source) {
       filters.push(eq(errorLogs.source, req.query.source as string));
     }
-    
+
     // Level filter
     if (req.query.level) {
       filters.push(eq(errorLogs.level, req.query.level as string));
     }
-    
+
     // User ID filter
     if (req.query.userId) {
       filters.push(eq(errorLogs.userId, parseInt(req.query.userId as string)));
     }
-    
+
     // Resolution status filter
     if (req.query.resolved === 'true') {
       filters.push(isNotNull(errorLogs.resolved));
@@ -48,16 +48,16 @@ router.get('/error-logs', async (req, res) => {
         eq(errorLogs.resolved, false)
       ));
     }
-    
+
     // Date range filters
     if (req.query.startDate) {
       filters.push(gte(errorLogs.createdAt, new Date(req.query.startDate as string)));
     }
-    
+
     if (req.query.endDate) {
       filters.push(lte(errorLogs.createdAt, new Date(req.query.endDate as string)));
     }
-    
+
     // Search filter (looks in message and stack)
     if (req.query.searchTerm) {
       const searchTerm = `%${req.query.searchTerm}%`;
@@ -68,27 +68,27 @@ router.get('/error-logs', async (req, res) => {
         like(errorLogs.url || '', searchTerm)
       ));
     }
-    
+
     // Fetch data with filters
     const query = db.select()
       .from(errorLogs)
       .orderBy(desc(errorLogs.createdAt));
-    
+
     // Apply filters if any
     if (filters.length > 0) {
       query.where(and(...filters));
     }
-    
+
     // Apply pagination
     const logs = await query.limit(limit).offset(offset);
-    
+
     // Get total count for pagination - simplify by using count() directly on the error logs array
     const allLogs = await db.select()
       .from(errorLogs)
       .where(filters.length > 0 ? and(...filters) : undefined);
-    
+
     const count = allLogs.length;
-    
+
     res.json({
       data: logs,
       pagination: {
@@ -114,15 +114,15 @@ router.get('/error-logs/:id', async (req, res) => {
     if (isNaN(id)) {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
-    
+
     const [log] = await db.select()
       .from(errorLogs)
       .where(eq(errorLogs.id, id));
-    
+
     if (!log) {
       return res.status(404).json({ message: 'Error log not found' });
     }
-    
+
     res.json(log);
   } catch (error) {
     console.error('Error fetching error log:', error);
@@ -140,16 +140,16 @@ router.post('/error-logs/:id/resolve', async (req, res) => {
     if (isNaN(id)) {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
-    
+
     // Check if log exists
     const [log] = await db.select()
       .from(errorLogs)
       .where(eq(errorLogs.id, id));
-    
+
     if (!log) {
       return res.status(404).json({ message: 'Error log not found' });
     }
-    
+
     // Update the log
     await db.update(errorLogs)
       .set({
@@ -159,7 +159,7 @@ router.post('/error-logs/:id/resolve', async (req, res) => {
         resolutionNotes: req.body.notes || ''
       })
       .where(eq(errorLogs.id, id));
-    
+
     res.json({ message: 'Error log marked as resolved' });
   } catch (error) {
     console.error('Error resolving error log:', error);
@@ -177,10 +177,10 @@ router.delete('/error-logs/:id', async (req, res) => {
     if (isNaN(id)) {
       return res.status(400).json({ message: 'Invalid ID format' });
     }
-    
+
     await db.delete(errorLogs)
       .where(eq(errorLogs.id, id));
-    
+
     res.json({ message: 'Error log deleted successfully' });
   } catch (error) {
     console.error('Error deleting error log:', error);
@@ -195,16 +195,16 @@ router.delete('/error-logs/:id', async (req, res) => {
 router.delete('/error-logs', async (req, res) => {
   try {
     const { ids, olderThan, allResolved } = req.body;
-    
+
     if (!ids && !olderThan && !allResolved) {
       return res.status(400).json({ 
         message: 'At least one filter criteria (ids, olderThan, or allResolved) must be provided' 
       });
     }
-    
+
     // Build up where conditions
     const conditions = [];
-    
+
     // Filter by IDs
     if (ids && Array.isArray(ids) && ids.length > 0) {
       const validIds = ids.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
@@ -212,19 +212,19 @@ router.delete('/error-logs', async (req, res) => {
         conditions.push(in_(errorLogs.id, validIds));
       }
     }
-    
+
     // Filter by age
     if (olderThan) {
       const date = new Date();
       date.setDate(date.getDate() - parseInt(olderThan));
       conditions.push(lte(errorLogs.createdAt, date));
     }
-    
+
     // Filter by resolution status
     if (allResolved) {
       conditions.push(eq(errorLogs.resolved, true));
     }
-    
+
     // Apply all conditions
     if (conditions.length > 0) {
       await db.delete(errorLogs).where(and(...conditions));
@@ -232,7 +232,7 @@ router.delete('/error-logs', async (req, res) => {
       // This should not happen due to the earlier check, but just in case
       return res.status(400).json({ message: 'No valid filter criteria provided' });
     }
-    
+
     res.json({ message: 'Error logs deleted successfully' });
   } catch (error) {
     console.error('Error bulk deleting error logs:', error);
