@@ -1308,9 +1308,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<ErrorLog[]> {
+  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<{logs: ErrorLog[], total: number}> {
     try {
-      let query = db.select().from(errorLogs);
+      // First, build the query for counting total records
+      let countQuery = db.select({ count: sql`count(*)` }).from(errorLogs);
+      
+      // Next, build the query for fetching the actual logs
+      let logsQuery = db.select().from(errorLogs);
       
       // Apply filters if options are provided
       if (options) {
@@ -1348,28 +1352,42 @@ export class DatabaseStorage implements IStorage {
           );
         }
         
+        if (options.userId) {
+          conditions.push(eq(errorLogs.userId, options.userId));
+        }
+        
         // Apply all conditions if any exist
         if (conditions.length > 0) {
-          query = query.where(and(...conditions));
+          countQuery = countQuery.where(and(...conditions));
+          logsQuery = logsQuery.where(and(...conditions));
         }
         
         // Sort by creation date descending (newest first) by default
-        query = query.orderBy(desc(errorLogs.createdAt));
+        logsQuery = logsQuery.orderBy(desc(errorLogs.createdAt));
         
         // Apply pagination
         if (options.page !== undefined && options.limit !== undefined) {
           const offset = (options.page - 1) * options.limit;
-          query = query.limit(options.limit).offset(offset);
+          logsQuery = logsQuery.limit(options.limit).offset(offset);
         }
       } else {
         // Default ordering if no options provided
-        query = query.orderBy(desc(errorLogs.createdAt));
+        logsQuery = logsQuery.orderBy(desc(errorLogs.createdAt));
       }
       
-      return await query;
+      // Execute both queries
+      const [countResult, logs] = await Promise.all([
+        countQuery,
+        logsQuery
+      ]);
+      
+      // Extract count from result
+      const total = Number(countResult[0]?.count || 0);
+      
+      return { logs, total };
     } catch (error) {
       console.error('Error fetching error logs:', error);
-      return [];
+      return { logs: [], total: 0 };
     }
   }
   

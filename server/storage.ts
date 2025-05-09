@@ -1446,51 +1446,64 @@ export class MemStorage implements IStorage {
     return this.errorLogs.get(id);
   }
   
-  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<ErrorLog[]> {
-    let results = Array.from(this.errorLogs.values());
+  async getErrorLogs(options?: ErrorLogQueryOptions): Promise<{logs: ErrorLog[], total: number}> {
+    let allResults = Array.from(this.errorLogs.values());
     
     // Apply filters if options are provided
     if (options) {
       if (options.status) {
-        results = results.filter(log => log.status === options.status);
+        allResults = allResults.filter(log => 
+          (options.status === 'resolved' && log.resolved) || 
+          (options.status === 'open' && !log.resolved)
+        );
       }
       
       if (options.level) {
-        results = results.filter(log => log.level === options.level);
+        allResults = allResults.filter(log => log.level === options.level);
       }
       
       if (options.source) {
-        results = results.filter(log => log.source === options.source);
+        allResults = allResults.filter(log => log.source === options.source);
       }
       
       if (options.search) {
         const searchLower = options.search.toLowerCase();
-        results = results.filter(log => 
+        allResults = allResults.filter(log => 
           log.message.toLowerCase().includes(searchLower) || 
           (log.stack && log.stack.toLowerCase().includes(searchLower)) ||
-          (log.context && log.context.toLowerCase().includes(searchLower))
+          (log.context && JSON.stringify(log.context).toLowerCase().includes(searchLower))
         );
       }
       
       if (options.startDate && options.endDate) {
-        results = results.filter(log => {
-          const timestamp = new Date(log.timestamp);
-          return timestamp >= new Date(options.startDate!) && 
-                 timestamp <= new Date(options.endDate!);
+        allResults = allResults.filter(log => {
+          const createdAt = new Date(log.createdAt);
+          return createdAt >= new Date(options.startDate!) && 
+                 createdAt <= new Date(options.endDate!);
         });
       }
       
-      // Sort by timestamp descending (newest first) by default
-      results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      
-      // Apply pagination
-      if (options.page !== undefined && options.limit !== undefined) {
-        const start = (options.page - 1) * options.limit;
-        results = results.slice(start, start + options.limit);
+      if (options.userId) {
+        allResults = allResults.filter(log => log.userId === options.userId);
       }
     }
     
-    return results;
+    // Get total count before pagination
+    const total = allResults.length;
+    
+    // Sort by creation date descending (newest first)
+    allResults.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    
+    // Apply pagination
+    let paginatedResults = [...allResults];
+    if (options?.page !== undefined && options?.limit !== undefined) {
+      const start = (options.page - 1) * options.limit;
+      paginatedResults = allResults.slice(start, start + options.limit);
+    }
+    
+    return { logs: paginatedResults, total };
   }
   
   async createErrorLog(errorLog: InsertErrorLog): Promise<ErrorLog> {
@@ -1499,10 +1512,11 @@ export class MemStorage implements IStorage {
     const newErrorLog: ErrorLog = {
       ...errorLog,
       id,
-      reportedAt: errorLog.reportedAt || new Date(),
+      createdAt: new Date(),
+      resolved: false,
       resolvedAt: null,
       resolvedBy: null,
-      status: errorLog.status || "open"
+      resolutionNotes: null
     };
     
     this.errorLogs.set(id, newErrorLog);
@@ -1529,9 +1543,26 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const updatedErrorLog: ErrorLog = {
       ...errorLog,
-      status: "resolved",
+      resolved: true,
       resolvedAt: now,
       resolvedBy: resolvedBy || null
+    };
+    
+    this.errorLogs.set(id, updatedErrorLog);
+    return updatedErrorLog;
+  }
+
+  async resolveErrorLog(id: number, resolvedBy: number, notes?: string): Promise<ErrorLog | undefined> {
+    const errorLog = await this.getErrorLog(id);
+    if (!errorLog) return undefined;
+    
+    const now = new Date();
+    const updatedErrorLog: ErrorLog = {
+      ...errorLog,
+      resolved: true,
+      resolvedAt: now,
+      resolvedBy: resolvedBy,
+      resolutionNotes: notes || null
     };
     
     this.errorLogs.set(id, updatedErrorLog);
