@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DocumentUpload from "@/components/profile/document-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,16 +12,7 @@ import MainLayout from "@/components/layout/main-layout";
 import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function Documents() {
-  const { user, isLoading } = useAuth();
-  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("all");
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user && !isLoading) {
-      navigate("/login");
-    }
-  }, [user, isLoading, navigate]);
 
   // Fetch user documents
   const { data: documents = [], isLoading: isDocumentsLoading } = useQuery<any[]>({
@@ -79,7 +68,7 @@ export default function Documents() {
     alert(`Downloading document: ${documentUrl}`);
   };
 
-  if (isLoading || isDocumentsLoading) {
+  if (isDocumentsLoading) {
     return (
       <AuthGuard>
         <MainLayout>
