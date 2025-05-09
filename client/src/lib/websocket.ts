@@ -272,21 +272,29 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
           onCallState(updatedCall);
         }
         
-        // If call was accepted, start the WebRTC connection
+        // If call was accepted, start the PeerJS connection
         if (data.accepted && activeCall.callerId === userId) {
-          initializePeerConnection(activeCall.receiverId, activeCall.callType);
+          initializePeerConnection(activeCall.receiverId, activeCall.callType, true);
         }
       });
       
-      // Handle WebRTC signaling
+      // Handle PeerJS signaling
       socket.on('peerjs-signal', async (data) => {
         try {
-          // Forward signal to PeerJS helper
+          console.log('Received PeerJS signal from user', data.senderId, 'type:', data.type || 'unknown');
+          
+          // Forward the signal to the PeerJS connection helper if it exists
           if (peerJSRef.current) {
             peerJSRef.current.handleSignal(data);
-          } else if (activeCall && activeCall.status === 'accepted') {
-            // If receiving signal before PeerJS is created, create it
-            await initializePeerConnection(data.senderId, activeCall.callType);
+          } else {
+            console.warn('Received PeerJS signal but no active PeerJS connection exists');
+            
+            // If we get a signal but don't have a PeerJS connection and we have an active call
+            // it might be necessary to initialize the connection
+            if (activeCall && !localStream) {
+              console.log('Attempting to initialize peer connection for incoming call');
+              initializePeerConnection(data.senderId, activeCall.callType, false);
+            }
           }
         } catch (err) {
           console.error('PeerJS signaling error:', err);
@@ -439,8 +447,8 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         onCallState(updatedCall);
       }
       
-      // Initialize peer connection
-      await initializePeerConnection(activeCall.callerId, activeCall.callType);
+      // Initialize peer connection as the call receiver
+      await initializePeerConnection(activeCall.callerId, activeCall.callType, false);
       
       return true;
     } catch (err) {
@@ -537,86 +545,54 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   // Initialize PeerJS connection
   const initializePeerConnection = useCallback(async (
     peerId: number, 
-    callType: 'audio' | 'video'
+    callType: 'audio' | 'video',
+    isInitiator: boolean
   ): Promise<boolean> => {
     try {
-      if (!socketRef.current || !userId) {
-        setError('Socket connection not established or user not authenticated');
+      if (!socketRef.current) {
+        setError('Socket connection not established');
         return false;
       }
       
-      // Import PeerJSConnection from peerjs-helper
-      const { PeerJSConnection } = await import('./peerjs-helper');
-      
       // Create PeerJS connection
-      const peerJS = new PeerJSConnection({
-        socket: socketRef.current,
-        userId: userId,
-        peerId: peerId
-      });
-      peerJSRef.current = peerJS;
+      const peerConnection = new PeerJSConnection(socketRef.current);
+      peerJSRef.current = peerConnection;
       
-      // Initialize the call
-      const stream = await peerJS.startCall(peerId, callType);
+      // Initialize with media options
+      const stream = await peerConnection.initializeCall(peerId, callType, isInitiator);
       
-      // Store local stream
+      // Set local stream
       setLocalStream(stream);
       
       // Handle remote stream
-      peerJS.onRemoteStream((remoteMediaStream) => {
+      peerConnection.onRemoteStream((remoteMediaStream) => {
         setRemoteStream(remoteMediaStream);
-      });
-      
-      // Handle call ended
-      peerJS.onCallEnded(() => {
-        endCall();
       });
       
       return true;
     } catch (err) {
-      console.error('Media or peer connection error:', err);
-      setError('Failed to access camera/microphone or establish connection');
+      setError('Failed to establish call connection');
+      console.error('PeerJS initialization error:', err);
       
-      // Clean up the call
-      if (activeCall) {
-        const updatedCall: CallInfo = {
-          ...activeCall,
-          status: 'ended',
-          endTime: new Date()
-        };
-        
-        setActiveCall(updatedCall);
-        
-        if (onCallState) {
-          onCallState(updatedCall);
-        }
-        
-        setTimeout(() => {
-          setActiveCall(null);
-        }, 1000);
+      // Clean up any partial connection
+      if (peerJSRef.current) {
+        peerJSRef.current.endCall();
+        peerJSRef.current = null;
       }
       
       return false;
     }
-  }, [activeCall, userId, endCall, onCallState]);
+  }, []);
   
-  // Share a file with another user
-  const shareFile = useCallback(async (
-    receiverId: number,
-    file: File
-  ): Promise<boolean> => {
+  // Share a file
+  const shareFile = useCallback(async (receiverId: number, file: File): Promise<boolean> => {
     if (!socketRef.current || !isConnected) {
       setError('Not connected to communication server');
       return false;
     }
     
-    if (!userId) {
-      setError('User not authenticated');
-      return false;
-    }
-    
     try {
-      // Create a file info object
+      // Create file info
       const fileId = uuidv4();
       const fileInfo: FileInfo = {
         id: fileId,
@@ -625,65 +601,52 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         type: file.type
       };
       
-      // Read file as data URL for preview and sharing
+      // Read file as data URL for direct sharing
       const reader = new FileReader();
       
-      reader.onload = async (e) => {
-        if (!e.target?.result) return;
-        
-        // Update file info with data
-        const fileInfoWithData: FileInfo = {
-          ...fileInfo,
-          data: e.target.result
-        };
-        
-        // Update file transfers
-        setFileTransfers(prev => {
-          const newMap = new Map(prev);
-          newMap.set(fileId, fileInfoWithData);
-          return newMap;
-        });
-        
-        // Create a temporary URL for the file
-        const blob = new Blob([file], { type: file.type });
-        const url = URL.createObjectURL(blob);
-        
-        const fileInfoToSend: FileInfo = {
-          ...fileInfo,
-          url // Send URL to recipient
-        };
-        
-        // Send file info to recipient
-        socketRef.current?.emit('file:share', {
-          receiverId,
-          fileInfo: fileInfoToSend
-        });
-        
-        // Also send a message
-        sendMessage(receiverId, `Shared a file: ${file.name}`);
-        
-        // Notify via callback
-        if (onMessage) {
-          onMessage({
-            id: uuidv4(),
-            type: 'file',
-            senderId: userId, // Safe after the null check above
-            receiverId,
-            content: `Shared a file: ${file.name}`,
-            timestamp: new Date(),
-            fileInfo: fileInfoToSend
-          });
-        }
-      };
+      // Wait for file to be read
+      const fileData = await new Promise<string | ArrayBuffer | null>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
       
-      reader.readAsDataURL(file);
+      // Add data to file info
+      fileInfo.data = fileData;
+      
+      // Send file data to recipient
+      socketRef.current.emit('file:share', {
+        receiverId,
+        fileInfo
+      });
+      
+      // Add to local file transfers
+      setFileTransfers(prev => {
+        const newMap = new Map(prev);
+        newMap.set(fileId, fileInfo);
+        return newMap;
+      });
+      
+      // Notify via message
+      if (onMessage) {
+        onMessage({
+          id: uuidv4(),
+          type: 'file',
+          senderId: userId,
+          receiverId,
+          content: `You shared a file: ${file.name}`,
+          timestamp: new Date(),
+          fileInfo
+        });
+      }
+      
       return true;
     } catch (err) {
       setError('Failed to share file');
       console.error('File sharing error:', err);
       return false;
     }
-  }, [isConnected, userId, sendMessage, onMessage]);
+  }, [isConnected, userId, onMessage]);
   
   // Download a shared file
   const downloadFile = useCallback((fileId: string): boolean => {
@@ -695,10 +658,10 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         return false;
       }
       
-      // Convert data URL to blob
-      const dataUri = fileInfo.data as string;
-      const byteString = atob(dataUri.split(',')[1]);
-      const mimeString = dataUri.split(',')[0].split(':')[1].split(';')[0];
+      // Use FileSaver to download the file
+      const dataUrlParts = (fileInfo.data as string).split(',');
+      const byteString = atob(dataUrlParts[1]);
+      const mimeType = dataUrlParts[0].split(':')[1].split(';')[0];
       
       const ab = new ArrayBuffer(byteString.length);
       const ia = new Uint8Array(ab);
@@ -707,10 +670,9 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         ia[i] = byteString.charCodeAt(i);
       }
       
-      const blob = new Blob([ab], { type: mimeString });
-      
-      // Download the file
+      const blob = new Blob([ab], { type: mimeType });
       saveAs(blob, fileInfo.name);
+      
       return true;
     } catch (err) {
       setError('Failed to download file');
@@ -719,10 +681,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, [fileTransfers]);
   
-  // Connect on mount and disconnect on unmount
+  // Connect and disconnect based on user ID changes
   useEffect(() => {
     if (userId) {
       connect();
+    } else {
+      disconnect();
     }
     
     return () => {
@@ -731,15 +695,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   }, [userId, connect, disconnect]);
   
   return {
-    // Connection
     isConnected,
     error,
+    connect,
+    disconnect,
     onlineUsers,
-    
-    // Messaging
     sendMessage,
-    
-    // Calls
     activeCall,
     localStream,
     remoteStream,
@@ -747,8 +708,6 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     acceptCall,
     rejectCall,
     endCall,
-    
-    // File sharing
     fileTransfers,
     shareFile,
     downloadFile

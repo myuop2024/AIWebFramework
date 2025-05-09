@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { CallInfo } from '@/lib/websocket-peerjs';
+import { CallInfo } from '@/lib/websocket';
 import VideoCall from '@/components/chat/video-call';
 import IncomingCallDialog from '@/components/chat/incoming-call-dialog';
 import { User } from '@shared/schema';

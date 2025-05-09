@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useCommunication, type ChatMessage, type UserStatus, type FileInfo, type CallInfo } from "@/lib/websocket-peerjs";
+import { useCommunication, type ChatMessage, type UserStatus, type FileInfo, type CallInfo } from "@/lib/websocket";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

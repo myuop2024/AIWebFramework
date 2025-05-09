@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Phone, Video, Mic, MicOff, VideoOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCommunication } from '@/lib/websocket-peerjs';
+import { useCommunication } from '@/lib/websocket';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
