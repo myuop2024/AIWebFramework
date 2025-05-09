@@ -1,78 +1,59 @@
-/**
- * PeerJS helper for reliable WebRTC connections
- */
-import Peer, { MediaConnection } from 'peerjs';
 import { Socket } from 'socket.io-client';
+import Peer, { MediaConnection } from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
 
-// Interface for call information - keeping consistent with existing interface
-export interface CallInfo {
-  callId: string;
-  callerId: number;
-  receiverId: number;
-  callType: 'audio' | 'video';
-  status: 'ringing' | 'accepted' | 'rejected' | 'ended' | 'missed';
-  startTime?: Date;
-  endTime?: Date;
-}
-
-// PeerJS WebRTC implementation
+/**
+ * Helper class to manage PeerJS connections for audio/video calls
+ */
 export class PeerJSConnection {
+  private socket: Socket;
   private peer: Peer | null = null;
-  private socket: Socket | null = null;
+  private peerId: string;
+  private remoteId: number | null = null;
+  private mediaConnection: MediaConnection | null = null;
   private localStream: MediaStream | null = null;
-  private remoteStream: MediaStream | null = null;
-  private onStreamCallback: ((stream: MediaStream) => void) | null = null;
-  private peerId: number | null = null;
-  private callType: 'audio' | 'video' = 'audio';
-  private peerConnection: MediaConnection | null = null;
-  private myPeerId: string = '';
-  private remotePeerId: string = '';
-  
+  private remoteStreamCallback: ((stream: MediaStream) => void) | null = null;
+  private debugMode: boolean = true;
+  private connectionId: string;
+
+  /**
+   * Initialize the PeerJS helper
+   * @param socket Socket.io socket for signaling
+   */
   constructor(socket: Socket) {
     this.socket = socket;
-    
-    // Listen for signaling messages (to exchange PeerJS IDs)
-    this.socket.on('peerjs-signal', async (data) => {
-      try {
-        // If we receive a peer ID, store it for connection
-        if (data.signal?.peerId) {
-          this.remotePeerId = data.signal.peerId;
-          this.peerId = data.senderId;
-          
-          // If we're receiving a peer ID and we're the initiator, make the call
-          if (data.signal.isAnswer && this.peer && this.localStream) {
-            this.initiateCall();
-          }
-        }
-      } catch (err) {
-        console.error('PeerJS signaling error:', err);
-      }
-    });
+    this.peerId = `peer-${uuidv4()}`;
+    this.connectionId = uuidv4();
+    this.debug('Created PeerJS helper with ID:', this.peerId);
   }
 
-  // Initialize media stream and peer connection
-  async initializeCall(remotePeerId: number, callType: 'audio' | 'video', isInitiator: boolean): Promise<MediaStream> {
-    this.peerId = remotePeerId;
-    this.callType = callType;
-    
+  /**
+   * Log debug messages if debug mode is enabled
+   */
+  private debug(...args: any[]): void {
+    if (this.debugMode) {
+      console.debug('[PeerJS Helper]', ...args);
+    }
+  }
+
+  /**
+   * Initialize PeerJS for a call
+   * @param remoteUserId ID of the remote user
+   * @param callType 'audio' or 'video'
+   * @param isInitiator Whether this client is initiating the call
+   * @returns The local media stream
+   */
+  async initializeCall(
+    remoteUserId: number,
+    callType: 'audio' | 'video',
+    isInitiator: boolean
+  ): Promise<MediaStream> {
     try {
-      // Get user media based on call type
-      const constraints = {
-        audio: true,
-        video: callType === 'video'
-      };
+      this.remoteId = remoteUserId;
       
-      // Request media stream
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      // Generate a unique ID for this user's peer
-      // Get userId safely from socket
-      const socketUserId = this.socket ? (this.socket as any).auth?.userId || 'unknown' : 'unknown';
-      this.myPeerId = `user-${socketUserId}-${uuidv4()}`;
-      
-      // Create a new peer connection
-      this.peer = new Peer(this.myPeerId, {
+      // Create PeerJS instance
+      this.peer = new Peer(this.peerId, {
+        debug: this.debugMode ? 3 : 0,
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
@@ -81,196 +62,259 @@ export class PeerJSConnection {
             { urls: 'stun:stun3.l.google.com:19302' },
             { urls: 'stun:stun4.l.google.com:19302' },
           ]
-        },
-        debug: 2 // Log errors and warnings
-      });
-      
-      // Setup error handling
-      this.setupPeerErrorHandling();
-      
-      // Listen for incoming calls
-      this.peer.on('call', (call) => {
-        this.peerConnection = call;
-        
-        // Answer automatically if we have the stream
-        if (this.localStream) {
-          call.answer(this.localStream);
-          
-          // Handle stream event
-          call.on('stream', (remoteStream) => {
-            this.remoteStream = remoteStream;
-            
-            if (this.onStreamCallback) {
-              this.onStreamCallback(remoteStream);
-            }
-          });
-          
-          this.setupCallErrorHandling(call);
         }
       });
+
+      // Listen for errors
+      this.peer.on('error', (err) => {
+        console.error('PeerJS error:', err);
+        this.notifyError(`PeerJS error: ${err.type}`);
+      });
       
-      // If we're the initiator, wait for peer to open then send our ID
+      // Get local media stream
+      const mediaConstraints = {
+        audio: true,
+        video: callType === 'video'
+      };
+      
+      this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      this.debug('Local stream obtained:', this.localStream.id);
+      
+      // Setup call handlers
+      await this.setupPeerCallHandlers();
+      
+      // If initiator, initiate the call after a short delay
       if (isInitiator) {
-        this.peer.on('open', (id) => {
-          console.log('PeerJS: Connection established with ID:', id);
-          
-          // Send our peer ID to the recipient via signaling channel
-          this.sendSignal({
-            peerId: this.myPeerId,
-            isInitiator: true
-          });
-        });
-      } else {
-        // If we're not the initiator, wait for open and send our ID as an answer
-        this.peer.on('open', (id) => {
-          console.log('PeerJS: Connection established with ID:', id);
-          
-          // Send our peer ID to the caller via signaling channel
-          this.sendSignal({
-            peerId: this.myPeerId,
-            isAnswer: true
-          });
-        });
+        setTimeout(() => {
+          this.initiateCall();
+        }, 1000);
       }
       
       return this.localStream;
     } catch (err) {
       console.error('Failed to initialize call:', err);
+      this.notifyError(`Could not access microphone/camera: ${err}`);
       throw err;
     }
   }
   
-  // Setup error handling for peer connection
-  private setupPeerErrorHandling() {
-    if (!this.peer) return;
+  /**
+   * Set up PeerJS call event handlers
+   */
+  private async setupPeerCallHandlers(): Promise<void> {
+    if (!this.peer) {
+      throw new Error('PeerJS not initialized');
+    }
     
-    this.peer.on('error', (err) => {
-      console.error('PeerJS error:', err);
+    // Handle incoming calls
+    this.peer.on('call', (call) => {
+      this.debug('Received incoming call from:', call.peer);
       
-      // Attempt to reconnect on certain errors
-      if (err.type === 'network' || err.type === 'peer-unavailable') {
-        console.log('PeerJS: Network error or peer unavailable, attempting to reconnect...');
-        setTimeout(() => {
-          if (this.peer) {
-            this.peer.reconnect();
-          }
-        }, 2000);
+      // Store the media connection
+      this.mediaConnection = call;
+      
+      // Setup media connection handlers
+      this.setupMediaConnectionHandlers(call);
+      
+      // Answer the call with our local stream
+      if (this.localStream) {
+        call.answer(this.localStream);
+        this.debug('Answered call with local stream');
+      } else {
+        console.error('Cannot answer call - no local stream');
+        this.notifyError('Cannot answer call - no local stream');
       }
     });
     
-    this.peer.on('disconnected', () => {
-      console.log('PeerJS: Disconnected from server, attempting to reconnect...');
-      this.peer?.reconnect();
+    // When the peer is fully connected
+    this.peer.on('open', (id) => {
+      this.debug('PeerJS connection established with ID:', id);
+      
+      // Send our PeerJS ID to the remote user via signaling server
+      this.sendSignal({
+        type: 'peer-id',
+        peerId: id,
+        connectionId: this.connectionId
+      });
     });
   }
   
-  // Setup error handling for media connection
-  private setupCallErrorHandling(call: MediaConnection) {
-    call.on('error', (err) => {
-      console.error('PeerJS call error:', err);
+  /**
+   * Set up handlers for the media connection
+   */
+  private setupMediaConnectionHandlers(call: MediaConnection): void {
+    // Handle remote stream
+    call.on('stream', (remoteStream) => {
+      this.debug('Received remote stream:', remoteStream.id);
+      
+      // Pass the remote stream to the callback
+      if (this.remoteStreamCallback) {
+        this.remoteStreamCallback(remoteStream);
+      }
     });
     
+    // Handle call closure
     call.on('close', () => {
-      console.log('PeerJS: Call closed');
+      this.debug('Call closed');
+      this.endCall();
+    });
+    
+    // Handle call errors
+    call.on('error', (err) => {
+      console.error('Call error:', err);
+      this.notifyError(`Call error: ${err}`);
     });
   }
   
-  // Initiate a call to the remote peer
-  private initiateCall() {
-    if (!this.peer || !this.localStream || !this.remotePeerId) {
-      console.error('Cannot initiate call: missing peer, stream, or remote ID');
+  /**
+   * Initiate a call to the remote peer
+   */
+  private initiateCall(): void {
+    if (!this.peer || !this.localStream) {
+      console.error('Cannot initiate call - peer or local stream not initialized');
+      this.notifyError('Cannot initiate call - peer or local stream not initialized');
       return;
     }
     
-    console.log('PeerJS: Initiating call to', this.remotePeerId);
-    
-    // Call the remote peer
-    const call = this.peer.call(this.remotePeerId, this.localStream);
-    this.peerConnection = call;
-    
-    // Handle remote stream
-    call.on('stream', (remoteStream) => {
-      this.remoteStream = remoteStream;
+    try {
+      // Call the remote peer (we'll use the user ID for now, will be updated with PeerJS ID)
+      this.debug('Initiating call to:', this.remoteId);
       
-      if (this.onStreamCallback) {
-        this.onStreamCallback(remoteStream);
-      }
-    });
-    
-    this.setupCallErrorHandling(call);
+      // Instead of calling directly, wait for the peer ID via signaling
+      this.sendSignal({
+        type: 'request-peer-id',
+        connectionId: this.connectionId
+      });
+    } catch (err) {
+      console.error('Failed to initiate call:', err);
+      this.notifyError(`Failed to initiate call: ${err}`);
+    }
   }
   
-  // Send signaling data to peer
-  private sendSignal(signal: any) {
-    if (!this.socket || !this.peerId) return;
+  /**
+   * Make the actual call once we have the remote peer ID
+   */
+  private makeCall(remotePeerId: string): void {
+    if (!this.peer || !this.localStream) {
+      console.error('Cannot make call - peer or local stream not initialized');
+      this.notifyError('Cannot make call - no local stream');
+      return;
+    }
     
+    try {
+      this.debug('Making call to peer ID:', remotePeerId);
+      
+      // Call the remote peer
+      const call = this.peer.call(remotePeerId, this.localStream);
+      
+      // Store the media connection
+      this.mediaConnection = call;
+      
+      // Setup media connection handlers
+      this.setupMediaConnectionHandlers(call);
+    } catch (err) {
+      console.error('Failed to make call:', err);
+      this.notifyError(`Failed to make call: ${err}`);
+    }
+  }
+  
+  /**
+   * Set callback for when remote stream is received
+   */
+  onRemoteStream(callback: (stream: MediaStream) => void): void {
+    this.remoteStreamCallback = callback;
+  }
+  
+  /**
+   * Send a signal through the signaling server
+   */
+  private sendSignal(data: any): void {
+    if (!this.socket) {
+      console.error('Cannot send signal - no socket connection');
+      return;
+    }
+    
+    this.debug('Sending signal:', data);
+    
+    // Send the signal through the signaling server
     this.socket.emit('peerjs-signal', {
-      receiverId: this.peerId,
-      signal
+      ...data,
+      receiverId: this.remoteId
     });
   }
   
-  // Register callback for remote stream
-  onRemoteStream(callback: (stream: MediaStream) => void) {
-    this.onStreamCallback = callback;
+  /**
+   * Handle incoming signals from the signaling server
+   */
+  handleSignal(data: any): void {
+    this.debug('Received signal:', data);
     
-    if (this.remoteStream) {
-      callback(this.remoteStream);
+    // Handle different signal types
+    switch (data.type) {
+      case 'peer-id':
+        // If this is for our connection, store the remote peer ID
+        if (data.connectionId === this.connectionId) {
+          this.debug('Received remote peer ID:', data.peerId);
+          this.makeCall(data.peerId);
+        }
+        break;
+        
+      case 'request-peer-id':
+        // Remote peer wants our PeerJS ID
+        if (this.peer) {
+          this.sendSignal({
+            type: 'peer-id',
+            peerId: this.peer.id,
+            connectionId: data.connectionId
+          });
+        }
+        break;
+        
+      default:
+        this.debug('Unknown signal type:', data.type);
     }
   }
   
-  // End the call and clean up resources
-  endCall() {
+  /**
+   * End the call and clean up resources
+   */
+  endCall(): void {
+    this.debug('Ending call');
+    
     // Close the media connection
-    if (this.peerConnection) {
-      this.peerConnection.close();
-      this.peerConnection = null;
+    if (this.mediaConnection) {
+      this.mediaConnection.close();
+      this.mediaConnection = null;
     }
     
-    // Stop local tracks
+    // Stop local stream
     if (this.localStream) {
       this.localStream.getTracks().forEach(track => track.stop());
       this.localStream = null;
     }
     
-    // Clear remote stream
-    this.remoteStream = null;
-    
-    // Close peer connection
+    // Close the PeerJS connection
     if (this.peer) {
       this.peer.destroy();
       this.peer = null;
     }
     
-    // Clear callback
-    this.onStreamCallback = null;
+    // Reset callbacks
+    this.remoteStreamCallback = null;
   }
   
-  // Toggle audio mute
-  toggleAudioMute(mute: boolean) {
-    if (this.localStream) {
-      this.localStream.getAudioTracks().forEach(track => {
-        track.enabled = !mute;
+  /**
+   * Notify of errors
+   */
+  private notifyError(message: string): void {
+    console.error('PeerJS Error:', message);
+    
+    // Emit error to the socket
+    if (this.socket) {
+      this.socket.emit('error', {
+        type: 'peerjs',
+        message
       });
     }
-  }
-  
-  // Toggle video off
-  toggleVideo(off: boolean) {
-    if (this.localStream) {
-      this.localStream.getVideoTracks().forEach(track => {
-        track.enabled = !off;
-      });
-    }
-  }
-  
-  // Get local stream
-  getLocalStream(): MediaStream | null {
-    return this.localStream;
-  }
-  
-  // Get remote stream
-  getRemoteStream(): MediaStream | null {
-    return this.remoteStream;
   }
 }

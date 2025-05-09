@@ -1,16 +1,15 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { PhoneCall, Video, PhoneOff } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@shared/schema';
+import AudioPlayer from './audio-player';
+import { Phone, PhoneOff, Video } from 'lucide-react';
 
 interface IncomingCallDialogProps {
   open: boolean;
@@ -27,102 +26,80 @@ const IncomingCallDialog: React.FC<IncomingCallDialogProps> = ({
   onAccept,
   onReject
 }) => {
-  // Play ring tone when dialog is open
-  React.useEffect(() => {
-    let audio: HTMLAudioElement | null = null;
-    
-    if (open) {
-      audio = new Audio('/sounds/ringtone.mp3');
-      audio.loop = true;
-      audio.play().catch(err => {
-        console.warn('Could not play ringtone:', err);
-      });
-    }
-    
-    return () => {
-      if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-      }
-    };
+  const [playRingtone, setPlayRingtone] = useState(false);
+
+  // Play ringtone when dialog opens
+  useEffect(() => {
+    setPlayRingtone(open);
   }, [open]);
-  
-  const getCallerInitials = () => {
-    if (!caller) return '?';
-    
-    const firstName = caller.firstName || '';
-    const lastName = caller.lastName || '';
-    
-    if (firstName && lastName) {
-      return `${firstName[0]}${lastName[0]}`;
-    } else if (firstName) {
-      return firstName.substring(0, 2);
-    } else if (caller.username) {
-      return caller.username.substring(0, 2).toUpperCase();
-    } else {
-      return '?';
-    }
+
+  // Handle the call actions
+  const handleAccept = () => {
+    setPlayRingtone(false);
+    onAccept();
   };
-  
-  const callerName = caller
-    ? `${caller.firstName || ''} ${caller.lastName || ''}`.trim() || caller.username || 'Unknown'
-    : 'Unknown';
-    
+
+  const handleReject = () => {
+    setPlayRingtone(false);
+    onReject();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={() => onReject()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="flex flex-col items-center justify-center mb-4">
-          <Avatar className="h-24 w-24 mb-4">
-            <AvatarImage src={caller?.photoUrl || ''} />
-            <AvatarFallback className="text-2xl bg-blue-500 text-white">
-              {getCallerInitials()}
-            </AvatarFallback>
-          </Avatar>
-          <DialogTitle className="text-xl">
-            {callType === 'video' ? 'Video Call' : 'Audio Call'} from {callerName}
-          </DialogTitle>
-          <DialogDescription className="flex items-center justify-center mt-2">
-            {callType === 'video' ? (
-              <Video className="mr-2 text-blue-500" />
-            ) : (
-              <PhoneCall className="mr-2 text-blue-500" />
-            )}
-            Incoming {callType === 'video' ? 'video' : 'audio'} call...
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex justify-center">
-          <div className="animate-pulse flex flex-col items-center">
-            <span className="text-sm text-gray-500 mb-2">Secure end-to-end encrypted call</span>
-            <div className="h-2 w-24 bg-blue-200 rounded"></div>
+    <>
+      {/* Ringtone player */}
+      <AudioPlayer play={playRingtone} loop={true} />
+
+      <Dialog open={open} onOpenChange={() => handleReject()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {callType === 'video' ? 'Incoming Video Call' : 'Incoming Call'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+              <span className="text-3xl font-bold text-primary">
+                {caller ? 
+                  `${caller.firstName?.charAt(0) || ''}${caller.lastName?.charAt(0) || ''}` : 
+                  'U'}
+              </span>
+            </div>
+            <p className="text-xl font-medium">
+              {caller ? 
+                `${caller.firstName || ''} ${caller.lastName || ''}` :
+                'Unknown Caller'}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {callType === 'video' ? 'Video call' : 'Voice call'}
+            </p>
           </div>
-        </div>
-        
-        <DialogFooter className="flex flex-row justify-center gap-4 sm:gap-6">
-          <Button 
-            variant="destructive"
-            size="lg"
-            className="rounded-full w-14 h-14 p-0 flex items-center justify-center"
-            onClick={onReject}
-          >
-            <PhoneOff size={24} />
-          </Button>
-          
-          <Button 
-            variant="default"
-            size="lg"
-            className="rounded-full w-14 h-14 p-0 flex items-center justify-center bg-green-500 hover:bg-green-600"
-            onClick={onAccept}
-          >
-            {callType === 'video' ? (
-              <Video size={24} />
-            ) : (
-              <PhoneCall size={24} />
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          <DialogFooter className="flex sm:justify-center gap-2">
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              className="rounded-full w-14 h-14 p-0"
+            >
+              <PhoneOff className="h-6 w-6" />
+              <span className="sr-only">Decline</span>
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleAccept}
+              className="rounded-full w-14 h-14 p-0 bg-green-600 hover:bg-green-700"
+            >
+              {callType === 'video' ? (
+                <Video className="h-6 w-6" />
+              ) : (
+                <Phone className="h-6 w-6" />
+              )}
+              <span className="sr-only">Accept</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
