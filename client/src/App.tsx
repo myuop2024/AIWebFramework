@@ -1,5 +1,6 @@
 import { Switch, Route } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect } from "react";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import DynamicRegister from "@/pages/dynamic-register";
@@ -38,6 +39,8 @@ import StationSchedulePage from "@/pages/roving/station-schedule";
 import AreaReportsPage from "@/pages/roving/area-reports";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
+import ErrorBoundary from "@/components/error/error-boundary";
+import { initGlobalErrorHandlers } from "@/lib/error-logger";
 
 function Router() {
   return (
@@ -121,12 +124,20 @@ function Router() {
 }
 
 function App() {
+  // Initialize global error handlers on app mount
+  useEffect(() => {
+    initGlobalErrorHandlers();
+    console.log('Global error handlers initialized');
+  }, []);
+
   return (
-    <AuthProvider>
-      <TooltipProvider>
-        <Router />
-      </TooltipProvider>
-    </AuthProvider>
+    <ErrorBoundary captureContext={{ location: window.location.href }}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

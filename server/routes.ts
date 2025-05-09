@@ -2251,5 +2251,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
 
+  // Register error logging routes
+  app.use('/api', errorLogRoutes);
+  
+  // Add error logging middleware as the last middleware before error handlers
+  app.use(ErrorLogger.createErrorMiddleware());
+  
+  // Final error handler that sends response to client
+  app.use((err: any, req: any, res: any, next: any) => {
+    // Error already logged by previous middleware
+    res.status(err.status || 500).json({
+      message: err.message || 'Internal Server Error',
+      error: process.env.NODE_ENV === 'development' ? err : {}
+    });
+  });
+
   return httpServer;
 }
