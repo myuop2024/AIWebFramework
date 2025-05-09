@@ -92,17 +92,22 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       console.log('Creating Socket.io connection with namespace /comms and path /socket.io');
       
       // Explicitly construct the Socket.io client with the right URL and namespace
-      const socket = io(window.location.origin + '/comms', {
+      // Initialize Socket.io with the namespace directly, not with a URL
+      const socket = io('/comms', {
         path: '/socket.io', // Must match the server's Socket.io path
         transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
         reconnectionAttempts: 5, // Try to reconnect 5 times
         reconnectionDelay: 1000, // Start with a 1 second delay
-        timeout: 10000, // 10 seconds connection timeout
+        timeout: 20000, // 20 seconds connection timeout (increased from 10s)
         autoConnect: true
       });
       
-      // Debug connection URL
-      console.log('Socket.io connection URL:', window.location.origin + '/comms');
+      // Debug connection details
+      console.log('Socket.io connection details:', {
+        namespace: '/comms',
+        path: '/socket.io',
+        origin: window.location.origin
+      });
       
       // Log that we're attempting to connect
       console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
@@ -141,18 +146,24 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Handle connection errors
       socket.on('connect_error', (err) => {
         console.error('Socket.io connection error:', err);
-        console.error('Socket.io connection error details:', {
-          message: err.message,
-          type: err.type,
-          description: err.description,
-          context: err.context,
+        
+        // Safely extract error properties - some are not standard Error properties
+        const errorDetails = {
+          message: err.message || 'Unknown error',
+          // TypeScript might complain about these properties, but they might exist in Socket.io errors
+          type: (err as any).type,
+          description: (err as any).description,
+          context: (err as any).context,
           stack: err.stack,
           socketId: socket.id,
           connected: socket.connected,
-          disconnected: socket.disconnected,
-          url: socket.io.uri
-        });
-        setError(`Connection error: ${err.message}`);
+          disconnected: socket.disconnected
+        };
+        
+        console.error('Socket.io connection error details:', errorDetails);
+        
+        // Set a user-friendly error message
+        setError(`Connection error: ${errorDetails.message}`);
       });
       
       // Add more detailed connection event logging

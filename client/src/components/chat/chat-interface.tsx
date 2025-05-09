@@ -544,6 +544,14 @@ export default function ChatInterface() {
             </div>
           </CardFooter>
         )}
+        {error && (
+          <CardFooter className="border-t py-2 px-4">
+            <div className="flex items-center text-red-600 text-sm w-full">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <span>Connection error: {error}</span>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       {/* Call Dialog */}
