@@ -600,7 +600,7 @@ function ErrorLogsPage() {
                     </AccordionItem>
                   )}
                   
-                  {selectedLog.context && (
+                  {typeof selectedLog.context !== 'undefined' && selectedLog.context !== null && (
                     <AccordionItem value="context">
                       <AccordionTrigger>
                         <span className="font-medium flex items-center">
@@ -609,7 +609,7 @@ function ErrorLogsPage() {
                       </AccordionTrigger>
                       <AccordionContent>
                         <pre className="bg-slate-50 p-4 rounded-md overflow-x-auto text-xs font-mono">
-                          {selectedLog.context ? JSON.stringify(selectedLog.context, null, 2) : '{}'}
+                          {JSON.stringify(selectedLog.context, null, 2)}
                         </pre>
                       </AccordionContent>
                     </AccordionItem>
