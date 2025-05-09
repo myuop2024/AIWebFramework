@@ -23,7 +23,7 @@ import MainLayout from '@/components/layout/main-layout';
 import TestErrorLogger from '@/components/error/test-error-logger';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ErrorLog } from '@shared/schema';
+import { type ErrorLog } from '@shared/schema';
 
 // Types for filtering
 interface FilterOptions {
