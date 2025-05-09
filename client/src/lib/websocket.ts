@@ -822,7 +822,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         onMessage({
           id: uuidv4(),
           type: 'file',
-          senderId: userId,
+          senderId: userId as number, // Type assertion to satisfy type checker
           receiverId,
           content: `You shared a file: ${file.name}`,
           timestamp: new Date(),
@@ -871,18 +871,64 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, [fileTransfers]);
   
-  // Connect and disconnect based on user ID changes
+  // Manage connection state and debounce connections to prevent rapid reconnects
+  const isConnectingRef = useRef(false);
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  // Function to safely cleanup any pending connection attempts
+  const cleanupPendingConnections = () => {
+    if (connectTimeoutRef.current) {
+      clearTimeout(connectTimeoutRef.current);
+      connectTimeoutRef.current = null;
+    }
+  };
+  
+  // Connect and disconnect based on user ID changes with connection tracking
   useEffect(() => {
-    if (userId) {
-      connect();
-    } else {
+    // Return early if already connecting or we have a pending connect attempt
+    if (isConnectingRef.current || connectTimeoutRef.current) {
+      return;
+    }
+    
+    // Only attempt connection if userId exists and we're not already connected
+    if (userId && !isConnected && !socketRef.current) {
+      // Set connecting flag to prevent multiple connection attempts
+      isConnectingRef.current = true;
+      
+      // Clean up any existing socket to ensure fresh connection
+      if (socketRef.current) {
+        try {
+          socketRef.current.disconnect();
+          socketRef.current = null;
+        } catch (err) {
+          console.error('Error cleaning up existing socket:', err);
+        }
+      }
+      
+      // Delay connection attempt slightly to prevent rapid reconnection cycles
+      connectTimeoutRef.current = setTimeout(() => {
+        try {
+          connect();
+        } catch (err) {
+          console.error('Connection error in useEffect:', err);
+        } finally {
+          // Reset connecting flag regardless of success/failure
+          isConnectingRef.current = false;
+          connectTimeoutRef.current = null;
+        }
+      }, 500); // Half-second delay to debounce connection attempts
+    } else if (!userId) {
+      // If no userId, ensure we're disconnected
+      cleanupPendingConnections();
       disconnect();
     }
     
+    // Cleanup on component unmount
     return () => {
+      cleanupPendingConnections();
       disconnect();
     };
-  }, [userId, connect, disconnect]);
+  }, [userId, isConnected, connect, disconnect]);
   
   return {
     isConnected,
