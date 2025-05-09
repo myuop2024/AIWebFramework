@@ -47,7 +47,7 @@ function ErrorLogsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch error logs
-  const { data, isLoading, error, refetch } = useQuery<ErrorLog[]>({
+  const { data, isLoading, error, refetch } = useQuery<{data: ErrorLog[], pagination: any}>({
     queryKey: ['/api/admin/error-logs', page, limit, filters],
     queryFn: async () => {
       const queryParams = new URLSearchParams({
@@ -58,8 +58,13 @@ function ErrorLogsPage() {
         )
       });
       
-      const res = await apiRequest('GET', `/api/admin/error-logs?${queryParams.toString()}`);
-      return await res.json();
+      try {
+        const res = await apiRequest('GET', `/api/admin/error-logs?${queryParams.toString()}`);
+        return await res.json();
+      } catch (error) {
+        console.error('Error fetching error logs:', error);
+        throw error;
+      }
     }
   });
 
@@ -88,8 +93,8 @@ function ErrorLogsPage() {
   });
 
   // Helper function for formatting dates
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+  const formatDate = (dateStr: string | Date) => {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric', 
       month: 'short', 
@@ -133,9 +138,9 @@ function ErrorLogsPage() {
 
   // Pagination component
   const renderPagination = () => {
-    if (!data || data.length === 0) return null;
+    if (!data || !data.data || data.data.length === 0) return null;
     
-    const totalPages = Math.ceil((data.length || 10) / limit); // This is just a placeholder, real app would have total count
+    const totalPages = data.pagination?.totalPages || Math.ceil((data.data.length || 10) / limit);
     
     return (
       <Pagination>
@@ -385,8 +390,8 @@ function ErrorLogsPage() {
                         Loading error logs...
                       </TableCell>
                     </TableRow>
-                  ) : data && data.length > 0 ? (
-                    data.map((log) => (
+                  ) : data && data.data && data.data.length > 0 ? (
+                    data.data.map((log: ErrorLog) => (
                       <TableRow key={log.id}>
                         <TableCell className="whitespace-nowrap">
                           <span className="flex items-center">
@@ -604,7 +609,7 @@ function ErrorLogsPage() {
                       </AccordionTrigger>
                       <AccordionContent>
                         <pre className="bg-slate-50 p-4 rounded-md overflow-x-auto text-xs font-mono">
-                          {JSON.stringify(selectedLog.context, null, 2)}
+                          {selectedLog.context ? JSON.stringify(selectedLog.context, null, 2) : '{}'}
                         </pre>
                       </AccordionContent>
                     </AccordionItem>
