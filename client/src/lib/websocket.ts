@@ -740,6 +740,13 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const connectionAttemptCountRef = useRef(0);
   const MAX_CONNECTION_ATTEMPTS = 3;
   
+  // Last connection attempt timestamp for rate limiting reconnects
+  const lastConnectionAttemptRef = useRef<number>(0);
+  const CONNECTION_ATTEMPT_COOLDOWN = 5000; // 5 seconds between reconnection attempts
+  
+  // Use another ref to track if we're actively in a connection cycle
+  const isReconnectingRef = useRef<boolean>(false);
+  
   // Connect and disconnect based on user ID changes with connection tracking
   useEffect(() => {
     // Set mounted flag - will be used in cleanup
@@ -750,18 +757,42 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       // Prevent connection attempts if component is unmounted
       if (!isMountedRef.current) return;
       
-      // Enforce maximum connection attempts
+      // Enforce maximum connection attempts and rate limiting
       if (connectionAttemptCountRef.current >= MAX_CONNECTION_ATTEMPTS) {
         console.log(`Maximum connection attempts (${MAX_CONNECTION_ATTEMPTS}) reached, stopping`);
         isConnectingRef.current = false;
+        isReconnectingRef.current = false;
         return;
       }
+      
+      // Check if enough time has passed since the last attempt
+      const now = Date.now();
+      const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+      
+      if (timeSinceLastAttempt < CONNECTION_ATTEMPT_COOLDOWN) {
+        console.log(`Connection attempt on cooldown. Waiting ${Math.ceil((CONNECTION_ATTEMPT_COOLDOWN - timeSinceLastAttempt)/1000)}s`);
+        
+        // Reschedule after cooldown period
+        if (connectTimeoutRef.current) {
+          clearTimeout(connectTimeoutRef.current);
+        }
+        
+        connectTimeoutRef.current = setTimeout(attemptConnection, 
+          CONNECTION_ATTEMPT_COOLDOWN - timeSinceLastAttempt);
+        return;
+      }
+      
+      // Update last attempt timestamp
+      lastConnectionAttemptRef.current = now;
       
       // Increment attempt counter
       connectionAttemptCountRef.current++;
       console.log(`Connection attempt ${connectionAttemptCountRef.current}/${MAX_CONNECTION_ATTEMPTS}`);
       
       try {
+        // Always ensure any previous socket is properly closed
+        safeDisconnectSocket();
+        
         // Create socket and register events
         connect();
         
@@ -769,6 +800,20 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         if (socketRef.current) {
           console.log('Manually connecting socket');
           socketRef.current.connect();
+          
+          // Set a timeout to check if connection succeeded
+          setTimeout(() => {
+            if (socketRef.current && !socketRef.current.connected) {
+              console.log('Connection timeout - socket did not connect within expected timeframe');
+              safeDisconnectSocket();
+              
+              // If we're still mounting, try again
+              if (isMountedRef.current && connectionAttemptCountRef.current < MAX_CONNECTION_ATTEMPTS) {
+                console.log('Scheduling another connection attempt');
+                connectTimeoutRef.current = setTimeout(attemptConnection, CONNECTION_ATTEMPT_COOLDOWN);
+              }
+            }
+          }, 3000); // 3 second connection timeout
         }
       } catch (err) {
         console.error('Connection error in useEffect:', err);
@@ -791,14 +836,18 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         // Set connecting flag to prevent multiple connection attempts
         isConnectingRef.current = true;
         
-        // Reset connection attempt counter
-        connectionAttemptCountRef.current = 0;
+        // Reset connection attempt counter if we're not in a reconnection cycle
+        if (!isReconnectingRef.current) {
+          connectionAttemptCountRef.current = 0;
+          isReconnectingRef.current = true;
+        }
         
         // Schedule a connection attempt with delay to prevent rapid reconnection
         if (connectTimeoutRef.current) {
           clearTimeout(connectTimeoutRef.current);
         }
         
+        // Use a shorter delay for initial connection
         connectTimeoutRef.current = setTimeout(attemptConnection, 1000);
       }
     } else {
@@ -807,6 +856,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       safeDisconnectSocket();
       resetConnectionState();
       connectionAttemptCountRef.current = 0;
+      isReconnectingRef.current = false;
     }
     
     // Cleanup on component unmount
@@ -825,6 +875,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       
       // Reset connection attempt counter
       connectionAttemptCountRef.current = 0;
+      isReconnectingRef.current = false;
     };
   }, [userId, isConnected, connect, cleanupPendingConnections, resetConnectionState, safeDisconnectSocket]);
   
