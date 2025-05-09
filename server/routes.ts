@@ -72,133 +72,6 @@ let connectedClients: ConnectedClient[] = [];
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
 
-  // Setup WebSocket server on a distinct path to avoid conflicts with Vite
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Handle WebSocket connections
-  wss.on('connection', (ws) => {
-    console.log('New WebSocket client connected');
-    
-    let userId: number | null = null;
-    
-    // Handle messages
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        
-        // Handle authentication
-        if (data.type === 'auth') {
-          userId = Number(data.userId);
-          console.log(`WebSocket client authenticated with userId: ${userId}`);
-          
-          // Ensure we have a valid userId (not NaN)
-          if (isNaN(userId)) {
-            console.error('Invalid userId received:', data.userId);
-            ws.send(JSON.stringify({
-              type: 'error',
-              content: 'Invalid user ID',
-              timestamp: new Date()
-            }));
-            return;
-          }
-          
-          // Add to connected clients
-          connectedClients.push({ userId, socket: ws });
-          
-          // Send confirmation
-          ws.send(JSON.stringify({
-            type: 'notification',
-            content: 'Connected to WebSocket server',
-            timestamp: new Date()
-          }));
-          
-          // Broadcast user status
-          if (userId !== null) {
-            broadcastUserStatus(userId, 'online');
-          }
-        }
-        // Handle chat messages
-        else if (data.type === 'message' && userId !== null) {
-          handleChatMessage(userId, data);
-        }
-      } catch (err) {
-        console.error('Error handling WebSocket message:', err);
-      }
-    });
-    
-    // Handle disconnections
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
-      
-      if (userId) {
-        // Remove from connected clients
-        connectedClients = connectedClients.filter(client => 
-          !(client.userId === userId && client.socket === ws));
-        
-        // Check if user has other connections
-        const hasOtherConnections = connectedClients.some(client => client.userId === userId);
-        
-        if (!hasOtherConnections) {
-          // Broadcast offline status
-          broadcastUserStatus(userId, 'offline');
-        }
-      }
-    });
-  });
-  
-  // Function to broadcast user status changes
-  function broadcastUserStatus(userId: number, status: 'online' | 'offline') {
-    const statusMessage = JSON.stringify({
-      type: 'user:status',
-      userId,
-      status
-    });
-    
-    connectedClients.forEach(client => {
-      if (client.userId !== userId && client.socket.readyState === WebSocket.OPEN) {
-        client.socket.send(statusMessage);
-      }
-    });
-  }
-  
-  // Function to handle and forward chat messages
-  function handleChatMessage(senderId: number, data: any) {
-    const { receiverId, content } = data;
-    
-    if (!receiverId || !content) {
-      return;
-    }
-    
-    // Create message object
-    const messageData = {
-      type: 'message',
-      senderId,
-      receiverId,
-      content,
-      timestamp: new Date()
-    };
-    
-    // Forward to recipient if online
-    const recipientClients = connectedClients.filter(client => 
-      client.userId === receiverId && client.socket.readyState === WebSocket.OPEN);
-    
-    recipientClients.forEach(client => {
-      client.socket.send(JSON.stringify(messageData));
-    });
-    
-    // Send confirmation to sender
-    const senderClients = connectedClients.filter(client => 
-      client.userId === senderId && client.socket.readyState === WebSocket.OPEN);
-    
-    senderClients.forEach(client => {
-      client.socket.send(JSON.stringify({
-        type: 'message:sent',
-        messageId: Date.now(), // Placeholder ID
-        timestamp: new Date()
-      }));
-    });
-  }
-
   // Setup static file serving for uploads directory
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
@@ -247,13 +120,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`New connection established to /comms namespace, socketId: ${socket.id}`);
     let userId: number | null = null;
     
-    // Authentication with improved user tracking
+    // Authentication
     socket.on('auth', (data) => {
       console.log(`Socket.io auth event received, userId: ${data.userId}`);
       userId = data.userId;
-      
-      // Store userId in socket.data for reference in other event handlers
-      socket.data.userId = userId;
       
       // Store the user's socket connection
       onlineUsers.set(userId, socket.id);
@@ -426,31 +296,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Handle disconnection with improved logging
-    socket.on('disconnect', (reason) => {
-      console.log(`Socket ${socket.id} disconnected, reason: ${reason}`);
-      
+    // Handle disconnection
+    socket.on('disconnect', () => {
       if (userId) {
-        console.log(`User ${userId} disconnected from socket ${socket.id}`);
+        // Remove from online users
+        onlineUsers.delete(userId);
         
-        // Check if the user has other active connections
-        const stillHasActiveConnection = Array.from(commsNamespace.sockets.values()).some(
-          s => s.id !== socket.id && s.data.userId === userId
-        );
-        
-        // Only remove from online users if no other active connections
-        if (!stillHasActiveConnection) {
-          console.log(`User ${userId} has no other active connections, marking as offline`);
-          onlineUsers.delete(userId);
-          
-          // Broadcast offline status
-          socket.broadcast.emit('user:status', {
-            userId,
-            status: 'offline'
-          });
-        } else {
-          console.log(`User ${userId} still has other active connections, keeping online status`);
-        }
+        // Broadcast offline status
+        socket.broadcast.emit('user:status', {
+          userId,
+          status: 'offline'
+        });
       }
     });
   });

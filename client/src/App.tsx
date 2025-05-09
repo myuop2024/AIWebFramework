@@ -38,7 +38,6 @@ import ScheduleMeeting from "@/pages/supervisor/schedule-meeting";
 import StationSchedulePage from "@/pages/roving/station-schedule";
 import AreaReportsPage from "@/pages/roving/area-reports";
 import ErrorLogsPage from "@/pages/admin/error-logs";
-import WebSocketTest from "@/pages/websocket-test";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -71,7 +70,6 @@ function Router() {
       <ProtectedRoute path="/chat" component={Chat} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
-      <ProtectedRoute path="/websocket-test" component={WebSocketTest} />
       
       {/* Admin Routes (require admin or director role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />

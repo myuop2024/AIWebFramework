@@ -1,3 +1,4 @@
+import { Socket } from 'socket.io-client';
 import Peer, { MediaConnection } from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,7 +12,7 @@ const RETRY_TIMEOUT_BASE = 1000;
  * with enhanced error handling and connection recovery
  */
 export class PeerJSConnection {
-  private socket: WebSocket;
+  private socket: Socket;
   private peer: Peer | null = null;
   private peerId: string;
   private remoteId: number | null = null;
@@ -24,36 +25,25 @@ export class PeerJSConnection {
   private retryCount: number = 0;
   private peerCreationInProgress: boolean = false;
   private connectionAttemptTimeout: NodeJS.Timeout | null = null;
-  private messageHandler: (event: MessageEvent) => void;
   
   /**
    * Initialize the PeerJS helper
-   * @param socket WebSocket for signaling
+   * @param socket Socket.io socket for signaling
    */
-  constructor(socket: WebSocket) {
+  constructor(socket: Socket) {
     this.socket = socket;
     this.peerId = `peer-${uuidv4()}`;
     this.connectionId = uuidv4();
     this.debug('Created PeerJS helper with ID:', this.peerId);
     
-    // Set up WebSocket message handler for PeerJS signaling
-    this.messageHandler = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'peerjs-signal') {
-          this.handleSignal(data);
-        }
-      } catch (err) {
-        console.error('Error handling WebSocket message for PeerJS:', err);
-      }
-    };
+    // Listen for socket disconnection
+    this.socket.on('disconnect', () => {
+      this.debug('Socket disconnected, may affect signaling');
+    });
     
-    // Add event listener for messages
-    this.socket.addEventListener('message', this.messageHandler);
-    
-    // Monitor socket status
-    this.socket.addEventListener('close', () => {
-      this.debug('WebSocket closed, may affect signaling');
+    // Listen for socket reconnection
+    this.socket.on('reconnect', () => {
+      this.debug('Socket reconnected, resuming signaling capability');
     });
   }
 
@@ -112,10 +102,9 @@ export class PeerJSConnection {
       }
       
       return stream;
-    } catch (error: unknown) {
-      const err = error as Error;
+    } catch (err) {
       console.error('Failed to initialize call:', err);
-      this.notifyError(`Could not establish call: ${err.message || String(err)}`);
+      this.notifyError(`Could not establish call: ${err.message || err}`);
       throw err;
     }
   }
@@ -467,19 +456,18 @@ export class PeerJSConnection {
    * Send a signal through the signaling server
    */
   private sendSignal(data: any): void {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('Cannot send signal - no socket connection or socket not open');
+    if (!this.socket) {
+      console.error('Cannot send signal - no socket connection');
       return;
     }
     
     this.debug('Sending signal:', data);
     
-    // Send the signal through the WebSocket
-    this.socket.send(JSON.stringify({
-      type: 'peerjs-signal',
+    // Send the signal through the signaling server
+    this.socket.emit('peerjs-signal', {
       ...data,
       receiverId: this.remoteId
-    }));
+    });
   }
   
   /**
@@ -590,7 +578,7 @@ export class PeerJSConnection {
         hasMediaConnection: Boolean(this.mediaConnection),
         hasLocalStream: Boolean(this.localStream),
         localStreamTracks: this.localStream ? this.localStream.getTracks().length : 0,
-        peerConnections: this.peer ? Object.keys(this.peer.connections).length : 0,
+        peerConnectionState: this.peer?.connectionState || 'none',
         retryCount: this.retryCount,
         hasTimeout: Boolean(this.connectionAttemptTimeout)
       };
@@ -726,18 +714,17 @@ export class PeerJSConnection {
       this.errorCallback(message);
     }
     
-    // Send error message through WebSocket if it's open
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+    // Emit error to the socket
+    if (this.socket) {
       try {
-        this.socket.send(JSON.stringify({
-          type: 'error',
-          source: 'peerjs',
+        this.socket.emit('error', {
+          type: 'peerjs',
           message,
           timestamp: new Date().toISOString(),
           peerId: this.peer?.id
-        }));
+        });
       } catch (err) {
-        console.error('Failed to send error to WebSocket:', err);
+        console.error('Failed to emit error to socket:', err);
       }
     }
   }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
 import { saveAs } from "file-saver";
 import { v4 as uuidv4 } from "uuid";
 import { PeerJSConnection } from "./peerjs-helper";
@@ -54,9 +55,6 @@ interface UseCommunicationOptions {
   autoReconnect?: boolean;
 }
 
-// Define our WebSocket type for our use case
-export type WebSocketType = WebSocket;
-
 export function useCommunication(options: UseCommunicationOptions = {}) {
   const {
     userId,
@@ -64,7 +62,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     onStatusChange,
     onCallState,
     onFileReceived,
-    autoReconnect = true
+    autoReconnect = true,
   } = options;
   
   // Connection state
@@ -73,7 +71,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const [onlineUsers, setOnlineUsers] = useState<number[]>([]);
   
   // Socket reference
-  const socketRef = useRef<WebSocketType | null>(null);
+  const socketRef = useRef<Socket | null>(null);
   
   // Call state
   const [activeCall, setActiveCall] = useState<CallInfo | null>(null);
@@ -84,43 +82,604 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   // File transfer state
   const [fileTransfers, setFileTransfers] = useState<Map<string, FileInfo>>(new Map());
   
-  // Connection management
-  const isConnectingRef = useRef(false);
-  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reconnectAttemptRef = useRef(0);
-  const maxReconnectAttempts = 3;
-  
-  // Function to safely cleanup any pending connection attempts
-  const cleanupPendingConnections = useCallback(() => {
-    if (connectTimeoutRef.current) {
-      clearTimeout(connectTimeoutRef.current);
-      connectTimeoutRef.current = null;
-    }
-  }, []);
-  
-  // Reset connection state
-  const resetConnectionState = useCallback(() => {
-    isConnectingRef.current = false;
-    reconnectAttemptRef.current = 0;
-    cleanupPendingConnections();
-  }, [cleanupPendingConnections]);
-  
-  // Safely disconnect socket
-  const safeDisconnectSocket = useCallback(() => {
+  // Connect to the Socket.io server with improved error handling
+  const connect = useCallback(() => {
+    if (!userId) return;
+    
     try {
-      if (socketRef.current) {
-        // Check if WebSocket is still open or connecting
-        if (socketRef.current.readyState === WebSocket.OPEN || 
-            socketRef.current.readyState === WebSocket.CONNECTING) {
-          console.log('Closing WebSocket connection...');
-          socketRef.current.close();
+      // Create new Socket.io connection
+      // Match server configuration (path /socket.io with namespace /comms)
+      console.log('Creating Socket.io connection with namespace /comms and path /socket.io');
+      
+      // Create a function to handle socket creation with better error handling
+      const createSocket = () => {
+        try {
+          // Determine best transport order based on browser capabilities
+          // Some environments perform better with specific transport orders
+          const supportsWebSockets = 'WebSocket' in window && 
+                                    window.WebSocket.CLOSING === 2; // Check for proper WebSocket implementation
+          
+          // Determine the appropriate transport order based on capabilities and previous errors
+          const transports = supportsWebSockets ? 
+            ['websocket', 'polling'] : // Prefer WebSocket if properly supported
+            ['polling', 'websocket']; // Fall back to polling first otherwise
+          
+          console.log(`Using transport order: [${transports.join(', ')}]`);
+          
+          // Initialize Socket.io with the namespace directly and enhanced options
+          const socket = io('/comms', {
+            path: '/socket.io', // Must match the server's Socket.io path
+            transports, // Use determined transport order
+            reconnectionAttempts: 20, // Increased reconnection attempts for better resilience
+            reconnectionDelay: 1000, // Start with a 1 second delay
+            reconnectionDelayMax: 15000, // Maximum delay between reconnection attempts
+            timeout: 90000, // 90 seconds connection timeout for slower networks
+            autoConnect: true,
+            forceNew: true, // Force a new connection to avoid reusing problematic connections
+            randomizationFactor: 0.5, // Add randomization to reconnection attempts
+            reconnection: true, // Explicitly enable reconnection
+            upgrade: true, // Enable transport upgrades
+            rememberUpgrade: true, // Remember successful transport upgrades
+            extraHeaders: {}, // No extra headers needed, but included for future extension
+            query: { clientTime: Date.now() } // Add timestamp to help with debugging
+          });
+          
+          return socket;
+        } catch (err) {
+          console.error('Error creating socket connection:', err);
+          setError(`Failed to create connection: ${err instanceof Error ? err.message : String(err)}`);
+          return null;
         }
-        socketRef.current = null;
+      };
+      
+      // Create socket with error handling
+      const socket = createSocket();
+      
+      // If socket creation fails, abort
+      if (!socket) {
+        console.error('Failed to create socket, aborting connection');
+        return;
       }
+      
+      // Debug connection details
+      console.log('Socket.io connection details:', {
+        namespace: '/comms',
+        path: '/socket.io',
+        origin: window.location.origin
+      });
+      
+      // Log that we're attempting to connect
+      console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
+      
+      // Log to help debug the connection issues
+      console.log('Socket.io connection attempt', {
+        namespace: '/comms',
+        path: '/socket.io',
+        userId,
+        currentSocketState: socketRef.current ? 'exists' : 'null'
+      });
+      socketRef.current = socket;
+      
+      // Connection event handlers
+      socket.on('connect', () => {
+        console.log('Socket.io connection successful, socketId:', socket.id);
+        setIsConnected(true);
+        setError(null);
+        
+        // Authenticate with user ID
+        console.log(`Sending auth event with userId: ${userId}`);
+        socket.emit('auth', { userId });
+        console.log('Auth event sent');
+      });
+      
+      // Handle disconnect with enhanced reconnection
+      socket.on('disconnect', (reason) => {
+        console.log('Socket.io disconnected, reason:', reason);
+        setIsConnected(false);
+        
+        // Clean up any active calls
+        if (activeCall) {
+          endCall();
+        }
+        
+        // Handle specific disconnect reasons with custom recovery strategies
+        // See: https://socket.io/docs/v4/client-socket-instance/#disconnect
+        if (reason === 'io server disconnect') {
+          // Server has forcefully disconnected us, we need to manually reconnect
+          console.log('Server forced disconnect, attempting manual reconnection...');
+          
+          // Add delay to avoid immediate reconnection attempts which may fail
+          setTimeout(() => {
+            try {
+              socket.connect();
+            } catch (reconnectErr) {
+              console.error('Error during manual reconnection after server disconnect:', reconnectErr);
+              setError('Connection lost. Please refresh the page to reconnect.');
+            }
+          }, 2000); // 2 second delay
+        } else if (reason === 'transport error') {
+          // Transport errors may need special handling
+          console.log('Transport error detected, attempting to switch transports');
+          
+          // Try to recover with different transport
+          if (socket.io.opts && socket.io.opts.transports) {
+            const currentTransports = socket.io.opts.transports as string[];
+            
+            // Check if websocket is the first transport
+            if (currentTransports.indexOf('websocket') === 0) {
+              console.log('Switching from WebSocket-first to polling-first transport');
+              socket.io.opts.transports = ['polling', 'websocket'] as any;
+            } else {
+              console.log('Switching from polling-first to WebSocket-only transport');
+              socket.io.opts.transports = ['websocket'] as any;
+            }
+          }
+          
+          // Socket.io will try to reconnect automatically for "transport error"
+        } else if (reason === 'ping timeout') {
+          // Ping timeout may indicate network instability
+          console.log('Ping timeout detected, connection may be unstable');
+          setError('Connection unstable. Attempting to reconnect...');
+          
+          // Socket.io will try to reconnect automatically for "ping timeout"
+        }
+      });
+      
+      // Handle connection errors with enhanced recovery
+      socket.on('connect_error', (err) => {
+        console.error('Socket.io connection error:', err);
+        
+        // Safely extract error properties - some are not standard Error properties
+        const errorDetails = {
+          message: err.message || 'Unknown error',
+          // TypeScript might complain about these properties, but they might exist in Socket.io errors
+          type: (err as any).type,
+          description: (err as any).description,
+          context: (err as any).context,
+          stack: err.stack,
+          socketId: socket.id,
+          connected: socket.connected,
+          disconnected: socket.disconnected
+        };
+        
+        console.error('Socket.io connection error details:', errorDetails);
+        
+        // Check for specific HTTP 502 errors
+        const is502Error = 
+          errorDetails.description === 502 || 
+          (errorDetails.message && errorDetails.message.includes('502')) ||
+          (errorDetails.context && 
+           typeof errorDetails.context === 'object' && 
+           errorDetails.context.chobitsuRequest && 
+           errorDetails.context.chobitsuRequest.description === 502);
+        
+        if (is502Error) {
+          console.log('Detected HTTP 502 error, implementing special recovery strategy');
+          
+          // For 502 errors, we'll force a new connection approach
+          // First, attempt to close the current connection if it exists
+          try {
+            if (!socket.disconnected) {
+              socket.disconnect();
+            }
+          } catch (closeErr) {
+            console.error('Error closing socket during 502 recovery:', closeErr);
+          }
+          
+          // Set a more specific error message
+          setError('Connection issue detected. Attempting to reconnect...');
+          
+          // Instead of letting socket.io handle reconnection automatically,
+          // we'll manually reconnect after a brief delay to give the server time to recover
+          setTimeout(() => {
+            try {
+              // Force reconnection with a different transport order
+              // This can help bypass issues with the current transport method
+              socket.io.opts.transports = ['websocket'];
+              socket.connect();
+              
+              console.log('Manual reconnection attempt initiated after 502 error');
+            } catch (reconnectErr) {
+              console.error('Error during manual reconnection:', reconnectErr);
+              
+              // If manual reconnection fails, provide user with instructions
+              setError('Connection issues persist. You may need to refresh the page.');
+            }
+          }, 3000); // 3 second delay before reconnection attempt
+        } else {
+          // For other errors, use standard error handling
+          setError(`Connection error: ${errorDetails.message}`);
+        }
+      });
+      
+      // Add more detailed connection event logging
+      socket.io.on('reconnect_attempt', (attempt) => {
+        console.debug(`Socket.io reconnection attempt #${attempt}`);
+      });
+      
+      socket.io.on('reconnect', (attempt) => {
+        console.debug(`Socket.io reconnected after ${attempt} attempts`);
+      });
+      
+      socket.io.on('reconnect_error', (err) => {
+        console.error('Socket.io reconnection error:', err);
+      });
+      
+      socket.io.on('reconnect_failed', () => {
+        console.error('Socket.io reconnection failed after maximum attempts');
+        setError('Connection failed after multiple attempts. Please check your network connection and refresh the page.');
+      });
+      
+      // Handle notifications
+      socket.on('notification', (data) => {
+        if (onMessage) {
+          onMessage({
+            id: uuidv4(),
+            type: 'notification',
+            content: data.content,
+            timestamp: new Date(data.timestamp)
+          });
+        }
+      });
+      
+      // Handle messages
+      socket.on('message', (data) => {
+        if (onMessage) {
+          const message: ChatMessage = {
+            id: uuidv4(),
+            type: 'text',
+            senderId: data.senderId,
+            receiverId: data.receiverId,
+            content: data.content,
+            timestamp: new Date(data.timestamp),
+            messageId: data.messageId
+          };
+          
+          onMessage(message);
+        }
+      });
+      
+      // Handle errors
+      socket.on('error', (data) => {
+        setError(data.message);
+      });
+      
+      // Handle user status changes
+      socket.on('user:status', (data: UserStatus) => {
+        if (onStatusChange) {
+          onStatusChange(data);
+        }
+        
+        // Update online users list
+        setOnlineUsers(prev => {
+          if (data.status === 'online' && !prev.includes(data.userId)) {
+            return [...prev, data.userId];
+          } else if (data.status === 'offline') {
+            return prev.filter(id => id !== data.userId);
+          }
+          return prev;
+        });
+      });
+      
+      // Handle online users list
+      socket.on('online:users', (userIds: number[]) => {
+        setOnlineUsers(userIds);
+      });
+      
+      // Handle incoming calls
+      socket.on('call:incoming', (data) => {
+        const newCall: CallInfo = {
+          callId: uuidv4(),
+          callerId: data.callerId,
+          receiverId: userId,
+          callType: data.callType,
+          status: 'ringing'
+        };
+        
+        setActiveCall(newCall);
+        
+        if (onCallState) {
+          onCallState(newCall);
+        }
+      });
+      
+      // Handle call responses
+      socket.on('call:response', (data) => {
+        if (!activeCall) return;
+        
+        const updatedCall: CallInfo = {
+          ...activeCall,
+          status: data.accepted ? 'accepted' : 'rejected'
+        };
+        
+        setActiveCall(updatedCall);
+        
+        if (onCallState) {
+          onCallState(updatedCall);
+        }
+        
+        // If call was accepted, start the PeerJS connection
+        if (data.accepted && activeCall.callerId === userId) {
+          initializePeerConnection(activeCall.receiverId, activeCall.callType, true);
+        }
+      });
+      
+      // Handle PeerJS signaling with enhanced error handling
+      socket.on('peerjs-signal', async (data) => {
+        try {
+          console.log('Received PeerJS signal from user', data.senderId, 'type:', data.type || 'unknown');
+          
+          // Forward the signal to the PeerJS connection helper if it exists
+          if (peerJSRef.current) {
+            peerJSRef.current.handleSignal(data);
+          } else {
+            console.warn('Received PeerJS signal but no active PeerJS connection exists');
+            
+            // If we get a signal but don't have a PeerJS connection and we have an active call
+            // it might be necessary to initialize the connection
+            if (activeCall && !localStream) {
+              console.log('Attempting to initialize peer connection for incoming call');
+              initializePeerConnection(data.senderId, activeCall.callType, false);
+            }
+          }
+        } catch (err) {
+          console.error('PeerJS signaling error:', err);
+          setError('Failed to establish call connection');
+        }
+      });
+      
+      // Handle PeerJS signal errors
+      socket.on('peerjs-signal-error', (data) => {
+        console.error('PeerJS signal error:', data);
+        
+        // Notify user of error based on type
+        if (data.type === 'receiver-offline') {
+          // User is offline
+          if (activeCall) {
+            const updatedCall: CallInfo = {
+              ...activeCall,
+              status: 'missed',
+              endTime: new Date()
+            };
+            
+            setActiveCall(updatedCall);
+            
+            if (onCallState) {
+              onCallState(updatedCall);
+            }
+          }
+          
+          // Notify error state
+          setError(`Call failed: User is offline`);
+          
+          // Clean up call resources
+          if (peerJSRef.current) {
+            peerJSRef.current.endCall();
+          }
+          setLocalStream(null);
+          setRemoteStream(null);
+        } else if (data.type === 'forward-failed') {
+          // Signal forwarding failed
+          setError(`Call failed: Connection error`);
+          
+          // End the call
+          if (activeCall) {
+            const updatedCall: CallInfo = {
+              ...activeCall,
+              status: 'ended',
+              endTime: new Date()
+            };
+            
+            setActiveCall(updatedCall);
+            
+            if (onCallState) {
+              onCallState(updatedCall);
+            }
+          }
+          
+          // Clean up call resources
+          if (peerJSRef.current) {
+            peerJSRef.current.endCall();
+          }
+          setLocalStream(null);
+          setRemoteStream(null);
+        }
+      });
+      
+      // Handle incoming files
+      socket.on('file:incoming', async (data) => {
+        // Add to file transfers
+        const fileInfo: FileInfo = {
+          ...data.fileInfo,
+          id: data.fileInfo.id || uuidv4()
+        };
+        
+        setFileTransfers(prev => {
+          const newMap = new Map(prev);
+          newMap.set(fileInfo.id, fileInfo);
+          return newMap;
+        });
+        
+        // Notify through callback
+        if (onFileReceived) {
+          onFileReceived(fileInfo);
+        }
+        
+        // Also notify via message
+        if (onMessage) {
+          onMessage({
+            id: uuidv4(),
+            type: 'file',
+            senderId: data.senderId,
+            content: `Shared a file: ${fileInfo.name}`,
+            timestamp: new Date(),
+            fileInfo
+          });
+        }
+      });
+      
     } catch (err) {
-      console.error('Error safely disconnecting socket:', err);
+      setError('Failed to establish communication connection');
+      console.error('Communication connection error:', err);
     }
-  }, []);
+  }, [userId, activeCall, onMessage, onStatusChange, onCallState, onFileReceived]);
+  
+  // Disconnect from the Socket.io server
+  const disconnect = useCallback(() => {
+    // Clean up any active call
+    if (activeCall) {
+      endCall();
+    }
+    
+    // Disconnect socket
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    
+    setIsConnected(false);
+  }, [activeCall]);
+  
+  // Send a text message
+  const sendMessage = useCallback((receiverId: number, content: string): boolean => {
+    if (!socketRef.current || !isConnected) {
+      setError('Not connected to communication server');
+      return false;
+    }
+    
+    try {
+      socketRef.current.emit('message', {
+        receiverId,
+        content
+      });
+      
+      return true;
+    } catch (err) {
+      setError('Failed to send message');
+      console.error('Message sending error:', err);
+      return false;
+    }
+  }, [isConnected]);
+  
+  // Initialize an audio or video call
+  const initiateCall = useCallback(async (receiverId: number, callType: 'audio' | 'video'): Promise<boolean> => {
+    if (!socketRef.current || !isConnected) {
+      setError('Not connected to communication server');
+      return false;
+    }
+    
+    // Check if recipient is online
+    if (!onlineUsers.includes(receiverId)) {
+      setError('User is offline');
+      return false;
+    }
+    
+    // Create a new call
+    const newCall: CallInfo = {
+      callId: uuidv4(),
+      callerId: userId as number,
+      receiverId,
+      callType,
+      status: 'ringing'
+    };
+    
+    setActiveCall(newCall);
+    
+    try {
+      // Send call request to recipient
+      socketRef.current.emit('call:init', {
+        receiverId,
+        callType
+      });
+      
+      if (onCallState) {
+        onCallState(newCall);
+      }
+      
+      return true;
+    } catch (err) {
+      setError('Failed to initiate call');
+      console.error('Call initiation error:', err);
+      return false;
+    }
+  }, [isConnected, userId, onlineUsers, onCallState]);
+  
+  // Accept an incoming call
+  const acceptCall = useCallback(async (): Promise<boolean> => {
+    if (!activeCall || !socketRef.current || !isConnected) {
+      setError('No active call to accept');
+      return false;
+    }
+    
+    try {
+      // Update call status
+      const updatedCall: CallInfo = {
+        ...activeCall,
+        status: 'accepted',
+        startTime: new Date()
+      };
+      
+      setActiveCall(updatedCall);
+      
+      // Send acceptance to caller
+      socketRef.current.emit('call:response', {
+        callerId: activeCall.callerId,
+        accepted: true
+      });
+      
+      if (onCallState) {
+        onCallState(updatedCall);
+      }
+      
+      // Initialize peer connection as the call receiver
+      await initializePeerConnection(activeCall.callerId, activeCall.callType, false);
+      
+      return true;
+    } catch (err) {
+      setError('Failed to accept call');
+      console.error('Call acceptance error:', err);
+      return false;
+    }
+  }, [activeCall, isConnected, onCallState]);
+  
+  // Reject an incoming call
+  const rejectCall = useCallback((): boolean => {
+    if (!activeCall || !socketRef.current || !isConnected) {
+      setError('No active call to reject');
+      return false;
+    }
+    
+    try {
+      // Update call status
+      const updatedCall: CallInfo = {
+        ...activeCall,
+        status: 'rejected'
+      };
+      
+      setActiveCall(updatedCall);
+      
+      // Send rejection to caller
+      socketRef.current.emit('call:response', {
+        callerId: activeCall.callerId,
+        accepted: false
+      });
+      
+      if (onCallState) {
+        onCallState(updatedCall);
+      }
+      
+      // Clean up call state
+      setTimeout(() => {
+        setActiveCall(null);
+      }, 1000);
+      
+      return true;
+    } catch (err) {
+      setError('Failed to reject call');
+      console.error('Call rejection error:', err);
+      return false;
+    }
+  }, [activeCall, isConnected, onCallState]);
   
   // End an active call
   const endCall = useCallback((): boolean => {
@@ -167,18 +726,6 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, [activeCall, localStream, onCallState]);
   
-  // Disconnect from the Socket.io server
-  const disconnect = useCallback(() => {
-    // Clean up any active call
-    if (activeCall) {
-      endCall();
-    }
-    
-    // Use the safe disconnect method
-    safeDisconnectSocket();
-    setIsConnected(false);
-  }, [activeCall, safeDisconnectSocket, endCall]);
-  
   // Initialize PeerJS connection
   const initializePeerConnection = useCallback(async (
     peerId: number, 
@@ -221,407 +768,6 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, []);
   
-  // Connect to WebSocket server with improved error handling
-  const connect = useCallback(() => {
-    // Don't proceed if no user ID is available
-    if (!userId) {
-      console.debug('Not connecting: No userId available');
-      return;
-    }
-    
-    // Don't create a new connection if one already exists
-    if (socketRef.current) {
-      console.debug('Not connecting: Socket already exists');
-      return;
-    }
-    
-    try {
-      // Create new WebSocket connection using the native WebSocket API
-      console.debug('Attempting to connect to WebSocket server with path: /ws');
-      
-      // Check if WebSocket is supported
-      if (!('WebSocket' in window)) {
-        console.error('WebSocket is not supported by this browser');
-        setError('WebSocket is not supported by this browser');
-        return;
-      }
-      
-      // Set up the WebSocket connection with the correct protocol based on https/http
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
-      console.log(`Connecting to WebSocket at: ${wsUrl}`);
-      
-      const socket = new WebSocket(wsUrl);
-      
-      // Store the native WebSocket in the ref
-      socketRef.current = socket;
-      
-      // Debug connection details
-      console.log('WebSocket connection attempt', {
-        url: wsUrl,
-        userId,
-        currentSocketState: socket.readyState
-      });
-      
-      // Connection opened
-      socket.addEventListener('open', () => {
-        console.log('WebSocket connection successful');
-        setIsConnected(true);
-        setError(null);
-        
-        // Authenticate with user ID
-        console.log(`Sending auth event with userId: ${userId}`);
-        // Use send with JSON string instead of emit
-        socket.send(JSON.stringify({
-          type: 'auth',
-          userId: userId
-        }));
-        console.log('Auth event sent');
-      });
-      
-      // Handle connection close
-      socket.addEventListener('close', (event) => {
-        console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
-        setIsConnected(false);
-        
-        // Clean up any active calls
-        if (activeCall) {
-          endCall();
-        }
-        
-        // Set socket reference to null after disconnection
-        if (socketRef.current) {
-          socketRef.current = null;
-        }
-        
-        // For ALL disconnect reasons, don't attempt automatic reconnection
-        // This breaks the reconnection loop by letting the parent useEffect
-        // handle reconnection only when appropriate
-        console.log(`WebSocket disconnected (${event.reason}), no automatic reconnection`);
-        
-        // Reset connecting state to allow new connection attempts from parent logic
-        isConnectingRef.current = false;
-      });
-      
-      // Handle connection errors 
-      socket.addEventListener('error', (event) => {
-        console.error('WebSocket error:', event);
-        
-        setError(`Connection error`);
-        setIsConnected(false);
-      });
-      
-      // Handle incoming messages (all message types come through here)
-      socket.addEventListener('message', (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          // Handle different message types
-          switch (data.type) {
-            case 'notification':
-              if (onMessage) {
-                onMessage({
-                  id: uuidv4(),
-                  type: 'notification',
-                  content: data.content,
-                  timestamp: new Date(data.timestamp)
-                });
-              }
-              break;
-              
-            case 'message':
-              if (onMessage) {
-                const message: ChatMessage = {
-                  id: uuidv4(),
-                  type: 'text',
-                  senderId: data.senderId,
-                  receiverId: data.receiverId,
-                  content: data.content,
-                  timestamp: new Date(data.timestamp),
-                  messageId: data.messageId || Date.now()
-                };
-                
-                onMessage(message);
-              }
-              break;
-              
-            case 'error':
-              setError(data.content);
-              break;
-            
-            case 'user:status':
-              const { userId: statusUserId, status } = data as UserStatus;
-              
-              // Update online users list
-              if (status === 'online') {
-                setOnlineUsers(prev => {
-                  if (!prev.includes(statusUserId)) {
-                    return [...prev, statusUserId];
-                  }
-                  return prev;
-                });
-              } else {
-                setOnlineUsers(prev => prev.filter(id => id !== statusUserId));
-              }
-              
-              // Forward status change to callback
-              if (onStatusChange) {
-                onStatusChange(data as UserStatus);
-              }
-              break;
-              
-            case 'online:users':
-              setOnlineUsers(data.userIds || []);
-              break;
-              
-            case 'call:incoming':
-              const { callerId, callType } = data;
-              
-              // Create new call info
-              const newCall: CallInfo = {
-                callId: uuidv4(),
-                callerId,
-                receiverId: userId as number,
-                callType,
-                status: 'ringing'
-              };
-              
-              setActiveCall(newCall);
-              
-              if (onCallState) {
-                onCallState(newCall);
-              }
-              break;
-              
-            case 'call:response':
-              if (!activeCall || activeCall.receiverId !== data.responderId) {
-                break;
-              }
-              
-              if (data.accepted) {
-                // Call was accepted
-                const updatedCall: CallInfo = {
-                  ...activeCall,
-                  status: 'accepted',
-                  startTime: new Date()
-                };
-                
-                setActiveCall(updatedCall);
-                
-                if (onCallState) {
-                  onCallState(updatedCall);
-                }
-                
-                // Initialize PeerJS connection as the caller
-                initializePeerConnection(activeCall.receiverId, activeCall.callType, true);
-              } else {
-                // Call was rejected
-                const updatedCall: CallInfo = {
-                  ...activeCall,
-                  status: 'rejected'
-                };
-                
-                setActiveCall(updatedCall);
-                
-                if (onCallState) {
-                  onCallState(updatedCall);
-                }
-                
-                // Clean up call state
-                setTimeout(() => {
-                  setActiveCall(null);
-                }, 1000);
-              }
-              break;
-              
-            case 'file:incoming':
-              // Add to file transfers
-              const fileInfo: FileInfo = {
-                ...data.fileInfo,
-                id: data.fileInfo.id || uuidv4()
-              };
-              
-              setFileTransfers(prev => {
-                const newMap = new Map(prev);
-                newMap.set(fileInfo.id, fileInfo);
-                return newMap;
-              });
-              
-              // Notify through callback
-              if (onFileReceived) {
-                onFileReceived(fileInfo);
-              }
-              
-              // Also notify via message
-              if (onMessage) {
-                onMessage({
-                  id: uuidv4(),
-                  type: 'file',
-                  senderId: data.senderId,
-                  content: `Shared a file: ${fileInfo.name}`,
-                  timestamp: new Date(),
-                  fileInfo
-                });
-              }
-              break;
-          }
-        } catch (err) {
-          console.error('Error handling WebSocket message:', err);
-        }
-      });
-      
-    } catch (err) {
-      setError('Failed to establish communication connection');
-      console.error('Communication connection error:', err);
-    }
-  }, [userId, activeCall, onMessage, onStatusChange, onCallState, onFileReceived, endCall, initializePeerConnection]);
-  
-  // Send a text message
-  const sendMessage = useCallback((receiverId: number, content: string): boolean => {
-    if (!socketRef.current || !isConnected) {
-      setError('Not connected to communication server');
-      return false;
-    }
-    
-    try {
-      // Use WebSocket send with JSON stringify
-      socketRef.current.send(JSON.stringify({
-        type: 'message',
-        receiverId,
-        content
-      }));
-      
-      return true;
-    } catch (err) {
-      setError('Failed to send message');
-      console.error('Message sending error:', err);
-      return false;
-    }
-  }, [isConnected]);
-  
-  // Initialize an audio or video call
-  const initiateCall = useCallback(async (receiverId: number, callType: 'audio' | 'video'): Promise<boolean> => {
-    if (!socketRef.current || !isConnected) {
-      setError('Not connected to communication server');
-      return false;
-    }
-    
-    // Check if recipient is online
-    if (!onlineUsers.includes(receiverId)) {
-      setError('User is offline');
-      return false;
-    }
-    
-    // Create a new call
-    const newCall: CallInfo = {
-      callId: uuidv4(),
-      callerId: userId as number,
-      receiverId,
-      callType,
-      status: 'ringing'
-    };
-    
-    setActiveCall(newCall);
-    
-    try {
-      // Send call request to recipient
-      socketRef.current.send(JSON.stringify({
-        type: 'call:init',
-        receiverId,
-        callType
-      }));
-      
-      if (onCallState) {
-        onCallState(newCall);
-      }
-      
-      return true;
-    } catch (err) {
-      setError('Failed to initiate call');
-      console.error('Call initiation error:', err);
-      return false;
-    }
-  }, [isConnected, userId, onlineUsers, onCallState]);
-  
-  // Accept an incoming call
-  const acceptCall = useCallback(async (): Promise<boolean> => {
-    if (!activeCall || !socketRef.current || !isConnected) {
-      setError('No active call to accept');
-      return false;
-    }
-    
-    try {
-      // Update call status
-      const updatedCall: CallInfo = {
-        ...activeCall,
-        status: 'accepted',
-        startTime: new Date()
-      };
-      
-      setActiveCall(updatedCall);
-      
-      // Send acceptance to caller
-      socketRef.current.send(JSON.stringify({
-        type: 'call:response',
-        callerId: activeCall.callerId,
-        accepted: true
-      }));
-      
-      if (onCallState) {
-        onCallState(updatedCall);
-      }
-      
-      // Initialize peer connection as the call receiver
-      await initializePeerConnection(activeCall.callerId, activeCall.callType, false);
-      
-      return true;
-    } catch (err) {
-      setError('Failed to accept call');
-      console.error('Call acceptance error:', err);
-      return false;
-    }
-  }, [activeCall, isConnected, onCallState, initializePeerConnection]);
-  
-  // Reject an incoming call
-  const rejectCall = useCallback((): boolean => {
-    if (!activeCall || !socketRef.current || !isConnected) {
-      setError('No active call to reject');
-      return false;
-    }
-    
-    try {
-      // Update call status
-      const updatedCall: CallInfo = {
-        ...activeCall,
-        status: 'rejected'
-      };
-      
-      setActiveCall(updatedCall);
-      
-      // Send rejection to caller
-      socketRef.current.send(JSON.stringify({
-        type: 'call:response',
-        callerId: activeCall.callerId,
-        accepted: false
-      }));
-      
-      if (onCallState) {
-        onCallState(updatedCall);
-      }
-      
-      // Clean up call state
-      setTimeout(() => {
-        setActiveCall(null);
-      }, 1000);
-      
-      return true;
-    } catch (err) {
-      setError('Failed to reject call');
-      console.error('Call rejection error:', err);
-      return false;
-    }
-  }, [activeCall, isConnected, onCallState]);
-  
   // Share a file
   const shareFile = useCallback(async (receiverId: number, file: File): Promise<boolean> => {
     if (!socketRef.current || !isConnected) {
@@ -653,11 +799,10 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       fileInfo.data = fileData;
       
       // Send file data to recipient
-      socketRef.current.send(JSON.stringify({
-        type: 'file:share',
+      socketRef.current.emit('file:share', {
         receiverId,
         fileInfo
-      }));
+      });
       
       // Add to local file transfers
       setFileTransfers(prev => {
@@ -671,7 +816,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         onMessage({
           id: uuidv4(),
           type: 'file',
-          senderId: userId as number, // Type assertion to satisfy type checker
+          senderId: userId,
           receiverId,
           content: `You shared a file: ${file.name}`,
           timestamp: new Date(),
@@ -720,150 +865,18 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, [fileTransfers]);
   
-  // Use a ref to track if component is mounted to prevent updates after unmount
-  const isMountedRef = useRef(true);
-  
-  // Keep track of the connection attempt count to prevent infinite loops
-  const connectionAttemptCountRef = useRef(0);
-  const MAX_CONNECTION_ATTEMPTS = 3;
-  
-  // Last connection attempt timestamp for rate limiting reconnects
-  const lastConnectionAttemptRef = useRef<number>(0);
-  const CONNECTION_ATTEMPT_COOLDOWN = 5000; // 5 seconds between reconnection attempts
-  
-  // Use another ref to track if we're actively in a connection cycle
-  const isReconnectingRef = useRef<boolean>(false);
-  
-  // Connect and disconnect based on user ID changes with connection tracking
+  // Connect and disconnect based on user ID changes
   useEffect(() => {
-    // Set mounted flag - will be used in cleanup
-    isMountedRef.current = true;
-    
-    // Function to attempt connection with proper tracking and cleanup
-    const attemptConnection = () => {
-      // Prevent connection attempts if component is unmounted
-      if (!isMountedRef.current) return;
-      
-      // Enforce maximum connection attempts and rate limiting
-      if (connectionAttemptCountRef.current >= MAX_CONNECTION_ATTEMPTS) {
-        console.log(`Maximum connection attempts (${MAX_CONNECTION_ATTEMPTS}) reached, stopping`);
-        isConnectingRef.current = false;
-        isReconnectingRef.current = false;
-        return;
-      }
-      
-      // Check if enough time has passed since the last attempt
-      const now = Date.now();
-      const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
-      
-      if (timeSinceLastAttempt < CONNECTION_ATTEMPT_COOLDOWN) {
-        console.log(`Connection attempt on cooldown. Waiting ${Math.ceil((CONNECTION_ATTEMPT_COOLDOWN - timeSinceLastAttempt)/1000)}s`);
-        
-        // Reschedule after cooldown period
-        if (connectTimeoutRef.current) {
-          clearTimeout(connectTimeoutRef.current);
-        }
-        
-        connectTimeoutRef.current = setTimeout(attemptConnection, 
-          CONNECTION_ATTEMPT_COOLDOWN - timeSinceLastAttempt);
-        return;
-      }
-      
-      // Update last attempt timestamp
-      lastConnectionAttemptRef.current = now;
-      
-      // Increment attempt counter
-      connectionAttemptCountRef.current++;
-      console.log(`Connection attempt ${connectionAttemptCountRef.current}/${MAX_CONNECTION_ATTEMPTS}`);
-      
-      try {
-        // Always ensure any previous socket is properly closed
-        safeDisconnectSocket();
-        
-        // Create socket and register events
-        connect();
-        
-        // With native WebSockets, connection is automatic after creation
-        if (socketRef.current) {
-          console.log('WebSocket connecting automatically');
-          
-          // Set a timeout to check if connection succeeded
-          setTimeout(() => {
-            if (socketRef.current && socketRef.current.readyState !== WebSocket.OPEN) {
-              console.log('Connection timeout - WebSocket did not connect within expected timeframe');
-              safeDisconnectSocket();
-              
-              // If we're still mounting, try again
-              if (isMountedRef.current && connectionAttemptCountRef.current < MAX_CONNECTION_ATTEMPTS) {
-                console.log('Scheduling another connection attempt');
-                connectTimeoutRef.current = setTimeout(attemptConnection, CONNECTION_ATTEMPT_COOLDOWN);
-              }
-            }
-          }, 3000); // 3 second connection timeout
-        }
-      } catch (err) {
-        console.error('Connection error in useEffect:', err);
-        isConnectingRef.current = false;
-      } finally {
-        // Clear the timeout reference
-        if (connectTimeoutRef.current) {
-          clearTimeout(connectTimeoutRef.current);
-          connectTimeoutRef.current = null;
-        }
-      }
-    };
-    
-    // Only attempt connection if userId exists
     if (userId) {
-      // Don't attempt if already connecting or connected with a valid socket
-      if (!isConnectingRef.current && !isConnected && !socketRef.current) {
-        console.log('Initializing socket connection');
-        
-        // Set connecting flag to prevent multiple connection attempts
-        isConnectingRef.current = true;
-        
-        // Reset connection attempt counter if we're not in a reconnection cycle
-        if (!isReconnectingRef.current) {
-          connectionAttemptCountRef.current = 0;
-          isReconnectingRef.current = true;
-        }
-        
-        // Schedule a connection attempt with delay to prevent rapid reconnection
-        if (connectTimeoutRef.current) {
-          clearTimeout(connectTimeoutRef.current);
-        }
-        
-        // Use a shorter delay for initial connection
-        connectTimeoutRef.current = setTimeout(attemptConnection, 1000);
-      }
+      connect();
     } else {
-      // If no userId, ensure we're disconnected and clean up
-      cleanupPendingConnections();
-      safeDisconnectSocket();
-      resetConnectionState();
-      connectionAttemptCountRef.current = 0;
-      isReconnectingRef.current = false;
+      disconnect();
     }
     
-    // Cleanup on component unmount
     return () => {
-      // Mark component as unmounted to prevent state updates
-      isMountedRef.current = false;
-      
-      // Clear any pending connection attempts
-      cleanupPendingConnections();
-      
-      // Disconnect socket if it exists
-      safeDisconnectSocket();
-      
-      // Reset connection state
-      resetConnectionState();
-      
-      // Reset connection attempt counter
-      connectionAttemptCountRef.current = 0;
-      isReconnectingRef.current = false;
+      disconnect();
     };
-  }, [userId, isConnected, connect, cleanupPendingConnections, resetConnectionState, safeDisconnectSocket]);
+  }, [userId, connect, disconnect]);
   
   return {
     isConnected,
