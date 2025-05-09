@@ -55,7 +55,7 @@ interface UseCommunicationOptions {
 }
 
 // Define our WebSocket type for our use case
-type WebSocketType = WebSocket;
+export type WebSocketType = WebSocket;
 
 export function useCommunication(options: UseCommunicationOptions = {}) {
   const {
@@ -254,7 +254,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       const socket = new WebSocket(wsUrl);
       
       // Store the native WebSocket in the ref
-      socketRef.current = socket as any; // Type adaptation
+      socketRef.current = socket;
       
       // Debug connection details
       console.log('WebSocket connection attempt', {

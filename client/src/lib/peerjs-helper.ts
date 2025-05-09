@@ -1,4 +1,3 @@
-import { Socket } from 'socket.io-client';
 import Peer, { MediaConnection } from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,7 +11,7 @@ const RETRY_TIMEOUT_BASE = 1000;
  * with enhanced error handling and connection recovery
  */
 export class PeerJSConnection {
-  private socket: Socket;
+  private socket: WebSocket;
   private peer: Peer | null = null;
   private peerId: string;
   private remoteId: number | null = null;
@@ -25,25 +24,36 @@ export class PeerJSConnection {
   private retryCount: number = 0;
   private peerCreationInProgress: boolean = false;
   private connectionAttemptTimeout: NodeJS.Timeout | null = null;
+  private messageHandler: (event: MessageEvent) => void;
   
   /**
    * Initialize the PeerJS helper
-   * @param socket Socket.io socket for signaling
+   * @param socket WebSocket for signaling
    */
-  constructor(socket: Socket) {
+  constructor(socket: WebSocket) {
     this.socket = socket;
     this.peerId = `peer-${uuidv4()}`;
     this.connectionId = uuidv4();
     this.debug('Created PeerJS helper with ID:', this.peerId);
     
-    // Listen for socket disconnection
-    this.socket.on('disconnect', () => {
-      this.debug('Socket disconnected, may affect signaling');
-    });
+    // Set up WebSocket message handler for PeerJS signaling
+    this.messageHandler = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'peerjs-signal') {
+          this.handleSignal(data);
+        }
+      } catch (err) {
+        console.error('Error handling WebSocket message for PeerJS:', err);
+      }
+    };
     
-    // Listen for socket reconnection
-    this.socket.on('reconnect', () => {
-      this.debug('Socket reconnected, resuming signaling capability');
+    // Add event listener for messages
+    this.socket.addEventListener('message', this.messageHandler);
+    
+    // Monitor socket status
+    this.socket.addEventListener('close', () => {
+      this.debug('WebSocket closed, may affect signaling');
     });
   }
 
