@@ -2,13 +2,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import MainLayout from "@/components/layout/main-layout";
+import React, { Suspense } from "react";
 
 export function ProtectedRoute({
   path,
   component: Component,
 }: {
   path: string;
-  component: () => React.JSX.Element;
+  component: React.ComponentType<any> | (() => React.JSX.Element);
 }) {
   const { user, isLoading } = useAuth();
 
@@ -30,11 +31,17 @@ export function ProtectedRoute({
     );
   }
 
-  // Always wrap the component with MainLayout for consistency
+  // Always wrap the component with MainLayout and Suspense for consistency
   return (
     <Route path={path}>
       <MainLayout>
-        <Component />
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }>
+          <Component />
+        </Suspense>
       </MainLayout>
     </Route>
   );
@@ -47,7 +54,7 @@ export function RoleProtectedRoute({
   allowedRoles,
 }: {
   path: string;
-  component: () => React.JSX.Element;
+  component: React.ComponentType<any> | (() => React.JSX.Element);
   allowedRoles: string[];
 }) {
   const { user, isLoading } = useAuth();
@@ -78,11 +85,17 @@ export function RoleProtectedRoute({
     );
   }
 
-  // Always wrap the component with MainLayout for consistency
+  // Always wrap the component with MainLayout and Suspense for consistency
   return (
     <Route path={path}>
       <MainLayout>
-        <Component />
+        <Suspense fallback={
+          <div className="flex items-center justify-center h-full min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        }>
+          <Component />
+        </Suspense>
       </MainLayout>
     </Route>
   );
