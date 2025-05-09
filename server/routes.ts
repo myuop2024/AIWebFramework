@@ -224,6 +224,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
+    // Signal exchange for PeerJS
+    socket.on('peerjs-signal', (data) => {
+      const { receiverId, signal } = data;
+      
+      if (!userId) {
+        socket.emit('error', { message: 'Not authenticated' });
+        return;
+      }
+      
+      // Forward PeerJS signaling data to the peer
+      socket.to(`user:${receiverId}`).emit('peerjs-signal', {
+        senderId: userId,
+        signal
+      });
+    });
+    
     // Call responses (accept/reject)
     socket.on('call:response', (data) => {
       const { callerId, accepted } = data;
