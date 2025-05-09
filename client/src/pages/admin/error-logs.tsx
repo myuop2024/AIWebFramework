@@ -46,6 +46,25 @@ function ErrorLogsPage() {
   const [selectedLog, setSelectedLog] = useState<ErrorLog | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Handle tab changes
+  React.useEffect(() => {
+    // Update filters based on active tab
+    if (activeTab === 'resolved') {
+      setFilters(f => ({ ...f, status: 'resolved' }));
+    } else if (activeTab === 'unresolved') {
+      setFilters(f => ({ ...f, status: 'open' }));
+    } else {
+      // For 'all' tab, remove status filter
+      setFilters(f => {
+        const newFilters = { ...f };
+        delete newFilters.status;
+        return newFilters;
+      });
+    }
+    // Reset to page 1 when changing tabs
+    setPage(1);
+  }, [activeTab]);
+
   // Fetch error logs
   const { data, isLoading, error, refetch } = useQuery<{data: ErrorLog[], pagination: any}>({
     queryKey: ['/api/admin/error-logs', page, limit, filters],

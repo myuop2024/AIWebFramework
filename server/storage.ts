@@ -1569,7 +1569,13 @@ export class MemStorage implements IStorage {
     return updatedErrorLog;
   }
   
-  async deleteErrorLogs(criteria: ErrorLogDeleteCriteria): Promise<number> {
+  async deleteErrorLogs(criteria: {
+    ids?: number[];
+    status?: string; 
+    level?: string;
+    source?: string;
+    olderThan?: string;
+  }): Promise<number> {
     let count = 0;
     let logsToCheck = Array.from(this.errorLogs.values());
     
@@ -1579,7 +1585,10 @@ export class MemStorage implements IStorage {
     }
     
     if (criteria.status) {
-      logsToCheck = logsToCheck.filter(log => log.status === criteria.status);
+      logsToCheck = logsToCheck.filter(log => 
+        (criteria.status === 'resolved' && log.resolved) || 
+        (criteria.status === 'open' && !log.resolved)
+      );
     }
     
     if (criteria.level) {
@@ -1592,7 +1601,7 @@ export class MemStorage implements IStorage {
     
     if (criteria.olderThan) {
       const cutoffDate = new Date(criteria.olderThan);
-      logsToCheck = logsToCheck.filter(log => new Date(log.timestamp) < cutoffDate);
+      logsToCheck = logsToCheck.filter(log => new Date(log.createdAt) < cutoffDate);
     }
     
     // Delete the filtered logs
