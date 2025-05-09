@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import * as THREE from 'three';
 
 interface BackgroundAnimationProps {
@@ -6,7 +6,8 @@ interface BackgroundAnimationProps {
   intensity?: number;
   speed?: number;
   count?: number;
-  enabled?: boolean; // New prop to control if animation is running
+  enabled?: boolean; // Prop to control if animation is running
+  quality?: 'low' | 'medium' | 'high'; // Quality setting for performance
 }
 
 export function BackgroundAnimation({
@@ -14,7 +15,8 @@ export function BackgroundAnimation({
   intensity = 0.2,
   speed = 0.5,
   count = 25, // Reduced default count
-  enabled = true // Default to enabled
+  enabled = true, // Default to enabled
+  quality = 'medium' // Default quality
 }: BackgroundAnimationProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -23,9 +25,40 @@ export function BackgroundAnimation({
   const particlesRef = useRef<THREE.Points | null>(null);
   const frameIdRef = useRef<number | null>(null);
   
+  // Quality-based settings
+  const qualitySettings = useMemo(() => {
+    switch(quality) {
+      case 'low':
+        return {
+          pixelRatio: Math.min(window.devicePixelRatio, 1),
+          particleCount: Math.max(10, Math.floor(count * 0.5)),
+          antialias: false,
+          updateEveryNthFrame: 2,
+          skipAnimation: window.innerWidth < 768 // Skip on mobile for low quality
+        };
+      case 'high':
+        return {
+          pixelRatio: window.devicePixelRatio,
+          particleCount: count,
+          antialias: true,
+          updateEveryNthFrame: 1,
+          skipAnimation: false
+        };
+      case 'medium':
+      default:
+        return {
+          pixelRatio: Math.min(window.devicePixelRatio, 1.5),
+          particleCount: Math.floor(count * 0.8),
+          antialias: false,
+          updateEveryNthFrame: 1,
+          skipAnimation: false
+        };
+    }
+  }, [quality, count]);
+
   // Only initialize if enabled
   useEffect(() => {
-    if (!containerRef.current || !enabled) return;
+    if (!containerRef.current || !enabled || (qualitySettings.skipAnimation)) return;
     
     // Convert hex color to THREE.Color
     const threeColor = new THREE.Color(color);
@@ -42,11 +75,11 @@ export function BackgroundAnimation({
     );
     camera.position.z = 20;
     
-    // Setup renderer with transparency and lower pixel ratio for performance
-    const pixelRatio = Math.min(window.devicePixelRatio, 1.5); // Cap pixel ratio
+    // Setup renderer with transparency and quality-based pixel ratio
+    const pixelRatio = qualitySettings.pixelRatio; 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: false, // Disable antialiasing for performance
+      antialias: qualitySettings.antialias,
       powerPreference: 'low-power' // Request low-power mode for better performance
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
