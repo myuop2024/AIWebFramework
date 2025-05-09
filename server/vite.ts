@@ -6,6 +6,17 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 
+import { createServer as createViteServer } from "vite";
+import { createLogger } from "vite";
+import { type Express } from "express";
+import { type Server } from "http";
+import path from "path";
+import fs from "fs";
+import { nanoid } from "nanoid";
+
+// Import vite config from the fixed_aiwebframework directory
+import viteConfigFile from "../fixed_aiwebframework/vite.config";
+
 const viteLogger = createLogger();
 
 export function log(message: string, source = "express") {
@@ -27,7 +38,7 @@ export async function setupVite(app: Express, server: Server) {
   };
 
   const vite = await createViteServer({
-    ...viteConfig,
+    ...viteConfigFile.default,
     configFile: false,
     customLogger: {
       ...viteLogger,
