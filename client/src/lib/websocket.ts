@@ -217,7 +217,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, []);
   
-  // Connect to the Socket.io server with improved error handling
+  // Connect to WebSocket server with improved error handling
   const connect = useCallback(() => {
     // Don't proceed if no user ID is available
     if (!userId) {
@@ -232,65 +232,52 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
     
     try {
-      // Create new Socket.io connection
-      console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
+      // Create new WebSocket connection using the native WebSocket API
+      console.debug('Attempting to connect to WebSocket server with path: /ws');
       
-      // Determine best transport order based on browser capabilities
-      const supportsWebSockets = 'WebSocket' in window && 
-                                window.WebSocket.CLOSING === 2;
+      // Check if WebSocket is supported
+      if (!('WebSocket' in window)) {
+        console.error('WebSocket is not supported by this browser');
+        setError('WebSocket is not supported by this browser');
+        return;
+      }
       
-      const transports = supportsWebSockets ? 
-        ['websocket', 'polling'] : 
-        ['polling', 'websocket'];
+      // Set up the WebSocket connection with the correct protocol based on https/http
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      console.log(`Connecting to WebSocket at: ${wsUrl}`);
       
-      console.log(`Using transport order: [${transports.join(', ')}]`);
+      const socket = new WebSocket(wsUrl);
       
-      // Initialize Socket.io with the namespace directly and enhanced options
-      // Use fewer options to reduce complexity and potential conflicts
-      const socket = io('/comms', {
-        path: '/socket.io',
-        transports,
-        timeout: 20000,
-        autoConnect: false,  // Important: We'll manually connect after setup
-        reconnection: false,  // We'll handle reconnection ourselves
-        forceNew: true,      // Create a new connection each time
-        query: { 
-          userId: userId,    // Send userId with initial connection
-          clientTime: Date.now() 
-        }
-      });
+      // Store the native WebSocket in the ref
+      socketRef.current = socket as any; // Type adaptation
       
       // Debug connection details
-      console.log('Socket.io connection details:', {
-        namespace: '/comms',
-        path: '/socket.io',
-        origin: window.location.origin
-      });
-      
-      console.log('Socket.io connection attempt', {
-        namespace: '/comms',
-        path: '/socket.io',
+      console.log('WebSocket connection attempt', {
+        url: wsUrl,
         userId,
-        currentSocketState: socketRef.current ? 'exists' : 'null'
+        currentSocketState: socket.readyState
       });
       
-      socketRef.current = socket;
-      
-      // Connection event handlers
-      socket.on('connect', () => {
-        console.log('Socket.io connection successful, socketId:', socket.id);
+      // Connection opened
+      socket.addEventListener('open', () => {
+        console.log('WebSocket connection successful');
         setIsConnected(true);
         setError(null);
         
         // Authenticate with user ID
         console.log(`Sending auth event with userId: ${userId}`);
-        socket.emit('auth', { userId });
+        // Use send with JSON string instead of emit
+        socket.send(JSON.stringify({
+          type: 'auth',
+          userId: userId
+        }));
         console.log('Auth event sent');
       });
       
-      // Handle disconnect with enhanced reconnection prevention
-      socket.on('disconnect', (reason) => {
-        console.log('Socket.io disconnected, reason:', reason);
+      // Handle connection close
+      socket.addEventListener('close', (event) => {
+        console.log('WebSocket closed, code:', event.code, 'reason:', event.reason);
         setIsConnected(false);
         
         // Clean up any active calls
@@ -299,193 +286,183 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
         }
         
         // Set socket reference to null after disconnection
-        if (socketRef.current === socket) {
+        if (socketRef.current) {
           socketRef.current = null;
         }
         
         // For ALL disconnect reasons, don't attempt automatic reconnection
         // This breaks the reconnection loop by letting the parent useEffect
         // handle reconnection only when appropriate
-        console.log(`Socket disconnected (${reason}), no automatic reconnection`);
+        console.log(`WebSocket disconnected (${event.reason}), no automatic reconnection`);
         
         // Reset connecting state to allow new connection attempts from parent logic
         isConnectingRef.current = false;
-        
-        // For certain types of disconnects, we might want to add a larger delay
-        // before allowing reconnection, handled in the parent useEffect
       });
       
-      // Handle connection errors with enhanced recovery
-      socket.on('connect_error', (err) => {
-        console.error('Socket.io connection error:', err);
+      // Handle connection errors 
+      socket.addEventListener('error', (event) => {
+        console.error('WebSocket error:', event);
         
-        // Safely extract error properties
-        const errorDetails = {
-          message: err.message || 'Unknown error',
-          type: (err as any).type,
-          description: (err as any).description,
-          context: (err as any).context,
-          stack: err.stack,
-          connected: socket.connected,
-          disconnected: socket.disconnected
-        };
-        
-        console.error('Socket.io connection error details:', errorDetails);
-        setError(`Connection error: ${errorDetails.message}`);
+        setError(`Connection error`);
+        setIsConnected(false);
       });
       
-      // Handle notifications
-      socket.on('notification', (data) => {
-        if (onMessage) {
-          onMessage({
-            id: uuidv4(),
-            type: 'notification',
-            content: data.content,
-            timestamp: new Date(data.timestamp)
-          });
-        }
-      });
-      
-      // Handle messages
-      socket.on('message', (data) => {
-        if (onMessage) {
-          const message: ChatMessage = {
-            id: uuidv4(),
-            type: 'text',
-            senderId: data.senderId,
-            receiverId: data.receiverId,
-            content: data.content,
-            timestamp: new Date(data.timestamp),
-            messageId: data.messageId
-          };
+      // Handle incoming messages (all message types come through here)
+      socket.addEventListener('message', (event) => {
+        try {
+          const data = JSON.parse(event.data);
           
-          onMessage(message);
-        }
-      });
-      
-      // Handle errors
-      socket.on('error', (data) => {
-        setError(data.message);
-      });
-      
-      // Handle online users
-      socket.on('online:users', (data) => {
-        setOnlineUsers(data);
-      });
-      
-      // Handle user status changes
-      socket.on('user:status', (data: UserStatus) => {
-        const { userId, status } = data;
-        
-        // Update online users list
-        if (status === 'online') {
-          setOnlineUsers(prev => {
-            if (!prev.includes(userId)) {
-              return [...prev, userId];
-            }
-            return prev;
-          });
-        } else {
-          setOnlineUsers(prev => prev.filter(id => id !== userId));
-        }
-        
-        // Forward status change to callback
-        if (onStatusChange) {
-          onStatusChange(data);
-        }
-      });
-      
-      // Handle incoming calls
-      socket.on('call:incoming', (data) => {
-        const { callerId, callType } = data;
-        
-        // Create new call info
-        const newCall: CallInfo = {
-          callId: uuidv4(),
-          callerId,
-          receiverId: userId as number,
-          callType,
-          status: 'ringing'
-        };
-        
-        setActiveCall(newCall);
-        
-        if (onCallState) {
-          onCallState(newCall);
-        }
-      });
-      
-      // Handle call responses
-      socket.on('call:response', (data) => {
-        if (!activeCall || activeCall.receiverId !== data.receiverId) {
-          return;
-        }
-        
-        if (data.accepted) {
-          // Call was accepted
-          const updatedCall: CallInfo = {
-            ...activeCall,
-            status: 'accepted',
-            startTime: new Date()
-          };
-          
-          setActiveCall(updatedCall);
-          
-          if (onCallState) {
-            onCallState(updatedCall);
+          // Handle different message types
+          switch (data.type) {
+            case 'notification':
+              if (onMessage) {
+                onMessage({
+                  id: uuidv4(),
+                  type: 'notification',
+                  content: data.content,
+                  timestamp: new Date(data.timestamp)
+                });
+              }
+              break;
+              
+            case 'message':
+              if (onMessage) {
+                const message: ChatMessage = {
+                  id: uuidv4(),
+                  type: 'text',
+                  senderId: data.senderId,
+                  receiverId: data.receiverId,
+                  content: data.content,
+                  timestamp: new Date(data.timestamp),
+                  messageId: data.messageId || Date.now()
+                };
+                
+                onMessage(message);
+              }
+              break;
+              
+            case 'error':
+              setError(data.content);
+              break;
+            
+            case 'user:status':
+              const { userId: statusUserId, status } = data as UserStatus;
+              
+              // Update online users list
+              if (status === 'online') {
+                setOnlineUsers(prev => {
+                  if (!prev.includes(statusUserId)) {
+                    return [...prev, statusUserId];
+                  }
+                  return prev;
+                });
+              } else {
+                setOnlineUsers(prev => prev.filter(id => id !== statusUserId));
+              }
+              
+              // Forward status change to callback
+              if (onStatusChange) {
+                onStatusChange(data as UserStatus);
+              }
+              break;
+              
+            case 'online:users':
+              setOnlineUsers(data.userIds || []);
+              break;
+              
+            case 'call:incoming':
+              const { callerId, callType } = data;
+              
+              // Create new call info
+              const newCall: CallInfo = {
+                callId: uuidv4(),
+                callerId,
+                receiverId: userId as number,
+                callType,
+                status: 'ringing'
+              };
+              
+              setActiveCall(newCall);
+              
+              if (onCallState) {
+                onCallState(newCall);
+              }
+              break;
+              
+            case 'call:response':
+              if (!activeCall || activeCall.receiverId !== data.responderId) {
+                break;
+              }
+              
+              if (data.accepted) {
+                // Call was accepted
+                const updatedCall: CallInfo = {
+                  ...activeCall,
+                  status: 'accepted',
+                  startTime: new Date()
+                };
+                
+                setActiveCall(updatedCall);
+                
+                if (onCallState) {
+                  onCallState(updatedCall);
+                }
+                
+                // Initialize PeerJS connection as the caller
+                initializePeerConnection(activeCall.receiverId, activeCall.callType, true);
+              } else {
+                // Call was rejected
+                const updatedCall: CallInfo = {
+                  ...activeCall,
+                  status: 'rejected'
+                };
+                
+                setActiveCall(updatedCall);
+                
+                if (onCallState) {
+                  onCallState(updatedCall);
+                }
+                
+                // Clean up call state
+                setTimeout(() => {
+                  setActiveCall(null);
+                }, 1000);
+              }
+              break;
+              
+            case 'file:incoming':
+              // Add to file transfers
+              const fileInfo: FileInfo = {
+                ...data.fileInfo,
+                id: data.fileInfo.id || uuidv4()
+              };
+              
+              setFileTransfers(prev => {
+                const newMap = new Map(prev);
+                newMap.set(fileInfo.id, fileInfo);
+                return newMap;
+              });
+              
+              // Notify through callback
+              if (onFileReceived) {
+                onFileReceived(fileInfo);
+              }
+              
+              // Also notify via message
+              if (onMessage) {
+                onMessage({
+                  id: uuidv4(),
+                  type: 'file',
+                  senderId: data.senderId,
+                  content: `Shared a file: ${fileInfo.name}`,
+                  timestamp: new Date(),
+                  fileInfo
+                });
+              }
+              break;
           }
-          
-          // Initialize PeerJS connection as the caller
-          initializePeerConnection(activeCall.receiverId, activeCall.callType, true);
-        } else {
-          // Call was rejected
-          const updatedCall: CallInfo = {
-            ...activeCall,
-            status: 'rejected'
-          };
-          
-          setActiveCall(updatedCall);
-          
-          if (onCallState) {
-            onCallState(updatedCall);
-          }
-          
-          // Clean up call state
-          setTimeout(() => {
-            setActiveCall(null);
-          }, 1000);
-        }
-      });
-      
-      // Handle incoming files
-      socket.on('file:incoming', async (data) => {
-        // Add to file transfers
-        const fileInfo: FileInfo = {
-          ...data.fileInfo,
-          id: data.fileInfo.id || uuidv4()
-        };
-        
-        setFileTransfers(prev => {
-          const newMap = new Map(prev);
-          newMap.set(fileInfo.id, fileInfo);
-          return newMap;
-        });
-        
-        // Notify through callback
-        if (onFileReceived) {
-          onFileReceived(fileInfo);
-        }
-        
-        // Also notify via message
-        if (onMessage) {
-          onMessage({
-            id: uuidv4(),
-            type: 'file',
-            senderId: data.senderId,
-            content: `Shared a file: ${fileInfo.name}`,
-            timestamp: new Date(),
-            fileInfo
-          });
+        } catch (err) {
+          console.error('Error handling WebSocket message:', err);
         }
       });
       
@@ -503,10 +480,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
     
     try {
-      socketRef.current.emit('message', {
+      // Use WebSocket send with JSON stringify
+      socketRef.current.send(JSON.stringify({
+        type: 'message',
         receiverId,
         content
-      });
+      }));
       
       return true;
     } catch (err) {
@@ -542,10 +521,11 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     
     try {
       // Send call request to recipient
-      socketRef.current.emit('call:init', {
+      socketRef.current.send(JSON.stringify({
+        type: 'call:init',
         receiverId,
         callType
-      });
+      }));
       
       if (onCallState) {
         onCallState(newCall);
@@ -577,10 +557,11 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       setActiveCall(updatedCall);
       
       // Send acceptance to caller
-      socketRef.current.emit('call:response', {
+      socketRef.current.send(JSON.stringify({
+        type: 'call:response',
         callerId: activeCall.callerId,
         accepted: true
-      });
+      }));
       
       if (onCallState) {
         onCallState(updatedCall);
