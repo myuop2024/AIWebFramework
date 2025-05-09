@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { saveAs } from "file-saver";
 import { v4 as uuidv4 } from "uuid";
-import { WebRTCConnection } from "./webrtc-helper";
+import { PeerJSConnection } from "./peerjs-helper";
 
 // Message types
 export type MessageType = 'text' | 'file' | 'notification' | 'system';
@@ -77,7 +77,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
   const [activeCall, setActiveCall] = useState<CallInfo | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const webRTCRef = useRef<WebRTCConnection | null>(null);
+  const peerJSRef = useRef<PeerJSConnection | null>(null);
   
   // File transfer state
   const [fileTransfers, setFileTransfers] = useState<Map<string, FileInfo>>(new Map());
@@ -279,18 +279,17 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       });
       
       // Handle WebRTC signaling
-      socket.on('signal', async (data) => {
+      socket.on('peerjs-signal', async (data) => {
         try {
-          // We don't need to manually handle the signal - 
-          // WebRTCConnection handles it for us via socket events
-          if (!webRTCRef.current) {
-            // If receiving signal before WebRTC is created, create it
-            if (activeCall && activeCall.status === 'accepted') {
-              await initializePeerConnection(data.senderId, activeCall.callType, data.signal);
-            }
+          // Forward signal to PeerJS helper
+          if (peerJSRef.current) {
+            peerJSRef.current.handleSignal(data);
+          } else if (activeCall && activeCall.status === 'accepted') {
+            // If receiving signal before PeerJS is created, create it
+            await initializePeerConnection(data.senderId, activeCall.callType);
           }
         } catch (err) {
-          console.error('Signaling error:', err);
+          console.error('PeerJS signaling error:', err);
           setError('Failed to establish call connection');
         }
       });
@@ -497,12 +496,12 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
     
     try {
-      // Close WebRTC connection - it handles media stream cleanup
-      if (webRTCRef.current) {
-        webRTCRef.current.endCall();
-        webRTCRef.current = null;
+      // Close PeerJS connection - it handles media stream cleanup
+      if (peerJSRef.current) {
+        peerJSRef.current.endCall();
+        peerJSRef.current = null;
       } else {
-        // Manual cleanup if WebRTC not initialized
+        // Manual cleanup if PeerJS not initialized
         if (localStream) {
           localStream.getTracks().forEach(track => track.stop());
           setLocalStream(null);
