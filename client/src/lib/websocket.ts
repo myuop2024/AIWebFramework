@@ -88,8 +88,26 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     
     try {
       // Create new Socket.io connection
-      // Use relative path to connect to socket.io namespace
-      const socket = io('/comms');
+      // Match server configuration (path /socket.io with namespace /comms)
+      const socket = io('/comms', {
+        path: '/socket.io', // Must match the server's Socket.io path
+        transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+        reconnectionAttempts: 5, // Try to reconnect 5 times
+        reconnectionDelay: 1000, // Start with a 1 second delay
+        timeout: 10000, // 10 seconds connection timeout
+        autoConnect: true
+      });
+      
+      // Log that we're attempting to connect
+      console.debug('Attempting to connect to Socket.io server with path: /comms, socket.io path: /socket.io');
+      
+      // Log to help debug the connection issues
+      console.log('Socket.io connection attempt', {
+        namespace: '/comms',
+        path: '/socket.io',
+        userId,
+        currentSocketState: socketRef.current ? 'exists' : 'null'
+      });
       socketRef.current = socket;
       
       // Connection event handlers
@@ -113,7 +131,26 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       
       // Handle connection errors
       socket.on('connect_error', (err) => {
+        console.error('Socket.io connection error:', err);
         setError(`Connection error: ${err.message}`);
+      });
+      
+      // Add more detailed connection event logging
+      socket.io.on('reconnect_attempt', (attempt) => {
+        console.debug(`Socket.io reconnection attempt #${attempt}`);
+      });
+      
+      socket.io.on('reconnect', (attempt) => {
+        console.debug(`Socket.io reconnected after ${attempt} attempts`);
+      });
+      
+      socket.io.on('reconnect_error', (err) => {
+        console.error('Socket.io reconnection error:', err);
+      });
+      
+      socket.io.on('reconnect_failed', () => {
+        console.error('Socket.io reconnection failed after maximum attempts');
+        setError('Connection failed after multiple attempts. Please check your network connection and refresh the page.');
       });
       
       // Handle notifications

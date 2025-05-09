@@ -80,13 +80,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(uploadsDir));
   console.log(`Serving static files from: ${uploadsDir}`);
 
-  // Set up Socket.io server
+  // Set up Socket.io server with detailed debug logging
+  console.log('Initializing Socket.io server with path: /socket.io');
+  
   const io = new SocketIOServer(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
-    }
+    },
+    path: "/socket.io", // Make sure the path is explicitly set
+    serveClient: false, // Don't serve the client library
+    connectTimeout: 10000, // Longer connection timeout (10s)
+    pingTimeout: 5000, // How long without a pong packet to consider the connection closed
+    pingInterval: 10000 // How often to ping the client (10s)
   });
+  
+  // Log Socket.io server initialization
+  console.log('Socket.io server initialized successfully');
   
   // Track online users and their socket connections
   const onlineUsers = new Map();
