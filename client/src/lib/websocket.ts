@@ -534,41 +534,48 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
     }
   }, [activeCall, localStream, onCallState]);
   
-  // Initialize WebRTC peer connection
+  // Initialize PeerJS connection
   const initializePeerConnection = useCallback(async (
     peerId: number, 
-    callType: 'audio' | 'video',
-    incomingSignal?: any
+    callType: 'audio' | 'video'
   ): Promise<boolean> => {
     try {
-      if (!socketRef.current) {
-        setError('Socket connection not established');
+      if (!socketRef.current || !userId) {
+        setError('Socket connection not established or user not authenticated');
         return false;
       }
       
-      // Create WebRTC connection
-      const webRTC = new WebRTCConnection(socketRef.current);
-      webRTCRef.current = webRTC;
+      // Import PeerJSConnection from peerjs-helper
+      const { PeerJSConnection } = await import('./peerjs-helper');
+      
+      // Create PeerJS connection
+      const peerJS = new PeerJSConnection({
+        socket: socketRef.current,
+        userId: userId,
+        peerId: peerId
+      });
+      peerJSRef.current = peerJS;
       
       // Initialize the call
-      const stream = await webRTC.initializeCall(
-        peerId, 
-        callType, 
-        !incomingSignal // isInitiator if there's no incoming signal
-      );
+      const stream = await peerJS.startCall(peerId, callType);
       
       // Store local stream
       setLocalStream(stream);
       
       // Handle remote stream
-      webRTC.onRemoteStream((remoteMediaStream) => {
+      peerJS.onRemoteStream((remoteMediaStream) => {
         setRemoteStream(remoteMediaStream);
+      });
+      
+      // Handle call ended
+      peerJS.onCallEnded(() => {
+        endCall();
       });
       
       return true;
     } catch (err) {
-      console.error('Media or peer error:', err);
-      setError('Failed to access camera/microphone');
+      console.error('Media or peer connection error:', err);
+      setError('Failed to access camera/microphone or establish connection');
       
       // Clean up the call
       if (activeCall) {
@@ -591,7 +598,7 @@ export function useCommunication(options: UseCommunicationOptions = {}) {
       
       return false;
     }
-  }, [activeCall, endCall, onCallState]);
+  }, [activeCall, userId, endCall, onCallState]);
   
   // Share a file with another user
   const shareFile = useCallback(async (
