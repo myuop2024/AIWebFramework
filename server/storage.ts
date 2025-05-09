@@ -1,7 +1,7 @@
 import {
   users, userProfiles, documents, pollingStations, assignments, formTemplates, reports, reportAttachments,
   events, eventParticipation, faqEntries, newsEntries, messages, registrationForms, userImportLogs, systemSettings,
-  photoApprovals,
+  photoApprovals, errorLogs,
   type User, type InsertUser, type UserProfile, type InsertUserProfile,
   type Document, type InsertDocument, type PollingStation, type InsertPollingStation,
   type Assignment, type InsertAssignment, type FormTemplate, type InsertFormTemplate,
@@ -10,7 +10,7 @@ import {
   type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage,
   type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
   type BulkUserImport, type SystemSetting, type InsertSystemSetting,
-  type PhotoApproval, type InsertPhotoApproval
+  type PhotoApproval, type InsertPhotoApproval, type ErrorLog, type InsertErrorLog
 } from "@shared/schema";
 import crypto from 'crypto';
 
@@ -151,6 +151,29 @@ export interface IStorage {
   updatePhotoApproval(id: number, data: Partial<PhotoApproval>): Promise<PhotoApproval | undefined>;
   approvePhotoApproval(id: number, approvedBy: number): Promise<PhotoApproval | undefined>;
   rejectPhotoApproval(id: number, approvedBy: number, notes?: string): Promise<PhotoApproval | undefined>;
+  
+  // Error log operations
+  getErrorLog(id: number): Promise<ErrorLog | undefined>;
+  getErrorLogs(options?: {
+    page?: number;
+    limit?: number;
+    source?: string;
+    level?: string;
+    userId?: number;
+    resolved?: boolean;
+    startDate?: Date;
+    endDate?: Date;
+    searchTerm?: string;
+  }): Promise<{logs: ErrorLog[], total: number}>;
+  createErrorLog(log: InsertErrorLog): Promise<ErrorLog>;
+  updateErrorLog(id: number, data: Partial<ErrorLog>): Promise<ErrorLog | undefined>;
+  resolveErrorLog(id: number, resolvedBy: number, notes?: string): Promise<ErrorLog | undefined>;
+  deleteErrorLog(id: number): Promise<boolean>;
+  deleteErrorLogs(options: {
+    ids?: number[];
+    olderThan?: Date;
+    allResolved?: boolean;
+  }): Promise<number>;
 }
 
 // Generate a unique observer ID in the format "JM+6-digit-number"
@@ -180,6 +203,7 @@ export class MemStorage implements IStorage {
   private userImportLogs: Map<number, UserImportLog>;
   private systemSettings: Map<number, SystemSetting>;
   private photoApprovals: Map<number, PhotoApproval>;
+  private errorLogs: Map<number, ErrorLog>;
   
   private userIdCounter: number;
   private profileIdCounter: number;
@@ -198,6 +222,7 @@ export class MemStorage implements IStorage {
   private userImportLogIdCounter: number;
   private systemSettingIdCounter: number;
   private photoApprovalIdCounter: number;
+  private errorLogIdCounter: number;
   
   constructor() {
     this.users = new Map();
@@ -217,6 +242,7 @@ export class MemStorage implements IStorage {
     this.userImportLogs = new Map();
     this.systemSettings = new Map();
     this.photoApprovals = new Map();
+    this.errorLogs = new Map();
     
     this.userIdCounter = 1;
     this.profileIdCounter = 1;
@@ -235,6 +261,7 @@ export class MemStorage implements IStorage {
     this.userImportLogIdCounter = 1;
     this.systemSettingIdCounter = 1;
     this.photoApprovalIdCounter = 1;
+    this.errorLogIdCounter = 1;
     
     // Initialize with sample data
     this.initializeData();
