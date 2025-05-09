@@ -208,21 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     });
     
-    // Signal exchange for WebRTC
-    socket.on('signal', (data) => {
-      const { receiverId, signal } = data;
-      
-      if (!userId) {
-        socket.emit('error', { message: 'Not authenticated' });
-        return;
-      }
-      
-      // Forward signaling data to the peer
-      socket.to(`user:${receiverId}`).emit('signal', {
-        senderId: userId,
-        signal
-      });
-    });
+    // PeerJS is now used for all WebRTC communications
     
     // Signal exchange for PeerJS
     socket.on('peerjs-signal', (data) => {
