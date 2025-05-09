@@ -45,6 +45,7 @@ function ErrorLogsPage() {
   const [showTestComponent, setShowTestComponent] = useState(false);
   const [selectedLog, setSelectedLog] = useState<ErrorLog | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [resolutionNotes, setResolutionNotes] = useState<string>('');
 
   // Handle tab changes
   React.useEffect(() => {
@@ -76,7 +77,7 @@ function ErrorLogsPage() {
           Object.entries(filters).filter(([_, v]) => v !== undefined)
         )
       });
-      
+
       try {
         const res = await apiRequest('GET', `/api/admin/error-logs?${queryParams.toString()}`);
         return await res.json();
@@ -103,6 +104,7 @@ function ErrorLogsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/error-logs'] });
       setIsDialogOpen(false);
+      setResolutionNotes('');
     },
     onError: (error) => {
       console.error('Failed to resolve error log:', error);
@@ -186,9 +188,9 @@ function ErrorLogsPage() {
   // Pagination component
   const renderPagination = () => {
     if (!data || !data.data || data.data.length === 0) return null;
-    
+
     const totalPages = data.pagination?.totalPages || Math.ceil((data.data.length || 10) / limit);
-    
+
     return (
       <Pagination>
         <PaginationContent>
@@ -203,7 +205,7 @@ function ErrorLogsPage() {
               <ChevronDown className="h-4 w-4 rotate-90" />
             </Button>
           </PaginationItem>
-          
+
           {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
             const pageNum = i + 1;
             return (
@@ -217,13 +219,13 @@ function ErrorLogsPage() {
               </PaginationItem>
             );
           })}
-          
+
           {totalPages > 5 && (
             <>
               <PaginationItem>
                 <PaginationEllipsis />
               </PaginationItem>
-              
+
               <PaginationItem>
                 <PaginationLink onClick={() => setPage(totalPages)}>
                   {totalPages}
@@ -231,7 +233,7 @@ function ErrorLogsPage() {
               </PaginationItem>
             </>
           )}
-          
+
           <PaginationItem>
             <Button 
               onClick={() => setPage(p => p + 1)}
@@ -247,6 +249,13 @@ function ErrorLogsPage() {
       </Pagination>
     );
   };
+
+    // Handle dialog close
+    const handleDialogClose = () => {
+        setIsDialogOpen(false);
+        setSelectedLog(null);
+        setResolutionNotes('');
+    };
 
   // Handle viewing error details
   const handleViewDetails = (log: ErrorLog) => {
@@ -285,7 +294,7 @@ function ErrorLogsPage() {
             <h1 className="text-3xl font-bold">Error Logs</h1>
             <p className="text-muted-foreground">Monitor and manage system errors</p>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button 
               variant="outline" 
@@ -295,7 +304,7 @@ function ErrorLogsPage() {
               <RotateCcw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            
+
             <Button 
               variant="outline" 
               onClick={() => setShowTestComponent(!showTestComponent)}
@@ -306,13 +315,13 @@ function ErrorLogsPage() {
             </Button>
           </div>
         </div>
-        
+
         {showTestComponent && (
           <div className="mb-6">
             <TestErrorLogger />
           </div>
         )}
-        
+
         <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <TabsList className="mb-4 md:mb-0">
@@ -320,7 +329,7 @@ function ErrorLogsPage() {
               <TabsTrigger value="unresolved">Unresolved</TabsTrigger>
               <TabsTrigger value="resolved">Resolved</TabsTrigger>
             </TabsList>
-            
+
             <div className="flex items-center gap-2">
               <Input 
                 placeholder="Search error logs..." 
@@ -328,7 +337,7 @@ function ErrorLogsPage() {
                 value={filters.searchTerm || ''}
                 onChange={(e) => setFilters(f => ({ ...f, searchTerm: e.target.value }))}
               />
-              
+
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -342,7 +351,7 @@ function ErrorLogsPage() {
                       Apply filters to narrow down the error logs.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="error-level" className="text-right">
@@ -363,7 +372,7 @@ function ErrorLogsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="error-source" className="text-right">
                         Source
@@ -385,7 +394,7 @@ function ErrorLogsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="date-from" className="text-right">
                         From Date
@@ -398,7 +407,7 @@ function ErrorLogsPage() {
                         onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value || undefined }))}
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="date-to" className="text-right">
                         To Date
@@ -412,7 +421,7 @@ function ErrorLogsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <DialogFooter>
                     <Button 
                       variant="outline" 
@@ -426,7 +435,7 @@ function ErrorLogsPage() {
               </Dialog>
             </div>
           </div>
-          
+
           <Card>
             <CardContent className="p-0">
               <Table>
@@ -483,7 +492,7 @@ function ErrorLogsPage() {
                             >
                               <Search className="h-4 w-4" />
                             </Button>
-                            
+
                             {!log.resolved && (
                               <Button
                                 variant="ghost"
@@ -497,7 +506,7 @@ function ErrorLogsPage() {
                                 <Check className="h-4 w-4" />
                               </Button>
                             )}
-                            
+
                             <Button
                               variant="ghost"
                               size="icon"
@@ -559,15 +568,15 @@ function ErrorLogsPage() {
                   <SelectItem value="100">100 per page</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               {renderPagination()}
             </CardFooter>
           </Card>
         </Tabs>
       </div>
-      
+
       {/* Error Detail Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -578,7 +587,7 @@ function ErrorLogsPage() {
               Detailed information about this error log
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedLog && (
             <ScrollArea className="max-h-[600px] pr-4">
               <div className="space-y-4">
@@ -599,26 +608,26 @@ function ErrorLogsPage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <Separator />
-                
+
                 <div>
                   <Label className="text-xs text-muted-foreground">Timestamp</Label>
                   <p>{formatDate(selectedLog.createdAt)}</p>
                 </div>
-                
+
                 <div>
                   <Label className="text-xs text-muted-foreground">Message</Label>
                   <p className="font-medium">{selectedLog.message}</p>
                 </div>
-                
+
                 {selectedLog.code && (
                   <div>
                     <Label className="text-xs text-muted-foreground">Error Code</Label>
                     <p className="font-mono">{selectedLog.code}</p>
                   </div>
                 )}
-                
+
                 {selectedLog.userId && (
                   <div>
                     <Label className="text-xs text-muted-foreground">User ID</Label>
@@ -627,28 +636,28 @@ function ErrorLogsPage() {
                     </p>
                   </div>
                 )}
-                
+
                 {selectedLog.url && (
                   <div>
                     <Label className="text-xs text-muted-foreground">URL</Label>
                     <p className="break-all font-mono text-xs">{selectedLog.url}</p>
                   </div>
                 )}
-                
+
                 {selectedLog.path && (
                   <div>
                     <Label className="text-xs text-muted-foreground">Path</Label>
                     <p className="font-mono text-xs">{selectedLog.path}</p>
                   </div>
                 )}
-                
+
                 {selectedLog.method && (
                   <div>
                     <Label className="text-xs text-muted-foreground">HTTP Method</Label>
                     <Badge variant="outline">{selectedLog.method}</Badge>
                   </div>
                 )}
-                
+
                 <Accordion type="single" collapsible className="w-full">
                   {selectedLog.stack && (
                     <AccordionItem value="stack">
@@ -664,7 +673,7 @@ function ErrorLogsPage() {
                       </AccordionContent>
                     </AccordionItem>
                   )}
-                  
+
                   {typeof selectedLog.context !== 'undefined' && selectedLog.context !== null && (
                     <AccordionItem value="context">
                       <AccordionTrigger>
@@ -679,7 +688,7 @@ function ErrorLogsPage() {
                       </AccordionContent>
                     </AccordionItem>
                   )}
-                  
+
                   {selectedLog.userAgent && (
                     <AccordionItem value="userAgent">
                       <AccordionTrigger>
@@ -692,7 +701,7 @@ function ErrorLogsPage() {
                       </AccordionContent>
                     </AccordionItem>
                   )}
-                  
+
                   {selectedLog.resolved && (
                     <AccordionItem value="resolution">
                       <AccordionTrigger>
@@ -706,7 +715,7 @@ function ErrorLogsPage() {
                             <Label className="text-xs text-muted-foreground">Resolved At</Label>
                             <p>{selectedLog.resolvedAt ? formatDate(selectedLog.resolvedAt) : 'Unknown'}</p>
                           </div>
-                          
+
                           {selectedLog.resolvedBy && (
                             <div>
                               <Label className="text-xs text-muted-foreground">Resolved By</Label>
@@ -715,7 +724,7 @@ function ErrorLogsPage() {
                               </p>
                             </div>
                           )}
-                          
+
                           {selectedLog.resolutionNotes && (
                             <div>
                               <Label className="text-xs text-muted-foreground">Resolution Notes</Label>
@@ -727,15 +736,17 @@ function ErrorLogsPage() {
                     </AccordionItem>
                   )}
                 </Accordion>
-                
+
                 {!selectedLog.resolved && (
                   <div className="pt-4">
                     <h4 className="font-medium mb-2">Mark as Resolved</h4>
                     <div className="space-y-2">
                       <Label htmlFor="resolution-notes">Resolution Notes</Label>
-                      <Input 
-                        id="resolution-notes" 
+                      <Input
+                        id="resolution-notes"
                         placeholder="Enter notes about how this error was resolved..."
+                        value={resolutionNotes}
+                        onChange={(e) => setResolutionNotes(e.target.value)}
                       />
                     </div>
                   </div>
@@ -743,25 +754,23 @@ function ErrorLogsPage() {
               </div>
             </ScrollArea>
           )}
-          
+
           <DialogFooter>
             {selectedLog && !selectedLog.resolved ? (
               <>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     try {
                       if (!selectedLog) {
                         throw new Error('No error log selected');
                       }
-                      const notesElement = document.getElementById('resolution-notes') as HTMLInputElement;
-                      const notes = notesElement?.value || '';
-                      
+
                       resolveMutation.mutate({
                         id: selectedLog.id,
-                        notes: notes
+                        notes: resolutionNotes
                       });
                     } catch (error) {
                       console.error('Error resolving log:', error);
