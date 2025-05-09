@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import ringtoneSrc from '@assets/sounds/ringtone.mp3';
 
 interface AudioPlayerProps {
   play: boolean;
@@ -14,7 +13,7 @@ interface AudioPlayerProps {
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ 
   play, 
   loop = false, 
-  src = ringtoneSrc // Default to the imported ringtone
+  src = "/sounds/ringtone.mp3" // Use a relative path that works with public folder
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -58,7 +57,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   // Handle play state changes
   useEffect(() => {
-    if (!audioRef.current || !audioLoaded) return;
+    if (!audioRef.current) return;
 
     if (play && !isPlaying) {
       // Try to play the sound
