@@ -38,9 +38,12 @@ export default function Admin() {
     enabled: !!user && user.role === 'admin',
   });
 
-  const { data: systemStats, isLoading: statsLoading } = useQuery({
+  const { data: systemStats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ['/api/admin/system-stats'],
     enabled: !!user && user.role === 'admin',
+    onSuccess: (data: any) => {
+      console.log('System stats:', data);
+    }
   });
 
   // State for managing user data
@@ -863,17 +866,17 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Users</span>
-                  <Badge variant="secondary">{usersLoading ? "..." : "234"}</Badge>
+                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.users?.total || "0"}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Pending Verification</span>
                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {usersLoading ? "..." : "12"}
+                    {statsLoading ? "..." : systemStats?.users?.byRole?.pending || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Admin Users</span>
-                  <Badge>{usersLoading ? "..." : "8"}</Badge>
+                  <Badge>{statsLoading ? "..." : systemStats?.users?.byRole?.admin || "0"}</Badge>
                 </div>
               </CardContent>
               <CardFooter>
