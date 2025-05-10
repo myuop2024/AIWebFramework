@@ -576,6 +576,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                             {user.status === 'online' ? 'Active now' :
                               user.status === 'away' ? 'Away' : 'Offline'}
                           </p>
+                          {user.role && (
+                            <Badge variant="outline" className="text-xs mt-1 py-0 h-5">
+                              {user.role}
+                            </Badge>
+                          )}
+                          {user.parish && (
+                            <Badge variant="secondary" className="text-xs mt-1 ml-1 py-0 h-5">
+                              {user.parish}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     ))}

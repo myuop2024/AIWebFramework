@@ -95,6 +95,8 @@ router.get('/online-users', ensureAuthenticated, async (req, res, next) => {
       // Determine status based on activeUserIds from communicationService
       status: activeUserIds.includes(user.id) ? 'online' : 'offline',
       profileImage: user.profileImage || null, // Ensure consistent null or string
+      role: user.role || null,
+      parish: user.parish || null,
     }));
 
     res.json(usersWithStatus);

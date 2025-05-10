@@ -34,6 +34,8 @@ export interface User {
   fullName?: string;
   status: 'online' | 'offline' | 'away';
   profileImage?: string;
+  role?: string;
+  parish?: string;
 }
 
 export interface CallData {
@@ -324,7 +326,7 @@ export function useCommunication(userId: number) {
       // No need to return response.json() if the body is empty or not used
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+      queryClient.invalidateQueries({ queryKey: ['api/communications/conversations', userId] });
       // Potentially invalidate specific message list if needed, though conversation list update might cover it
     },
   });
