@@ -901,12 +901,70 @@ export class DatabaseStorage implements IStorage {
     return db.select()
       .from(messages)
       .where(
-        and(
-          eq(messages.senderId, userId1),
-          eq(messages.receiverId, userId2)
+        or(
+          and(
+            eq(messages.senderId, userId1),
+            eq(messages.receiverId, userId2)
+          ),
+          and(
+            eq(messages.senderId, userId2),
+            eq(messages.receiverId, userId1)
+          )
         )
       )
-      .orderBy(messages.sentAt);
+      .orderBy(asc(messages.sentAt));
+  }
+  
+  async getRecentConversations(userId: number): Promise<any[]> {
+    // This query finds all unique conversations (by user pair) and gets the latest message
+    // First, get all users this user has communicated with
+    const conversationPartners = await db.execute<{
+      partnerId: number,
+      partnerUsername: string,
+      lastMessageAt: Date,
+      lastMessageContent: string,
+      unreadCount: number
+    }>(sql`
+      WITH user_conversations AS (
+        SELECT 
+          CASE 
+            WHEN sender_id = ${userId} THEN receiver_id 
+            ELSE sender_id 
+          END as partner_id,
+          MAX(sent_at) as last_message_at
+        FROM messages
+        WHERE sender_id = ${userId} OR receiver_id = ${userId}
+        GROUP BY partner_id
+      ),
+      unread_counts AS (
+        SELECT 
+          sender_id as partner_id,
+          COUNT(*) as unread_count
+        FROM messages
+        WHERE receiver_id = ${userId} AND is_read = false
+        GROUP BY sender_id
+      )
+      SELECT 
+        uc.partner_id as "partnerId",
+        u.username as "partnerUsername",
+        uc.last_message_at as "lastMessageAt",
+        (
+          SELECT content 
+          FROM messages 
+          WHERE 
+            ((sender_id = ${userId} AND receiver_id = uc.partner_id) OR
+             (sender_id = uc.partner_id AND receiver_id = ${userId}))
+            AND sent_at = uc.last_message_at
+          LIMIT 1
+        ) as "lastMessageContent",
+        COALESCE(unc.unread_count, 0) as "unreadCount"
+      FROM user_conversations uc
+      JOIN users u ON uc.partner_id = u.id
+      LEFT JOIN unread_counts unc ON uc.partner_id = unc.partner_id
+      ORDER BY uc.last_message_at DESC
+    `);
+    
+    return conversationPartners.rows || [];
   }
 
   async createMessage(message: InsertMessage): Promise<Message> {
