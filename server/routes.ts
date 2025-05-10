@@ -70,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the communication service
   const communicationService = createCommunicationService(httpServer);
   setCommunicationService(communicationService);
-  app.use(communicationRoutes);
+  app.use('/api/communications', communicationRoutes);
   console.log('Communication service initialized with WebSocket support');
 
   // User metadata route for device binding UI (limited information)

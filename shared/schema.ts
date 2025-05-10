@@ -205,9 +205,13 @@ export const messages = pgTable("messages", {
   senderId: integer("sender_id").notNull().references(() => users.id),
   receiverId: integer("receiver_id").references(() => users.id),
   content: text("content").notNull(),
-  isRead: boolean("is_read").default(false),
+  type: text("type").default("text").notNull(), // text, file, image, system
+  read: boolean("read").default(false),
   sentAt: timestamp("sent_at").defaultNow(),
 });
+
+// Define a type for Message type
+export const messageTypeEnum = ["text", "file", "image", "system"] as const;
 
 // Dynamic registration form configuration
 export const registrationForms = pgTable("registration_forms", {

@@ -2,17 +2,6 @@ import { Server as SocketIOServer } from 'socket.io';
 import { Server } from 'http';
 import { storage } from '../storage';
 
-// Function for API routes to create/access the service
-let communicationServiceInstance: CommunicationService | null = null;
-
-export function createCommunicationService(server: Server): CommunicationService {
-  if (!communicationServiceInstance) {
-    communicationServiceInstance = new CommunicationService(server);
-  }
-  return communicationServiceInstance;
-}
-
-// Store connected users with their socket IDs
 interface ConnectedUser {
   userId: number;
   socketId: string;
@@ -25,152 +14,190 @@ export class CommunicationService {
 
   constructor(server: Server) {
     this.io = new SocketIOServer(server, {
+      path: '/socket',
       cors: {
         origin: '*',
         methods: ['GET', 'POST']
-      },
-      path: '/socket'
+      }
     });
 
     this.setupSocketHandlers();
+    console.log('Communication service initialized');
   }
 
   private setupSocketHandlers() {
     this.io.on('connection', (socket) => {
-      console.log('New client connected:', socket.id);
+      console.log('New socket connection:', socket.id);
 
-      // Handle user authentication
-      socket.on('authenticate', async (data: { userId: number }) => {
+      // Authenticate user
+      socket.on('authenticate', async ({ userId }) => {
         try {
-          const { userId } = data;
-          if (!userId) {
-            console.error('Invalid authentication data:', data);
-            return;
-          }
-
+          // Get user from database
           const user = await storage.getUser(userId);
+          
           if (!user) {
-            console.error('User not found for ID:', userId);
+            console.error('Authentication failed: User not found', userId);
+            socket.disconnect();
             return;
           }
 
-          // Add user to connected users
+          console.log(`User authenticated: ${user.username} (${userId})`);
+          
+          // Add user to connected users list
           this.connectedUsers.push({
             userId,
             socketId: socket.id,
             username: user.username
           });
 
-          // Join a room with their user ID
-          socket.join(`user:${userId}`);
-
-          // Broadcast user online status
+          // Broadcast user's online status to others
           this.broadcastUserStatus(userId, true);
-
-          console.log(`User ${userId} authenticated and connected`);
           
-          // Send the list of online users to the newly connected user
-          socket.emit('online-users', this.getOnlineUsers());
+          // Send connected users list to newly connected user
+          const onlineUsers = this.getOnlineUsers();
+          socket.emit('online-users', onlineUsers);
+          
+          // Join user's private room for direct messages
+          socket.join(`user:${userId}`);
         } catch (error) {
-          console.error('Error in authenticate:', error);
+          console.error('Authentication error:', error);
+          socket.disconnect();
         }
       });
 
       // Handle private messages
-      socket.on('private-message', async (data: { senderId: number; receiverId: number; content: string; type?: string }) => {
+      socket.on('private-message', async (data) => {
         try {
           const { senderId, receiverId, content, type = 'text' } = data;
           
-          // Save message to database
+          // Create message in database
           const message = await storage.createMessage({
             senderId,
             receiverId,
             content,
-            type: type as 'text' | 'file' | 'image' | 'system',
-            sentAt: new Date(),
-            read: false
+            type,
+            read: false,
+            sentAt: new Date()
           });
 
-          // Emit to sender for confirmation
-          socket.emit('message-sent', message);
-
-          // Emit to recipient if they're online
-          const recipientSocketId = this.getUserSocketId(receiverId);
-          if (recipientSocketId) {
-            this.io.to(`user:${receiverId}`).emit('new-message', message);
-          }
+          // Send to receiver if online
+          this.io.to(`user:${receiverId}`).emit('new-message', message);
+          
+          // Confirm to sender
+          socket.emit('message-sent', { 
+            messageId: message.id,
+            receiverId,
+            status: 'sent'
+          });
         } catch (error) {
-          console.error('Error in private-message:', error);
+          console.error('Error sending private message:', error);
           socket.emit('message-error', { error: 'Failed to send message' });
         }
       });
 
-      // Handle typing indicators
-      socket.on('typing', (data: { senderId: number; receiverId: number; isTyping: boolean }) => {
-        const { senderId, receiverId, isTyping } = data;
-        this.io.to(`user:${receiverId}`).emit('user-typing', { userId: senderId, isTyping });
-      });
-
-      // Handle video/audio call offers
-      socket.on('call-offer', (data: { callerId: number; receiverId: number; offer: any; type: 'video' | 'audio' }) => {
-        const { callerId, receiverId, offer, type } = data;
-        this.io.to(`user:${receiverId}`).emit('call-offer', { callerId, offer, type });
-      });
-
-      // Handle call answers
-      socket.on('call-answer', (data: { callerId: number; receiverId: number; answer: any }) => {
-        const { callerId, receiverId, answer } = data;
-        this.io.to(`user:${callerId}`).emit('call-answer', { from: receiverId, answer });
-      });
-
-      // Handle ICE candidates
-      socket.on('ice-candidate', (data: { senderId: number; receiverId: number; candidate: any }) => {
-        const { senderId, receiverId, candidate } = data;
-        this.io.to(`user:${receiverId}`).emit('ice-candidate', { from: senderId, candidate });
-      });
-
-      // Handle call end
-      socket.on('call-end', (data: { callerId: number; receiverId: number }) => {
-        const { callerId, receiverId } = data;
-        this.io.to(`user:${receiverId}`).emit('call-end', { from: callerId });
-      });
-
-      // Handle screen sharing
-      socket.on('screen-share-offer', (data: { senderId: number; receiverId: number; offer: any }) => {
-        const { senderId, receiverId, offer } = data;
-        this.io.to(`user:${receiverId}`).emit('screen-share-offer', { from: senderId, offer });
-      });
-
-      // Handle read receipts
-      socket.on('mark-read', async (data: { messageIds: number[] }) => {
+      // Handle message read status updates
+      socket.on('mark-read', async ({ messageIds }) => {
         try {
-          const { messageIds } = data;
-          
+          if (!Array.isArray(messageIds) || messageIds.length === 0) {
+            return;
+          }
+
           for (const messageId of messageIds) {
             const message = await storage.markMessageAsRead(messageId);
-            if (message && message.senderId) {
-              this.io.to(`user:${message.senderId}`).emit('message-read', { messageId });
+            if (message) {
+              // Notify sender that message was read
+              this.io.to(`user:${message.senderId}`).emit('message-read', { 
+                messageId: message.id,
+                readAt: new Date()
+              });
             }
           }
         } catch (error) {
-          console.error('Error in mark-read:', error);
+          console.error('Error marking messages as read:', error);
         }
+      });
+
+      // Handle typing indicators
+      socket.on('typing', ({ senderId, receiverId, isTyping }) => {
+        this.io.to(`user:${receiverId}`).emit('user-typing', {
+          userId: senderId,
+          isTyping
+        });
+      });
+
+      // Handle WebRTC signaling
+      socket.on('call-offer', (data) => {
+        const { callerId, receiverId, offer, type } = data;
+        this.io.to(`user:${receiverId}`).emit('call-offer', {
+          callerId,
+          receiverId,
+          offer,
+          type
+        });
+      });
+
+      socket.on('call-answer', (data) => {
+        const { callerId, receiverId, answer } = data;
+        this.io.to(`user:${callerId}`).emit('call-answer', {
+          from: receiverId,
+          answer
+        });
+      });
+
+      socket.on('ice-candidate', (data) => {
+        const { callerId, receiverId, candidate } = data;
+        const targetUserId = receiverId === data.senderId ? callerId : receiverId;
+        this.io.to(`user:${targetUserId}`).emit('ice-candidate', {
+          from: data.senderId,
+          candidate
+        });
+      });
+
+      socket.on('call-end', (data) => {
+        const { callerId, receiverId } = data;
+        this.io.to(`user:${receiverId}`).emit('call-end', {
+          from: callerId
+        });
+      });
+
+      socket.on('screen-share-start', (data) => {
+        const { senderId, receiverId, stream } = data;
+        this.io.to(`user:${receiverId}`).emit('screen-share-start', {
+          from: senderId,
+          stream
+        });
+      });
+
+      socket.on('screen-share-end', (data) => {
+        const { senderId, receiverId } = data;
+        this.io.to(`user:${receiverId}`).emit('screen-share-end', {
+          from: senderId
+        });
       });
 
       // Handle disconnection
       socket.on('disconnect', () => {
+        console.log('Socket disconnected:', socket.id);
+        
+        // Find user by socket id
         const user = this.connectedUsers.find(u => u.socketId === socket.id);
+        
         if (user) {
+          // Remove user from connected users list
           this.connectedUsers = this.connectedUsers.filter(u => u.socketId !== socket.id);
+          
+          // Broadcast user's offline status
           this.broadcastUserStatus(user.userId, false);
-          console.log(`User ${user.userId} disconnected`);
         }
       });
     });
   }
 
   private broadcastUserStatus(userId: number, isOnline: boolean) {
-    this.io.emit('user-status', { userId, status: isOnline ? 'online' : 'offline' });
+    this.io.emit('user-status', {
+      userId,
+      status: isOnline ? 'online' : 'offline'
+    });
   }
 
   private getUserSocketId(userId: number): string | undefined {
@@ -185,6 +212,57 @@ export class CommunicationService {
       status: 'online'
     }));
   }
+
+  // Public methods for external use
+  
+  public sendSystemMessage(userId: number, content: string) {
+    try {
+      // Get socket ID by user ID
+      const socketId = this.getUserSocketId(userId);
+      
+      if (socketId) {
+        this.io.to(socketId).emit('system-message', {
+          content,
+          timestamp: new Date()
+        });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error sending system message:', error);
+      return false;
+    }
+  }
+
+  public broadcastSystemMessage(content: string, excludeUserIds: number[] = []) {
+    try {
+      this.connectedUsers
+        .filter(user => !excludeUserIds.includes(user.userId))
+        .forEach(user => {
+          this.io.to(user.socketId).emit('system-message', {
+            content,
+            timestamp: new Date()
+          });
+        });
+      
+      return true;
+    } catch (error) {
+      console.error('Error broadcasting system message:', error);
+      return false;
+    }
+  }
+
+  public getUserStatus(userId: number): 'online' | 'offline' {
+    return this.connectedUsers.some(u => u.userId === userId) ? 'online' : 'offline';
+  }
+
+  public getActiveUsers(): number[] {
+    return this.connectedUsers.map(u => u.userId);
+  }
 }
 
-export default CommunicationService;
+// Factory function to create communication service
+export function createCommunicationService(server: Server): CommunicationService {
+  return new CommunicationService(server);
+}
