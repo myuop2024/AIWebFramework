@@ -13,6 +13,7 @@ import {
   CheckCircle2, Clock, Filter, CheckSquare, AlertTriangle, MapPin 
 } from "lucide-react";
 import { format } from "date-fns";
+import { AssignmentForm } from "./assignment-form";
 
 // Types
 interface Assignment {
@@ -49,6 +50,8 @@ export function AssignmentManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [stationFilter, setStationFilter] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
 
   // Fetch assignments
   const { data: assignments = [], isLoading: assignmentsLoading, refetch: refetchAssignments } = useQuery<Assignment[]>({
@@ -185,20 +188,86 @@ export function AssignmentManagement() {
     checkOutObserver.mutate(id);
   };
 
+  // Create a new assignment
+  const createAssignment = useMutation({
+    mutationFn: async (assignmentData: Omit<Assignment, 'id'>) => {
+      return apiRequest(
+        'POST',
+        '/api/admin/assignments',
+        assignmentData
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "Assignment Created",
+        description: "The observer assignment has been created successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error creating assignment:', error);
+      toast({
+        title: "Failed to create assignment",
+        description: "There was an error creating the assignment. Please check for scheduling conflicts.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update an existing assignment
+  const updateAssignment = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<Assignment> }) => {
+      return apiRequest(
+        'PATCH',
+        `/api/admin/assignments/${id}`,
+        data
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "Assignment Updated",
+        description: "The observer assignment has been updated successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error updating assignment:', error);
+      toast({
+        title: "Failed to update assignment",
+        description: "There was an error updating the assignment. Please check for scheduling conflicts.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle form submission
+  const handleFormSubmit = (data: any) => {
+    if (selectedAssignment) {
+      // Update existing assignment
+      updateAssignment.mutate({ id: selectedAssignment.id, data });
+    } else {
+      // Create new assignment
+      createAssignment.mutate(data);
+    }
+  };
+
   // Handle edit assignment
   const handleEditAssignment = (id: number) => {
-    toast({
-      title: "Edit Assignment",
-      description: "Edit functionality will be implemented soon.",
-    });
+    const assignment = assignments.find(a => a.id === id);
+    if (assignment) {
+      setSelectedAssignment(assignment);
+      setFormOpen(true);
+    }
   };
 
   // Handle add new assignment
   const handleAddAssignment = () => {
-    toast({
-      title: "New Assignment",
-      description: "New assignment functionality will be implemented soon.",
-    });
+    setSelectedAssignment(null);
+    setFormOpen(true);
   };
 
   // Format dates for display
@@ -436,6 +505,15 @@ export function AssignmentManagement() {
           </div>
         )}
       </CardFooter>
+
+      {/* Assignment Form Modal */}
+      <AssignmentForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        assignment={selectedAssignment || undefined}
+        title={selectedAssignment ? "Edit Assignment" : "Create New Assignment"}
+      />
     </Card>
   );
 }

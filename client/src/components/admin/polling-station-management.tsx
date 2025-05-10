@@ -31,6 +31,9 @@ export function PollingStationManagement() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<PollingStation | null>(null);
 
   // Fetch polling stations
   const { data: stations = [], isLoading, refetch } = useQuery<PollingStation[]>({
@@ -46,6 +49,62 @@ export function PollingStationManagement() {
       (station.city && station.city.toLowerCase().includes(searchTerm)) ||
       (station.region && station.region.toLowerCase().includes(searchTerm))
     );
+  });
+
+  // Create a new polling station
+  const createStation = useMutation({
+    mutationFn: async (stationData: Omit<PollingStation, 'id'>) => {
+      return apiRequest(
+        'POST',
+        '/api/admin/polling-stations',
+        stationData
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/polling-stations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "Station Created",
+        description: "The polling station has been created successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error creating polling station:', error);
+      toast({
+        title: "Failed to create station",
+        description: "There was an error creating the polling station.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update an existing polling station
+  const updateStation = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<PollingStation> }) => {
+      return apiRequest(
+        'PATCH',
+        `/api/admin/polling-stations/${id}`,
+        data
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/polling-stations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "Station Updated",
+        description: "The polling station has been updated successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error updating polling station:', error);
+      toast({
+        title: "Failed to update station",
+        description: "There was an error updating the polling station.",
+        variant: "destructive",
+      });
+    }
   });
 
   // Delete a polling station
@@ -74,6 +133,17 @@ export function PollingStationManagement() {
     }
   });
 
+  // Handle form submission
+  const handleFormSubmit = (data: any) => {
+    if (selectedStation) {
+      // Update existing station
+      updateStation.mutate({ id: selectedStation.id, data });
+    } else {
+      // Create new station
+      createStation.mutate(data);
+    }
+  };
+
   // Handle deleting a station
   const handleDeleteStation = (id: number) => {
     if (window.confirm("Are you sure you want to delete this polling station? This action cannot be undone.")) {
@@ -81,28 +151,28 @@ export function PollingStationManagement() {
     }
   };
 
-  // Handle edit station - this would open a modal or navigate to edit page
+  // Handle edit station
   const handleEditStation = (id: number) => {
-    toast({
-      title: "Edit Station",
-      description: "Edit functionality will be implemented soon.",
-    });
+    const station = stations.find(s => s.id === id);
+    if (station) {
+      setSelectedStation(station);
+      setFormOpen(true);
+    }
   };
 
-  // Handle view map - this would open a map view
+  // Handle view map
   const handleViewMap = (id: number) => {
-    toast({
-      title: "View Map",
-      description: "Map view functionality will be implemented soon.",
-    });
+    const station = stations.find(s => s.id === id);
+    if (station) {
+      setSelectedStation(station);
+      setMapOpen(true);
+    }
   };
 
   // Handle adding a new station
   const handleAddStation = () => {
-    toast({
-      title: "Add Station",
-      description: "Add station functionality will be implemented soon.",
-    });
+    setSelectedStation(null);
+    setFormOpen(true);
   };
 
   return (
@@ -248,6 +318,21 @@ export function PollingStationManagement() {
           </div>
         )}
       </CardFooter>
+      {/* Polling Station Form Modal */}
+      <PollingStationForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        station={selectedStation || undefined}
+        title={selectedStation ? "Edit Polling Station" : "Add New Polling Station"}
+      />
+
+      {/* Polling Station Map Modal */}
+      <PollingStationMap
+        isOpen={mapOpen}
+        onClose={() => setMapOpen(false)}
+        station={selectedStation}
+      />
     </Card>
   );
 }
