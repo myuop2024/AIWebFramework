@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import * as z from "zod";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -21,39 +21,31 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { Check, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Define a schema for user form
+// Form validation schema
 const userSchema = z.object({
-  username: z.string()
-    .min(3, { message: "Username must be at least 3 characters" })
-    .regex(/^[a-zA-Z0-9_-]+$/, { message: "Username can only contain letters, numbers, underscores and hyphens" }),
-  email: z.string()
-    .email({ message: "Please enter a valid email address" }),
-  password: z.string()
-    .min(6, { message: "Password must be at least 6 characters" })
-    .optional()
-    .or(z.literal('')),
+  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
-  role: z.string(),
+  role: z.string().default("observer"),
   observerId: z.string().optional(),
-  notes: z.string().optional(),
   isActive: z.boolean().default(true),
-});
-
-// Schema for editing a user (password optional)
-const editUserSchema = userSchema.extend({
-  password: z.string().optional(),
+  verificationStatus: z.string().default("pending"),
+  notes: z.string().optional(),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }).optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -86,281 +78,361 @@ export function UserForm({
   user,
   title,
 }: UserFormProps) {
-  const [error, setError] = useState<string | null>(null);
-  
-  // Determine if we're editing (user provided) or creating (no user)
-  const isEditing = !!user;
-  
-  // Use the appropriate schema
-  const formSchema = isEditing ? editUserSchema : userSchema;
-  
-  // Initialize form with default values
+  const [activeTab, setActiveTab] = useState("basic");
+  const [passwordMode, setPasswordMode] = useState(user ? "keep" : "set");
+
+  const defaultValues: Partial<UserFormValues> = {
+    username: user?.username || "",
+    email: user?.email || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    role: user?.role || "observer",
+    observerId: user?.observerId || "",
+    isActive: user?.isActive ?? true,
+    verificationStatus: user?.verificationStatus || "pending",
+    notes: user?.notes || "",
+    password: "",
+  };
+
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: user?.username || "",
-      email: user?.email || "",
-      password: "", // Always start with empty password field
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      role: user?.role || "observer",
-      observerId: user?.observerId || "",
-      notes: user?.notes || "",
-      isActive: user?.isActive !== undefined ? user.isActive : true,
-    },
+    resolver: zodResolver(userSchema),
+    defaultValues,
+    mode: "onChange",
   });
-  
-  // Update form when user prop changes
-  useEffect(() => {
-    if (user) {
-      form.reset({
-        username: user.username || "",
-        email: user.email || "",
-        password: "", // Always reset password field
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        role: user.role || "observer",
-        observerId: user.observerId || "",
-        notes: user.notes || "",
-        isActive: user.isActive !== undefined ? user.isActive : true,
-      });
-    }
-  }, [user, form]);
-  
-  // Reset form on close
-  useEffect(() => {
-    if (!isOpen) {
-      form.reset();
-      setError(null);
-    }
-  }, [isOpen, form]);
-  
+
+  // Form submission handler
   const handleSubmit = (values: UserFormValues) => {
-    setError(null);
-    
-    // For editing, if password is empty, remove it from the submission
-    if (isEditing && (!values.password || values.password.trim() === '')) {
-      const { password, ...dataWithoutPassword } = values;
-      onSubmit(dataWithoutPassword);
-    } else {
-      onSubmit(values);
+    // Remove password if it's not being changed
+    if (user && passwordMode === "keep") {
+      delete values.password;
     }
+
+    onSubmit(values);
   };
-  
-  const handleCancel = () => {
-    form.reset();
-    onClose();
-  };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Edit user details below." : "Enter details to create a new user."}
+            {user
+              ? "Edit the user's information below."
+              : "Fill out the form below to create a new user."}
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
-                <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Error</p>
-                  <p className="text-sm">{error}</p>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4 w-full">
+                <TabsTrigger value="basic" className="flex-1">
+                  Basic Info
+                </TabsTrigger>
+                <TabsTrigger value="account" className="flex-1">
+                  Account
+                </TabsTrigger>
+                <TabsTrigger value="additional" className="flex-1">
+                  Additional
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Basic Info Tab */}
+              <TabsContent value="basic">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem className="col-span-2">
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="johndoe@example.com"
+                            type="email"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="username" 
-                        {...field} 
-                        disabled={isEditing} // Cannot edit username once created
-                      />
-                    </FormControl>
-                    {isEditing && (
-                      <FormDescription>
-                        Username cannot be changed
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="user@example.com" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="First name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Last name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{isEditing ? "New Password" : "Password*"}</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder={isEditing ? "Leave blank to keep current" : "Password"} 
-                        {...field}
-                      />
-                    </FormControl>
-                    {isEditing && (
-                      <FormDescription>
-                        Leave blank to keep current password
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role*</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                        <SelectItem value="supervisor">Supervisor</SelectItem>
-                        <SelectItem value="observer">Observer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="observerId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observer ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="OBS123" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Unique identifier used in the field
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="col-span-2">
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Add additional information about this user" 
-                          className="resize-none" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="col-span-2">
-                <FormField
-                  control={form.control}
-                  name="isActive"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Active Account</FormLabel>
+              </TabsContent>
+
+              {/* Account Tab */}
+              <TabsContent value="account">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="johndoe" {...field} />
+                        </FormControl>
                         <FormDescription>
-                          Inactive accounts cannot log in to the system
+                          This will be used for login purposes.
                         </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {user ? (
+                    <div className="space-y-3">
+                      <div className="text-sm font-medium">Password</div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="keep-password"
+                          name="password-mode"
+                          value="keep"
+                          checked={passwordMode === "keep"}
+                          onChange={() => setPasswordMode("keep")}
+                          className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                         />
-                      </FormControl>
-                    </FormItem>
+                        <label
+                          htmlFor="keep-password"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Keep existing password
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="change-password"
+                          name="password-mode"
+                          value="change"
+                          checked={passwordMode === "set"}
+                          onChange={() => setPasswordMode("set")}
+                          className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <label
+                          htmlFor="change-password"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Change password
+                        </label>
+                      </div>
+
+                      {passwordMode === "set" && (
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>New Password</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="password"
+                                  placeholder="********"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Must be at least 8 characters.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="********"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Must be at least 8 characters.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   )}
-                />
-              </div>
-            </div>
-            
+
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                            <SelectItem value="supervisor">Supervisor</SelectItem>
+                            <SelectItem value="observer">Observer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Determines user's access level and permissions.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="isActive"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between space-x-3 space-y-0 rounded-md border p-4">
+                          <div className="space-y-1">
+                            <FormLabel>Active Status</FormLabel>
+                            <FormDescription>
+                              Determines if user can log in to the system.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="verificationStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Verification Status</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="verified">Verified</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Additional Tab */}
+              <TabsContent value="additional">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="observerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observer ID</FormLabel>
+                        <FormControl>
+                          <Input placeholder="OBS-12345" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormDescription>
+                          Unique identifier for the observer (if applicable).
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Additional information about this user..."
+                            className="min-h-[120px]"
+                            {...field}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {user && (
+                    <Alert variant="outline" className="bg-blue-50 border-blue-200">
+                      <AlertCircle className="h-4 w-4 text-blue-500" />
+                      <AlertTitle className="text-blue-700">Information</AlertTitle>
+                      <AlertDescription className="text-blue-600">
+                        Extended profile details like address, phone number, and emergency contacts 
+                        can be managed through the user detail view after creation.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={handleCancel}>
+              <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit">
-                <Check className="h-4 w-4 mr-2" />
-                {isEditing ? "Update User" : "Create User"}
+                {user ? "Update User" : "Create User"}
               </Button>
             </DialogFooter>
           </form>

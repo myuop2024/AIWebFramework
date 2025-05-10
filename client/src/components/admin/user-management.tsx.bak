@@ -134,6 +134,16 @@ export function UserManagement() {
     }
   });
 
+  // Handle toggling user status
+  const handleToggleStatus = (userId: number) => {
+    toggleUserStatus.mutate(userId);
+  };
+
+  // Handle verification actions
+  const handleVerify = (userId: number) => {
+    updateVerification.mutate({ userId, status: "verified" });
+  };
+
   // Create a new user
   const createUser = useMutation({
     mutationFn: async (userData: Omit<User, 'id' | 'createdAt'>) => {
@@ -189,16 +199,6 @@ export function UserManagement() {
       });
     }
   });
-
-  // Handle toggling user status
-  const handleToggleStatus = (userId: number) => {
-    toggleUserStatus.mutate(userId);
-  };
-
-  // Handle verification actions
-  const handleVerify = (userId: number) => {
-    updateVerification.mutate({ userId, status: "verified" });
-  };
 
   // Handle form submission
   const handleFormSubmit = (data: any) => {
@@ -371,7 +371,7 @@ export function UserManagement() {
                         {user.firstName} {user.lastName}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {user.observerId || "-"}
+                        {user.observerId || `-`}
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
@@ -451,22 +451,22 @@ export function UserManagement() {
           </div>
         )}
       </CardFooter>
-
-      {/* User Form Modal */}
-      <UserForm
-        isOpen={formOpen}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleFormSubmit}
-        user={selectedUser || undefined}
-        title={selectedUser ? "Edit User" : "Add New User"}
-      />
-
-      {/* User Details Modal */}
-      <UserDetailModal
-        isOpen={detailModalOpen}
-        onClose={() => setDetailModalOpen(false)}
-        userId={selectedUser?.id || null}
-      />
     </Card>
+
+    {/* User Form Modal */}
+    <UserForm
+      isOpen={formOpen}
+      onClose={() => setFormOpen(false)}
+      onSubmit={handleFormSubmit}
+      user={selectedUser || undefined}
+      title={selectedUser ? "Edit User" : "Add New User"}
+    />
+
+    {/* User Details Modal */}
+    <UserDetailModal
+      isOpen={detailModalOpen}
+      onClose={() => setDetailModalOpen(false)}
+      userId={selectedUser?.id || null}
+    />
   );
 }
