@@ -21,6 +21,7 @@ export interface User {
   id: number;
   username: string;
   status: 'online' | 'offline' | 'away';
+  profileImage?: string;
 }
 
 // Call data for audio/video calls

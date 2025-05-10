@@ -462,12 +462,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`} />
+                            <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
                             <AvatarFallback>{getInitials(conversation.username)}</AvatarFallback>
                           </Avatar>
-                          {isUserOnline(conversation.userId) && (
-                            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-white" />
-                          )}
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                            isUserOnline(conversation.userId) ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
                         </div>
                         <div className="flex-1 overflow-hidden">
                           <div className="flex justify-between items-start">
@@ -554,11 +554,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
                             <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-green-500' : user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-                            }`} />
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                            user.status === 'online' ? 'bg-green-500' : 
+                            user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                          }`} />
                         </div>
                         <div>
                           <p className="font-medium">{user.username}</p>
@@ -612,11 +614,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     <div className="flex items-center gap-2">
                       <div className="relative">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
+                          <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
                           <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
                         </Avatar>
-                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${activeChatUser.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
-                          }`} />
+                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                          activeChatUser.status === 'online' ? 'bg-green-500' : 
+                          activeChatUser.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                        }`} />
                       </div>
                       <div>
                         <p className="font-medium">{activeChatUser.username}</p>
@@ -687,7 +691,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                               <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
                                 {!isCurrentUser && showAvatar && activeChatUser && ( // Added activeChatUser check
                                   <Avatar className="h-8 w-8 mr-0 self-end mb-1"> {/* Adjusted margin for alignment */}
-                                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
+                                    <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
                                     <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
                                   </Avatar>
                                 )}
@@ -1039,11 +1043,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
                             <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
-                            }`} />
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                            user.status === 'online' ? 'bg-green-500' : 
+                            user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                          }`} />
                         </div>
                         <div className="text-left">
                           <p className="font-medium">{user.username}</p>

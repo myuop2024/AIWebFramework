@@ -73,11 +73,12 @@ router.get('/online-users', async (req, res) => {
     // Get active users from the communication service
     const activeUserIds = communicationService ? communicationService.getActiveUsers() : [];
     
-    // Map users with their online status
+    // Map users with their online status and profile image
     const users = allUsers.map(user => ({
       id: user.id,
       username: user.username,
-      status: activeUserIds.includes(user.id) ? 'online' : 'offline'
+      status: activeUserIds.includes(user.id) ? 'online' : 'offline',
+      profileImage: user.profileImage || null
     }));
     
     res.json(users);
