@@ -17,6 +17,8 @@ import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
 import analyticsRoutes from './routes/analytics';
 import adminAnalyticsRoutes from './routes/admin-analytics';
+import adminUserRoutes from './routes/admin-users';
+import adminSystemRoutes from './routes/admin-system';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
