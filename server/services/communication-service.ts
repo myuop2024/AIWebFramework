@@ -1,356 +1,190 @@
-import { Server as HTTPServer } from "http";
-import { Server as SocketIOServer, Socket } from "socket.io";
-import { storage } from "../storage";
-import logger from "../utils/logger";
+import { Server as SocketIOServer } from 'socket.io';
+import { Server } from 'http';
+import { storage } from '../storage';
 
-interface UserConnection {
-  userId: number;
-  username: string;
-  socketId: string;
-  peerId?: string;
-  status: 'online' | 'busy' | 'away' | 'offline';
-  lastActivity: Date;
+// Function for API routes to create/access the service
+let communicationServiceInstance: CommunicationService | null = null;
+
+export function createCommunicationService(server: Server): CommunicationService {
+  if (!communicationServiceInstance) {
+    communicationServiceInstance = new CommunicationService(server);
+  }
+  return communicationServiceInstance;
 }
 
-/**
- * CommunicationService manages real-time communication between users
- * Handles video, audio, file transfers, and screen sharing
- */
+// Store connected users with their socket IDs
+interface ConnectedUser {
+  userId: number;
+  socketId: string;
+  username: string;
+}
+
 export class CommunicationService {
   private io: SocketIOServer;
-  private userConnections: Map<number, UserConnection> = new Map();
-  private rooms: Map<string, Set<string>> = new Map();
-  
-  constructor(httpServer: HTTPServer) {
-    this.io = new SocketIOServer(httpServer, {
-      path: '/comm-socket',
+  private connectedUsers: ConnectedUser[] = [];
+
+  constructor(server: Server) {
+    this.io = new SocketIOServer(server, {
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-      }
+        origin: '*',
+        methods: ['GET', 'POST']
+      },
+      path: '/socket'
     });
-    
+
     this.setupSocketHandlers();
-    logger.info('Communication service initialized');
   }
-  
+
   private setupSocketHandlers() {
-    this.io.on('connection', (socket: Socket) => {
-      logger.info(`Socket connected: ${socket.id}`);
-      
-      // Authentication and user registration
-      socket.on('register', async (data: { userId: number, peerId?: string }) => {
+    this.io.on('connection', (socket) => {
+      console.log('New client connected:', socket.id);
+
+      // Handle user authentication
+      socket.on('authenticate', async (data: { userId: number }) => {
         try {
-          const { userId, peerId } = data;
-          
+          const { userId } = data;
           if (!userId) {
-            socket.emit('register:error', { message: 'User ID is required' });
+            console.error('Invalid authentication data:', data);
             return;
           }
-          
-          // Get user info from database
+
           const user = await storage.getUser(userId);
           if (!user) {
-            socket.emit('register:error', { message: 'User not found' });
+            console.error('User not found for ID:', userId);
             return;
           }
-          
-          // Save user connection
-          this.userConnections.set(userId, {
+
+          // Add user to connected users
+          this.connectedUsers.push({
             userId,
-            username: user.username,
             socketId: socket.id,
-            peerId,
-            status: 'online',
-            lastActivity: new Date()
+            username: user.username
           });
-          
+
+          // Join a room with their user ID
           socket.join(`user:${userId}`);
+
+          // Broadcast user online status
+          this.broadcastUserStatus(userId, true);
+
+          console.log(`User ${userId} authenticated and connected`);
           
-          // Notify the client that registration was successful
-          socket.emit('register:success', { userId, username: user.username });
-          
-          // Broadcast new user online status to others
-          this.broadcastUserStatus(userId, 'online');
-          
-          logger.info(`User registered to communication service: ${user.username} (${userId})`);
+          // Send the list of online users to the newly connected user
+          socket.emit('online-users', this.getOnlineUsers());
         } catch (error) {
-          logger.error('Error in socket registration:', error);
-          socket.emit('register:error', { message: 'Server error during registration' });
+          console.error('Error in authenticate:', error);
         }
       });
-      
-      // Change user status
-      socket.on('status', (data: { status: 'online' | 'busy' | 'away' | 'offline' }) => {
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        const connection = this.userConnections.get(userId);
-        if (connection) {
-          connection.status = data.status;
-          connection.lastActivity = new Date();
-          this.userConnections.set(userId, connection);
-          
-          // Broadcast status change
-          this.broadcastUserStatus(userId, data.status);
-        }
-      });
-      
-      // Handle signaling for WebRTC
-      socket.on('signal', (data: { to: number, signal: any, from: number }) => {
-        const { to, signal, from } = data;
-        const targetConnection = this.userConnections.get(to);
-        
-        if (targetConnection) {
-          this.io.to(`user:${to}`).emit('signal', {
-            from,
-            signal
-          });
-          logger.debug(`Signal relayed from ${from} to ${to}`);
-        }
-      });
-      
-      // Create or join a room
-      socket.on('room:join', (data: { roomId: string }) => {
-        const { roomId } = data;
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        // Create room if it doesn't exist
-        if (!this.rooms.has(roomId)) {
-          this.rooms.set(roomId, new Set());
-        }
-        
-        // Add user to room
-        socket.join(roomId);
-        this.rooms.get(roomId)?.add(socket.id);
-        
-        // Notify everyone in the room
-        const usersInRoom = this.getUsersInRoom(roomId);
-        this.io.to(roomId).emit('room:users', { roomId, users: usersInRoom });
-        
-        logger.info(`User ${userId} joined room ${roomId}`);
-      });
-      
-      // Leave a room
-      socket.on('room:leave', (data: { roomId: string }) => {
-        const { roomId } = data;
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        this.leaveRoom(socket, roomId);
-      });
-      
-      // Direct message
-      socket.on('message:direct', async (data: { to: number, content: string, type: string }) => {
-        const { to, content, type } = data;
-        const from = this.getUserIdBySocketId(socket.id);
-        
-        if (!from) return;
-        
+
+      // Handle private messages
+      socket.on('private-message', async (data: { senderId: number; receiverId: number; content: string; type?: string }) => {
         try {
-          // Store message in database
+          const { senderId, receiverId, content, type = 'text' } = data;
+          
+          // Save message to database
           const message = await storage.createMessage({
-            senderId: from,
-            recipientId: to,
+            senderId,
+            receiverId,
             content,
-            messageType: type,
-            status: 'sent'
+            type: type as 'text' | 'file' | 'image' | 'system',
+            sentAt: new Date(),
+            read: false
           });
-          
-          // Send to recipient
-          this.io.to(`user:${to}`).emit('message:direct', {
-            id: message.id,
-            from,
-            content,
-            type,
-            timestamp: message.createdAt
-          });
-          
-          // Confirm delivery to sender
-          socket.emit('message:sent', {
-            id: message.id,
-            to,
-            timestamp: message.createdAt
-          });
-          
+
+          // Emit to sender for confirmation
+          socket.emit('message-sent', message);
+
+          // Emit to recipient if they're online
+          const recipientSocketId = this.getUserSocketId(receiverId);
+          if (recipientSocketId) {
+            this.io.to(`user:${receiverId}`).emit('new-message', message);
+          }
         } catch (error) {
-          logger.error('Error sending direct message:', error);
-          socket.emit('message:error', { message: 'Failed to send message' });
+          console.error('Error in private-message:', error);
+          socket.emit('message-error', { error: 'Failed to send message' });
         }
       });
-      
-      // File transfer notification
-      socket.on('file:request', (data: { to: number, fileInfo: any }) => {
-        const { to, fileInfo } = data;
-        const from = this.getUserIdBySocketId(socket.id);
-        if (!from) return;
-        
-        this.io.to(`user:${to}`).emit('file:request', {
-          from,
-          fileInfo
-        });
+
+      // Handle typing indicators
+      socket.on('typing', (data: { senderId: number; receiverId: number; isTyping: boolean }) => {
+        const { senderId, receiverId, isTyping } = data;
+        this.io.to(`user:${receiverId}`).emit('user-typing', { userId: senderId, isTyping });
       });
-      
-      // Screen sharing notification
-      socket.on('screen:start', (data: { roomId: string }) => {
-        const { roomId } = data;
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        this.io.to(roomId).emit('screen:started', { userId });
+
+      // Handle video/audio call offers
+      socket.on('call-offer', (data: { callerId: number; receiverId: number; offer: any; type: 'video' | 'audio' }) => {
+        const { callerId, receiverId, offer, type } = data;
+        this.io.to(`user:${receiverId}`).emit('call-offer', { callerId, offer, type });
       });
-      
-      // Screen sharing stop notification
-      socket.on('screen:stop', (data: { roomId: string }) => {
-        const { roomId } = data;
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        this.io.to(roomId).emit('screen:stopped', { userId });
+
+      // Handle call answers
+      socket.on('call-answer', (data: { callerId: number; receiverId: number; answer: any }) => {
+        const { callerId, receiverId, answer } = data;
+        this.io.to(`user:${callerId}`).emit('call-answer', { from: receiverId, answer });
       });
-      
-      // Update PeerId
-      socket.on('peer:update', (data: { peerId: string }) => {
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        const connection = this.userConnections.get(userId);
-        if (connection) {
-          connection.peerId = data.peerId;
-          this.userConnections.set(userId, connection);
+
+      // Handle ICE candidates
+      socket.on('ice-candidate', (data: { senderId: number; receiverId: number; candidate: any }) => {
+        const { senderId, receiverId, candidate } = data;
+        this.io.to(`user:${receiverId}`).emit('ice-candidate', { from: senderId, candidate });
+      });
+
+      // Handle call end
+      socket.on('call-end', (data: { callerId: number; receiverId: number }) => {
+        const { callerId, receiverId } = data;
+        this.io.to(`user:${receiverId}`).emit('call-end', { from: callerId });
+      });
+
+      // Handle screen sharing
+      socket.on('screen-share-offer', (data: { senderId: number; receiverId: number; offer: any }) => {
+        const { senderId, receiverId, offer } = data;
+        this.io.to(`user:${receiverId}`).emit('screen-share-offer', { from: senderId, offer });
+      });
+
+      // Handle read receipts
+      socket.on('mark-read', async (data: { messageIds: number[] }) => {
+        try {
+          const { messageIds } = data;
+          
+          for (const messageId of messageIds) {
+            const message = await storage.markMessageAsRead(messageId);
+            if (message && message.senderId) {
+              this.io.to(`user:${message.senderId}`).emit('message-read', { messageId });
+            }
+          }
+        } catch (error) {
+          console.error('Error in mark-read:', error);
         }
       });
-      
+
       // Handle disconnection
       socket.on('disconnect', () => {
-        const userId = this.getUserIdBySocketId(socket.id);
-        if (!userId) return;
-        
-        // Remove from all rooms
-        this.rooms.forEach((members, roomId) => {
-          if (members.has(socket.id)) {
-            this.leaveRoom(socket, roomId);
-          }
-        });
-        
-        // Remove from user connections and broadcast offline status
-        this.userConnections.delete(userId);
-        this.broadcastUserStatus(userId, 'offline');
-        
-        logger.info(`User disconnected from communication service: ${userId}`);
-      });
-    });
-  }
-  
-  private getUserIdBySocketId(socketId: string): number | null {
-    for (const [userId, connection] of this.userConnections.entries()) {
-      if (connection.socketId === socketId) {
-        return userId;
-      }
-    }
-    return null;
-  }
-  
-  private getUsersInRoom(roomId: string): { userId: number, username: string }[] {
-    const result: { userId: number, username: string }[] = [];
-    const roomMembers = this.rooms.get(roomId);
-    
-    if (!roomMembers) return result;
-    
-    for (const socketId of roomMembers) {
-      const userId = this.getUserIdBySocketId(socketId);
-      if (userId) {
-        const connection = this.userConnections.get(userId);
-        if (connection) {
-          result.push({
-            userId: connection.userId,
-            username: connection.username
-          });
+        const user = this.connectedUsers.find(u => u.socketId === socket.id);
+        if (user) {
+          this.connectedUsers = this.connectedUsers.filter(u => u.socketId !== socket.id);
+          this.broadcastUserStatus(user.userId, false);
+          console.log(`User ${user.userId} disconnected`);
         }
-      }
-    }
-    
-    return result;
-  }
-  
-  private leaveRoom(socket: Socket, roomId: string) {
-    socket.leave(roomId);
-    
-    const roomMembers = this.rooms.get(roomId);
-    if (roomMembers) {
-      roomMembers.delete(socket.id);
-      
-      // If room is empty, delete it
-      if (roomMembers.size === 0) {
-        this.rooms.delete(roomId);
-        logger.info(`Room deleted: ${roomId}`);
-      } else {
-        // Otherwise notify remaining users
-        const usersInRoom = this.getUsersInRoom(roomId);
-        this.io.to(roomId).emit('room:users', { roomId, users: usersInRoom });
-      }
-    }
-    
-    const userId = this.getUserIdBySocketId(socket.id);
-    logger.info(`User ${userId} left room ${roomId}`);
-  }
-  
-  private broadcastUserStatus(userId: number, status: 'online' | 'busy' | 'away' | 'offline') {
-    const user = this.userConnections.get(userId);
-    if (!user) return;
-    
-    this.io.emit('user:status', {
-      userId,
-      username: user.username,
-      status,
-      timestamp: new Date()
-    });
-  }
-  
-  // Public API
-  
-  /**
-   * Get all online users
-   */
-  public getOnlineUsers(): { userId: number, username: string, status: string }[] {
-    const result: { userId: number, username: string, status: string }[] = [];
-    
-    for (const [userId, connection] of this.userConnections.entries()) {
-      result.push({
-        userId,
-        username: connection.username,
-        status: connection.status
       });
-    }
-    
-    return result;
-  }
-  
-  /**
-   * Send a system notification to a specific user
-   */
-  public sendSystemNotification(userId: number, message: string, type: string = 'info') {
-    this.io.to(`user:${userId}`).emit('system:notification', {
-      message,
-      type,
-      timestamp: new Date()
     });
   }
-  
-  /**
-   * Broadcast a system notification to all connected users
-   */
-  public broadcastSystemNotification(message: string, type: string = 'info') {
-    this.io.emit('system:notification', {
-      message,
-      type,
-      timestamp: new Date()
-    });
+
+  private broadcastUserStatus(userId: number, isOnline: boolean) {
+    this.io.emit('user-status', { userId, status: isOnline ? 'online' : 'offline' });
+  }
+
+  private getUserSocketId(userId: number): string | undefined {
+    const user = this.connectedUsers.find(u => u.userId === userId);
+    return user?.socketId;
+  }
+
+  private getOnlineUsers() {
+    return this.connectedUsers.map(user => ({
+      id: user.userId,
+      username: user.username,
+      status: 'online'
+    }));
   }
 }
 
-// Export a factory function to create the service
-export function createCommunicationService(httpServer: HTTPServer): CommunicationService {
-  return new CommunicationService(httpServer);
-}
+export default CommunicationService;

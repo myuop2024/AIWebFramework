@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CommunicationCenter } from '@/components/communication/communication-center';
-import { PageHeader } from '@/components/ui/page-header';
+import { PageHeader, PageHeaderHeading, PageHeaderDescription } from '@/components/ui/page-header';
 import MainLayout from '@/components/layout/main-layout';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { Separator } from '@/components/ui/separator';
@@ -51,10 +51,10 @@ export default function CommunicationsPage() {
   return (
     <MainLayout>
       <div className="p-8">
-        <PageHeader
-          heading="Communications"
-          subheading="Chat, video, and voice communications center"
-        />
+        <PageHeader>
+          <PageHeaderHeading>Communications</PageHeaderHeading>
+          <PageHeaderDescription>Chat, video, and voice communications center</PageHeaderDescription>
+        </PageHeader>
         <Separator className="my-6" />
         <div className="h-[70vh]">
           <CommunicationCenter userId={currentUser.id} />

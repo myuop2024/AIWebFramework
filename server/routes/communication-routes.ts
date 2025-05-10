@@ -1,86 +1,120 @@
-import { Router } from "express";
-import { ensureAuthenticated } from "../middleware/auth";
-import { storage } from "../storage";
-import logger from "../utils/logger";
+import { Router } from 'express';
+import { storage } from '../storage';
+import { z } from 'zod';
+import { CommunicationService } from '../services/communication-service';
 
-// This will be populated by the communication service
-let communicationServiceInstance: any = null;
+let communicationService: CommunicationService | null = null;
 
-export function setCommunicationService(service: any) {
-  communicationServiceInstance = service;
+export function setCommunicationService(service: CommunicationService) {
+  communicationService = service;
 }
 
-const communicationRouter = Router();
+const router = Router();
 
-// Get online users
-communicationRouter.get("/api/communication/users/online", ensureAuthenticated, async (req, res) => {
+// Get the current user's conversations
+router.get('/conversations', async (req, res) => {
   try {
-    if (!communicationServiceInstance) {
-      return res.status(503).json({ message: "Communication service not available" });
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    const onlineUsers = communicationServiceInstance.getOnlineUsers();
-    res.json(onlineUsers);
+
+    const conversations = await storage.getRecentConversations(req.user.id);
+    res.json(conversations);
   } catch (error) {
-    logger.error("Error fetching online users:", error);
-    res.status(500).json({ message: "Failed to fetch online users" });
+    console.error('Error getting conversations:', error);
+    res.status(500).json({ error: 'Failed to get conversations' });
   }
 });
 
-// Get user conversations
-communicationRouter.get("/api/communication/conversations", ensureAuthenticated, async (req, res) => {
+// Get messages between the current user and a specific user
+router.get('/messages/:userId', async (req, res) => {
   try {
-    const userId = req.session.userId as number;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    const messages = await storage.getMessagesBetweenUsers(req.user.id, userId);
+    
+    // Mark messages as read
+    for (const message of messages) {
+      if (message.receiverId === req.user.id && !message.read) {
+        await storage.markMessageAsRead(message.id!);
+      }
     }
     
-    // Get user's recent conversations
-    const messages = await storage.getRecentConversations(userId);
     res.json(messages);
   } catch (error) {
-    logger.error("Error fetching conversations:", error);
-    res.status(500).json({ message: "Failed to fetch conversations" });
+    console.error('Error getting messages:', error);
+    res.status(500).json({ error: 'Failed to get messages' });
   }
 });
 
-// Get messages between two users
-communicationRouter.get("/api/communication/messages/:userId", ensureAuthenticated, async (req, res) => {
+// Send a message to another user
+router.post('/messages', async (req, res) => {
   try {
-    const currentUserId = req.session.userId as number;
-    const otherUserId = parseInt(req.params.userId);
-    
-    if (!currentUserId) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
-    
-    if (isNaN(otherUserId)) {
-      return res.status(400).json({ message: "Invalid user ID" });
+
+    const schema = z.object({
+      receiverId: z.number(),
+      content: z.string().min(1),
+      type: z.enum(['text', 'file', 'image', 'system']).default('text'),
+    });
+
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Invalid request body', details: result.error });
     }
-    
-    const messages = await storage.getMessagesBetweenUsers(currentUserId, otherUserId);
-    res.json(messages);
+
+    const { receiverId, content, type } = result.data;
+
+    const message = await storage.createMessage({
+      senderId: req.user.id,
+      receiverId,
+      content,
+      type,
+      sentAt: new Date(),
+      read: false
+    });
+
+    res.status(201).json(message);
   } catch (error) {
-    logger.error("Error fetching messages:", error);
-    res.status(500).json({ message: "Failed to fetch messages" });
+    console.error('Error sending message:', error);
+    res.status(500).json({ error: 'Failed to send message' });
   }
 });
 
-// Mark message as read
-communicationRouter.post("/api/communication/messages/:id/read", ensureAuthenticated, async (req, res) => {
+// Get the list of online users (will be populated via WebSockets)
+router.get('/online-users', async (req, res) => {
   try {
-    const messageId = parseInt(req.params.id);
-    
-    if (isNaN(messageId)) {
-      return res.status(400).json({ message: "Invalid message ID" });
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
+
+    // For now, return all users as there's no persistent online status in the DB
+    const users = await storage.getAllUsers();
     
-    const message = await storage.markMessageAsRead(messageId);
-    res.json(message);
+    // Filter out the current user
+    const filteredUsers = users.filter(user => user.id !== req.user?.id);
+    
+    // Transform to match the expected format in the client
+    const formattedUsers = filteredUsers.map(user => ({
+      id: user.id,
+      username: user.username,
+      status: 'offline' // Default status
+    }));
+    
+    res.json(formattedUsers);
   } catch (error) {
-    logger.error("Error marking message as read:", error);
-    res.status(500).json({ message: "Failed to mark message as read" });
+    console.error('Error getting online users:', error);
+    res.status(500).json({ error: 'Failed to get online users' });
   }
 });
 
-export default communicationRouter;
+export default router;
