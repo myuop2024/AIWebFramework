@@ -12,6 +12,7 @@ import {
   UserCheck, Clock, Users, FileText 
 } from "lucide-react";
 import { format } from "date-fns";
+import DocumentViewerModal from "./document-viewer-modal";
 
 // Types
 interface User {
@@ -42,6 +43,8 @@ interface Document {
 function VerificationQueue() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [documentModalOpen, setDocumentModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Fetch pending users
   const { data: pendingUsers = [], isLoading, refetch } = useQuery<User[]>({
@@ -118,10 +121,14 @@ function VerificationQueue() {
 
   // Handle view documents
   const handleViewDocuments = (userId: number) => {
-    toast({
-      title: "View Documents",
-      description: "Document view functionality will be implemented soon.",
-    });
+    setSelectedUserId(userId);
+    setDocumentModalOpen(true);
+  };
+  
+  // Handle close document modal
+  const handleCloseDocumentModal = () => {
+    setDocumentModalOpen(false);
+    setSelectedUserId(null);
   };
 
   // Format date for display
@@ -261,6 +268,15 @@ function VerificationQueue() {
           </div>
         )}
       </CardFooter>
+      
+      {/* Document Viewer Modal */}
+      <DocumentViewerModal 
+        isOpen={documentModalOpen}
+        userId={selectedUserId}
+        onClose={handleCloseDocumentModal}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
     </Card>
   );
 }
