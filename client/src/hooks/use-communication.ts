@@ -1,22 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'; // Assuming this path is correct
 
-// Message types
+// --- Constants for WebSocket Message Types ---
+const WS_MSG_TYPES = {
+  REGISTER: 'register',
+  USERS_LIST: 'users',
+  NEW_MESSAGE: 'message',
+  CALL_OFFER: 'call-offer',
+  CALL_ANSWER: 'call-answer',
+  CALL_CANDIDATE: 'call-candidate',
+  CALL_END: 'call-end',
+} as const;
+
+// --- Type Definitions ---
 export type MessageType = 'text' | 'file' | 'image' | 'system';
 
-// Message interface
 export interface Message {
   id: number;
   senderId: number;
   receiverId: number;
   content: string;
   type: MessageType;
-  sentAt: Date;
+  sentAt: Date; // Consider string if your API returns ISO strings, then parse to Date
   read: boolean;
 }
 
-// User interface for online/offline status
 export interface User {
   id: number;
   username: string;
@@ -24,15 +33,67 @@ export interface User {
   profileImage?: string;
 }
 
-// Call data for audio/video calls
 export interface CallData {
   callerId: number;
   receiverId: number;
   type: 'audio' | 'video';
-  offer?: any;
-  answer?: any;
-  candidate?: any;
+  offer?: RTCSessionDescriptionInit; // More specific type
+  answer?: RTCSessionDescriptionInit; // More specific type
+  candidate?: RTCIceCandidateInit | RTCIceCandidate; // More specific type
 }
+
+// For WebSocket messages
+interface WebSocketMessageBase {
+  type: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any; // Allow other properties but prefer more specific types if possible
+}
+
+interface WebSocketUsersMessage extends WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.USERS_LIST;
+  users: User[];
+}
+
+interface WebSocketNewMessage extends WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.NEW_MESSAGE;
+  message: Message;
+}
+
+interface WebSocketCallOfferMessage extends CallData, WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.CALL_OFFER;
+}
+interface WebSocketCallAnswerMessage extends CallData, WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.CALL_ANSWER;
+}
+interface WebSocketCallCandidateMessage extends CallData, WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.CALL_CANDIDATE;
+}
+interface WebSocketCallEndMessage extends WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.CALL_END;
+  callerId?: number; // Optional, for identifying who ended/rejected
+  receiverId?: number; // Optional
+}
+
+type ParsedWebSocketMessage =
+  | WebSocketUsersMessage
+  | WebSocketNewMessage
+  | WebSocketCallOfferMessage
+  | WebSocketCallAnswerMessage
+  | WebSocketCallCandidateMessage
+  | WebSocketCallEndMessage;
+
+
+// --- API Response Types (Assumed) ---
+interface Conversation {
+  userId: number;
+  username: string;
+  lastMessage: string;
+  lastMessageAt: string; // Or Date
+  lastMessageType: MessageType;
+  unreadCount: number;
+  // Add other properties as returned by your API
+}
+
 
 /**
  * Hook for handling communication functionality
@@ -44,191 +105,193 @@ export function useCommunication(userId: number) {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [activeCall, setActiveCall] = useState<CallData | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
-  const peerConnection = useRef<RTCPeerConnection | null>(null);
-  const localStream = useRef<MediaStream | null>(null);
-  const remoteStream = useRef<MediaStream | null>(null);
 
-  // Connect to WebSocket server with reconnection logic
+  // Use state for streams to trigger re-renders in consuming components
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+  const ringtoneAudio = useRef<HTMLAudioElement | null>(null); // Ref for ringtone
+
+  // --- WebSocket Connection and Management ---
   useEffect(() => {
     let reconnectTimer: NodeJS.Timeout | null = null;
-    let ws: WebSocket | null = null;
+    let wsInstance: WebSocket | null = null;
     let isUnmounting = false;
-    
+
     const connectWebSocket = () => {
-      if (isUnmounting) return;
-      
-      // Close existing connection if any
-      if (ws) {
-        ws.close();
-        ws = null;
+      if (isUnmounting || (wsInstance && wsInstance.readyState === WebSocket.OPEN)) {
+        // Don't reconnect if unmounting or already open
+        return;
       }
-      
-      // Clear any existing reconnect timer
+
+      if (wsInstance) {
+        wsInstance.close(); // Ensure old instance is closed before creating new
+      }
+
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
       }
-      
+
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
-        console.log(`Connecting to WebSocket at ${wsUrl}...`);
-        ws = new WebSocket(wsUrl);
-        
-        ws.onopen = () => {
+        console.log(`Connecting to WebSocket at ${wsUrl}... (User ID: ${userId})`);
+        wsInstance = new WebSocket(wsUrl);
+        setSocket(wsInstance); // Set socket state early for other parts of the hook
+
+        wsInstance.onopen = () => {
           console.log('WebSocket connected successfully');
-          // Send user ID to identify the connection
-          ws.send(JSON.stringify({ type: 'register', userId }));
-          setSocket(ws);
+          if (wsInstance?.readyState === WebSocket.OPEN) {
+            wsInstance.send(JSON.stringify({ type: WS_MSG_TYPES.REGISTER, userId }));
+          }
         };
-        
-        ws.onclose = (event) => {
+
+        wsInstance.onclose = (event) => {
           console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
-          setSocket(null);
-          
-          // Attempt to reconnect after a delay
-          if (!reconnectTimer && document.visibilityState !== 'hidden') {
+          setSocket(null); // Clear socket state
+          if (!isUnmounting && document.visibilityState !== 'hidden' && !reconnectTimer) {
             console.log('Scheduling WebSocket reconnection...');
+            // Implement exponential backoff for better reconnection strategy
             reconnectTimer = setTimeout(() => {
               console.log('Attempting to reconnect WebSocket...');
               connectWebSocket();
-            }, 3000);
+            }, 3000 + Math.random() * 2000); // Basic backoff with jitter
           }
         };
-        
-        ws.onerror = (error) => {
+
+        wsInstance.onerror = (error) => {
           console.error('WebSocket error:', error);
+          // wsInstance.onclose will likely be called after this, triggering reconnection logic
         };
-        
-        ws.onmessage = (event) => {
+
+        wsInstance.onmessage = (event) => {
           try {
-            const data = JSON.parse(event.data);
+            const data = JSON.parse(event.data as string) as ParsedWebSocketMessage; // Added type assertion
             console.log('WebSocket message received:', data);
-            
+
             switch (data.type) {
-              case 'users':
+              case WS_MSG_TYPES.USERS_LIST:
                 setOnlineUsers(data.users);
                 break;
-              case 'message':
+              case WS_MSG_TYPES.NEW_MESSAGE:
                 // Invalidate queries to refresh message list
-                queryClient.invalidateQueries({ 
-                  queryKey: [`/api/communications/messages/${data.message.senderId}`] 
-                });
-                queryClient.invalidateQueries({ 
-                  queryKey: ['/api/communications/conversations'] 
-                });
-                
-                // Show toast notification for new message if it's not from current user
+                // Ensure query keys match those used in useGetMessages
+                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.senderId}`] });
+                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.receiverId}`] }); // Also invalidate for receiver if current user is receiver
+                queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+
                 if (data.message.senderId !== userId) {
-                  const sender = onlineUsers.find(user => user.id === data.message.senderId);
+                  // Find sender from the most recent onlineUsers list or fetch if necessary
+                  const currentOnlineUsers = queryClient.getQueryData<User[]>(['/api/communications/online-users']) || onlineUsers;
+                  const sender = currentOnlineUsers.find(user => user.id === data.message.senderId);
                   toast({
-                    title: `New message from ${sender?.username || 'User'}`,
-                    description: data.message.type === 'text' ? 
-                      (data.message.content.length > 50 ? 
-                        `${data.message.content.substring(0, 50)}...` : 
-                        data.message.content) : 
-                      `New ${data.message.type} message`,
-                    variant: 'default'
+                    title: `New message from ${sender?.username || `User ${data.message.senderId}`}`,
+                    description: data.message.type === 'text'
+                      ? (data.message.content.length > 50 ? `${data.message.content.substring(0, 50)}...` : data.message.content)
+                      : `New ${data.message.type} message`,
+                    variant: 'default',
                   });
                 }
                 break;
-              case 'call-offer':
-                handleIncomingCall(data);
+              case WS_MSG_TYPES.CALL_OFFER:
+                handleIncomingCall(data as CallData); // Cast to CallData
                 break;
-              case 'call-answer':
-                handleCallAnswer(data);
+              case WS_MSG_TYPES.CALL_ANSWER:
+                handleCallAnswer(data as CallData); // Cast to CallData
                 break;
-              case 'call-candidate':
-                handleIceCandidate(data);
+              case WS_MSG_TYPES.CALL_CANDIDATE:
+                handleIceCandidate(data as CallData); // Cast to CallData
                 break;
-              case 'call-end':
-                handleCallEnd();
+              case WS_MSG_TYPES.CALL_END:
+                handleCallEnd(data.receiverId === userId || data.callerId === userId); // Pass if current user was part of the call
                 break;
+              default:
+                console.warn('Received unknown WebSocket message type:', data.type);
             }
           } catch (error) {
             console.error('Error parsing WebSocket message:', error, event.data);
           }
         };
       } catch (error) {
-        console.error('Error connecting to WebSocket:', error);
-        // Schedule reconnection
-        if (!reconnectTimer && document.visibilityState !== 'hidden') {
-          reconnectTimer = setTimeout(() => {
-            console.log('Attempting to reconnect WebSocket after error...');
-            connectWebSocket();
-          }, 3000);
+        console.error('Error initializing WebSocket connection:', error);
+        if (!isUnmounting && !reconnectTimer) {
+          reconnectTimer = setTimeout(connectWebSocket, 5000); // Retry after a longer delay on init error
         }
       }
     };
-    
-    // Initial connection
+
     connectWebSocket();
-    
-    // Setup visibility change handler to reconnect when tab becomes visible
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && (!ws || ws.readyState !== WebSocket.OPEN)) {
-        console.log('Tab visible, reconnecting WebSocket...');
+      if (document.visibilityState === 'visible' && (!wsInstance || wsInstance.readyState !== WebSocket.OPEN)) {
+        console.log('Tab became visible, ensuring WebSocket is connected...');
         connectWebSocket();
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Cleanup
+
     return () => {
+      isUnmounting = true;
+      console.log('Cleaning up WebSocket connection...');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
       }
-      
-      if (ws) {
-        ws.close();
+      if (wsInstance) {
+        wsInstance.onclose = null; // Prevent reconnection logic on manual close
+        wsInstance.onerror = null;
+        wsInstance.onmessage = null;
+        wsInstance.onopen = null;
+        wsInstance.close();
       }
+      setSocket(null);
+      // Clean up WebRTC resources if any are active
+      handleCallEnd(true); // Force cleanup on unmount
     };
-  }, [userId, queryClient, toast, onlineUsers]);
+    // IMPORTANT: Dependencies for WebSocket useEffect.
+    // queryClient and toast are generally stable. userId should trigger re-connect if it changes.
+    // onlineUsers was removed as it caused too many reconnections.
+  }, [userId, queryClient, toast]); // Removed onlineUsers
+
+  // --- React Query Hooks for Data Fetching & Mutations ---
 
   // Get recent conversations
-  const { data: conversations, isLoading: conversationsLoading } = useQuery({
-    queryKey: ['/api/communications/conversations'],
+  const { data: conversations, isLoading: conversationsLoading } = useQuery<Conversation[], Error>({
+    queryKey: ['/api/communications/conversations', userId], // Added userId to make it user-specific
     queryFn: async () => {
-      const response = await fetch('/api/communications/conversations');
-      if (!response.ok) throw new Error('Failed to fetch conversations');
-      const data = await response.json();
-      return data;
+      const response = await fetch(`/api/communications/conversations`); // Assuming API takes userId from session or token
+      if (!response.ok) throw new Error(`Failed to fetch conversations: ${response.statusText}`);
+      return response.json();
     },
-    staleTime: 30000 // 30 seconds
+    staleTime: 30000, // 30 seconds
   });
 
-  // Get messages between two users
-  // This is a factory function, not a hook itself
-  const getMessagesQuery = (otherUserId: number | null) => ({
-    queryKey: [`/api/communications/messages/${otherUserId}`],
-    queryFn: async () => {
+  // Factory for creating messages query options
+  const getMessagesQueryOptions = useCallback((otherUserId: number | null) => ({
+    queryKey: [`/api/communications/messages`, otherUserId], // Simpler, more specific query key
+    queryFn: async (): Promise<Message[]> => {
       if (!otherUserId) return [];
-      const response = await fetch(`/api/communications/messages/${otherUserId}`);
-      if (!response.ok) throw new Error('Failed to fetch messages');
-      const data = await response.json();
-      return data;
+      const response = await fetch(`/api/communications/messages/${otherUserId}`); // API implies messages with this other user
+      if (!response.ok) throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      return response.json();
     },
     staleTime: 10000, // 10 seconds
-    enabled: !!otherUserId // Only run the query if otherUserId is defined
-  });
-  
-  // This function will be used by components to create their own message queries
+    enabled: !!otherUserId,
+  }), []);
+
   const useGetMessages = (otherUserId: number | null) => {
-    return useQuery(getMessagesQuery(otherUserId));
+    return useQuery<Message[], Error>(getMessagesQueryOptions(otherUserId));
   };
 
   // Send a message
-  const sendMessageMutation = useMutation({
-    mutationFn: async (data: { receiverId: number; content: string; type?: MessageType }) => {
+  const sendMessageMutation = useMutation<Message, Error, { receiverId: number; content: string; type?: MessageType }>({
+    mutationFn: async (data) => {
       const response = await fetch('/api/communications/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           senderId: userId,
           receiverId: data.receiverId,
@@ -236,392 +299,327 @@ export function useCommunication(userId: number) {
           type: data.type || 'text',
         }),
       });
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to send message' }));
+        throw new Error(errorData.message || `Failed to send message: ${response.statusText}`);
+      }
       return response.json();
     },
-    onSuccess: (data, variables) => {
-      // Invalidate and refetch messages between these users
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/communications/messages/${userId}/${variables.receiverId}`] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/communications/conversations'] 
-      });
+    onSuccess: (newMessage, variables) => {
+      // Optimistically update or invalidate
+      queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, variables.receiverId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
     },
+    // onError handled by the caller (sendMessage function)
   });
 
-  // Mark a message as read
-  const markAsReadMutation = useMutation({
-    mutationFn: async (messageId: number) => {
-      const response = await fetch(`/api/communications/messages/${messageId}/read`, {
-        method: 'PUT',
-      });
+  // Mark a message as read (individual)
+  const markAsReadMutation = useMutation<void, Error, number>({
+    mutationFn: async (messageId) => {
+      const response = await fetch(`/api/communications/messages/${messageId}/read`, { method: 'PUT' });
       if (!response.ok) throw new Error('Failed to mark message as read');
-      return response.json();
+      // No need to return response.json() if the body is empty or not used
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+      // Potentially invalidate specific message list if needed, though conversation list update might cover it
     },
   });
 
   // Mark all messages from a user as read
-  const markAllAsReadMutation = useMutation({
-    mutationFn: async (otherUserId: number) => {
-      // Use our dedicated endpoint to mark all messages from this sender as read
-      const response = await fetch(`/api/communications/messages/read-all/${otherUserId}`, {
-        method: 'PATCH',
-      });
-      
+  const markAllAsReadMutation = useMutation<void, Error, number>({
+    mutationFn: async (otherUserId) => {
+      const response = await fetch(`/api/communications/messages/read-all/${otherUserId}`, { method: 'PATCH' });
       if (!response.ok) throw new Error('Failed to mark all messages as read');
-      return response.json();
     },
-    onSuccess: (_, variables) => {
-      // Invalidate both message list and conversations
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/communications/messages/${variables}`] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/communications/conversations'] 
-      });
-      
-      console.log(`Marked all messages from user ${variables} as read`);
+    onSuccess: (_, otherUserId) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, otherUserId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+      console.log(`Marked all messages from user ${otherUserId} as read`);
     },
   });
 
-  // Send a message via the WebSocket and HTTP
+
+  // --- Combined Message Sending Logic ---
   const sendMessage = useCallback((receiverId: number, content: string, type: MessageType = 'text') => {
-    console.log(`Sending message to ${receiverId}: ${content} (${type})`);
-    
-    // First try to send via HTTP for persistence - add error handling
+    console.log(`Sending message to ${receiverId}: "${content.substring(0,30)}..." (${type})`);
+
     sendMessageMutation.mutate(
       { receiverId, content, type },
       {
         onSuccess: (data) => {
-          console.log('Message sent successfully via HTTP:', data);
-          // Invalidate queries to refresh the UI
-          queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
-          queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${receiverId}`] });
+          console.log('Message persisted successfully via HTTP:', data);
+          // WebSocket send for real-time, if HTTP was successful
+          if (socket?.readyState === WebSocket.OPEN) {
+            try {
+              socket.send(JSON.stringify({
+                type: WS_MSG_TYPES.NEW_MESSAGE,
+                message: { // Construct a message object similar to what's received
+                  id: data.id, // Use ID from HTTP response if available
+                  senderId: userId,
+                  receiverId,
+                  content,
+                  type,
+                  sentAt: new Date(), // Or use server timestamp from data
+                  read: false,
+                },
+              }));
+            } catch (wsError) {
+              console.error('Error sending message via WebSocket after HTTP success:', wsError);
+            }
+          } else {
+            console.warn('WebSocket not connected. Message persisted via HTTP.');
+          }
         },
         onError: (error) => {
           console.error('Error sending message via HTTP:', error);
           toast({
-            title: 'Message could not be sent',
-            description: 'There was an error sending your message. Please try again.',
-            variant: 'destructive'
+            title: 'Message Not Sent',
+            description: error.message || 'Please try again.',
+            variant: 'destructive',
           });
-        }
+        },
       }
     );
-    
-    // Also send via WebSocket for real-time delivery
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      try {
-        socket.send(JSON.stringify({
-          type: 'message',
-          message: {
-            senderId: userId,
-            receiverId,
-            content,
-            type,
-          },
-        }));
-      } catch (error) {
-        console.error('Error sending message via WebSocket:', error);
-      }
-    } else {
-      console.warn('WebSocket not connected or ready, message sent only via HTTP');
-      // Try to reconnect WebSocket
-      if (socket && socket.readyState !== WebSocket.OPEN) {
-        console.log('Attempting to reconnect WebSocket...');
-      }
-    }
-  }, [socket, userId, sendMessageMutation, queryClient, toast]);
+  }, [socket, userId, sendMessageMutation, toast]); // queryClient removed as mutation handles invalidation
 
-  // Handle incoming call
-  const handleIncomingCall = (data: any) => {
-    setIncomingCall(data);
-    // Play ringtone
-    const audio = new Audio('/sounds/ringtone.mp3');
-    audio.loop = true;
-    audio.play().catch(err => console.error('Error playing ringtone:', err));
-    // Store audio element to stop it later
-    (window as any).ringtone = audio;
+
+  // --- WebRTC Call Handling ---
+
+  const playRingtone = () => {
+    if (!ringtoneAudio.current) {
+      ringtoneAudio.current = new Audio('/sounds/ringtone.mp3'); // Ensure this path is correct
+      ringtoneAudio.current.loop = true;
+    }
+    ringtoneAudio.current.play().catch(err => console.error('Error playing ringtone:', err));
   };
 
-  // Handle call answer
-  const handleCallAnswer = async (data: any) => {
-    // Stop ringtone if it's playing
-    if ((window as any).ringtone) {
-      (window as any).ringtone.pause();
-      (window as any).ringtone = null;
+  const stopRingtone = () => {
+    if (ringtoneAudio.current) {
+      ringtoneAudio.current.pause();
+      ringtoneAudio.current.currentTime = 0; // Reset for next play
     }
+  };
 
+  const handleIncomingCall = useCallback((data: CallData) => {
+    // Prevent handling if already in a call or if it's a self-call
+    if (activeCall || incomingCall || data.callerId === userId) {
+        console.warn("Already in a call or duplicate incoming call ignored.");
+        // Optionally send a "busy" signal back
+        if (socket?.readyState === WebSocket.OPEN && data.callerId !== userId) {
+            socket.send(JSON.stringify({ type: 'call-busy', receiverId: data.callerId, callerId: userId }));
+        }
+        return;
+    }
+    setIncomingCall(data);
+    playRingtone();
+  }, [activeCall, incomingCall, userId, socket]);
+
+  const handleCallAnswer = useCallback(async (data: CallData) => {
+    stopRingtone();
     if (peerConnection.current && data.answer) {
       try {
         await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
         console.log('Remote description set successfully after answer');
+        // The call is now established
+        setActiveCall(prev => prev ? {...prev, answer: data.answer} : null); // Update active call state
       } catch (error) {
         console.error('Error setting remote description after answer:', error);
+        toast({ title: "Call Connection Error", description: "Failed to establish call.", variant: "destructive" });
+        handleCallEnd(true);
       }
     }
-  };
+  }, [toast]);
 
-  // Handle ICE candidate
-  const handleIceCandidate = (data: any) => {
+
+  const handleIceCandidate = useCallback((data: CallData) => {
     if (peerConnection.current && data.candidate) {
       try {
         peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate))
-          .catch(e => console.error('Error adding ice candidate:', e));
+          .catch(e => console.error('Error adding received ICE candidate:', e));
       } catch (error) {
-        console.error('Error creating ICE candidate:', error);
+        console.error('Error creating received ICE candidate object:', error);
       }
     }
-  };
+  }, []);
 
-  // Handle call end
-  const handleCallEnd = () => {
-    // Stop ringtone if it's playing
-    if ((window as any).ringtone) {
-      (window as any).ringtone.pause();
-      (window as any).ringtone = null;
-    }
 
-    // Close peer connection
+  const cleanupPeerConnection = () => {
     if (peerConnection.current) {
+      peerConnection.current.onicecandidate = null;
+      peerConnection.current.ontrack = null;
       peerConnection.current.close();
       peerConnection.current = null;
     }
-
-    // Stop media streams
-    if (localStream.current) {
-      localStream.current.getTracks().forEach(track => track.stop());
-      localStream.current = null;
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
     }
-
-    if (remoteStream.current) {
-      remoteStream.current.getTracks().forEach(track => track.stop());
-      remoteStream.current = null;
+    if (remoteStream) {
+      remoteStream.getTracks().forEach(track => track.stop());
+      setRemoteStream(null);
     }
-
-    setActiveCall(null);
-    setIncomingCall(null);
   };
 
-  // Start a call
+  const handleCallEnd = useCallback((isCurrentUserInvolved = true) => {
+    stopRingtone();
+    if (isCurrentUserInvolved) { // Only cleanup if this user was part of the call
+        cleanupPeerConnection();
+        setActiveCall(null);
+        setIncomingCall(null); // Clear incoming call as well
+        console.log('Call ended and resources cleaned up.');
+    }
+  }, [localStream, remoteStream]); // Dependencies for streams if they are directly used in cleanup
+
+  const initializePeerConnection = useCallback((callReceiverId: number, callType: 'audio' | 'video', isInitiator: boolean) => {
+    cleanupPeerConnection(); // Ensure any old connection is closed
+
+    const pc = new RTCPeerConnection({
+      iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ],
+    });
+    peerConnection.current = pc;
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: WS_MSG_TYPES.CALL_CANDIDATE,
+          candidate: event.candidate,
+          receiverId: callReceiverId, // The other party
+          callerId: userId, // This user
+        }));
+      }
+    };
+
+    pc.ontrack = (event) => {
+      const newRemoteStream = new MediaStream();
+      event.streams[0].getTracks().forEach(track => newRemoteStream.addTrack(track));
+      setRemoteStream(newRemoteStream);
+    };
+
+    // If not initiator, remote stream might already be set up by offer
+    if (isInitiator) {
+        setRemoteStream(new MediaStream()); // Initialize empty remote stream for initiator
+    }
+
+
+    return pc;
+  }, [socket, userId, cleanupPeerConnection]); // Added cleanupPeerConnection
+
   const startCall = async (receiverId: number, type: 'audio' | 'video') => {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        toast({ title: "Cannot Start Call", description: "Not connected to server.", variant: "destructive" });
+        return null;
+    }
+    if (activeCall || incomingCall) {
+        toast({ title: "Cannot Start Call", description: "You are already in a call or have an incoming call.", variant: "destructive" });
+        return null;
+    }
+
     try {
-      // Create a new RTCPeerConnection
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      });
-      peerConnection.current = pc;
+      const pc = initializePeerConnection(receiverId, type, true);
 
-      // Get local media stream
-      const constraints = {
-        audio: true,
-        video: type === 'video',
-      };
-      localStream.current = await navigator.mediaDevices.getUserMedia(constraints);
+      const mediaConstraints = { audio: true, video: type === 'video' };
+      const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      setLocalStream(stream);
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-      // Add tracks to the peer connection
-      localStream.current.getTracks().forEach(track => {
-        if (localStream.current && peerConnection.current) {
-          peerConnection.current.addTrack(track, localStream.current);
-        }
-      });
-
-      // Set up remote stream
-      remoteStream.current = new MediaStream();
-
-      // Handle ICE candidate events
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'call-candidate',
-            candidate: event.candidate,
-            receiverId,
-            callerId: userId,
-          }));
-        }
-      };
-
-      // Handle track events to get remote stream
-      pc.ontrack = (event) => {
-        if (remoteStream.current) {
-          event.streams[0].getTracks().forEach(track => {
-            if (remoteStream.current) {
-              remoteStream.current.addTrack(track);
-            }
-          });
-        }
-      };
-
-      // Create offer
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Send the offer to the receiver
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'call-offer',
-          callerId: userId,
-          receiverId,
-          type,
-          offer,
-        }));
-      }
-
-      setActiveCall({
+      socket.send(JSON.stringify({
+        type: WS_MSG_TYPES.CALL_OFFER,
         callerId: userId,
         receiverId,
         type,
         offer,
-      });
+      }));
 
-      return { localStream: localStream.current, remoteStream: remoteStream.current };
+      setActiveCall({ callerId: userId, receiverId, type, offer });
+      return { localStream: stream, remoteStream }; // Return current remoteStream state
     } catch (error) {
       console.error('Error starting call:', error);
       toast({
         title: 'Call Failed',
-        description: 'Could not start the call. Please check your camera and microphone permissions.',
+        description: (error as Error).message || 'Check camera/microphone permissions.',
         variant: 'destructive',
       });
-      throw error;
+      handleCallEnd(true); // Cleanup on error
+      return null;
     }
   };
 
-  // Answer a call
   const answerCall = async () => {
-    if (!incomingCall) return;
+    if (!incomingCall || !socket || socket.readyState !== WebSocket.OPEN) {
+        toast({ title: "Cannot Answer Call", description: incomingCall ? "Not connected to server." : "No incoming call.", variant: "destructive"});
+        return null;
+    }
+    stopRingtone();
 
     try {
-      // Stop ringtone if it's playing
-      if ((window as any).ringtone) {
-        (window as any).ringtone.pause();
-        (window as any).ringtone = null;
-      }
+      const pc = initializePeerConnection(incomingCall.callerId, incomingCall.type, false);
 
-      // Create a new RTCPeerConnection
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-        ],
-      });
-      peerConnection.current = pc;
+      const mediaConstraints = { audio: true, video: incomingCall.type === 'video' };
+      const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      setLocalStream(stream);
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-      // Get local media stream
-      const constraints = {
-        audio: true,
-        video: incomingCall.type === 'video',
-      };
-      localStream.current = await navigator.mediaDevices.getUserMedia(constraints);
-
-      // Add tracks to the peer connection
-      localStream.current.getTracks().forEach(track => {
-        if (localStream.current && peerConnection.current) {
-          peerConnection.current.addTrack(track, localStream.current);
-        }
-      });
-
-      // Set up remote stream
-      remoteStream.current = new MediaStream();
-
-      // Handle ICE candidate events
-      pc.onicecandidate = (event) => {
-        if (event.candidate && socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'call-candidate',
-            candidate: event.candidate,
-            receiverId: incomingCall.callerId,
-            callerId: userId,
-          }));
-        }
-      };
-
-      // Handle track events to get remote stream
-      pc.ontrack = (event) => {
-        if (remoteStream.current) {
-          event.streams[0].getTracks().forEach(track => {
-            if (remoteStream.current) {
-              remoteStream.current.addTrack(track);
-            }
-          });
-        }
-      };
-
-      // Set remote description from the offer
-      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
-
-      // Create answer
+      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer!)); // Offer must exist
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      // Send the answer to the caller
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-          type: 'call-answer',
-          callerId: incomingCall.callerId,
-          receiverId: userId,
-          answer,
-        }));
-      }
+      socket.send(JSON.stringify({
+        type: WS_MSG_TYPES.CALL_ANSWER,
+        callerId: incomingCall.callerId,
+        receiverId: userId,
+        answer,
+        type: incomingCall.type, // Include call type in answer message
+      }));
 
-      setActiveCall(incomingCall);
+      setActiveCall({ ...incomingCall, receiverId: userId, answer }); // Current user is receiver
       setIncomingCall(null);
-
-      return { localStream: localStream.current, remoteStream: remoteStream.current };
+      return { localStream: stream, remoteStream }; // Return current remoteStream state
     } catch (error) {
       console.error('Error answering call:', error);
       toast({
-        title: 'Call Failed',
-        description: 'Could not answer the call. Please check your camera and microphone permissions.',
+        title: 'Call Answer Failed',
+        description: (error as Error).message || 'Check camera/microphone permissions.',
         variant: 'destructive',
       });
-      throw error;
+      handleCallEnd(true); // Cleanup on error
+      return null;
     }
   };
 
-  // Reject a call
-  const rejectCall = () => {
+  const rejectCall = useCallback(() => {
     if (!incomingCall) return;
-
-    // Stop ringtone if it's playing
-    if ((window as any).ringtone) {
-      (window as any).ringtone.pause();
-      (window as any).ringtone = null;
-    }
-
-    // Send call-end signal to the caller
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    stopRingtone();
+    if (socket?.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
-        type: 'call-end',
-        callerId: incomingCall.callerId,
-        receiverId: userId,
+        type: WS_MSG_TYPES.CALL_END, // Use CALL_END to signify rejection before connection
+        callerId: incomingCall.callerId, // Who was calling
+        receiverId: userId, // Who is rejecting
+        reason: 'rejected'
       }));
     }
-
     setIncomingCall(null);
-  };
+  }, [incomingCall, socket, userId]);
 
-  // End a call
-  const endCall = () => {
+  const endCall = useCallback(() => {
     if (!activeCall) return;
+    // Determine the other party
+    const otherPartyId = activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId;
 
-    // Send call-end signal to the other user
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socket?.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
-        type: 'call-end',
-        callerId: userId,
-        receiverId: activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId,
+        type: WS_MSG_TYPES.CALL_END,
+        callerId: userId, // This user initiated the end
+        receiverId: otherPartyId,
+        reason: 'ended'
       }));
     }
+    handleCallEnd(true); // Clean up local resources immediately
+  }, [activeCall, socket, userId, handleCallEnd]);
 
-    handleCallEnd();
-  };
 
   return {
     conversations,
@@ -637,7 +635,8 @@ export function useCommunication(userId: number) {
     endCall,
     activeCall,
     incomingCall,
-    localStream: localStream.current,
-    remoteStream: remoteStream.current,
+    localStream, // Now a state variable
+    remoteStream, // Now a state variable
+    isSocketConnected: socket?.readyState === WebSocket.OPEN,
   };
 }
