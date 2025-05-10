@@ -150,22 +150,20 @@ export default function ReportDetail() {
 
   if (authLoading || isReportLoading || !reportId) {
     return (
-      <MainLayout>
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-8 w-36" />
-              <Skeleton className="h-9 w-20" />
-            </div>
-            <Skeleton className="h-4 w-full mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </CardContent>
-        </Card>
-      </MainLayout>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-8 w-36" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+          <Skeleton className="h-4 w-full mt-2" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </CardContent>
+      </Card>
     );
   }
 
@@ -194,44 +192,43 @@ export default function ReportDetail() {
   };
 
   return (
-    <MainLayout>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center mb-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-0 mr-2 h-8 w-8"
-                  onClick={() => navigate("/reports")}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <CardTitle className="text-2xl">
-                  {generateReportId(reportData.id)}
-                </CardTitle>
-                <div className="ml-4">
-                  {getStatusBadge(reportData.status)}
-                </div>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center mb-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-0 mr-2 h-8 w-8"
+                onClick={() => navigate("/reports")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <CardTitle className="text-2xl">
+                {generateReportId(reportData.id)}
+              </CardTitle>
+              <div className="ml-4">
+                {getStatusBadge(reportData.status)}
               </div>
-              <CardDescription>
-                Submitted on {formatDate(reportData.submittedAt)} at {formatTime(reportData.submittedAt)}
-              </CardDescription>
             </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <FileEdit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </Button>
-            </div>
+            <CardDescription>
+              Submitted on {formatDate(reportData.submittedAt)} at {formatTime(reportData.submittedAt)}
+            </CardDescription>
           </div>
-        </CardHeader>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <FileEdit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
         
         <CardContent className="space-y-6">
           {/* Report Overview */}

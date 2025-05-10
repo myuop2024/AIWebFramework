@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import MainLayout from '@/components/layout/main-layout'; // Added import
 
 import ReportForm from "@/components/polling/report-form";
 
@@ -21,9 +20,5 @@ export default function NewReport() {
     // This is handled by the ReportForm component
   }, []);
 
-  return (
-    <MainLayout>
-      <ReportForm />
-    </MainLayout>
-  );
+  return <ReportForm />;
 }
