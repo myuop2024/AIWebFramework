@@ -522,8 +522,6 @@ export function useCommunication(userId: number) {
     conversationsLoading,
     onlineUsers,
     useGetMessages,
-    activeMessages,
-    messagesLoading,
     sendMessage,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,

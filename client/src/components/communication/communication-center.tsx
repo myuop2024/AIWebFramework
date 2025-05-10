@@ -37,8 +37,6 @@ export function CommunicationCenter({ userId }: CommunicationCenterProps) {
     conversationsLoading,
     onlineUsers,
     useGetMessages,
-    activeMessages,
-    messagesLoading: baseMessagesLoading,
     sendMessage,
     markAsRead,
     markAllAsRead,
