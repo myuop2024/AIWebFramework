@@ -123,19 +123,35 @@ export const InteractiveMap = forwardRef(({
       });
     }
 
-    // Make the map responsive
-    window.addEventListener('resize', () => {
-      newMap.getViewPort().resize();
-    });
+    // Make the map responsive with a named handler function 
+    // so we can properly remove it in the cleanup
+    const handleResize = () => {
+      try {
+        newMap.getViewPort().resize();
+      } catch (e) {
+        console.log('Error in resize handler:', e);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
 
     setMap(newMap);
 
     // Cleanup on unmount
     return () => {
-      window.removeEventListener('resize', () => {
-        newMap.getViewPort().resize();
-      });
-      newMap.dispose();
+      try {
+        window.removeEventListener('resize', handleResize);
+        
+        if (newMap) {
+          try {
+            newMap.dispose();
+          } catch (e) {
+            console.log('Error disposing map:', e);
+          }
+        }
+      } catch (e) {
+        console.log('Error in map cleanup:', e);
+      }
     };
   }, [H, isLoaded, centerLat, centerLng, zoom, showControls, ref]);
 
@@ -143,9 +159,6 @@ export const InteractiveMap = forwardRef(({
   useEffect(() => {
     if (!map || !H) return;
 
-    // Clear previous markers
-    mapMarkers.forEach(marker => map.removeObject(marker));
-    
     // Create marker group
     const markerGroup = new H.map.Group();
     const newMapMarkers: any[] = [];
@@ -205,20 +218,46 @@ export const InteractiveMap = forwardRef(({
       });
     }
     
+    // Safely remove old markers
+    if (mapMarkers.length > 0) {
+      try {
+        // Safely remove each marker one by one
+        mapMarkers.forEach(marker => {
+          try {
+            if (map.getObjects().includes(marker)) {
+              map.removeObject(marker);
+            }
+          } catch (e) {
+            console.log('Could not remove old marker:', e);
+          }
+        });
+      } catch (e) {
+        console.log('Error cleaning up old markers:', e);
+      }
+    }
+    
     // Add group to map
     map.addObject(markerGroup);
     setMapMarkers(newMapMarkers);
     
     // Adjust map view to fit all markers if there are any
-    if (markers.length > 0) {
-      map.getViewModel().setLookAtData({
-        bounds: markerGroup.getBoundingBox()
-      });
+    if (markers.length > 0 && markerGroup.getObjects().length > 0) {
+      try {
+        map.getViewModel().setLookAtData({
+          bounds: markerGroup.getBoundingBox()
+        });
+      } catch (e) {
+        console.log('Error setting map bounds:', e);
+      }
     }
     
     return () => {
-      if (map) {
-        map.removeObject(markerGroup);
+      try {
+        if (map && markerGroup && map.getObjects().includes(markerGroup)) {
+          map.removeObject(markerGroup);
+        }
+      } catch (e) {
+        console.log('Error in marker cleanup:', e);
       }
     };
   }, [map, H, markers, onMarkerClick]);
@@ -227,8 +266,23 @@ export const InteractiveMap = forwardRef(({
   useEffect(() => {
     if (!map || !H) return;
 
-    // Clear previous routes
-    mapRoutes.forEach(route => map.removeObject(route));
+    // Safely remove previous routes
+    if (mapRoutes.length > 0) {
+      try {
+        mapRoutes.forEach(route => {
+          try {
+            if (map.getObjects().includes(route)) {
+              map.removeObject(route);
+            }
+          } catch (e) {
+            console.log('Could not remove old route:', e);
+          }
+        });
+      } catch (e) {
+        console.log('Error cleaning up old routes:', e);
+      }
+    }
+    
     const newMapRoutes: any[] = [];
 
     // Add new routes
@@ -259,8 +313,20 @@ export const InteractiveMap = forwardRef(({
     setMapRoutes(newMapRoutes);
     
     return () => {
-      if (map) {
-        newMapRoutes.forEach(route => map.removeObject(route));
+      try {
+        if (map) {
+          newMapRoutes.forEach(route => {
+            try {
+              if (map.getObjects().includes(route)) {
+                map.removeObject(route);
+              }
+            } catch (e) {
+              console.log('Error removing route in cleanup:', e);
+            }
+          });
+        }
+      } catch (e) {
+        console.log('Error in routes cleanup:', e);
       }
     };
   }, [map, H, routes]);
