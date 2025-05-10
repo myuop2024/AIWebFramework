@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,8 @@ interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  content: string;
+  content: ReactNode | string;
+  showFooter?: boolean;
 }
 
 const AdminModal: React.FC<AdminModalProps> = ({
@@ -22,6 +23,7 @@ const AdminModal: React.FC<AdminModalProps> = ({
   onClose,
   title,
   content,
+  showFooter = true,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -42,15 +44,20 @@ const AdminModal: React.FC<AdminModalProps> = ({
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
-        <div
-          className="mt-4"
-          dangerouslySetInnerHTML={{ __html: content }}
-        />
-        <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </DialogFooter>
+        <div className="mt-4">
+          {typeof content === 'string' ? (
+            <div dangerouslySetInnerHTML={{ __html: content }} />
+          ) : (
+            content
+          )}
+        </div>
+        {showFooter && (
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

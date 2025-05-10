@@ -52,11 +52,11 @@ export default function Admin() {
   const [selectedReport, setSelectedReport] = useState<number | null>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<string>('');
+  const [modalContent, setModalContent] = useState<React.ReactNode | string>('');
   const [modalTitle, setModalTitle] = useState<string>('');
 
   // Function to open a modal with specific content
-  const openModal = (title: string, content: string) => {
+  const openModal = (title: string, content: React.ReactNode | string) => {
     setModalTitle(title);
     setModalContent(content);
     setIsModalOpen(true);
@@ -96,116 +96,43 @@ export default function Admin() {
   const handleManageUsers = () => {
     setIsActionLoading(true);
     
-    setTimeout(() => {
+    // Import dynamically to avoid circular dependencies
+    import('@/components/admin/user-management').then(({ UserManagement }) => {
       setIsActionLoading(false);
-      
-      // Create user list HTML from actual user data
-      let usersHtml = '';
-      
-      if (usersData && Array.isArray(usersData)) {
-        usersData.forEach(user => {
-          const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
-          const observerId = user.observerId || `OBS${String(user.id).padStart(3, '0')}`;
-          const statusClass = user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-          const statusText = user.isActive ? 'Active' : 'Inactive';
-          
-          usersHtml += `
-            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
-              <div>
-                <div class="font-medium">${fullName}</div>
-                <div class="text-sm text-gray-500">
-                  Observer ID: ${observerId} 
-                  <span class="px-2 py-0.5 rounded-full text-xs ${statusClass}">${statusText}</span>
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
-                  ${user.isActive ? 'Disable' : 'Enable'}
-                </button>
-              </div>
-            </li>
-          `;
-        });
-      } else {
-        usersHtml = '<li class="p-2">No users found</li>';
-      }
-      
-      const totalUsers = usersData ? usersData.length : 0;
-      
       openModal(
         "User Management", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">All Users (${totalUsers})</h3>
-          <ul class="space-y-2">
-            ${usersHtml}
-          </ul>
-        </div>
-        `
+        <UserManagement />
       );
-    }, 800);
+    }).catch(error => {
+      console.error('Error loading UserManagement component:', error);
+      setIsActionLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load user management component",
+        variant: "destructive",
+      });
+    });
   };
   
   // Handler for processing verifications
   const handleProcessVerifications = () => {
     setIsActionLoading(true);
     
-    setTimeout(() => {
+    import('@/components/admin/verification-queue').then(({ VerificationQueue }) => {
       setIsActionLoading(false);
-      
-      // Filter users with pending verification
-      let pendingUsersHtml = '';
-      let pendingCount = 0;
-      
-      if (usersData && Array.isArray(usersData)) {
-        // Filter users with pending verification status
-        const pendingUsers = usersData.filter(user => 
-          user.verificationStatus === 'pending' || 
-          (!user.isActive && !user.verificationStatus)
-        );
-        
-        pendingCount = pendingUsers.length;
-        
-        if (pendingUsers.length > 0) {
-          pendingUsers.forEach(user => {
-            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
-            const observerId = user.observerId || `OBS${String(user.id).padStart(3, '0')}`;
-            
-            pendingUsersHtml += `
-              <li class="p-3 border rounded">
-                <div class="flex justify-between mb-2">
-                  <div class="font-medium">${fullName}</div>
-                  <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
-                </div>
-                <div class="text-sm text-gray-500 mb-2">Observer ID: ${observerId}</div>
-                <div class="flex gap-2">
-                  <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
-                  <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-                </div>
-              </li>
-            `;
-          });
-        } else {
-          pendingUsersHtml = '<li class="p-3 border rounded text-center">No pending verifications</li>';
-        }
-      } else {
-        pendingUsersHtml = '<li class="p-3 border rounded text-center">No data available</li>';
-      }
-      
       openModal(
         "User Verification", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">Pending Verifications (${pendingCount})</h3>
-          <ul class="space-y-4">
-            ${pendingUsersHtml}
-          </ul>
-        </div>
-        `
+        <VerificationQueue />
       );
-    }, 800);
+    }).catch(error => {
+      console.error('Error loading VerificationQueue component:', error);
+      setIsActionLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load verification queue component",
+        variant: "destructive",
+      });
+    });
   };
   
   // Handler for editing roles
