@@ -134,23 +134,24 @@ export function useCommunication(userId: number) {
   });
 
   // Get messages between two users
-  const useGetMessages = (otherUserId: number | null) => {
-    return useQuery({
-      queryKey: [`/api/communications/messages/${userId}/${otherUserId}`],
-      queryFn: async () => {
-        if (!otherUserId) return [];
-        const response = await fetch(`/api/communications/messages/${userId}/${otherUserId}`);
-        if (!response.ok) throw new Error('Failed to fetch messages');
-        const data = await response.json();
-        return data;
-      },
-      staleTime: 10000, // 10 seconds
-      enabled: !!otherUserId // Only run the query if otherUserId is defined
-    });
-  };
+  // This is a factory function, not a hook itself
+  const getMessagesQuery = (otherUserId: number | null) => ({
+    queryKey: [`/api/communications/messages/${otherUserId}`],
+    queryFn: async () => {
+      if (!otherUserId) return [];
+      const response = await fetch(`/api/communications/messages/${otherUserId}`);
+      if (!response.ok) throw new Error('Failed to fetch messages');
+      const data = await response.json();
+      return data;
+    },
+    staleTime: 10000, // 10 seconds
+    enabled: !!otherUserId // Only run the query if otherUserId is defined
+  });
   
-  // Get messages for the current active chat
-  const { data: activeMessages, isLoading: messagesLoading } = useGetMessages(null);
+  // This function will be used by components to create their own message queries
+  const useGetMessages = (otherUserId: number | null) => {
+    return useQuery(getMessagesQuery(otherUserId));
+  };
 
   // Send a message
   const sendMessageMutation = useMutation({
