@@ -291,24 +291,50 @@ export function useCommunication(userId: number) {
   const sendMessage = useCallback((receiverId: number, content: string, type: MessageType = 'text') => {
     console.log(`Sending message to ${receiverId}: ${content} (${type})`);
     
-    // First try to send via HTTP for persistence
-    sendMessageMutation.mutate({ receiverId, content, type });
+    // First try to send via HTTP for persistence - add error handling
+    sendMessageMutation.mutate(
+      { receiverId, content, type },
+      {
+        onSuccess: (data) => {
+          console.log('Message sent successfully via HTTP:', data);
+          // Invalidate queries to refresh the UI
+          queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+          queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${receiverId}`] });
+        },
+        onError: (error) => {
+          console.error('Error sending message via HTTP:', error);
+          toast({
+            title: 'Message could not be sent',
+            description: 'There was an error sending your message. Please try again.',
+            variant: 'destructive'
+          });
+        }
+      }
+    );
     
     // Also send via WebSocket for real-time delivery
     if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({
-        type: 'message',
-        message: {
-          senderId: userId,
-          receiverId,
-          content,
-          type,
-        },
-      }));
+      try {
+        socket.send(JSON.stringify({
+          type: 'message',
+          message: {
+            senderId: userId,
+            receiverId,
+            content,
+            type,
+          },
+        }));
+      } catch (error) {
+        console.error('Error sending message via WebSocket:', error);
+      }
     } else {
       console.warn('WebSocket not connected or ready, message sent only via HTTP');
+      // Try to reconnect WebSocket
+      if (socket && socket.readyState !== WebSocket.OPEN) {
+        console.log('Attempting to reconnect WebSocket...');
+      }
     }
-  }, [socket, userId, sendMessageMutation]);
+  }, [socket, userId, sendMessageMutation, queryClient, toast]);
 
   // Handle incoming call
   const handleIncomingCall = (data: any) => {

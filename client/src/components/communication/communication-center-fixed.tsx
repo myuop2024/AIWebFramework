@@ -37,7 +37,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  
+
   const { 
     conversations, 
     conversationsLoading,
@@ -101,7 +101,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       const unreadMessages = messages.filter(m => 
         m.senderId === activeChatUserId && !m.read
       );
-      
+
       if (unreadMessages.length > 0) {
         markAllAsRead(activeChatUserId);
       }
@@ -113,7 +113,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     if (localStream && localVideoRef.current) {
       localVideoRef.current.srcObject = localStream;
     }
-    
+
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
@@ -132,7 +132,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingFile(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && activeChatUserId) {
       const file = e.dataTransfer.files[0];
       await handleFileUpload(file);
@@ -150,7 +150,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Process and upload file
   const handleFileUpload = async (file: File) => {
     if (!activeChatUserId) return;
-    
+
     try {
       // Handle different file types
       if (file.type.startsWith('image/')) {
@@ -199,7 +199,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Initialize a call
   const handleStartCall = async (callType: 'audio' | 'video') => {
     if (!activeChatUserId) return;
-    
+
     try {
       await startCall(activeChatUserId, callType);
       setIsCallModalOpen(true);
@@ -292,7 +292,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const getUserById = (id: number): CommunicationUser | undefined => {
     const onlineUser = onlineUsers.find(user => user.id === id);
     if (onlineUser) return onlineUser;
-    
+
     // If not in online users, check conversations
     const conversation = conversations?.find(conv => conv.userId === id);
     if (conversation) {
@@ -302,7 +302,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         status: 'offline'
       };
     }
-    
+
     // If not in conversations, check all users
     const allUser = allUsers?.find(user => user.id === id);
     if (allUser) {
@@ -312,7 +312,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         status: allUser.status
       };
     }
-    
+
     return undefined;
   };
 
@@ -323,7 +323,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const isUserOnline = (userId: number): boolean => {
     return onlineUsers.some(user => user.id === userId && user.status === 'online');
   };
-  
+
   // Start a chat with a user
   const startChat = (userId: number) => {
     setActiveChatUserId(userId);
@@ -355,7 +355,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </TabsList>
             </div>
           )}
-          
+
           <div className="flex h-full overflow-hidden">
             <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
@@ -447,7 +447,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 </Button>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
                 <div className="relative">
@@ -489,7 +489,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         </div>
                       </div>
                     ))}
-                    
+
                     <p className="text-xs font-medium px-2 pt-4 pb-1 text-muted-foreground">Offline</p>
                     {filteredContacts.filter(user => user.status !== 'online').map((user) => (
                       <div 
@@ -520,7 +520,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 )}
               </ScrollArea>
             </TabsContent>
-            
+
             <div className="flex-grow flex flex-col h-full">
               {activeChatUserId && activeChatUser ? (
                 <>
@@ -559,7 +559,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <TooltipContent>Audio call</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -577,7 +577,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       </TooltipProvider>
                     </div>
                   </div>
-                  
+
                   <div 
                     className={`flex-grow overflow-y-auto p-4 ${isDraggingFile ? 'bg-primary-50' : ''}`}
                     onDragOver={handleDragOver}
@@ -596,7 +596,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           const showAvatar = index === 0 || 
                             messages[index - 1].senderId !== message.senderId ||
                             new Date(message.sentAt).getTime() - new Date(messages[index - 1].sentAt).getTime() > 120000;
-                          
+
                           return (
                             <div 
                               key={message.id} 
@@ -654,7 +654,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="p-3 border-t">
                     <div className="relative">
                       <input 
@@ -722,7 +722,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </div>
         </Tabs>
       </CardContent>
-      
+
       {/* Incoming call dialog */}
       <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={() => rejectCall()}>
         <DialogContent className="sm:max-w-md">
@@ -765,7 +765,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Active call dialog */}
       <Dialog open={isCallModalOpen} onOpenChange={(open) => {
         if (!open) {
@@ -837,7 +837,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               <Button 
                 variant="destructive" 
                 size="icon" 
-                className="h-10 w-10 rounded-full"
+The code has been modified to filter out the current user from the list of users that can be messaged.                className="h-10 w-10 rounded-full"
                 onClick={() => {
                   endCall();
                   setIsCallModalOpen(false);
@@ -849,7 +849,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* User search dialog */}
       <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
         <DialogContent className="sm:max-w-md">
@@ -868,20 +868,23 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             </div>
             <div className="max-h-[300px] overflow-y-auto">
               {allUsersLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <Spinner />
-                </div>
-              ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
-                <div className="space-y-2">
-                  {filteredAllUsers.map((user) => (
-                    <Button
-                      key={user.id}
-                      variant="ghost"
-                      className="w-full justify-start p-2 h-auto"
-                      onClick={() => {
-                        startChat(user.id);
-                      }}
-                    >
+                    <div className="flex justify-center items-center py-8">
+                      <Spinner />
+                    </div>
+                  ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
+                    <div className="space-y-2">
+                      {filteredAllUsers
+                        .filter(user => user.id !== userId) // Filter out the current user
+                        .map((user) => (
+                          <Button
+                            key={user.id}
+                            variant="ghost"
+                            className="w-full justify-start p-2 h-auto"
+                            onClick={() => {
+                              console.log(`Clicked to start chat with: ${user.id} (${user.username})`);
+                              startChat(user.id);
+                            }}
+                          >
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className="h-10 w-10">
