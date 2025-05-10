@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { storage } from '../storage';
-import { isAuthenticated, isAdmin } from '../middleware/auth';
+import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '../middleware/auth';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -42,7 +42,8 @@ router.get('/api/admin/system-stats', isAuthenticated, isAdmin, async (req: Requ
     });
     
     // Calculate total polling stations
-    let totalPollingStations = await storage.getTotalPollingStations();
+    const allStations = await storage.getAllPollingStations();
+    let totalPollingStations = allStations.length;
     
     // Calculate no risk stations
     riskAssessment.noRisk = totalPollingStations - 

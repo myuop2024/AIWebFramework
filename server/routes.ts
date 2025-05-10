@@ -2046,6 +2046,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin analytics routes (requires admin authentication)
   app.use('/api/admin/analytics', adminAnalyticsRoutes);
+  
+  // Admin user management routes
+  app.use('/', adminUserRoutes);
+  
+  // Admin system information routes
+  app.use('/', adminSystemRoutes);
 
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);

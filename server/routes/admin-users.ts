@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
-import { isAuthenticated, isAdmin } from '../middleware/auth';
+import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -19,9 +19,10 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
       lastName: user.lastName || '',
       role: user.role,
       observerId: user.observerId,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      // Handle missing fields with defaults
+      isActive: user.verificationStatus === 'approved',
+      createdAt: user.createdAt || new Date(),
+      updatedAt: user.updatedAt || new Date()
     }));
     
     res.json(safeUsers);
@@ -56,9 +57,10 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
       lastName: user.lastName || '',
       role: user.role,
       observerId: user.observerId,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      // Handle missing fields with defaults
+      isActive: user.verificationStatus === 'approved',
+      createdAt: user.createdAt || new Date(),
+      updatedAt: user.updatedAt || new Date(),
       profile: profile || null
     };
     
@@ -108,8 +110,9 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
       lastName: updatedUser.lastName || '',
       role: updatedUser.role,
       observerId: updatedUser.observerId,
-      isActive: updatedUser.isActive,
-      updatedAt: updatedUser.updatedAt
+      // Handle missing fields with defaults
+      isActive: updatedUser.verificationStatus === 'approved',
+      updatedAt: updatedUser.updatedAt || new Date()
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -131,16 +134,26 @@ router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, asy
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Toggle status
-    const updatedUser = await storage.updateUser(userId, { isActive: !user.isActive });
+    // Get current status and toggle it
+    const currentStatus = user.verificationStatus === 'approved';
+    const newVerificationStatus = currentStatus ? 'pending' : 'approved';
+    
+    // Update with the new status
+    const updatedUser = await storage.updateUser(userId, { 
+      verificationStatus: newVerificationStatus 
+    });
+    
     if (!updatedUser) {
       return res.status(500).json({ error: 'Failed to update user status' });
     }
     
+    // For response, map verification status to isActive
+    const isActive = updatedUser.verificationStatus === 'approved';
+    
     res.json({
       id: updatedUser.id,
-      isActive: updatedUser.isActive,
-      message: updatedUser.isActive ? 'User account activated' : 'User account deactivated'
+      isActive: isActive,
+      message: isActive ? 'User account activated' : 'User account deactivated'
     });
   } catch (error) {
     console.error('Error toggling user status:', error);
