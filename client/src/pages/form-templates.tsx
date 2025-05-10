@@ -6,6 +6,9 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { FormTemplateEditor } from '@/components/forms/form-template-editor';
 import { FormBuilder } from '@/components/forms/form-builder';
+// Import FormField interface type
+import type { FormField } from '@/components/registration/dynamic-form';
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { 
   PageHeader, 
   PageHeaderDescription, 
@@ -56,7 +59,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Spinner } from '@/components/ui/spinner';
-import { FormField as FormFieldComponent } from '@/components/registration/dynamic-form';
 
 import { 
   ClipboardEdit, 
@@ -79,7 +81,7 @@ import {
   type FormTemplate,
   type FormTemplateExtended,
   type RegistrationForm,
-  type FormField
+  type FormField as SchemaFormField
 } from '@shared/schema';
 
 export default function FormTemplatesPage() {
@@ -96,7 +98,7 @@ export default function FormTemplatesPage() {
   // Registration Form States
   const [selectedForm, setSelectedForm] = useState<RegistrationForm | null>(null);
   const [showFieldEditor, setShowFieldEditor] = useState(false);
-  const [editingField, setEditingField] = useState<FormField | null>(null);
+  const [editingField, setEditingField] = useState<SchemaFormField | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -314,7 +316,7 @@ export default function FormTemplatesPage() {
     setShowFieldEditor(true);
   };
   
-  const handleEditField = (field: FormField) => {
+  const handleEditField = (field: SchemaFormField) => {
     setEditingField({...field});
     setShowFieldEditor(true);
   };
@@ -388,7 +390,7 @@ export default function FormTemplatesPage() {
         ...editingField,
         id: (editingField.id as string).replace('new-', '')
       };
-      fields.push(newField as FormField);
+      fields.push(newField as SchemaFormField);
     } else {
       // Update existing field
       const index = fields.findIndex(f => f.id === editingField.id);
@@ -953,11 +955,9 @@ export default function FormTemplatesPage() {
                                       </Badge>
                                     ) : (
                                       <div className="w-40 max-w-full">
-                                        <FormFieldComponent 
-                                          field={field}
-                                          disabled
-                                          showPreview
-                                        />
+                                        <div className="text-sm text-gray-500">
+                                          {field.type} field: {field.name}
+                                        </div>
                                       </div>
                                     )}
                                   </TableCell>

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AuthGuard } from "@/components/auth/auth-guard";
 
 export default function IntegratedTraining() {
   const { user, loading } = useAuth();
@@ -28,18 +29,18 @@ export default function IntegratedTraining() {
 
   if (loading) {
     return (
-      <MainLayout>
-        <div className="animate-pulse space-y-6">
+      <AuthGuard>
+        <div className="container mx-auto py-6 animate-pulse space-y-6">
           <Skeleton className="h-40 w-full rounded-md" />
           <Skeleton className="h-80 w-full rounded-md" />
         </div>
-      </MainLayout>
+      </AuthGuard>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="space-y-6">
+    <AuthGuard>
+      <div className="container mx-auto py-6 space-y-6">
         <div className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Integrated Training Portal</h1>
           <p className="text-muted-foreground">
@@ -180,6 +181,6 @@ export default function IntegratedTraining() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </AuthGuard>
   );
 }
