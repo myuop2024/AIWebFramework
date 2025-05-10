@@ -941,7 +941,7 @@ export class DatabaseStorage implements IStorage {
           sender_id as partner_id,
           COUNT(*) as unread_count
         FROM messages
-        WHERE receiver_id = ${userId} AND is_read = false
+        WHERE receiver_id = ${userId} AND read = false
         GROUP BY sender_id
       )
       SELECT 
@@ -972,7 +972,7 @@ export class DatabaseStorage implements IStorage {
       .values({
         ...message,
         sentAt: new Date(),
-        isRead: false
+        read: false
       })
       .returning();
     return result[0];
@@ -980,10 +980,32 @@ export class DatabaseStorage implements IStorage {
 
   async markMessageAsRead(id: number): Promise<Message | undefined> {
     const result = await db.update(messages)
-      .set({ isRead: true })
+      .set({ read: true })
       .where(eq(messages.id, id))
       .returning();
     return result[0];
+  }
+  
+  async markAllMessagesAsRead(senderId: number, receiverId: number): Promise<number> {
+    try {
+      // Update all unread messages from senderId to receiverId
+      const result = await db
+        .update(messages)
+        .set({ read: true })
+        .where(
+          and(
+            eq(messages.senderId, senderId),
+            eq(messages.receiverId, receiverId),
+            eq(messages.read, false)
+          )
+        )
+        .returning({ id: messages.id });
+      
+      return result.length;
+    } catch (error) {
+      console.error('Error marking all messages as read:', error);
+      return 0;
+    }
   }
   
   // Statistics operations for admin dashboard

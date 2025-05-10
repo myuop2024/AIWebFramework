@@ -47,77 +47,135 @@ export function useCommunication(userId: number) {
   const localStream = useRef<MediaStream | null>(null);
   const remoteStream = useRef<MediaStream | null>(null);
 
-  // Connect to WebSocket server
+  // Connect to WebSocket server with reconnection logic
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const newSocket = new WebSocket(wsUrl);
-
-    newSocket.onopen = () => {
-      console.log('WebSocket connected');
-      // Send user ID to identify the connection
-      newSocket.send(JSON.stringify({ type: 'register', userId }));
-    };
-
-    newSocket.onclose = () => {
-      console.log('WebSocket disconnected');
-      // Attempt to reconnect after 3 seconds
-      setTimeout(() => {
-        if (document.visibilityState !== 'hidden') {
-          console.log('Attempting to reconnect WebSocket...');
+    let reconnectTimer: NodeJS.Timeout | null = null;
+    let ws: WebSocket | null = null;
+    
+    const connectWebSocket = () => {
+      // Clear any existing reconnect timer
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+      
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        
+        console.log(`Connecting to WebSocket at ${wsUrl}...`);
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          console.log('WebSocket connected successfully');
+          // Send user ID to identify the connection
+          ws.send(JSON.stringify({ type: 'register', userId }));
+          setSocket(ws);
+        };
+        
+        ws.onclose = (event) => {
+          console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
           setSocket(null);
-        }
-      }, 3000);
-    };
-
-    newSocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('WebSocket message received:', data);
-
-      switch (data.type) {
-        case 'users':
-          setOnlineUsers(data.users);
-          break;
-        case 'message':
-          // Invalidate queries to refresh message list
-          queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.senderId}/${userId}`] });
-          queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
-
-          // Show toast notification for new message if it's not from current user
-          if (data.message.senderId !== userId) {
-            const sender = onlineUsers.find(user => user.id === data.message.senderId);
-            toast({
-              title: `New message from ${sender?.username || 'User'}`,
-              description: data.message.content.length > 50 ? 
-                `${data.message.content.substring(0, 50)}...` : 
-                data.message.content,
-              variant: 'default'
-            });
+          
+          // Attempt to reconnect after a delay
+          if (!reconnectTimer && document.visibilityState !== 'hidden') {
+            console.log('Scheduling WebSocket reconnection...');
+            reconnectTimer = setTimeout(() => {
+              console.log('Attempting to reconnect WebSocket...');
+              connectWebSocket();
+            }, 3000);
           }
-          break;
-        case 'call-offer':
-          handleIncomingCall(data);
-          break;
-        case 'call-answer':
-          handleCallAnswer(data);
-          break;
-        case 'call-candidate':
-          handleIceCandidate(data);
-          break;
-        case 'call-end':
-          handleCallEnd();
-          break;
+        };
+        
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            console.log('WebSocket message received:', data);
+            
+            switch (data.type) {
+              case 'users':
+                setOnlineUsers(data.users);
+                break;
+              case 'message':
+                // Invalidate queries to refresh message list
+                queryClient.invalidateQueries({ 
+                  queryKey: [`/api/communications/messages/${data.message.senderId}`] 
+                });
+                queryClient.invalidateQueries({ 
+                  queryKey: ['/api/communications/conversations'] 
+                });
+                
+                // Show toast notification for new message if it's not from current user
+                if (data.message.senderId !== userId) {
+                  const sender = onlineUsers.find(user => user.id === data.message.senderId);
+                  toast({
+                    title: `New message from ${sender?.username || 'User'}`,
+                    description: data.message.type === 'text' ? 
+                      (data.message.content.length > 50 ? 
+                        `${data.message.content.substring(0, 50)}...` : 
+                        data.message.content) : 
+                      `New ${data.message.type} message`,
+                    variant: 'default'
+                  });
+                }
+                break;
+              case 'call-offer':
+                handleIncomingCall(data);
+                break;
+              case 'call-answer':
+                handleCallAnswer(data);
+                break;
+              case 'call-candidate':
+                handleIceCandidate(data);
+                break;
+              case 'call-end':
+                handleCallEnd();
+                break;
+            }
+          } catch (error) {
+            console.error('Error parsing WebSocket message:', error, event.data);
+          }
+        };
+      } catch (error) {
+        console.error('Error connecting to WebSocket:', error);
+        // Schedule reconnection
+        if (!reconnectTimer && document.visibilityState !== 'hidden') {
+          reconnectTimer = setTimeout(() => {
+            console.log('Attempting to reconnect WebSocket after error...');
+            connectWebSocket();
+          }, 3000);
+        }
       }
     };
-
-    setSocket(newSocket);
-
+    
+    // Initial connection
+    connectWebSocket();
+    
+    // Setup visibility change handler to reconnect when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && (!ws || ws.readyState !== WebSocket.OPEN)) {
+        console.log('Tab visible, reconnecting WebSocket...');
+        connectWebSocket();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup
     return () => {
-      newSocket.close();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      
+      if (ws) {
+        ws.close();
+      }
     };
   }, [userId, queryClient, toast, onlineUsers]);
 
