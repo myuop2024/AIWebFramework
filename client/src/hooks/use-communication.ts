@@ -51,10 +51,11 @@ export function useCommunication(userId: number) {
   useEffect(() => {
     let reconnectTimer: NodeJS.Timeout | null = null;
     let ws: WebSocket | null = null;
+    let isUnmounting = false;
     
     const connectWebSocket = () => {
-      if (ws?.readyState === WebSocket.OPEN) {
-        return; // Already connected
+      if (isUnmounting || (ws?.readyState === WebSocket.OPEN)) {
+        return;
       }
       
       // Clear any existing reconnect timer

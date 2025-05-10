@@ -73,7 +73,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Filter conversations based on search query
   const filteredConversations = conversations?.filter(conversation => 
-    conversation?.username?.toLowerCase().includes((searchQuery || '').toLowerCase())
+    conversation?.username && searchQuery 
+      ? conversation.username.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
   ) || [];
 
   // Filter contacts based on search query
