@@ -3,9 +3,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  User, UsersRound, FileText, MapPin, Calendar, ShieldCheck, BarChart3, AlertTriangle 
+  User, UsersRound, FileText, MapPin, Calendar, ShieldCheck, BarChart3, AlertTriangle, Settings 
 } from "lucide-react";
 import { UserManagement } from "@/components/admin/user-management";
+import { RoleManagement } from "@/components/admin/role-management";
 import { BackgroundAnimation } from "@/components/three/BackgroundAnimation";
 import { ThreeBarChart } from "@/components/three/ThreeBarChart";
 import { ElectoralMapViewer } from "@/components/three/ElectoralMapViewer";
@@ -123,6 +124,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
             <TabsTrigger value="stations">Polling Stations</TabsTrigger>
+            <TabsTrigger value="system">System</TabsTrigger>
           </TabsList>
         </div>
         
@@ -377,6 +379,22 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="system">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>System Settings</CardTitle>
+                  <CardDescription>Manage roles, permissions and core system settings</CardDescription>
+                </div>
+                <Settings className="h-6 w-6 text-muted-foreground" />
+              </CardHeader>
+            </Card>
+            
+            <RoleManagement />
+          </div>
         </TabsContent>
       </Tabs>
     </AdminLayout>
