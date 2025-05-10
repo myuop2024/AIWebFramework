@@ -12,6 +12,8 @@ import {
   RefreshCw, Users, Search, Plus, Edit, UserCheck, UserX, 
   Filter, Shield, Eye, AlertTriangle, CheckCircle2
 } from "lucide-react";
+import { UserForm } from "./user-form";
+import { UserDetailModal } from "./user-detail-modal";
 
 // Types
 interface User {
@@ -35,6 +37,9 @@ export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [formOpen, setFormOpen] = useState(false);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Fetch all users
   const { data: users = [], isLoading, refetch } = useQuery<User[]>({
@@ -139,28 +144,92 @@ export function UserManagement() {
     updateVerification.mutate({ userId, status: "verified" });
   };
 
+  // Create a new user
+  const createUser = useMutation({
+    mutationFn: async (userData: Omit<User, 'id' | 'createdAt'>) => {
+      return apiRequest(
+        'POST',
+        '/api/admin/users',
+        userData
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "User Created",
+        description: "The user has been created successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Failed to create user",
+        description: "There was an error creating the user. The username or email may already be in use.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update an existing user
+  const updateUser = useMutation({
+    mutationFn: async ({ id, data }: { id: number, data: Partial<User> }) => {
+      return apiRequest(
+        'PATCH',
+        `/api/admin/users/${id}`,
+        data
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
+      toast({
+        title: "User Updated",
+        description: "The user has been updated successfully.",
+      });
+      setFormOpen(false);
+    },
+    onError: (error) => {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Failed to update user",
+        description: "There was an error updating the user.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle form submission
+  const handleFormSubmit = (data: any) => {
+    if (selectedUser) {
+      // Update existing user
+      updateUser.mutate({ id: selectedUser.id, data });
+    } else {
+      // Create new user
+      createUser.mutate(data);
+    }
+  };
+
   // Handle edit user
   const handleEditUser = (id: number) => {
-    toast({
-      title: "Edit User",
-      description: "Edit functionality will be implemented soon.",
-    });
+    const user = users.find(u => u.id === id);
+    if (user) {
+      setSelectedUser(user);
+      setFormOpen(true);
+    }
   };
 
   // Handle view user details
   const handleViewDetails = (id: number) => {
-    toast({
-      title: "User Details",
-      description: "User details functionality will be implemented soon.",
-    });
+    setSelectedUser(users.find(u => u.id === id) || null);
+    setDetailModalOpen(true);
   };
 
   // Handle add new user
   const handleAddUser = () => {
-    toast({
-      title: "Add User",
-      description: "Add user functionality will be implemented soon.",
-    });
+    setSelectedUser(null);
+    setFormOpen(true);
   };
 
   // Get status badge for a user
