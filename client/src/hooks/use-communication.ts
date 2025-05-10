@@ -134,18 +134,23 @@ export function useCommunication(userId: number) {
   });
 
   // Get messages between two users
-  const getMessages = (otherUserId: number) => {
+  const useGetMessages = (otherUserId: number | null) => {
     return useQuery({
       queryKey: [`/api/communications/messages/${userId}/${otherUserId}`],
       queryFn: async () => {
-        const response = await fetch(`/api/communications/messages/${userId}/${otherUserId}`);
+        if (!otherUserId) return [];
+        const response = await fetch(`/api/communications/messages/${otherUserId}`);
         if (!response.ok) throw new Error('Failed to fetch messages');
         const data = await response.json();
         return data;
       },
-      staleTime: 10000 // 10 seconds
+      staleTime: 10000, // 10 seconds
+      enabled: !!otherUserId // Only run the query if otherUserId is defined
     });
   };
+  
+  // Get messages for the current active chat
+  const { data: activeMessages, isLoading: messagesLoading } = useGetMessages(null);
 
   // Send a message
   const sendMessageMutation = useMutation({
@@ -515,7 +520,9 @@ export function useCommunication(userId: number) {
     conversations,
     conversationsLoading,
     onlineUsers,
-    getMessages,
+    useGetMessages,
+    activeMessages,
+    messagesLoading,
     sendMessage,
     markAsRead: markAsReadMutation.mutate,
     markAllAsRead: markAllAsReadMutation.mutate,

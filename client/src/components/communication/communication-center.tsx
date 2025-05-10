@@ -36,7 +36,9 @@ export function CommunicationCenter({ userId }: CommunicationCenterProps) {
     conversations, 
     conversationsLoading,
     onlineUsers,
-    getMessages,
+    useGetMessages,
+    activeMessages,
+    messagesLoading: baseMessagesLoading,
     sendMessage,
     markAsRead,
     markAllAsRead,
@@ -52,7 +54,7 @@ export function CommunicationCenter({ userId }: CommunicationCenterProps) {
 
   // Get messages for the active chat
   const { data: messages, isLoading: messagesLoading } = 
-    activeChatUserId ? getMessages(activeChatUserId) : { data: [], isLoading: false };
+    useGetMessages(activeChatUserId);
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
