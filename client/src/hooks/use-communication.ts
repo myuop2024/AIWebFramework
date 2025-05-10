@@ -199,22 +199,43 @@ export function useCommunication(userId: number) {
   // Mark all messages from a user as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async (otherUserId: number) => {
-      const response = await fetch(`/api/communications/messages/read-all/${otherUserId}/${userId}`, {
-        method: 'PUT',
+      // Get all unread messages from this sender
+      const messages = await fetch(`/api/communications/messages/${otherUserId}`).then(r => r.json());
+      const unreadMessages = messages.filter((m: any) => 
+        m.senderId === otherUserId && !m.read
+      );
+      
+      // Mark each message as read
+      if (unreadMessages.length === 0) return { count: 0 };
+      
+      const messageIds = unreadMessages.map((m: any) => m.id);
+      const response = await fetch(`/api/communications/messages/read`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageIds }),
       });
+      
       if (!response.ok) throw new Error('Failed to mark all messages as read');
-      return response.json();
+      return { count: messageIds.length };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/communications/messages/${userId}/${variables}`] 
+        queryKey: [`/api/communications/messages/${variables}`] 
       });
       queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
     },
   });
 
-  // Send a message via the WebSocket
+  // Send a message via the WebSocket and HTTP
   const sendMessage = useCallback((receiverId: number, content: string, type: MessageType = 'text') => {
+    console.log(`Sending message to ${receiverId}: ${content} (${type})`);
+    
+    // First try to send via HTTP for persistence
+    sendMessageMutation.mutate({ receiverId, content, type });
+    
+    // Also send via WebSocket for real-time delivery
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({
         type: 'message',
@@ -225,10 +246,9 @@ export function useCommunication(userId: number) {
           type,
         },
       }));
+    } else {
+      console.warn('WebSocket not connected or ready, message sent only via HTTP');
     }
-
-    // Also send via HTTP for persistence
-    sendMessageMutation.mutate({ receiverId, content, type });
   }, [socket, userId, sendMessageMutation]);
 
   // Handle incoming call
