@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { formatDistanceToNow } from 'date-fns';
 import {
   MessageSquare, Phone, Video, Send, Paperclip, Image, Mic,
-  User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search
+  User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search,
+  Download, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCommunication, type Message, type User as CommunicationUser } from '@/hooks/use-communication';
@@ -97,6 +98,93 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     // contactsSearchQuery is initialized as '', so .toLowerCase() is safe on it.
     return username.toLowerCase().includes(contactsSearchQuery.toLowerCase());
   }) || []; // Ensure filteredAllUsers is an empty array if allUsers is undefined (e.g., during loading)
+
+  // State for media viewer modal
+  const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
+  const [viewedMedia, setViewedMedia] = useState<{
+    type: 'image' | 'file';
+    content: string;
+    fileData?: { name: string; size: number; type: string };
+  } | null>(null);
+
+  // Open media viewer
+  const openMediaViewer = (message: Message) => {
+    if (message.type === 'image') {
+      setViewedMedia({
+        type: 'image',
+        content: message.content
+      });
+      setIsMediaViewerOpen(true);
+    } else if (message.type === 'file') {
+      try {
+        const fileData = JSON.parse(message.content);
+        setViewedMedia({
+          type: 'file',
+          content: message.content,
+          fileData
+        });
+        setIsMediaViewerOpen(true);
+      } catch (e) {
+        console.error('Failed to parse file data', e);
+      }
+    }
+  };
+
+  // Format file size with appropriate units
+  const formatFileSize = (sizeInBytes: number): string => {
+    if (sizeInBytes < 1024) {
+      return `${sizeInBytes} B`;
+    } else if (sizeInBytes < 1024 * 1024) {
+      return `${(sizeInBytes / 1024).toFixed(2)} KB`;
+    } else if (sizeInBytes < 1024 * 1024 * 1024) {
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+      return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
+  };
+
+  // Render message content based on type
+  const renderMessageContent = (message: Message) => {
+    switch (message.type) {
+      case 'image':
+        return (
+          <div className="mt-2">
+            <img
+              src={message.content}
+              alt="Shared image"
+              className="max-w-[200px] max-h-[200px] rounded-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => openMediaViewer(message)}
+            />
+          </div>
+        );
+      case 'file':
+        try {
+          const fileData = JSON.parse(message.content);
+          return (
+            <div
+              className="mt-2 flex items-center gap-2 p-2 bg-secondary rounded-md cursor-pointer hover:bg-secondary/80 transition-colors"
+              onClick={() => openMediaViewer(message)}
+            >
+              <Paperclip className="h-4 w-4" />
+              <div>
+                <p className="text-sm font-medium">{fileData.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {(fileData.size / 1024).toFixed(2)} KB
+                </p>
+              </div>
+            </div>
+          );
+        } catch (e) {
+          return <p>{message.content}</p>;
+        }
+      case 'system':
+        return (
+          <p className="text-sm italic text-muted-foreground">{message.content}</p>
+        );
+      default:
+        return <p>{message.content}</p>;
+    }
+  };
 
 
   // Scroll to bottom of messages when messages change
@@ -258,46 +346,6 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Format message time
   const formatMessageTime = (date: Date | string) => { // Allow string for flexibility if API returns string dates
     return formatDistanceToNow(new Date(date), { addSuffix: true });
-  };
-
-  // Render message content based on type
-  const renderMessageContent = (message: Message) => {
-    switch (message.type) {
-      case 'image':
-        return (
-          <div className="mt-2">
-            <img
-              src={message.content}
-              alt="Shared image"
-              className="max-w-[200px] max-h-[200px] rounded-md object-contain"
-            />
-          </div>
-        );
-      case 'file':
-        try {
-          const fileData = JSON.parse(message.content);
-          return (
-            <div className="mt-2 flex items-center gap-2 p-2 bg-secondary rounded-md">
-              <Paperclip className="h-4 w-4" />
-              <div>
-                <p className="text-sm font-medium">{fileData.name || 'File'}</p>
-                <p className="text-xs text-muted-foreground">
-                  {typeof fileData.size === 'number' ? (fileData.size / 1024).toFixed(2) + ' KB' : 'Unknown size'}
-                </p>
-              </div>
-            </div>
-          );
-        } catch (e) {
-          console.error("Error parsing file message content:", e);
-          return <p className="text-red-500">Error displaying file: Invalid format.</p>;
-        }
-      case 'system':
-        return (
-          <p className="text-sm italic text-muted-foreground">{message.content}</p>
-        );
-      default:
-        return <p>{message.content}</p>;
-    }
   };
 
   // Get user by ID
@@ -762,6 +810,71 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         </Tabs>
       </CardContent>
 
+      {/* Media Viewer Modal */}
+      <Dialog open={isMediaViewerOpen} onOpenChange={setIsMediaViewerOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {viewedMedia?.type === 'image' ? 'Image' :
+                viewedMedia?.fileData?.name || 'File'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center">
+            {viewedMedia?.type === 'image' ? (
+              <div className="flex flex-col items-center gap-4">
+                <img
+                  src={viewedMedia.content}
+                  alt="Full-size image"
+                  className="max-w-full max-h-[70vh] object-contain rounded-md"
+                />
+                <Button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = viewedMedia.content;
+                    link.download = 'image-' + Date.now() + '.jpg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Image
+                </Button>
+              </div>
+            ) : viewedMedia?.fileData ? (
+              <div className="flex flex-col items-center gap-4 w-full">
+                <div className="bg-secondary p-8 rounded-lg flex flex-col items-center">
+                  <Paperclip className="h-16 w-16 mb-4 text-primary" />
+                  <h3 className="text-lg font-medium mb-2">{viewedMedia.fileData.name}</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    <p className="text-muted-foreground">File size:</p>
+                    <p className="font-medium">{formatFileSize(viewedMedia.fileData.size)}</p>
+
+                    <p className="text-muted-foreground">File type:</p>
+                    <p className="font-medium">{viewedMedia.fileData.type}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // In a real implementation, you would have a download URL
+                    // For now, we'll just demonstrate the UI
+                    alert('Download functionality would be implemented here');
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download File
+                </Button>
+              </div>
+            ) : (
+              <p>File information not available</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Incoming call dialog */}
       <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={(isOpen) => { if (!isOpen && incomingCall) rejectCall(); }}>
         <DialogContent className="sm:max-w-md">
@@ -829,17 +942,17 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               )}
               {/* Placeholder when video/remote stream is not available */}
               {(!remoteStream || activeCall?.type !== 'video') && (
-                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                    <Avatar className="h-24 w-24"> {/* Larger avatar */}
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
-                          }`}
-                      />
-                      <AvatarFallback className="text-3xl">
-                        {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                  <Avatar className="h-24 w-24"> {/* Larger avatar */}
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
+                        }`}
+                    />
+                    <AvatarFallback className="text-3xl">
+                      {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
               )}
               {activeCall?.type === 'video' && localStream && (
                 <div className="absolute bottom-2 right-2 w-1/4 max-w-[120px] aspect-video bg-black rounded-lg overflow-hidden border-2 border-background">
@@ -890,8 +1003,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
       {/* User search dialog */}
       <Dialog open={showUserSearch} onOpenChange={(isOpen) => {
-          setShowUserSearch(isOpen);
-          if (!isOpen) setContactsSearchQuery(''); // Clear search on close
+        setShowUserSearch(isOpen);
+        if (!isOpen) setContactsSearchQuery(''); // Clear search on close
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
