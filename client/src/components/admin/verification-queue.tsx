@@ -38,7 +38,8 @@ interface Document {
   updatedAt: string | Date;
 }
 
-function VerificationQueueComponent() {
+// Create the component with a function declaration
+function VerificationQueue() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -263,3 +264,8 @@ function VerificationQueueComponent() {
     </Card>
   );
 }
+
+// Export the component as default
+export default VerificationQueue;
+// Also keep a named export for backward compatibility 
+export { VerificationQueue };
