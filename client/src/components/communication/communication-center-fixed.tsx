@@ -72,9 +72,11 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     useGetMessages(activeChatUserId);
 
   // Filter conversations based on search query
-  const filteredConversations = conversations?.filter(conversation => 
-    conversation.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredConversations = conversations?.filter(conversation => {
+    const username = conversation?.username || '';
+    const query = searchQuery || '';
+    return username.toLowerCase().includes(query.toLowerCase());
+  });
 
   // Filter contacts based on search query
   const filteredContacts = onlineUsers.filter(user => 
