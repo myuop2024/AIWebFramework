@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, FileUp, FileDown, Edit, Eye, Trash2, Search, RefreshCw } from "lucide-react";
+import { PollingStationForm } from "./polling-station-form";
+import { PollingStationMap } from "./polling-station-map";
 
 // Types
 interface PollingStation {
