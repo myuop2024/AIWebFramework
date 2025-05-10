@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { storage } from "../storage";
 import { z } from "zod";
-import { isAdmin, isAuthenticated } from "../middleware/auth";
+import { ensureAdmin, ensureAuthenticated } from "../middleware/auth";
 
 const roleRouter = Router();
 
@@ -20,7 +20,7 @@ const updateRoleSchema = z.object({
 });
 
 // Get all roles
-roleRouter.get("/admin/roles", isAuthenticated, isAdmin, async (req, res) => {
+roleRouter.get("/admin/roles", ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const roles = await storage.getAllRoles();
     res.json(roles);
@@ -31,7 +31,7 @@ roleRouter.get("/admin/roles", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // Get role by ID
-roleRouter.get("/admin/roles/:id", isAuthenticated, isAdmin, async (req, res) => {
+roleRouter.get("/admin/roles/:id", ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const roleId = parseInt(req.params.id);
     if (isNaN(roleId)) {
@@ -51,7 +51,7 @@ roleRouter.get("/admin/roles/:id", isAuthenticated, isAdmin, async (req, res) =>
 });
 
 // Create new role
-roleRouter.post("/admin/roles", isAuthenticated, isAdmin, async (req, res) => {
+roleRouter.post("/admin/roles", ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const validatedData = createRoleSchema.parse(req.body);
     
@@ -73,7 +73,7 @@ roleRouter.post("/admin/roles", isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // Update role
-roleRouter.patch("/admin/roles/:id", isAuthenticated, isAdmin, async (req, res) => {
+roleRouter.patch("/admin/roles/:id", ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const roleId = parseInt(req.params.id);
     if (isNaN(roleId)) {
@@ -111,7 +111,7 @@ roleRouter.patch("/admin/roles/:id", isAuthenticated, isAdmin, async (req, res) 
 });
 
 // Delete role
-roleRouter.delete("/admin/roles/:id", isAuthenticated, isAdmin, async (req, res) => {
+roleRouter.delete("/admin/roles/:id", ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
     const roleId = parseInt(req.params.id);
     if (isNaN(roleId)) {

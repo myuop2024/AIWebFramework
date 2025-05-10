@@ -290,6 +290,28 @@ export const photoApprovals = pgTable("photo_approvals", {
   notes: text("notes"),
 });
 
+// User roles and permissions table
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions").default([]),
+  isSystem: boolean("is_system").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Define insert schema for roles
+export const insertRoleSchema = createInsertSchema(roles)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof insertRoleSchema._type;
+
 // Verification settings schema for the application
 export const verificationSettingsSchema = z.object({
   autoApproval: z.boolean().default(false),

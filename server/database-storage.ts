@@ -21,7 +21,8 @@ import {
   photoApprovals, PhotoApproval, InsertPhotoApproval,
   systemSettings, SystemSetting, InsertSystemSetting,
   errorLogs, ErrorLog, InsertErrorLog, ErrorLogQueryOptions, ErrorLogDeleteCriteria,
-  BulkUserImport, RegistrationField
+  BulkUserImport, RegistrationField,
+  roles, Role, InsertRole
 } from "@shared/schema";
 import crypto from "crypto";
 
