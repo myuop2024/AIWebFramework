@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import MainLayout from '@/components/layout/main-layout';
 import { FormTemplateEditor } from '@/components/forms/form-template-editor';
 import { FormBuilder } from '@/components/forms/form-builder';
 import { 
@@ -311,7 +310,7 @@ export default function FormTemplatesPage() {
       required: false,
       isAdminOnly: false,
       isUserEditable: true
-    } as FormField);
+    } as any);
     setShowFieldEditor(true);
   };
   
@@ -323,7 +322,7 @@ export default function FormTemplatesPage() {
   const handleRemoveField = (fieldId: string | number) => {
     if (!selectedForm || !selectedForm.fields) return;
     
-    const updatedFields = selectedForm.fields.filter(f => f.id !== fieldId);
+    const updatedFields = (selectedForm.fields as any[]).filter(f => f.id !== fieldId);
     
     // Reorder remaining fields
     const reorderedFields = updatedFields.map((field, index) => ({
@@ -347,7 +346,7 @@ export default function FormTemplatesPage() {
   const handleChangeFieldOrder = (fieldId: string | number, direction: 'up' | 'down') => {
     if (!selectedForm || !selectedForm.fields) return;
     
-    const fields = [...selectedForm.fields];
+    const fields = [...(selectedForm.fields as any[])];
     const index = fields.findIndex(f => f.id === fieldId);
     
     if (index === -1) return;
@@ -380,7 +379,7 @@ export default function FormTemplatesPage() {
   const handleSaveField = () => {
     if (!selectedForm || !editingField || !selectedForm.fields) return;
     
-    const fields = [...selectedForm.fields];
+    const fields = [...(selectedForm.fields as any[])];
     const isNew = typeof editingField.id === 'string' && editingField.id.startsWith('new');
     
     if (isNew) {
@@ -466,7 +465,7 @@ export default function FormTemplatesPage() {
         <div className="space-y-2">
           <Label htmlFor="field-type">Field Type</Label>
           <Select
-            value={editingField.type}
+            value={editingField.type as string}
             onValueChange={(value) => setEditingField({...editingField, type: value})}
           >
             <SelectTrigger>
@@ -493,148 +492,166 @@ export default function FormTemplatesPage() {
             <Label htmlFor="field-options">Options (comma separated)</Label>
             <Textarea
               id="field-options"
-              value={editingField.options?.join(', ') || ''}
+              value={(editingField.options as any)?.join(', ') || ''}
               onChange={(e) => setEditingField({
                 ...editingField, 
-                options: e.target.value.split(',').map(opt => opt.trim()).filter(Boolean)
+                options: e.target.value.split(',').map(opt => opt.trim()).filter(Boolean) as any
               })}
-              placeholder="e.g. Option 1, Option 2, Option 3"
+              placeholder="Option 1, Option 2, Option 3"
             />
           </div>
         )}
         
         <div className="space-y-2">
-          <Label htmlFor="field-mapping">Map to User Field</Label>
-          <Select
-            value={editingField.mapToUserField || 'none'}
-            onValueChange={(value) => {
-              if (value === "none") {
-                const { mapToUserField, ...rest } = editingField;
-                setEditingField(rest);
-              } else {
-                setEditingField({...editingField, mapToUserField: value});
-              }
-            }}
+          <Label htmlFor="map-to-user-field">Map to User Field</Label>
+          <Select 
+            value={(editingField as any).mapToUserField || ''}
+            onValueChange={(value) => setEditingField({
+              ...editingField, 
+              mapToUserField: value === '' ? undefined : value as any
+            })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Map to user field" />
+              <SelectValue placeholder="Select user field (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="firstName">First Name</SelectItem>
-              <SelectItem value="lastName">Last Name</SelectItem>
-              <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="phoneNumber">Phone Number</SelectItem>
+              <SelectItem value="">None</SelectItem>
               <SelectItem value="username">Username</SelectItem>
-              <SelectItem value="password">Password</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="phone">Phone Number</SelectItem>
               <SelectItem value="role">Role</SelectItem>
+              <SelectItem value="observerId">Observer ID</SelectItem>
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground">
+            This will automatically populate the field with the user's data
+          </p>
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="field-profile-mapping">Map to Profile Field</Label>
-          <Select
-            value={editingField.mapToProfileField || 'none'}
-            onValueChange={(value) => {
-              if (value === "none") {
-                const { mapToProfileField, ...rest } = editingField;
-                setEditingField(rest);
-              } else {
-                setEditingField({...editingField, mapToProfileField: value});
-              }
-            }}
+          <Label htmlFor="map-to-profile-field">Map to Profile Field</Label>
+          <Select 
+            value={(editingField as any).mapToProfileField || ''}
+            onValueChange={(value) => setEditingField({
+              ...editingField, 
+              mapToProfileField: value === '' ? undefined : value as any
+            })}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Map to profile field" />
+              <SelectValue placeholder="Select profile field (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="">None</SelectItem>
+              <SelectItem value="firstName">First Name</SelectItem>
+              <SelectItem value="lastName">Last Name</SelectItem>
+              <SelectItem value="dateOfBirth">Date of Birth</SelectItem>
               <SelectItem value="address">Address</SelectItem>
               <SelectItem value="city">City</SelectItem>
-              <SelectItem value="state">State/Parish</SelectItem>
-              <SelectItem value="zipCode">Zip/Postal Code</SelectItem>
+              <SelectItem value="state">State/Province</SelectItem>
+              <SelectItem value="postalCode">Postal Code</SelectItem>
               <SelectItem value="country">Country</SelectItem>
-              <SelectItem value="idType">ID Type</SelectItem>
               <SelectItem value="idNumber">ID Number</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        
-        <div className="flex items-center space-x-2 mt-6">
-          <Checkbox 
-            id="field-required"
-            checked={editingField.required || false} 
-            onCheckedChange={(checked) => setEditingField({...editingField, required: checked === true})}
-          />
-          <Label htmlFor="field-required">Required Field</Label>
+          <p className="text-xs text-muted-foreground">
+            This will automatically populate the field with the user's profile data
+          </p>
         </div>
         
         <div className="flex items-center space-x-2">
           <Checkbox 
-            id="field-admin-only"
-            checked={editingField.isAdminOnly || false} 
-            onCheckedChange={(checked) => setEditingField({...editingField, isAdminOnly: checked === true})}
+            id="field-required" 
+            checked={editingField.required}
+            onCheckedChange={(checked) => 
+              setEditingField({...editingField, required: !!checked})
+            }
           />
-          <Label htmlFor="field-admin-only">Admin-Only Field</Label>
+          <Label 
+            htmlFor="field-required"
+            className="text-sm font-normal"
+          >
+            This field is required
+          </Label>
         </div>
         
         <div className="flex items-center space-x-2">
           <Checkbox 
-            id="field-editable"
-            checked={editingField.isUserEditable !== false} 
-            onCheckedChange={(checked) => setEditingField({...editingField, isUserEditable: checked === true})}
+            id="field-admin-only" 
+            checked={(editingField as any).isAdminOnly}
+            onCheckedChange={(checked) => 
+              setEditingField({...editingField, isAdminOnly: !!checked} as any)
+            }
           />
-          <Label htmlFor="field-editable">User Can Edit</Label>
+          <Label 
+            htmlFor="field-admin-only"
+            className="text-sm font-normal"
+          >
+            Admin only field (not shown to users when registering)
+          </Label>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Checkbox 
+            id="field-user-editable" 
+            checked={(editingField as any).isUserEditable}
+            onCheckedChange={(checked) => 
+              setEditingField({...editingField, isUserEditable: !!checked} as any)
+            }
+          />
+          <Label 
+            htmlFor="field-user-editable"
+            className="text-sm font-normal"
+          >
+            Users can edit this field in their profile
+          </Label>
         </div>
       </div>
     );
   };
 
   return (
-    <MainLayout>
-      <div className="container mx-auto py-6">
-        <Tabs defaultValue="templates" className="space-y-6">
-          <TabsList className="grid w-full sm:w-auto grid-cols-2">
-            <TabsTrigger value="templates">Form Templates</TabsTrigger>
-            <TabsTrigger value="registration">Registration Forms</TabsTrigger>
-          </TabsList>
+    <div className="container mx-auto py-6">
+      <Tabs defaultValue="templates" className="space-y-6">
+        <TabsList className="grid w-full sm:w-auto grid-cols-2">
+          <TabsTrigger value="templates">Form Templates</TabsTrigger>
+          <TabsTrigger value="registration">Registration Forms</TabsTrigger>
+        </TabsList>
           
-          <TabsContent value="templates" className="space-y-6">
-            <PageHeader className="pb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <PageHeaderHeading>Form Templates</PageHeaderHeading>
-                  <PageHeaderDescription>
-                    Create and manage form templates for various types of reports and observations
-                  </PageHeaderDescription>
-                </div>
-                <Button onClick={() => setIsCreating(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Template
-                </Button>
+        <TabsContent value="templates" className="space-y-6">
+          <PageHeader className="pb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <PageHeaderHeading>Form Templates</PageHeaderHeading>
+                <PageHeaderDescription>
+                  Create and manage form templates for various types of reports and observations
+                </PageHeaderDescription>
               </div>
+              <Button onClick={() => setIsCreating(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Template
+              </Button>
+            </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Button
+                variant={categoryFilter === null ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setCategoryFilter(null)}
+              >
+                All
+              </Button>
+              {categories.map((category) => (
                 <Button
-                  variant={categoryFilter === null ? "secondary" : "outline"}
+                  key={category}
+                  variant={categoryFilter === category ? "secondary" : "outline"}
                   size="sm"
-                  onClick={() => setCategoryFilter(null)}
+                  onClick={() => setCategoryFilter(category)}
                 >
-                  All
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
                 </Button>
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={categoryFilter === category ? "secondary" : "outline"}
-                    size="sm"
-                    onClick={() => setCategoryFilter(category)}
-                  >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </PageHeader>
+              ))}
+            </div>
+          </PageHeader>
 
         {isTemplatesLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -863,221 +880,276 @@ export default function FormTemplatesPage() {
                   </Table>
                 </CardContent>
               </Card>
-              
+
               {selectedForm && (
-                <Card>
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
+                <Card className="mt-8">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>{selectedForm.name}</CardTitle>
-                        <CardDescription>{selectedForm.description}</CardDescription>
+                        <CardTitle>Configure Form: {selectedForm.name}</CardTitle>
+                        <CardDescription>
+                          Manage the fields users will see when registering with this form
+                        </CardDescription>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => handleAddField()}>
+                      <Button 
+                        onClick={handleAddField}
+                        size="sm"
+                      >
                         <PlusCircle className="h-4 w-4 mr-1" />
                         Add Field
                       </Button>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[80px]">Order</TableHead>
-                          <TableHead>Field</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Required</TableHead>
-                          <TableHead>Mapping</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedForm.fields && selectedForm.fields.sort((a, b) => a.order - b.order).map((field) => (
-                          <TableRow key={field.id}>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8" 
-                                  onClick={() => handleChangeFieldOrder(field.id, 'up')}
-                                  disabled={field.order === 1}
-                                >
-                                  <span className="sr-only">Move up</span>
-                                  ↑
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8" 
-                                  onClick={() => handleChangeFieldOrder(field.id, 'down')}
-                                  disabled={field.order === selectedForm.fields.length}
-                                >
-                                  <span className="sr-only">Move down</span>
-                                  ↓
-                                </Button>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="font-medium">{field.label}</div>
-                              <div className="text-sm text-muted-foreground">{field.name}</div>
-                            </TableCell>
-                            <TableCell className="capitalize">{field.type}</TableCell>
-                            <TableCell>{field.required ? 'Yes' : 'No'}</TableCell>
-                            <TableCell>
-                              {field.mapToUserField ? (
-                                <Badge variant="secondary" className="mr-1">User: {field.mapToUserField}</Badge>
-                              ) : null}
-                              {field.mapToProfileField ? (
-                                <Badge variant="outline">Profile: {field.mapToProfileField}</Badge>
-                              ) : null}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditField(field)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                  <span className="sr-only">Edit</span>
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive/90"
-                                  onClick={() => handleRemoveField(field.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                  <span className="sr-only">Delete</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        
-                        {!selectedForm.fields || selectedForm.fields.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                              No fields configured for this form. Click "Add Field" to create the first field.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
+                    {(selectedForm.fields as any[])?.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
+                          <ClipboardEdit className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <h3 className="font-medium text-lg">No fields configured</h3>
+                        <p className="text-muted-foreground mt-1 mb-4">
+                          Add fields to customize what information you collect from users
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={handleAddField}
+                        >
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Add First Field
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Order</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Label</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Required</TableHead>
+                              <TableHead>Preview</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {(selectedForm.fields as any[])
+                              .sort((a, b) => (a.order || 0) - (b.order || 0))
+                              .map((field: any) => (
+                                <TableRow key={field.id}>
+                                  <TableCell>{field.order}</TableCell>
+                                  <TableCell className="font-medium">{field.name}</TableCell>
+                                  <TableCell>{field.label}</TableCell>
+                                  <TableCell className="capitalize">{field.type}</TableCell>
+                                  <TableCell>{field.required ? 'Yes' : 'No'}</TableCell>
+                                  <TableCell>
+                                    {field.mapToUserField ? (
+                                      <Badge variant="outline">
+                                        Maps to: {field.mapToUserField}
+                                      </Badge>
+                                    ) : field.mapToProfileField ? (
+                                      <Badge variant="outline">
+                                        Maps to: {field.mapToProfileField}
+                                      </Badge>
+                                    ) : (
+                                      <div className="w-40 max-w-full">
+                                        <FormFieldComponent 
+                                          field={field}
+                                          disabled
+                                          showPreview
+                                        />
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        disabled={field.order === 1}
+                                        onClick={() => handleChangeFieldOrder(field.id, 'up')}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                          <path fillRule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/>
+                                        </svg>
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        disabled={field.order === (selectedForm.fields as any[]).length}
+                                        onClick={() => handleChangeFieldOrder(field.id, 'down')}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                          <path fillRule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
+                                        </svg>
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        onClick={() => handleEditField(field)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        className="text-destructive"
+                                        onClick={() => handleRemoveField(field.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
             </>
           )}
         </TabsContent>
-        </Tabs>
+      </Tabs>
 
-        {/* Create Template Dialog */}
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle>Create Form Template</DialogTitle>
-              <DialogDescription>
-                Design a new form template for observers to submit reports
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="flex-1 px-1">
-              <div className="py-4">
-                <FormTemplateEditor onSubmit={handleCreateTemplate} />
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+      {/* Template Editor Dialog */}
+      <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Create Form Template</DialogTitle>
+            <DialogDescription>
+              Design a new form template with multiple sections and fields
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            <FormTemplateEditor
+              onSave={handleCreateTemplate}
+              onCancel={() => setIsCreating(false)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Edit Template Dialog */}
-        <Dialog open={isEditing} onOpenChange={setIsEditing}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle>Edit Form Template</DialogTitle>
-              <DialogDescription>
-                Modify the form template structure and fields
-              </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="flex-1 px-1">
-              <div className="py-4">
-                {activeTemplate && (
-                  <FormTemplateEditor 
-                    initialData={activeTemplate} 
-                    onSubmit={handleUpdateTemplate} 
-                  />
-                )}
-              </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
+      {/* Template Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Edit Form Template</DialogTitle>
+            <DialogDescription>
+              Update the form template sections and fields
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {activeTemplate && (
+              <FormTemplateEditor
+                template={activeTemplate}
+                onSave={handleUpdateTemplate}
+                onCancel={() => {
+                  setIsEditing(false);
+                  setActiveTemplate(null);
+                }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Preview Template Dialog */}
-        <Dialog open={isPreviewing} onOpenChange={setIsPreviewing}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle>Preview Form Template</DialogTitle>
-              <DialogDescription>
-                This is how the form will appear to observers
-              </DialogDescription>
-            </DialogHeader>
-            <Tabs defaultValue="preview" className="flex-1 flex flex-col">
-              <TabsList className="self-center mb-4">
-                <TabsTrigger value="preview">Form Preview</TabsTrigger>
-                <TabsTrigger value="data">Template Data</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="preview" className="flex-1 overflow-hidden flex flex-col">
+      {/* Form Preview Dialog */}
+      <Dialog open={isPreviewing} onOpenChange={setIsPreviewing}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Form Preview</DialogTitle>
+            <DialogDescription>
+              Preview how this form will appear to users
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="form" className="flex-1 flex flex-col overflow-hidden">
+            <TabsList>
+              <TabsTrigger value="form">Form View</TabsTrigger>
+              <TabsTrigger value="data">Data Structure</TabsTrigger>
+            </TabsList>
+            
+            <div className="flex-1 overflow-hidden mt-4">
+              <TabsContent value="form" className="flex-1 overflow-hidden flex flex-col h-full">
                 <ScrollArea className="flex-1">
-                  <div className="py-4">
-                    {activeTemplate && (
-                      <FormBuilder 
-                        template={activeTemplate} 
-                        readOnly={true}
+                  {activeTemplate && (
+                    <div className="p-4">
+                      <FormBuilder
+                        template={activeTemplate}
+                        readOnly
                       />
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
 
               <TabsContent value="data" className="flex-1 overflow-hidden flex flex-col">
                 <ScrollArea className="flex-1">
-                  <pre className="p-4 bg-gray-50 rounded-md text-sm overflow-auto">
-                    {activeTemplate ? JSON.stringify(activeTemplate, null, 2) : 'No template selected'}
-                  </pre>
+                  {activeTemplate && (
+                    <pre className="p-4 bg-muted rounded-md text-xs overflow-auto">
+                      {JSON.stringify(activeTemplate.fields, null, 2)}
+                    </pre>
+                  )}
                 </ScrollArea>
               </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Field Editor Dialog */}
-        <Dialog open={showFieldEditor} onOpenChange={setShowFieldEditor}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>
-                {editingField?.id?.startsWith('new') ? 'Add New Field' : 'Edit Field'}
-              </DialogTitle>
-              <DialogDescription>
-                Configure the properties for this registration form field
-              </DialogDescription>
-            </DialogHeader>
+            </div>
+          </Tabs>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsPreviewing(false);
+                setActiveTemplate(null);
+              }}
+            >
+              Close Preview
+            </Button>
+            <Button onClick={() => {
+              setIsPreviewing(false);
+              if (activeTemplate) {
+                handleEditTemplate(activeTemplate);
+              }
+            }}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Field Editor Dialog */}
+      <Dialog open={showFieldEditor} onOpenChange={setShowFieldEditor}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingField && typeof editingField.id === 'string' && editingField.id.startsWith('new') 
+                ? 'Add Field' 
+                : 'Edit Field'}
+            </DialogTitle>
+            <DialogDescription>
+              Configure the field properties and mapping
+            </DialogDescription>
+          </DialogHeader>
             
-            <ScrollArea className="max-h-[60vh]">
-              {renderFieldEditor()}
-            </ScrollArea>
+          <ScrollArea className="max-h-[60vh]">
+            {renderFieldEditor()}
+          </ScrollArea>
             
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowFieldEditor(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSaveField}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Field
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </MainLayout>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFieldEditor(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveField}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Field
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
