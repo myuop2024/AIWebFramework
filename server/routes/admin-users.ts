@@ -27,7 +27,7 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
       // Map verificationStatus to match the client expectations
       verificationStatus: user.verificationStatus || 'pending',
       // Also provide isActive for backwards compatibility
-      isActive: user.verificationStatus === 'approved',
+      isActive: user.verificationStatus === 'verified',
       // Add training status with default
       trainingStatus: user.trainingStatus || 'not_started',
       // Add phone number if available
@@ -68,7 +68,9 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
       role: user.role,
       observerId: user.observerId,
       // Handle missing fields with defaults
-      isActive: user.verificationStatus === 'approved',
+      isActive: user.verificationStatus === 'verified',
+      // Add proper verification status in response
+      verificationStatus: user.verificationStatus || 'pending',
       createdAt: user.createdAt || new Date(),
       updatedAt: user.updatedAt || new Date(),
       profile: profile || null
