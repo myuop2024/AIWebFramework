@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, IStorage } from "./storage";
-import { createCommunicationService } from "./services/communication-service";
+import { CommunicationService } from "./services/communication-service";
 import { 
   loginUserSchema, 
   insertUserSchema, 
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   console.log(`Serving static files from: ${uploadsDir}`);
 
   // Initialize the communication service
-  const communicationService = createCommunicationService(httpServer);
+  const communicationService = new CommunicationService(httpServer);
   setCommunicationService(communicationService);
   app.use('/api/communications', communicationRoutes);
   console.log('Communication service initialized with WebSocket support');

@@ -1,13 +1,14 @@
 import express from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
+import { CommunicationService } from '../services/communication-service';
 
 const router = express.Router();
 
 // Reference to the communication service (will be set by server/routes.ts)
-let communicationService: any = null;
+let communicationService: CommunicationService | null = null;
 
-export function setCommunicationService(service: any) {
+export function setCommunicationService(service: CommunicationService) {
   communicationService = service;
 }
 

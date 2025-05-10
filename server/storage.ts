@@ -108,10 +108,18 @@ export interface IStorage {
   
   // Message operations
   getMessage(id: number): Promise<Message | undefined>;
-  getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]>;
-  getRecentConversations(userId: number): Promise<any[]>;
+  getMessagesBetweenUsers(userId1: number, userId2: number, limit?: number): Promise<Message[]>;
+  getRecentConversations(userId: number): Promise<{
+    userId: number;
+    username: string;
+    lastMessage: string;
+    lastMessageType: string;
+    unreadCount: number;
+    lastMessageAt: Date;
+  }[]>;
   createMessage(message: InsertMessage): Promise<Message>;
-  markMessageAsRead(id: number): Promise<Message | undefined>;
+  markMessageAsRead(messageId: number): Promise<Message | undefined>;
+  markAllMessagesAsRead(senderId: number, receiverId: number): Promise<number>;
   
   // Registration form operations
   getRegistrationForm(id: number): Promise<RegistrationForm | undefined>;

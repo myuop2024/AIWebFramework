@@ -421,9 +421,11 @@ export const insertNewsSchema = createInsertSchema(newsEntries)
 export const insertMessageSchema = createInsertSchema(messages)
   .omit({
     id: true,
-    isRead: true,
+    read: true,
     sentAt: true,
   });
+
+export const messageTypeSchema = z.enum(messageTypeEnum);
 
 // Field definitions for form templates
 export const formFieldSchema = z.object({

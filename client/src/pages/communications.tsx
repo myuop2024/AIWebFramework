@@ -1,64 +1,42 @@
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { CommunicationCenter } from '@/components/communication/communication-center';
-import { PageHeader, PageHeaderHeading, PageHeaderDescription } from '@/components/ui/page-header';
+import React from 'react';
 import MainLayout from '@/components/layout/main-layout';
-import { AuthGuard } from '@/components/auth/auth-guard';
-import { Separator } from '@/components/ui/separator';
+import PageHeader from '@/components/layout/page-header';
+import { CommunicationCenter } from '@/components/communication/communication-center';
+import { useAuth } from '@/hooks/use-auth';
+import { Loader2 } from 'lucide-react';
 
 export default function CommunicationsPage() {
-  // Get the current user
-  const { data: currentUser, isLoading } = useQuery({ 
-    queryKey: ['/api/user'],
-  });
-  
+  const { user, isLoading } = useAuth();
+
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="p-8">
-          <PageHeader
-            heading="Communications"
-            subheading="Chat, video, and voice communications center"
-          />
-          <Separator className="my-6" />
-          <div className="h-[70vh] flex items-center justify-center">
-            <p className="text-muted-foreground">Loading communications center...</p>
-          </div>
+        <div className="flex items-center justify-center h-screen">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </MainLayout>
     );
   }
-  
-  if (!currentUser) {
+
+  if (!user) {
     return (
       <MainLayout>
-        <AuthGuard>
-          <div className="p-8">
-            <PageHeader
-              heading="Communications"
-              subheading="Chat, video, and voice communications center"
-            />
-            <Separator className="my-6" />
-            <div className="h-[70vh] flex items-center justify-center">
-              <p className="text-muted-foreground">Please log in to access the communications center</p>
-            </div>
-          </div>
-        </AuthGuard>
+        <div className="flex flex-col items-center justify-center h-screen">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p>Please log in to access the communications center.</p>
+        </div>
       </MainLayout>
     );
   }
-  
+
   return (
     <MainLayout>
-      <div className="p-8">
-        <PageHeader>
-          <PageHeaderHeading>Communications</PageHeaderHeading>
-          <PageHeaderDescription>Chat, video, and voice communications center</PageHeaderDescription>
-        </PageHeader>
-        <Separator className="my-6" />
-        <div className="h-[70vh]">
-          <CommunicationCenter userId={currentUser.id} />
-        </div>
+      <PageHeader
+        title="Communications Center"
+        description="Chat with other observers and staff members in real-time"
+      />
+      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)]">
+        <CommunicationCenter userId={user.id} />
       </div>
     </MainLayout>
   );

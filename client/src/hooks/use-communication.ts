@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { io, Socket } from 'socket.io-client';
-import SimplePeer from 'simple-peer';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-// Types for messages
-type MessageType = 'text' | 'file' | 'image' | 'system';
+// Message types
+export type MessageType = 'text' | 'file' | 'image' | 'system';
 
-interface Message {
+// Message interface
+export interface Message {
   id: number;
   senderId: number;
   receiverId: number;
@@ -16,458 +16,516 @@ interface Message {
   read: boolean;
 }
 
-interface User {
+// User interface for online/offline status
+export interface User {
   id: number;
   username: string;
   status: 'online' | 'offline' | 'away';
 }
 
-interface CallData {
+// Call data for audio/video calls
+export interface CallData {
   callerId: number;
   receiverId: number;
   type: 'audio' | 'video';
   offer?: any;
   answer?: any;
+  candidate?: any;
 }
 
-// Socket.io and WebRTC integration with React
+/**
+ * Hook for handling communication functionality
+ */
 export function useCommunication(userId: number) {
-  const socketRef = useRef<Socket | null>(null);
-  const peerRef = useRef<SimplePeer.Instance | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
   const queryClient = useQueryClient();
-
-  const [isConnected, setIsConnected] = useState(false);
+  const { toast } = useToast();
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
-  const [activeChat, setActiveChat] = useState<number | null>(null);
-  const [typingUsers, setTypingUsers] = useState<Record<number, boolean>>({});
+  const [activeCall, setActiveCall] = useState<CallData | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
-  const [currentCall, setCurrentCall] = useState<CallData | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const peerConnection = useRef<RTCPeerConnection | null>(null);
+  const localStream = useRef<MediaStream | null>(null);
+  const remoteStream = useRef<MediaStream | null>(null);
 
-  // Get conversations from API
-  const { data: conversations = [] } = useQuery({
+  // Connect to WebSocket server
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const newSocket = new WebSocket(wsUrl);
+
+    newSocket.onopen = () => {
+      console.log('WebSocket connected');
+      // Send user ID to identify the connection
+      newSocket.send(JSON.stringify({ type: 'register', userId }));
+    };
+
+    newSocket.onclose = () => {
+      console.log('WebSocket disconnected');
+      // Attempt to reconnect after 3 seconds
+      setTimeout(() => {
+        if (document.visibilityState !== 'hidden') {
+          console.log('Attempting to reconnect WebSocket...');
+          setSocket(null);
+        }
+      }, 3000);
+    };
+
+    newSocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('WebSocket message received:', data);
+
+      switch (data.type) {
+        case 'users':
+          setOnlineUsers(data.users);
+          break;
+        case 'message':
+          // Invalidate queries to refresh message list
+          queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.senderId}/${userId}`] });
+          queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+          
+          // Show toast notification for new message if it's not from current user
+          if (data.message.senderId !== userId) {
+            const sender = onlineUsers.find(user => user.id === data.message.senderId);
+            toast({
+              title: `New message from ${sender?.username || 'User'}`,
+              description: data.message.content.length > 50 ? 
+                `${data.message.content.substring(0, 50)}...` : 
+                data.message.content,
+              variant: 'default'
+            });
+          }
+          break;
+        case 'call-offer':
+          handleIncomingCall(data);
+          break;
+        case 'call-answer':
+          handleCallAnswer(data);
+          break;
+        case 'call-candidate':
+          handleIceCandidate(data);
+          break;
+        case 'call-end':
+          handleCallEnd();
+          break;
+      }
+    };
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, [userId, queryClient, toast, onlineUsers]);
+
+  // Get recent conversations
+  const { data: conversations, isLoading: conversationsLoading } = useQuery({
     queryKey: ['/api/communications/conversations'],
-    enabled: !!userId,
+    queryFn: async () => {
+      const response = await fetch('/api/communications/conversations');
+      if (!response.ok) throw new Error('Failed to fetch conversations');
+      const data = await response.json();
+      return data;
+    },
+    staleTime: 30000 // 30 seconds
   });
 
-  // Get messages between current user and selected user
-  const { data: messages = [] } = useQuery({
-    queryKey: ['/api/communications/messages', activeChat],
-    enabled: !!activeChat,
-  });
+  // Get messages between two users
+  const getMessages = (otherUserId: number) => {
+    return useQuery({
+      queryKey: [`/api/communications/messages/${userId}/${otherUserId}`],
+      queryFn: async () => {
+        const response = await fetch(`/api/communications/messages/${userId}/${otherUserId}`);
+        if (!response.ok) throw new Error('Failed to fetch messages');
+        const data = await response.json();
+        return data;
+      },
+      staleTime: 10000 // 10 seconds
+    });
+  };
 
-  // Get online users
-  const { data: users = [] } = useQuery({
-    queryKey: ['/api/communications/online-users'],
-    enabled: !!userId,
-  });
-
-  // Send message mutation
+  // Send a message
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { receiverId: number; content: string; type?: MessageType }) => {
-      return fetch('/api/communications/messages', {
+      const response = await fetch('/api/communications/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
-      }).then(res => res.json());
+        body: JSON.stringify({
+          senderId: userId,
+          receiverId: data.receiverId,
+          content: data.content,
+          type: data.type || 'text',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to send message');
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch messages between these users
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/communications/messages/${userId}/${variables.receiverId}`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/communications/conversations'] 
+      });
+    },
+  });
+
+  // Mark a message as read
+  const markAsReadMutation = useMutation({
+    mutationFn: async (messageId: number) => {
+      const response = await fetch(`/api/communications/messages/${messageId}/read`, {
+        method: 'PUT',
+      });
+      if (!response.ok) throw new Error('Failed to mark message as read');
+      return response.json();
     },
     onSuccess: () => {
-      // Invalidate the messages cache to refresh the messages list
-      queryClient.invalidateQueries({ queryKey: ['/api/communications/messages', activeChat] });
       queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
     },
   });
 
-  // Initialize socket connection
-  useEffect(() => {
-    if (!userId) return;
-
-    // Use the current URL to connect to the Socket.io server
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    socketRef.current = io(`${protocol}//${host}`, {
-      path: '/socket',
-    });
-
-    // Connect to socket
-    const socket = socketRef.current;
-
-    socket.on('connect', () => {
-      console.log('Socket connected');
-      setIsConnected(true);
-
-      // Authenticate with the server
-      socket.emit('authenticate', { userId });
-    });
-
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
-      setIsConnected(false);
-    });
-
-    socket.on('online-users', (users: User[]) => {
-      setOnlineUsers(users);
-    });
-
-    socket.on('user-status', ({ userId, status }: { userId: number; status: string }) => {
-      setOnlineUsers(prev => 
-        prev.map(user => 
-          user.id === userId 
-            ? { ...user, status: status as 'online' | 'offline' | 'away' } 
-            : user
-        )
-      );
-    });
-
-    socket.on('new-message', (message: Message) => {
-      // Update messages if this is from the active chat
-      if (activeChat === message.senderId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/communications/messages', activeChat] });
-      }
-
-      // Always update conversations list
+  // Mark all messages from a user as read
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async (otherUserId: number) => {
+      const response = await fetch(`/api/communications/messages/read-all/${otherUserId}/${userId}`, {
+        method: 'PUT',
+      });
+      if (!response.ok) throw new Error('Failed to mark all messages as read');
+      return response.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/communications/messages/${userId}/${variables}`] 
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+    },
+  });
 
-      // Mark the message as read if it's from the active chat
-      if (activeChat === message.senderId) {
-        socket.emit('mark-read', { messageIds: [message.id] });
-      }
-    });
-
-    socket.on('user-typing', ({ userId, isTyping }: { userId: number; isTyping: boolean }) => {
-      setTypingUsers(prev => ({
-        ...prev,
-        [userId]: isTyping,
-      }));
-    });
-
-    socket.on('message-read', ({ messageId }: { messageId: number }) => {
-      // Update the message as read in the cache
-      queryClient.setQueryData(['/api/communications/messages', activeChat], (oldData: Message[] | undefined) => {
-        if (!oldData) return [];
-        return oldData.map(msg => 
-          msg.id === messageId ? { ...msg, read: true } : msg
-        );
-      });
-    });
-
-    // WebRTC call events
-    socket.on('call-offer', (data: CallData) => {
-      setIncomingCall(data);
-    });
-
-    socket.on('call-answer', ({ from, answer }: { from: number; answer: any }) => {
-      if (peerRef.current && currentCall) {
-        peerRef.current.signal(answer);
-      }
-    });
-
-    socket.on('ice-candidate', ({ from, candidate }: { from: number; candidate: any }) => {
-      if (peerRef.current) {
-        peerRef.current.signal(candidate);
-      }
-    });
-
-    socket.on('call-end', ({ from }: { from: number }) => {
-      endCall();
-    });
-
-    socket.on('screen-share-offer', ({ from, offer }: { from: number; offer: any }) => {
-      // Handle incoming screen share
-    });
-
-    // Clean up
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-      if (peerRef.current) {
-        peerRef.current.destroy();
-      }
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [userId, activeChat, queryClient]);
-
-  // Sends a text message to another user
+  // Send a message via the WebSocket
   const sendMessage = useCallback((receiverId: number, content: string, type: MessageType = 'text') => {
-    if (!socketRef.current || !isConnected) {
-      console.warn('Socket not connected, sending via REST API');
-      sendMessageMutation.mutate({ receiverId, content, type });
-      return;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'message',
+        message: {
+          senderId: userId,
+          receiverId,
+          content,
+          type,
+        },
+      }));
+    }
+    
+    // Also send via HTTP for persistence
+    sendMessageMutation.mutate({ receiverId, content, type });
+  }, [socket, userId, sendMessageMutation]);
+
+  // Handle incoming call
+  const handleIncomingCall = (data: any) => {
+    setIncomingCall(data);
+    // Play ringtone
+    const audio = new Audio('/sounds/ringtone.mp3');
+    audio.loop = true;
+    audio.play().catch(err => console.error('Error playing ringtone:', err));
+    // Store audio element to stop it later
+    (window as any).ringtone = audio;
+  };
+
+  // Handle call answer
+  const handleCallAnswer = async (data: any) => {
+    // Stop ringtone if it's playing
+    if ((window as any).ringtone) {
+      (window as any).ringtone.pause();
+      (window as any).ringtone = null;
     }
 
-    socketRef.current.emit('private-message', {
-      senderId: userId,
-      receiverId,
-      content,
-      type,
-    });
-  }, [userId, isConnected, sendMessageMutation]);
-
-  // Sets the active chat user and marks messages as read
-  const setActiveChatUser = useCallback((userId: number) => {
-    setActiveChat(userId);
-
-    // Mark unread messages as read
-    if (messages.length > 0) {
-      const unreadMessages = messages
-        .filter(msg => msg.senderId === userId && !msg.read)
-        .map(msg => msg.id);
-
-      if (unreadMessages.length > 0 && socketRef.current) {
-        socketRef.current.emit('mark-read', { messageIds: unreadMessages });
+    if (peerConnection.current && data.answer) {
+      try {
+        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+        console.log('Remote description set successfully after answer');
+      } catch (error) {
+        console.error('Error setting remote description after answer:', error);
       }
     }
-  }, [messages]);
+  };
 
-  // Send typing indicator
-  const sendTypingIndicator = useCallback((receiverId: number, isTyping: boolean) => {
-    if (socketRef.current && isConnected) {
-      socketRef.current.emit('typing', {
-        senderId: userId,
-        receiverId,
-        isTyping,
-      });
+  // Handle ICE candidate
+  const handleIceCandidate = (data: any) => {
+    if (peerConnection.current && data.candidate) {
+      try {
+        peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate))
+          .catch(e => console.error('Error adding ice candidate:', e));
+      } catch (error) {
+        console.error('Error creating ICE candidate:', error);
+      }
     }
-  }, [userId, isConnected]);
+  };
 
-  // Start a call (audio or video)
-  const startCall = useCallback(async (receiverId: number, type: 'audio' | 'video') => {
-    if (!socketRef.current || !isConnected) {
-      console.error('Socket not connected');
-      return;
+  // Handle call end
+  const handleCallEnd = () => {
+    // Stop ringtone if it's playing
+    if ((window as any).ringtone) {
+      (window as any).ringtone.pause();
+      (window as any).ringtone = null;
     }
 
+    // Close peer connection
+    if (peerConnection.current) {
+      peerConnection.current.close();
+      peerConnection.current = null;
+    }
+
+    // Stop media streams
+    if (localStream.current) {
+      localStream.current.getTracks().forEach(track => track.stop());
+      localStream.current = null;
+    }
+
+    if (remoteStream.current) {
+      remoteStream.current.getTracks().forEach(track => track.stop());
+      remoteStream.current = null;
+    }
+
+    setActiveCall(null);
+    setIncomingCall(null);
+  };
+
+  // Start a call
+  const startCall = async (receiverId: number, type: 'audio' | 'video') => {
     try {
-      // Get user media based on call type
+      // Create a new RTCPeerConnection
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+      peerConnection.current = pc;
+
+      // Get local media stream
       const constraints = {
         audio: true,
         video: type === 'video',
       };
+      localStream.current = await navigator.mediaDevices.getUserMedia(constraints);
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-
-      // Create peer connection
-      const peer = new SimplePeer({
-        initiator: true,
-        trickle: false,
-        stream,
+      // Add tracks to the peer connection
+      localStream.current.getTracks().forEach(track => {
+        if (localStream.current && peerConnection.current) {
+          peerConnection.current.addTrack(track, localStream.current);
+        }
       });
 
-      peer.on('signal', (data) => {
-        // Send the offer to the receiver
-        socketRef.current?.emit('call-offer', {
+      // Set up remote stream
+      remoteStream.current = new MediaStream();
+      
+      // Handle ICE candidate events
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'call-candidate',
+            candidate: event.candidate,
+            receiverId,
+            callerId: userId,
+          }));
+        }
+      };
+
+      // Handle track events to get remote stream
+      pc.ontrack = (event) => {
+        if (remoteStream.current) {
+          event.streams[0].getTracks().forEach(track => {
+            if (remoteStream.current) {
+              remoteStream.current.addTrack(track);
+            }
+          });
+        }
+      };
+
+      // Create offer
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Send the offer to the receiver
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'call-offer',
           callerId: userId,
           receiverId,
-          offer: data,
           type,
-        });
+          offer,
+        }));
+      }
+
+      setActiveCall({
+        callerId: userId,
+        receiverId,
+        type,
+        offer,
       });
 
-      peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
-      });
-
-      peer.on('close', () => {
-        endCall();
-      });
-
-      peer.on('error', (err) => {
-        console.error('Peer connection error:', err);
-        endCall();
-      });
-
-      peerRef.current = peer;
-      setCurrentCall({ callerId: userId, receiverId, type });
-
+      return { localStream: localStream.current, remoteStream: remoteStream.current };
     } catch (error) {
       console.error('Error starting call:', error);
+      toast({
+        title: 'Call Failed',
+        description: 'Could not start the call. Please check your camera and microphone permissions.',
+        variant: 'destructive',
+      });
+      throw error;
     }
-  }, [userId, isConnected]);
+  };
 
-  // Answer an incoming call
-  const answerCall = useCallback(async () => {
-    if (!socketRef.current || !isConnected || !incomingCall) {
-      console.error('Cannot answer call: Socket not connected or no incoming call');
-      return;
-    }
+  // Answer a call
+  const answerCall = async () => {
+    if (!incomingCall) return;
 
     try {
-      // Get user media based on call type
+      // Stop ringtone if it's playing
+      if ((window as any).ringtone) {
+        (window as any).ringtone.pause();
+        (window as any).ringtone = null;
+      }
+
+      // Create a new RTCPeerConnection
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+        ],
+      });
+      peerConnection.current = pc;
+
+      // Get local media stream
       const constraints = {
         audio: true,
         video: incomingCall.type === 'video',
       };
+      localStream.current = await navigator.mediaDevices.getUserMedia(constraints);
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      localStreamRef.current = stream;
-      setLocalStream(stream);
-
-      // Create peer connection
-      const peer = new SimplePeer({
-        initiator: false,
-        trickle: false,
-        stream,
+      // Add tracks to the peer connection
+      localStream.current.getTracks().forEach(track => {
+        if (localStream.current && peerConnection.current) {
+          peerConnection.current.addTrack(track, localStream.current);
+        }
       });
 
-      peer.on('signal', (data) => {
-        // Send the answer to the caller
-        socketRef.current?.emit('call-answer', {
+      // Set up remote stream
+      remoteStream.current = new MediaStream();
+
+      // Handle ICE candidate events
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'call-candidate',
+            candidate: event.candidate,
+            receiverId: incomingCall.callerId,
+            callerId: userId,
+          }));
+        }
+      };
+
+      // Handle track events to get remote stream
+      pc.ontrack = (event) => {
+        if (remoteStream.current) {
+          event.streams[0].getTracks().forEach(track => {
+            if (remoteStream.current) {
+              remoteStream.current.addTrack(track);
+            }
+          });
+        }
+      };
+
+      // Set remote description from the offer
+      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+
+      // Create answer
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+
+      // Send the answer to the caller
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+          type: 'call-answer',
           callerId: incomingCall.callerId,
           receiverId: userId,
-          answer: data,
-        });
-      });
-
-      peer.on('stream', (remoteStream) => {
-        setRemoteStream(remoteStream);
-      });
-
-      peer.on('close', () => {
-        endCall();
-      });
-
-      peer.on('error', (err) => {
-        console.error('Peer connection error:', err);
-        endCall();
-      });
-
-      // Signal the peer with the offer we received
-      if (incomingCall.offer) {
-        peer.signal(incomingCall.offer);
+          answer,
+        }));
       }
 
-      peerRef.current = peer;
-      setCurrentCall(incomingCall);
+      setActiveCall(incomingCall);
       setIncomingCall(null);
 
+      return { localStream: localStream.current, remoteStream: remoteStream.current };
     } catch (error) {
       console.error('Error answering call:', error);
-      rejectCall();
-    }
-  }, [userId, isConnected, incomingCall]);
-
-  // Reject an incoming call
-  const rejectCall = useCallback(() => {
-    if (socketRef.current && incomingCall) {
-      socketRef.current.emit('call-end', {
-        callerId: userId,
-        receiverId: incomingCall.callerId,
+      toast({
+        title: 'Call Failed',
+        description: 'Could not answer the call. Please check your camera and microphone permissions.',
+        variant: 'destructive',
       });
-      setIncomingCall(null);
+      throw error;
     }
-  }, [userId, incomingCall]);
+  };
 
-  // End current call
-  const endCall = useCallback(() => {
-    if (socketRef.current && currentCall) {
-      socketRef.current.emit('call-end', {
+  // Reject a call
+  const rejectCall = () => {
+    if (!incomingCall) return;
+
+    // Stop ringtone if it's playing
+    if ((window as any).ringtone) {
+      (window as any).ringtone.pause();
+      (window as any).ringtone = null;
+    }
+
+    // Send call-end signal to the caller
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'call-end',
+        callerId: incomingCall.callerId,
+        receiverId: userId,
+      }));
+    }
+
+    setIncomingCall(null);
+  };
+
+  // End a call
+  const endCall = () => {
+    if (!activeCall) return;
+
+    // Send call-end signal to the other user
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({
+        type: 'call-end',
         callerId: userId,
-        receiverId: currentCall.receiverId !== userId ? currentCall.receiverId : currentCall.callerId,
-      });
+        receiverId: activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId,
+      }));
     }
 
-    if (peerRef.current) {
-      peerRef.current.destroy();
-      peerRef.current = null;
-    }
-
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
-      localStreamRef.current = null;
-    }
-
-    setLocalStream(null);
-    setRemoteStream(null);
-    setCurrentCall(null);
-  }, [userId, currentCall]);
-
-  // Share screen during a call
-  const shareScreen = useCallback(async () => {
-    if (!socketRef.current || !isConnected || !currentCall) {
-      console.error('Cannot share screen: No active call');
-      return;
-    }
-
-    try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      
-      // Replace video track in the peer connection
-      if (peerRef.current && localStreamRef.current) {
-        const videoTrack = screenStream.getVideoTracks()[0];
-        const senders = peerRef.current._pc.getSenders();
-        const videoSender = senders.find((sender: RTCRtpSender) => 
-          sender.track?.kind === 'video'
-        );
-        
-        if (videoSender) {
-          videoSender.replaceTrack(videoTrack);
-        }
-
-        // Update local stream ref and state
-        const newStream = new MediaStream();
-        newStream.addTrack(videoTrack);
-        localStreamRef.current.getAudioTracks().forEach(track => {
-          newStream.addTrack(track);
-        });
-        
-        localStreamRef.current = newStream;
-        setLocalStream(newStream);
-
-        // Handle screen share end
-        videoTrack.onended = () => {
-          // Revert to camera
-          navigator.mediaDevices.getUserMedia({ video: true }).then(cameraStream => {
-            const cameraTrack = cameraStream.getVideoTracks()[0];
-            videoSender.replaceTrack(cameraTrack);
-            
-            const newLocalStream = new MediaStream();
-            newLocalStream.addTrack(cameraTrack);
-            localStreamRef.current?.getAudioTracks().forEach(track => {
-              newLocalStream.addTrack(track);
-            });
-            
-            localStreamRef.current = newLocalStream;
-            setLocalStream(newLocalStream);
-          });
-        };
-      }
-    } catch (error) {
-      console.error('Error sharing screen:', error);
-    }
-  }, [isConnected, currentCall]);
+    handleCallEnd();
+  };
 
   return {
-    // State
-    isConnected,
-    onlineUsers: [...onlineUsers, ...users.filter(u => !onlineUsers.some(ou => ou.id === u.id))],
-    activeChat,
-    typingUsers,
     conversations,
-    messages,
-    incomingCall,
-    currentCall,
-    localStream,
-    remoteStream,
-    
-    // Actions
+    conversationsLoading,
+    onlineUsers,
+    getMessages,
     sendMessage,
-    setActiveChatUser,
-    sendTypingIndicator,
+    markAsRead: markAsReadMutation.mutate,
+    markAllAsRead: markAllAsReadMutation.mutate,
     startCall,
     answerCall,
     rejectCall,
     endCall,
-    shareScreen
+    activeCall,
+    incomingCall,
+    localStream: localStream.current,
+    remoteStream: remoteStream.current,
   };
 }
-
-export default useCommunication;
