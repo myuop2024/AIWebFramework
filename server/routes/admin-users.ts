@@ -5,6 +5,11 @@ import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '
 
 const router = Router();
 
+// Schema for verification status update
+const verificationStatusSchema = z.object({
+  verificationStatus: z.enum(['pending', 'verified', 'rejected'])
+});
+
 // Get all users
 router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
@@ -19,10 +24,15 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
       lastName: user.lastName || '',
       role: user.role,
       observerId: user.observerId,
-      // Handle missing fields with defaults
+      // Map verificationStatus to match the client expectations
+      verificationStatus: user.verificationStatus || 'pending',
+      // Also provide isActive for backwards compatibility
       isActive: user.verificationStatus === 'approved',
-      createdAt: user.createdAt || new Date(),
-      updatedAt: user.updatedAt || new Date()
+      // Add training status with default
+      trainingStatus: user.trainingStatus || 'not_started',
+      // Add phone number if available
+      phoneNumber: user.phoneNumber || null,
+      createdAt: user.createdAt || new Date()
     }));
     
     res.json(safeUsers);
@@ -117,6 +127,49 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
   } catch (error) {
     console.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Update user verification status
+router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
+    // Validate input
+    const validationResult = verificationStatusSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: 'Invalid verification status',
+        details: validationResult.error
+      });
+    }
+    
+    const { verificationStatus } = validationResult.data;
+    
+    // Get user to update
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update user verification status
+    const updatedUser = await storage.updateUser(userId, { verificationStatus });
+    if (!updatedUser) {
+      return res.status(500).json({ error: 'Failed to update verification status' });
+    }
+    
+    // Return updated user info
+    res.json({
+      id: updatedUser.id,
+      verificationStatus: updatedUser.verificationStatus,
+      message: `User verification status updated to ${verificationStatus}`
+    });
+  } catch (error) {
+    console.error('Error updating verification status:', error);
+    res.status(500).json({ error: 'Failed to update verification status' });
   }
 });
 

@@ -22,10 +22,12 @@ interface User {
   username: string;
   observerId: string;
   role: string;
-  verificationStatus: string;
-  trainingStatus: string;
+  // Using the fields returned by our API
+  verificationStatus?: string;
+  isActive?: boolean; // For backward compatibility
+  trainingStatus?: string;
   phoneNumber?: string;
-  createdAt: string;
+  createdAt: string | Date;
 }
 
 export function UserManagement() {
@@ -44,10 +46,11 @@ export function UserManagement() {
   // Update user verification status
   const updateVerification = useMutation({
     mutationFn: async ({ userId, status }: { userId: number, status: string }) => {
-      return apiRequest(`/api/admin/users/${userId}/verify`, {
-        method: 'POST',
-        data: { verificationStatus: status }
-      });
+      return apiRequest(
+        'POST',
+        `/api/admin/users/${userId}/verify`, 
+        { verificationStatus: status }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
@@ -56,7 +59,8 @@ export function UserManagement() {
         description: "The verification status has been updated successfully.",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error updating user status:', error);
       toast({
         title: "Failed to update status",
         description: "There was an error updating the verification status.",
@@ -97,7 +101,7 @@ export function UserManagement() {
   };
 
   // Get verification status badge
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string = 'pending') => {
     switch (status) {
       case "verified":
         return <Badge className="bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Verified</Badge>;
@@ -111,7 +115,7 @@ export function UserManagement() {
   };
 
   // Get training status badge
-  const getTrainingBadge = (status: string) => {
+  const getTrainingBadge = (status: string = 'not_started') => {
     switch (status) {
       case "completed":
         return <Badge className="bg-green-600">Completed</Badge>;
@@ -120,7 +124,7 @@ export function UserManagement() {
       case "not_started":
         return <Badge variant="outline">Not Started</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline">{status || 'Not Started'}</Badge>;
     }
   };
 
