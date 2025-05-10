@@ -249,7 +249,7 @@ export function CommunicationCenter({ userId }: CommunicationCenterProps) {
   };
 
   // Get user by ID
-  const getUserById = (id: number): User | undefined => {
+  const getUserById = (id: number): CommunicationUser | undefined => {
     const onlineUser = onlineUsers.find(user => user.id === id);
     if (onlineUser) return onlineUser;
     
