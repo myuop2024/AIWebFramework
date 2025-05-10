@@ -11,10 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { formatDistanceToNow } from 'date-fns';
 import { 
   MessageSquare, Phone, Video, Send, Paperclip, Image, Mic, 
-  User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff 
+  User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCommunication, type Message, type User as CommunicationUser } from '@/hooks/use-communication';
+import { useQuery } from '@tanstack/react-query';
+import { Spinner } from '@/components/ui/spinner';
 
 interface CommunicationCenterProps {
   userId: number;
@@ -28,6 +30,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [contactsSearchQuery, setContactsSearchQuery] = useState('');
+  const [showUserSearch, setShowUserSearch] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -51,9 +56,35 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     remoteStream
   } = useCommunication(userId);
 
+  // Get all users for site-wide search
+  const { data: allUsers, isLoading: allUsersLoading } = useQuery({
+    queryKey: ['/api/communications/online-users'],
+    queryFn: async () => {
+      const response = await fetch('/api/communications/online-users');
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    },
+    staleTime: 10000 // 10 seconds
+  });
+
   // Get messages for the active chat
   const { data: messages, isLoading: messagesLoading } = 
     useGetMessages(activeChatUserId);
+
+  // Filter conversations based on search query
+  const filteredConversations = conversations?.filter(conversation => 
+    conversation.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter contacts based on search query
+  const filteredContacts = onlineUsers.filter(user => 
+    user.username.toLowerCase().includes(contactsSearchQuery.toLowerCase())
+  );
+
+  // Filter all users based on search query
+  const filteredAllUsers = allUsers?.filter(user => 
+    user.username.toLowerCase().includes(contactsSearchQuery.toLowerCase())
+  );
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
@@ -264,6 +295,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       };
     }
     
+    // If not in conversations, check all users
+    const allUser = allUsers?.find(user => user.id === id);
+    if (allUser) {
+      return {
+        id: allUser.id,
+        username: allUser.username,
+        status: allUser.status
+      };
+    }
+    
     return undefined;
   };
 
@@ -273,6 +314,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Check if a user is online
   const isUserOnline = (userId: number): boolean => {
     return onlineUsers.some(user => user.id === userId && user.status === 'online');
+  };
+  
+  // Start a chat with a user
+  const startChat = (userId: number) => {
+    setActiveChatUserId(userId);
+    setShowUserSearch(false);
   };
 
   return (
@@ -297,19 +344,24 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           <div className="flex h-full overflow-hidden">
             <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
-                <Input 
-                  placeholder="Search conversations..." 
-                  className="border-0 bg-secondary text-sm" 
-                />
+                <div className="relative">
+                  <Input 
+                    placeholder="Search conversations..." 
+                    className="border-0 bg-secondary text-sm pl-9" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
               <ScrollArea className="flex-grow">
                 {conversationsLoading ? (
                   <div className="flex justify-center items-center h-32">
                     <p className="text-sm text-muted-foreground">Loading conversations...</p>
                   </div>
-                ) : conversations && conversations.length > 0 ? (
+                ) : filteredConversations && filteredConversations.length > 0 ? (
                   <div className="px-2">
-                    {conversations.map((conversation) => (
+                    {filteredConversations.map((conversation) => (
                       <div 
                         key={conversation.userId} 
                         className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${
@@ -358,35 +410,63 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-32 px-4">
-                    <p className="text-sm text-muted-foreground text-center">No conversations yet</p>
-                    <p className="text-xs text-muted-foreground text-center mt-1">
-                      Start a new chat by selecting a contact from the Contacts tab
+                    <p className="text-sm text-muted-foreground text-center">
+                      {searchQuery ? 'No matches found' : 'No conversations yet'}
                     </p>
+                    {!searchQuery && (
+                      <p className="text-xs text-muted-foreground text-center mt-1">
+                        Start a new chat by selecting a contact from the Contacts tab
+                      </p>
+                    )}
                   </div>
                 )}
               </ScrollArea>
+              <div className="p-3 border-t">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center" 
+                  onClick={() => setShowUserSearch(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  New Conversation
+                </Button>
+              </div>
             </TabsContent>
             
             <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
-                <Input 
-                  placeholder="Search contacts..." 
-                  className="border-0 bg-secondary text-sm"
-                />
+                <div className="relative">
+                  <Input 
+                    placeholder="Search contacts..." 
+                    className="border-0 bg-secondary text-sm pl-9"
+                    value={contactsSearchQuery}
+                    onChange={(e) => setContactsSearchQuery(e.target.value)}
+                  />
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
-              <div className="px-3 py-2 flex items-center justify-between">
-                <h3 className="text-sm font-medium">Online Users</h3>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+              <div className="px-3 py-2 flex items-center justify-between border-b">
+                <h3 className="text-sm font-medium">Online Users ({onlineUsers.length})</h3>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => setShowUserSearch(true)}
+                >
                   <UserPlus className="h-4 w-4" />
                 </Button>
               </div>
               <ScrollArea className="flex-grow">
-                <div className="px-2">
-                  {onlineUsers.length > 0 ? (
-                    onlineUsers.map(user => (
+                <div className="px-2 py-2">
+                  {filteredContacts.length > 0 ? (
+                    filteredContacts.map(user => (
                       <div 
                         key={user.id} 
-                        className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-secondary/50"
+                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${
+                          activeChatUserId === user.id
+                            ? 'bg-secondary'
+                            : 'hover:bg-secondary/50'
+                        }`}
                         onClick={() => setActiveChatUserId(user.id)}
                       >
                         <div className="relative">
@@ -407,7 +487,53 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     ))
                   ) : (
                     <div className="flex justify-center items-center h-32">
-                      <p className="text-sm text-muted-foreground">No users online</p>
+                      <p className="text-sm text-muted-foreground">
+                        {contactsSearchQuery ? 'No matches found' : 'No users online'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* All Users Section */}
+                <div className="px-3 py-2 border-t mt-2">
+                  <h3 className="text-sm font-medium">All Users</h3>
+                </div>
+                <div className="px-2">
+                  {allUsersLoading ? (
+                    <div className="flex justify-center items-center py-4">
+                      <p className="text-sm text-muted-foreground">Loading users...</p>
+                    </div>
+                  ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
+                    filteredAllUsers.map(user => (
+                      <div 
+                        key={user.id} 
+                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${
+                          activeChatUserId === user.id
+                            ? 'bg-secondary'
+                            : 'hover:bg-secondary/50'
+                        }`}
+                        onClick={() => setActiveChatUserId(user.id)}
+                      >
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                            user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.username}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{user.status}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex justify-center items-center py-4">
+                      <p className="text-sm text-muted-foreground">
+                        {contactsSearchQuery ? 'No matches found' : 'No users available'}
+                      </p>
                     </div>
                   )}
                 </div>
