@@ -139,7 +139,7 @@ export function useCommunication(userId: number) {
       queryKey: [`/api/communications/messages/${userId}/${otherUserId}`],
       queryFn: async () => {
         if (!otherUserId) return [];
-        const response = await fetch(`/api/communications/messages/${otherUserId}`);
+        const response = await fetch(`/api/communications/messages/${userId}/${otherUserId}`);
         if (!response.ok) throw new Error('Failed to fetch messages');
         const data = await response.json();
         return data;
