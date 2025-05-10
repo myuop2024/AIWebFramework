@@ -45,7 +45,7 @@ export default function Chat() {
         description="Chat with other observers and staff members in real-time"
       />
       <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)]">
-        <CommunicationCenter userId={user.id} />
+        <CommunicationCenter userId={user.id} hideHeader={true} />
       </div>
     </MainLayout>
   );

@@ -18,9 +18,10 @@ import { useCommunication, type Message, type User as CommunicationUser } from '
 
 interface CommunicationCenterProps {
   userId: number;
+  hideHeader?: boolean; // Optional prop to hide the header tabs
 }
 
-export function CommunicationCenter({ userId }: CommunicationCenterProps) {
+export function CommunicationCenter({ userId, hideHeader = false }: CommunicationCenterProps) {
   const [activeChatUserId, setActiveChatUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
@@ -278,18 +279,20 @@ export function CommunicationCenter({ userId }: CommunicationCenterProps) {
     <Card className="h-full border-none shadow-none">
       <CardContent className="p-0 h-full">
         <Tabs defaultValue="chats" className="h-full flex flex-col">
-          <div className="border-b px-4">
-            <TabsList className="justify-start bg-transparent border-b-0 px-0 py-1">
-              <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Chats
-              </TabsTrigger>
-              <TabsTrigger value="contacts" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                <Users className="h-4 w-4 mr-2" />
-                Contacts
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          {!hideHeader && (
+            <div className="border-b px-4">
+              <TabsList className="justify-start bg-transparent border-b-0 px-0 py-1">
+                <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Chats
+                </TabsTrigger>
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                  <Users className="h-4 w-4 mr-2" />
+                  Contacts
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          )}
           
           <div className="flex h-full overflow-hidden">
             <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
