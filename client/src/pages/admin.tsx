@@ -904,17 +904,17 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Pending Documents</span>
-                  <Badge variant="secondary">{usersLoading ? "..." : "18"}</Badge>
+                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.users?.byRole?.pending_documents || "0"}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">ID Verifications</span>
                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {usersLoading ? "..." : "7"}
+                    {statsLoading ? "..." : systemStats?.users?.byRole?.pending_verification || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Rejected</span>
-                  <Badge variant="destructive">{usersLoading ? "..." : "3"}</Badge>
+                  <Badge variant="destructive">{statsLoading ? "..." : systemStats?.users?.byRole?.rejected || "0"}</Badge>
                 </div>
               </CardContent>
               <CardFooter>
@@ -1094,17 +1094,25 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Stations</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : "124"}</Badge>
+                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.pollingStations?.total || "0"}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Active Stations</span>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {statsLoading ? "..." : "118"}
+                    {statsLoading ? "..." : 
+                      // Calculate active stations by subtracting high-risk (inactive) stations from total
+                      (systemStats?.pollingStations?.total || 0) - (systemStats?.pollingStations?.riskAssessment?.highRisk || 0)
+                    }
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Observer Coverage</span>
-                  <Badge>{statsLoading ? "..." : "82%"}</Badge>
+                  <Badge>{statsLoading ? "..." : 
+                    // Calculate percentage of stations that have observer coverage
+                    systemStats?.pollingStations?.total && systemStats.assignments?.active
+                      ? Math.round((systemStats.assignments.active / systemStats.pollingStations.total) * 100) + "%"
+                      : "0%"
+                  }</Badge>
                 </div>
               </CardContent>
               <CardFooter>
@@ -1132,17 +1140,24 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Assignments</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : "211"}</Badge>
+                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.assignments?.active || "0"}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Unassigned Stations</span>
                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : "22"}
+                    {statsLoading ? "..." : 
+                      // Calculate unassigned stations
+                      Math.max(0, (systemStats?.pollingStations?.total || 0) - (systemStats?.assignments?.active || 0))
+                    }
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Scheduling Conflicts</span>
-                  <Badge variant="destructive">{statsLoading ? "..." : "5"}</Badge>
+                  <span className="text-sm font-medium">Coverage Rate</span>
+                  <Badge>{statsLoading ? "..." : 
+                    systemStats?.pollingStations?.total && systemStats?.assignments?.active
+                      ? Math.round((systemStats.assignments.active / systemStats.pollingStations.total) * 100) + "%"
+                      : "0%"
+                  }</Badge>
                 </div>
               </CardContent>
               <CardFooter>
@@ -1170,18 +1185,18 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">High Risk Stations</span>
-                  <Badge variant="destructive">{statsLoading ? "..." : "14"}</Badge>
+                  <Badge variant="destructive">{statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.highRisk || "0"}</Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Medium Risk</span>
                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : "32"}
+                    {statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.mediumRisk || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Low Risk</span>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {statsLoading ? "..." : "78"}
+                    {statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.lowRisk || "0"}
                   </Badge>
                 </div>
               </CardContent>
@@ -1215,17 +1230,24 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Total Reports</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : "342"}</Badge>
+                  <Badge variant="secondary">
+                    {statsLoading ? "..." : 
+                      // Sum all report counts from all statuses
+                      Object.values(systemStats?.reports?.byStatus || {}).reduce((sum: number, count: number) => sum + count, 0)
+                    }
+                  </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Pending Review</span>
                   <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : "18"}
+                    {statsLoading ? "..." : systemStats?.reports?.pending || "0"}
                   </Badge>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Flagged Issues</span>
-                  <Badge variant="destructive">{statsLoading ? "..." : "7"}</Badge>
+                  <Badge variant="destructive">
+                    {statsLoading ? "..." : systemStats?.reports?.byType?.flagged || "0"}
+                  </Badge>
                 </div>
               </CardContent>
               <CardFooter>
