@@ -96,45 +96,50 @@ export default function Admin() {
   const handleManageUsers = () => {
     setIsActionLoading(true);
     
-    // Simulate API call to get users
     setTimeout(() => {
       setIsActionLoading(false);
+      
+      // Create user list HTML from actual user data
+      let usersHtml = '';
+      
+      if (usersData && Array.isArray(usersData)) {
+        usersData.forEach(user => {
+          const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
+          const observerId = user.observerId || `OBS${String(user.id).padStart(3, '0')}`;
+          const statusClass = user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+          const statusText = user.isActive ? 'Active' : 'Inactive';
+          
+          usersHtml += `
+            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
+              <div>
+                <div class="font-medium">${fullName}</div>
+                <div class="text-sm text-gray-500">
+                  Observer ID: ${observerId} 
+                  <span class="px-2 py-0.5 rounded-full text-xs ${statusClass}">${statusText}</span>
+                </div>
+              </div>
+              <div class="flex gap-2">
+                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
+                  ${user.isActive ? 'Disable' : 'Enable'}
+                </button>
+              </div>
+            </li>
+          `;
+        });
+      } else {
+        usersHtml = '<li class="p-2">No users found</li>';
+      }
+      
+      const totalUsers = usersData ? usersData.length : 0;
+      
       openModal(
         "User Management", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">All Users (234)</h3>
+          <h3 class="text-lg font-medium mb-4">All Users (${totalUsers})</h3>
           <ul class="space-y-2">
-            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
-              <div>
-                <div class="font-medium">John Smith</div>
-                <div class="text-sm text-gray-500">Observer ID: OBS001</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
-              </div>
-            </li>
-            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
-              <div>
-                <div class="font-medium">Sarah Wilson</div>
-                <div class="text-sm text-gray-500">Observer ID: OBS002</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
-              </div>
-            </li>
-            <li class="flex justify-between items-center p-2 bg-gray-50 rounded">
-              <div>
-                <div class="font-medium">Michael Johnson</div>
-                <div class="text-sm text-gray-500">Observer ID: OBS003</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Disable</button>
-              </div>
-            </li>
+            ${usersHtml}
           </ul>
         </div>
         `
@@ -146,39 +151,56 @@ export default function Admin() {
   const handleProcessVerifications = () => {
     setIsActionLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsActionLoading(false);
+      
+      // Filter users with pending verification
+      let pendingUsersHtml = '';
+      let pendingCount = 0;
+      
+      if (usersData && Array.isArray(usersData)) {
+        // Filter users with pending verification status
+        const pendingUsers = usersData.filter(user => 
+          user.verificationStatus === 'pending' || 
+          (!user.isActive && !user.verificationStatus)
+        );
+        
+        pendingCount = pendingUsers.length;
+        
+        if (pendingUsers.length > 0) {
+          pendingUsers.forEach(user => {
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username;
+            const observerId = user.observerId || `OBS${String(user.id).padStart(3, '0')}`;
+            
+            pendingUsersHtml += `
+              <li class="p-3 border rounded">
+                <div class="flex justify-between mb-2">
+                  <div class="font-medium">${fullName}</div>
+                  <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
+                </div>
+                <div class="text-sm text-gray-500 mb-2">Observer ID: ${observerId}</div>
+                <div class="flex gap-2">
+                  <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
+                  <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
+                </div>
+              </li>
+            `;
+          });
+        } else {
+          pendingUsersHtml = '<li class="p-3 border rounded text-center">No pending verifications</li>';
+        }
+      } else {
+        pendingUsersHtml = '<li class="p-3 border rounded text-center">No data available</li>';
+      }
+      
       openModal(
         "User Verification", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">Pending Verifications (18)</h3>
+          <h3 class="text-lg font-medium mb-4">Pending Verifications (${pendingCount})</h3>
           <ul class="space-y-4">
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">John Smith</div>
-                <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
-              </div>
-              <div class="text-sm text-gray-500 mb-2">Observer ID: OBS001</div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-              </div>
-            </li>
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Sarah Wilson</div>
-                <div class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Pending</div>
-              </div>
-              <div class="text-sm text-gray-500 mb-2">Observer ID: OBS002</div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Approve</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Reject</button>
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-              </div>
-            </li>
+            ${pendingUsersHtml}
           </ul>
         </div>
         `
@@ -247,14 +269,50 @@ export default function Admin() {
   const handleManageStations = () => {
     setIsActionLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsActionLoading(false);
+      
+      // Create station list HTML from actual polling station data
+      let stationsHtml = '';
+      let stationCount = 0;
+      
+      // Get polling stations from systemStats
+      if (systemStats?.pollingStations && Array.isArray(systemStats.pollingStations)) {
+        stationCount = systemStats.pollingStations.length;
+        
+        if (systemStats.pollingStations.length > 0) {
+          systemStats.pollingStations.forEach(station => {
+            const stationCode = station.code || `STA${String(station.id).padStart(3, '0')}`;
+            const cityInfo = station.city ? `City: ${station.city}` : '';
+            const capacityInfo = station.capacity ? `Cap: ${station.capacity}` : '';
+            const locationInfo = [cityInfo, capacityInfo].filter(Boolean).join(', ');
+            
+            stationsHtml += `
+              <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
+                <div>
+                  <div class="font-medium">${station.name}</div>
+                  <div class="text-sm text-gray-500">Station Code: ${stationCode}</div>
+                  ${locationInfo ? `<div class="text-xs text-gray-500">${locationInfo}</div>` : ''}
+                </div>
+                <div class="flex gap-2">
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                  <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          stationsHtml = '<div class="p-4 text-center">No polling stations found</div>';
+        }
+      } else {
+        stationsHtml = '<div class="p-4 text-center">No polling station data available</div>';
+      }
+      
       openModal(
         "Polling Station Management", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">All Polling Stations (124)</h3>
+          <h3 class="text-lg font-medium mb-4">All Polling Stations (${stationCount})</h3>
           <div class="mb-4">
             <input type="text" placeholder="Search stations..." class="w-full p-2 border rounded mb-4" />
             <div class="flex gap-2 mb-4">
@@ -265,46 +323,12 @@ export default function Admin() {
           </div>
           
           <div class="space-y-3">
-            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
-              <div>
-                <div class="font-medium">Central High School</div>
-                <div class="text-sm text-gray-500">Station Code: STA001</div>
-                <div class="text-xs text-gray-500">City: Springfield, Cap: 1200</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
-              <div>
-                <div class="font-medium">Town Hall</div>
-                <div class="text-sm text-gray-500">Station Code: STA002</div>
-                <div class="text-xs text-gray-500">City: Springfield, Cap: 800</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
-              <div>
-                <div class="font-medium">Community Center</div>
-                <div class="text-sm text-gray-500">Station Code: STA003</div>
-                <div class="text-xs text-gray-500">City: Riverside, Cap: 650</div>
-              </div>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
-              </div>
-            </div>
+            ${stationsHtml}
           </div>
           
           <div class="mt-4 flex justify-between">
             <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
-            <span class="text-sm">Page 1 of 12</span>
+            <span class="text-sm">Page 1 of 1</span>
             <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
           </div>
         </div>
@@ -317,21 +341,94 @@ export default function Admin() {
   const handleManageAssignments = () => {
     setIsActionLoading(true);
     
-    // Simulate API call
     setTimeout(() => {
       setIsActionLoading(false);
+      
+      // Create assignments list HTML from actual assignment data
+      let assignmentsHtml = '';
+      let assignmentCount = 0;
+      let stationOptions = '';
+      
+      // Get stations and assignments from systemStats
+      if (systemStats?.assignments && Array.isArray(systemStats.assignments)) {
+        assignmentCount = systemStats.assignments.length;
+        
+        // Add station options for dropdown
+        if (systemStats.pollingStations && Array.isArray(systemStats.pollingStations)) {
+          systemStats.pollingStations.forEach(station => {
+            stationOptions += `<option>${station.name}</option>`;
+          });
+        }
+        
+        if (systemStats.assignments.length > 0) {
+          systemStats.assignments.forEach(assignment => {
+            // Find related polling station
+            const stationName = assignment.stationName || "Unknown Station";
+            
+            // Find related user
+            const userFullName = assignment.userFullName || "Unknown Observer";
+            const observerId = assignment.observerId || `OBS${String(assignment.userId || 0).padStart(3, '0')}`;
+            
+            // Format dates
+            const startDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
+            const endDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
+            
+            const startDateFormatted = startDate.toLocaleDateString('en-US', { 
+              year: 'numeric', month: 'short', day: 'numeric'
+            });
+            const startTimeFormatted = startDate.toLocaleTimeString('en-US', { 
+              hour: '2-digit', minute: '2-digit', hour12: false
+            });
+            const endTimeFormatted = endDate.toLocaleTimeString('en-US', { 
+              hour: '2-digit', minute: '2-digit', hour12: false
+            });
+            
+            const dateTimeStr = `${startDateFormatted} ${startTimeFormatted} - ${endTimeFormatted}`;
+            
+            // Determine status
+            const statusClass = assignment.status === 'active' || assignment.isActive 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-gray-100 text-gray-800';
+            const statusText = assignment.status === 'active' || assignment.isActive 
+              ? 'Active' 
+              : 'Scheduled';
+            
+            assignmentsHtml += `
+              <div class="p-3 bg-gray-50 rounded border">
+                <div class="flex justify-between mb-2">
+                  <div class="font-medium">${stationName}</div>
+                  <div class="px-2 py-1 ${statusClass} rounded text-xs">${statusText}</div>
+                </div>
+                <div class="text-sm text-gray-500 mb-1">Observer: ${userFullName} (${observerId})</div>
+                <div class="text-sm text-gray-500 mb-1">${dateTimeStr}</div>
+                <div class="flex gap-2 mt-2">
+                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
+                  <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
+                  ${assignment.status === 'active' || assignment.isActive 
+                    ? `<button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>` 
+                    : ''
+                  }
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          assignmentsHtml = '<div class="p-4 text-center">No assignments found</div>';
+        }
+      } else {
+        assignmentsHtml = '<div class="p-4 text-center">No assignment data available</div>';
+      }
+      
       openModal(
         "Station Assignments", 
         `
         <div>
-          <h3 class="text-lg font-medium mb-4">Observer Assignments</h3>
+          <h3 class="text-lg font-medium mb-4">Observer Assignments (${assignmentCount})</h3>
           <div class="mb-4">
             <div class="grid grid-cols-2 gap-4 mb-4">
               <select class="p-2 border rounded">
                 <option>All Stations</option>
-                <option>Central High School</option>
-                <option>Town Hall</option>
-                <option>Community Center</option>
+                ${stationOptions}
               </select>
               <select class="p-2 border rounded">
                 <option>All Statuses</option>
@@ -344,51 +441,12 @@ export default function Admin() {
           </div>
           
           <div class="space-y-3">
-            <div class="p-3 bg-gray-50 rounded border">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Central High School</div>
-                <div class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Active</div>
-              </div>
-              <div class="text-sm text-gray-500 mb-1">Observer: John Smith (OBS001)</div>
-              <div class="text-sm text-gray-500 mb-1">May 6, 2025 08:00 - 20:00</div>
-              <div class="flex gap-2 mt-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
-                <button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Town Hall</div>
-                <div class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Active</div>
-              </div>
-              <div class="text-sm text-gray-500 mb-1">Observer: Sarah Wilson (OBS002)</div>
-              <div class="text-sm text-gray-500 mb-1">May 6, 2025 08:00 - 16:00</div>
-              <div class="flex gap-2 mt-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
-                <button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border">
-              <div class="flex justify-between mb-2">
-                <div class="font-medium">Community Center</div>
-                <div class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Scheduled</div>
-              </div>
-              <div class="text-sm text-gray-500 mb-1">Observer: Michael Johnson (OBS003)</div>
-              <div class="text-sm text-gray-500 mb-1">May 7, 2025 08:00 - 20:00</div>
-              <div class="flex gap-2 mt-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
-              </div>
-            </div>
+            ${assignmentsHtml}
           </div>
           
           <div class="mt-4 flex justify-between">
             <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
-            <span class="text-sm">Page 1 of 8</span>
+            <span class="text-sm">Page 1 of 1</span>
             <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
           </div>
         </div>
