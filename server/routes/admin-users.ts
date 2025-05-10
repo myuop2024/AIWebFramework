@@ -72,7 +72,6 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
       // Add proper verification status in response
       verificationStatus: user.verificationStatus || 'pending',
       createdAt: user.createdAt || new Date(),
-      updatedAt: user.updatedAt || new Date(),
       profile: profile || null
     };
     
@@ -123,8 +122,8 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
       role: updatedUser.role,
       observerId: updatedUser.observerId,
       // Handle missing fields with defaults
-      isActive: updatedUser.verificationStatus === 'approved',
-      updatedAt: updatedUser.updatedAt || new Date()
+      isActive: updatedUser.verificationStatus === 'verified',
+      verificationStatus: updatedUser.verificationStatus || 'pending'
     });
   } catch (error) {
     console.error('Error updating user:', error);
@@ -190,8 +189,8 @@ router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, asy
     }
     
     // Get current status and toggle it
-    const currentStatus = user.verificationStatus === 'approved';
-    const newVerificationStatus = currentStatus ? 'pending' : 'approved';
+    const currentStatus = user.verificationStatus === 'verified';
+    const newVerificationStatus = currentStatus ? 'pending' : 'verified';
     
     // Update with the new status
     const updatedUser = await storage.updateUser(userId, { 
@@ -203,7 +202,7 @@ router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, asy
     }
     
     // For response, map verification status to isActive
-    const isActive = updatedUser.verificationStatus === 'approved';
+    const isActive = updatedUser.verificationStatus === 'verified';
     
     res.json({
       id: updatedUser.id,
