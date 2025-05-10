@@ -131,6 +131,44 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
   }
 });
 
+// Get user documents for verification
+router.get('/api/admin/users/:id/documents', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    
+    // Check if the user exists
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Get all documents for this user
+    const documents = await storage.getDocumentsByUserId(userId);
+    
+    // Get user profile for additional verification data
+    const profile = await storage.getUserProfile(userId);
+    
+    // Return the documents and profile info
+    res.json({
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        verificationStatus: user.verificationStatus
+      },
+      documents,
+      profile
+    });
+  } catch (error) {
+    console.error('Error fetching user documents:', error);
+    res.status(500).json({ error: 'Failed to fetch user documents' });
+  }
+});
+
 // Update user verification status
 router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
