@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import PageHeader from '@/components/layout/page-header';
-import { CommunicationCenter } from '@/components/communication/communication-center';
+import { CommunicationCenter } from '@/components/communication/communication-center-fixed';
 import { Loader2 } from 'lucide-react';
 
 export default function Chat() {

@@ -1,6 +1,6 @@
 import React from 'react';
 import PageHeader from '@/components/layout/page-header';
-import { CommunicationCenter } from '@/components/communication/communication-center';
+import { CommunicationCenter } from '@/components/communication/communication-center-fixed';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 
