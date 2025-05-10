@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage, IStorage } from "./storage";
-// WebSocket imports removed, will be reinstated when reimplementing chat
+import { createCommunicationService } from "./services/communication-service";
 import { 
   loginUserSchema, 
   insertUserSchema, 
@@ -23,6 +23,7 @@ import adminRolesRoutes from './routes/admin-roles';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
+import communicationRoutes, { setCommunicationService } from './routes/communication-routes';
 import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
@@ -66,9 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(uploadsDir));
   console.log(`Serving static files from: ${uploadsDir}`);
 
-  // WebSocket communication functionality has been removed
-  // It will be reimplemented from scratch with improved architecture
-  console.log('WebSocket/Socket.io functionality temporarily disabled for rebuild');
+  // Initialize the communication service
+  const communicationService = createCommunicationService(httpServer);
+  console.log('Communication service initialized with WebSocket support');
 
   // User metadata route for device binding UI (limited information)
   app.get('/api/users/metadata', async (req, res) => {
