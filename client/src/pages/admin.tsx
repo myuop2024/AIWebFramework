@@ -118,7 +118,9 @@ export default function Admin() {
   const handleProcessVerifications = () => {
     setIsActionLoading(true);
     
-    import('@/components/admin/verification-queue').then(({ VerificationQueue }) => {
+    import('@/components/admin/verification-queue').then((module) => {
+      // Make sure we get the component correctly regardless of export style
+      const VerificationQueue = module.default || module.VerificationQueue;
       setIsActionLoading(false);
       openModal(
         "User Verification", 
@@ -218,118 +220,22 @@ export default function Admin() {
   const handleManageAssignments = () => {
     setIsActionLoading(true);
     
-    setTimeout(() => {
+    // Import dynamically to avoid circular dependencies
+    import('@/components/admin/assignment-management').then(({ AssignmentManagement }) => {
       setIsActionLoading(false);
-      
-      // Create assignments list HTML from actual assignment data
-      let assignmentsHtml = '';
-      let assignmentCount = 0;
-      let stationOptions = '';
-      
-      // Get stations and assignments from systemStats
-      if (systemStats?.assignments && Array.isArray(systemStats.assignments)) {
-        assignmentCount = systemStats.assignments.length;
-        
-        // Add station options for dropdown
-        if (systemStats.pollingStations && Array.isArray(systemStats.pollingStations)) {
-          systemStats.pollingStations.forEach(station => {
-            stationOptions += `<option>${station.name}</option>`;
-          });
-        }
-        
-        if (systemStats.assignments.length > 0) {
-          systemStats.assignments.forEach(assignment => {
-            // Find related polling station
-            const stationName = assignment.stationName || "Unknown Station";
-            
-            // Find related user
-            const userFullName = assignment.userFullName || "Unknown Observer";
-            const observerId = assignment.observerId || `OBS${String(assignment.userId || 0).padStart(3, '0')}`;
-            
-            // Format dates
-            const startDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
-            const endDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
-            
-            const startDateFormatted = startDate.toLocaleDateString('en-US', { 
-              year: 'numeric', month: 'short', day: 'numeric'
-            });
-            const startTimeFormatted = startDate.toLocaleTimeString('en-US', { 
-              hour: '2-digit', minute: '2-digit', hour12: false
-            });
-            const endTimeFormatted = endDate.toLocaleTimeString('en-US', { 
-              hour: '2-digit', minute: '2-digit', hour12: false
-            });
-            
-            const dateTimeStr = `${startDateFormatted} ${startTimeFormatted} - ${endTimeFormatted}`;
-            
-            // Determine status
-            const statusClass = assignment.status === 'active' || assignment.isActive 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800';
-            const statusText = assignment.status === 'active' || assignment.isActive 
-              ? 'Active' 
-              : 'Scheduled';
-            
-            assignmentsHtml += `
-              <div class="p-3 bg-gray-50 rounded border">
-                <div class="flex justify-between mb-2">
-                  <div class="font-medium">${stationName}</div>
-                  <div class="px-2 py-1 ${statusClass} rounded text-xs">${statusText}</div>
-                </div>
-                <div class="text-sm text-gray-500 mb-1">Observer: ${userFullName} (${observerId})</div>
-                <div class="text-sm text-gray-500 mb-1">${dateTimeStr}</div>
-                <div class="flex gap-2 mt-2">
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                  <button class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">Cancel</button>
-                  ${assignment.status === 'active' || assignment.isActive 
-                    ? `<button class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Check-in</button>` 
-                    : ''
-                  }
-                </div>
-              </div>
-            `;
-          });
-        } else {
-          assignmentsHtml = '<div class="p-4 text-center">No assignments found</div>';
-        }
-      } else {
-        assignmentsHtml = '<div class="p-4 text-center">No assignment data available</div>';
-      }
-      
       openModal(
         "Station Assignments", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">Observer Assignments (${assignmentCount})</h3>
-          <div class="mb-4">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-              <select class="p-2 border rounded">
-                <option>All Stations</option>
-                ${stationOptions}
-              </select>
-              <select class="p-2 border rounded">
-                <option>All Statuses</option>
-                <option>Assigned</option>
-                <option>Check-in Complete</option>
-                <option>Check-out Complete</option>
-              </select>
-            </div>
-            <button class="w-full px-3 py-2 bg-primary text-white rounded text-sm mb-4">Create New Assignment</button>
-          </div>
-          
-          <div class="space-y-3">
-            ${assignmentsHtml}
-          </div>
-          
-          <div class="mt-4 flex justify-between">
-            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
-            <span class="text-sm">Page 1 of 1</span>
-            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
-          </div>
-        </div>
-        `
+        <AssignmentManagement />
       );
-    }, 800);
+    }).catch(error => {
+      console.error('Error loading AssignmentManagement component:', error);
+      setIsActionLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load assignment management component",
+        variant: "destructive",
+      });
+    });
   };
   
   // Handler for viewing station analytics

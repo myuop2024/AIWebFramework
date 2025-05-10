@@ -38,7 +38,7 @@ interface Document {
   updatedAt: string | Date;
 }
 
-export function VerificationQueue() {
+function VerificationQueueComponent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
