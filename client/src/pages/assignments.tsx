@@ -14,7 +14,6 @@ import { CalendarIcon, CheckCircle, ClipboardList, Clock, MapPin, Plus } from "l
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { assignmentStatusColors } from '@/lib/utils';
 import { AssignmentScheduler, AssignmentCard } from '@/components/assignments/assignment-scheduler';
-import MainLayout from "@/components/layout/main-layout";
 
 // Helper function to format date range
 const formatDateRange = (startDate: string, endDate: string): string => {
@@ -144,156 +143,154 @@ export default function AssignmentsPage() {
 
   return (
     <AuthGuard>
-      <MainLayout>
-        <div className="container mx-auto py-6 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
-              <p className="text-muted-foreground">
-                Manage your polling station assignments
-              </p>
-            </div>
-            <Button 
-              onClick={() => setShowScheduler(!showScheduler)} 
-              className="self-end md:self-auto"
-            >
-              {showScheduler ? (
-                "Cancel"
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Assignment
-                </>
-              )}
-            </Button>
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Assignments</h1>
+            <p className="text-muted-foreground">
+              Manage your polling station assignments
+            </p>
           </div>
-
-          {showScheduler && (
-            <div className="my-6">
-              <AssignmentScheduler 
-                onSuccess={() => setShowScheduler(false)}
-              />
-            </div>
-          )}
-
-          <Tabs 
-            defaultValue="upcoming" 
-            value={selectedTab} 
-            onValueChange={setSelectedTab}
-            className="space-y-4"
+          <Button 
+            onClick={() => setShowScheduler(!showScheduler)} 
+            className="self-end md:self-auto"
           >
-            <TabsList>
-              <TabsTrigger value="active" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                <span>Active</span>
-                {activeItems.length > 0 && 
-                  <span className="rounded-full bg-primary text-primary-foreground ml-1 px-2 py-0.5 text-xs">
-                    {activeItems.length}
-                  </span>
-                }
-              </TabsTrigger>
-              <TabsTrigger value="upcoming" className="flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
-                <span>Upcoming</span>
-                {upcomingItems.length > 0 && 
-                  <span className="rounded-full bg-primary text-primary-foreground ml-1 px-2 py-0.5 text-xs">
-                    {upcomingItems.length}
-                  </span>
-                }
-              </TabsTrigger>
-              <TabsTrigger value="past" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>Past</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="active" className="space-y-4">
-              {activeAssignmentsLoading ? (
-                <div className="text-center py-6">Loading active assignments...</div>
-              ) : activeItems.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
-                    <CheckCircle className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-medium text-lg">No active assignments</h3>
-                  <p className="text-muted-foreground mt-1">
-                    You don't have any active assignments at the moment.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {activeItems.map((assignment) => (
-                    <AssignmentCard 
-                      key={assignment.id}
-                      assignment={assignment}
-                      onCheckIn={() => handleCheckIn(assignment.id)}
-                      onCheckOut={() => handleCheckOut(assignment.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="upcoming" className="space-y-4">
-              {assignmentsLoading ? (
-                <div className="text-center py-6">Loading upcoming assignments...</div>
-              ) : upcomingItems.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
-                    <CalendarIcon className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-medium text-lg">No upcoming assignments</h3>
-                  <p className="text-muted-foreground mt-1">
-                    You don't have any scheduled assignments coming up.
-                  </p>
-                  <Button 
-                    onClick={() => setShowScheduler(true)} 
-                    variant="outline" 
-                    className="mt-4"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Schedule Assignment
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {upcomingItems.map((assignment) => (
-                    <AssignmentCard 
-                      key={assignment.id}
-                      assignment={assignment}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="past" className="space-y-4">
-              {assignmentsLoading ? (
-                <div className="text-center py-6">Loading past assignments...</div>
-              ) : pastItems.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
-                    <Clock className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="font-medium text-lg">No past assignments</h3>
-                  <p className="text-muted-foreground mt-1">
-                    You don't have any completed assignments yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pastItems.map((assignment) => (
-                    <AssignmentCard 
-                      key={assignment.id}
-                      assignment={assignment}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            {showScheduler ? (
+              "Cancel"
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                New Assignment
+              </>
+            )}
+          </Button>
         </div>
-      </MainLayout>
+
+        {showScheduler && (
+          <div className="my-6">
+            <AssignmentScheduler 
+              onSuccess={() => setShowScheduler(false)}
+            />
+          </div>
+        )}
+
+        <Tabs 
+          defaultValue="upcoming" 
+          value={selectedTab} 
+          onValueChange={setSelectedTab}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              <span>Active</span>
+              {activeItems.length > 0 && 
+                <span className="rounded-full bg-primary text-primary-foreground ml-1 px-2 py-0.5 text-xs">
+                  {activeItems.length}
+                </span>
+              }
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" />
+              <span>Upcoming</span>
+              {upcomingItems.length > 0 && 
+                <span className="rounded-full bg-primary text-primary-foreground ml-1 px-2 py-0.5 text-xs">
+                  {upcomingItems.length}
+                </span>
+              }
+            </TabsTrigger>
+            <TabsTrigger value="past" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Past</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="space-y-4">
+            {activeAssignmentsLoading ? (
+              <div className="text-center py-6">Loading active assignments...</div>
+            ) : activeItems.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
+                  <CheckCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-medium text-lg">No active assignments</h3>
+                <p className="text-muted-foreground mt-1">
+                  You don't have any active assignments at the moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeItems.map((assignment) => (
+                  <AssignmentCard 
+                    key={assignment.id}
+                    assignment={assignment}
+                    onCheckIn={() => handleCheckIn(assignment.id)}
+                    onCheckOut={() => handleCheckOut(assignment.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="upcoming" className="space-y-4">
+            {assignmentsLoading ? (
+              <div className="text-center py-6">Loading upcoming assignments...</div>
+            ) : upcomingItems.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
+                  <CalendarIcon className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-medium text-lg">No upcoming assignments</h3>
+                <p className="text-muted-foreground mt-1">
+                  You don't have any scheduled assignments coming up.
+                </p>
+                <Button 
+                  onClick={() => setShowScheduler(true)} 
+                  variant="outline" 
+                  className="mt-4"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Schedule Assignment
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {upcomingItems.map((assignment) => (
+                  <AssignmentCard 
+                    key={assignment.id}
+                    assignment={assignment}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="past" className="space-y-4">
+            {assignmentsLoading ? (
+              <div className="text-center py-6">Loading past assignments...</div>
+            ) : pastItems.length === 0 ? (
+              <div className="text-center py-10">
+                <div className="mx-auto rounded-full bg-muted w-12 h-12 flex items-center justify-center mb-3">
+                  <Clock className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-medium text-lg">No past assignments</h3>
+                <p className="text-muted-foreground mt-1">
+                  You don't have any completed assignments yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pastItems.map((assignment) => (
+                  <AssignmentCard 
+                    key={assignment.id}
+                    assignment={assignment}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </AuthGuard>
   );
 }
