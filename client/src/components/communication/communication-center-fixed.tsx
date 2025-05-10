@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  MessageSquare, Phone, Video, Send, Paperclip, Image, Mic, 
+import {
+  MessageSquare, Phone, Video, Send, Paperclip, Image, Mic,
   User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -38,8 +38,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
-  const { 
-    conversations, 
+  const {
+    conversations,
     conversationsLoading,
     onlineUsers,
     useGetMessages,
@@ -57,7 +57,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   } = useCommunication(userId);
 
   // Get all users for site-wide search
-  const { data: allUsers, isLoading: allUsersLoading } = useQuery({
+  const { data: allUsers, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({ // Added type for clarity
     queryKey: ['/api/communications/online-users'],
     queryFn: async () => {
       const response = await fetch('/api/communications/online-users');
@@ -68,25 +68,36 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   });
 
   // Get messages for the active chat
-  const { data: messages, isLoading: messagesLoading } = 
+  const { data: messages, isLoading: messagesLoading } =
     useGetMessages(activeChatUserId);
 
   // Filter conversations based on search query
   const filteredConversations = conversations?.filter(conversation => {
-    if (!conversation || !conversation.username) return false;
-    const query = searchQuery?.toLowerCase() || '';
+    // Ensure conversation and username exist before attempting to use them
+    if (!conversation || typeof conversation.username !== 'string') return false;
+    const query = searchQuery?.toLowerCase() || ''; // searchQuery can be null/undefined, provide default
     return conversation.username.toLowerCase().includes(query);
   }) || [];
 
   // Filter contacts based on search query
-  const filteredContacts = onlineUsers.filter(user => 
-    user.username.toLowerCase().includes(contactsSearchQuery.toLowerCase())
-  );
+  // This is the likely location of the original error if user.username is undefined
+  const filteredContacts = onlineUsers.filter(user => {
+    // FIX: Use nullish coalescing to provide a default empty string if username is undefined or null
+    // This prevents calling .toLowerCase() on undefined.
+    const username = user?.username ?? "";
+    // contactsSearchQuery is initialized as '', so .toLowerCase() is safe on it.
+    return username.toLowerCase().includes(contactsSearchQuery.toLowerCase());
+  });
 
   // Filter all users based on search query
-  const filteredAllUsers = allUsers?.filter(user => 
-    user.username?.toLowerCase().includes(contactsSearchQuery.toLowerCase())
-  );
+  const filteredAllUsers = allUsers?.filter(user => {
+    // FIX: Ensure user.username is treated as a string before .toLowerCase()
+    // and provide a default for the whole expression if allUsers is not yet available.
+    const username = user?.username ?? "";
+    // contactsSearchQuery is initialized as '', so .toLowerCase() is safe on it.
+    return username.toLowerCase().includes(contactsSearchQuery.toLowerCase());
+  }) || []; // Ensure filteredAllUsers is an empty array if allUsers is undefined (e.g., during loading)
+
 
   // Scroll to bottom of messages when messages change
   useEffect(() => {
@@ -98,7 +109,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Mark messages as read when opening a chat
   useEffect(() => {
     if (activeChatUserId && messages?.length) {
-      const unreadMessages = messages.filter(m => 
+      const unreadMessages = messages.filter(m =>
         m.senderId === activeChatUserId && !m.read
       );
 
@@ -166,12 +177,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         // For other files, upload to server first (we'll simulate this for now)
         // In production, you would upload the file to your server and get a URL
         sendMessage(
-          activeChatUserId, 
+          activeChatUserId,
           JSON.stringify({
             name: file.name,
             size: file.size,
             type: file.type
-          }), 
+          }),
           'file'
         );
       }
@@ -240,12 +251,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Safely get user initials or provide default
   const getInitials = (username?: string): string => {
-    if (!username) return 'UN';
+    if (!username || typeof username !== 'string') return 'UN'; // Check type for safety
     return username.substring(0, 2).toUpperCase();
   };
 
   // Format message time
-  const formatMessageTime = (date: Date) => {
+  const formatMessageTime = (date: Date | string) => { // Allow string for flexibility if API returns string dates
     return formatDistanceToNow(new Date(date), { addSuffix: true });
   };
 
@@ -255,9 +266,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       case 'image':
         return (
           <div className="mt-2">
-            <img 
-              src={message.content} 
-              alt="Shared image" 
+            <img
+              src={message.content}
+              alt="Shared image"
               className="max-w-[200px] max-h-[200px] rounded-md object-contain"
             />
           </div>
@@ -269,15 +280,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             <div className="mt-2 flex items-center gap-2 p-2 bg-secondary rounded-md">
               <Paperclip className="h-4 w-4" />
               <div>
-                <p className="text-sm font-medium">{fileData.name}</p>
+                <p className="text-sm font-medium">{fileData.name || 'File'}</p>
                 <p className="text-xs text-muted-foreground">
-                  {(fileData.size / 1024).toFixed(2)} KB
+                  {typeof fileData.size === 'number' ? (fileData.size / 1024).toFixed(2) + ' KB' : 'Unknown size'}
                 </p>
               </div>
             </div>
           );
         } catch (e) {
-          return <p>{message.content}</p>;
+          console.error("Error parsing file message content:", e);
+          return <p className="text-red-500">Error displaying file: Invalid format.</p>;
         }
       case 'system':
         return (
@@ -290,31 +302,32 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Get user by ID
   const getUserById = (id: number): CommunicationUser | undefined => {
+    if (typeof id !== 'number') return undefined; // Basic type check
+
     const onlineUser = onlineUsers.find(user => user.id === id);
     if (onlineUser) return onlineUser;
 
-    // If not in online users, check conversations
     const conversation = conversations?.find(conv => conv.userId === id);
     if (conversation) {
       return {
         id: conversation.userId,
-        username: conversation.username,
-        status: 'offline'
+        username: conversation.username, // Assuming username exists and is string from conversation type
+        status: 'offline' // This user is from conversations, likely offline if not in onlineUsers
       };
     }
 
-    // If not in conversations, check all users
     const allUser = allUsers?.find(user => user.id === id);
     if (allUser) {
-      return {
+      return { // Construct a CommunicationUser object
         id: allUser.id,
-        username: allUser.username,
-        status: allUser.status
+        username: allUser.username, // Assuming username exists from API type
+        status: allUser.status || 'offline' // Ensure status is present
       };
     }
 
     return undefined;
   };
+
 
   // Get active chat user
   const activeChatUser = activeChatUserId ? getUserById(activeChatUserId) : undefined;
@@ -328,14 +341,27 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const startChat = (userId: number) => {
     setActiveChatUserId(userId);
     setShowUserSearch(false);
+    setContactsSearchQuery(''); // Clear search query after selecting a user
   };
 
-  // Reset active chat if conversation not found
+  // Reset active chat if conversation not found or user becomes invalid
   useEffect(() => {
-    if (activeChatUserId && !conversations?.some(c => c.userId === activeChatUserId)) {
-      setActiveChatUserId(null);
+    if (activeChatUserId) {
+      const userExistsInConversations = conversations?.some(c => c.userId === activeChatUserId);
+      const userExistsInOnline = onlineUsers.some(u => u.id === activeChatUserId);
+      const userExistsInAllUsers = allUsers?.some(u => u.id === activeChatUserId);
+
+      if (!userExistsInConversations && !userExistsInOnline && !userExistsInAllUsers) {
+        // If user is not found anywhere, reset active chat
+        // This logic might need adjustment based on how users are populated/removed
+        // For now, we only reset if not in current conversations list
+        if (!userExistsInConversations && conversations && conversations.length > 0) {
+             // setActiveChatUserId(null); // Commented out to prevent losing chat if user briefly disconnects
+        }
+      }
     }
-  }, [conversations, activeChatUserId]);
+  }, [conversations, onlineUsers, allUsers, activeChatUserId]);
+
 
   return (
     <Card className="h-full border-none shadow-none">
@@ -356,13 +382,14 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             </div>
           )}
 
-          <div className="flex h-full overflow-hidden">
-            <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
+          <div className="flex h-full overflow-hidden"> {/* Main flex container for sidebars and chat area */}
+            {/* Chats Tab Content (Left Sidebar) */}
+            <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
               <div className="p-3">
                 <div className="relative">
-                  <Input 
-                    placeholder="Search conversations..." 
-                    className="border-0 bg-secondary text-sm pl-9" 
+                  <Input
+                    placeholder="Search conversations..."
+                    className="border-0 bg-secondary text-sm pl-9"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -377,13 +404,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 ) : filteredConversations && filteredConversations.length > 0 ? (
                   <div className="px-2">
                     {filteredConversations.map((conversation) => (
-                      <div 
-                        key={conversation.userId} 
-                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${
-                          activeChatUserId === conversation.userId
+                      <div
+                        key={conversation.userId}
+                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${activeChatUserId === conversation.userId
                             ? 'bg-secondary'
                             : 'hover:bg-secondary/50'
-                        }`}
+                          }`}
                         onClick={() => setActiveChatUserId(conversation.userId)}
                       >
                         <div className="relative">
@@ -399,19 +425,19 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <div className="flex justify-between items-start">
                             <p className="font-medium truncate">{conversation.username}</p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(conversation.lastMessageAt), { 
+                              {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                                 addSuffix: false,
-                                includeSeconds: true
+                                includeSeconds: true // Consider removing for brevity if too frequent
                               })}
                             </p>
                           </div>
                           <div className="flex items-center gap-1">
                             <p className="text-sm text-muted-foreground truncate">
-                              {conversation.lastMessageType === 'image' 
+                              {conversation.lastMessageType === 'image'
                                 ? '🖼️ Image'
                                 : conversation.lastMessageType === 'file'
-                                ? '📎 File'
-                                : conversation.lastMessage}
+                                  ? '📎 File'
+                                  : conversation.lastMessage}
                             </p>
                             {conversation.unreadCount > 0 && (
                               <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center">
@@ -430,17 +456,17 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     </p>
                     {!searchQuery && (
                       <p className="text-xs text-muted-foreground text-center mt-1">
-                        Start a new chat by selecting a contact from the Contacts tab
+                        Start a new chat from Contacts or by searching users.
                       </p>
                     )}
                   </div>
                 )}
               </ScrollArea>
               <div className="p-3 border-t">
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center" 
-                  onClick={() => setShowUserSearch(true)}
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center"
+                  onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }} // Clear search for new conversation
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   New Conversation
@@ -448,12 +474,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </div>
             </TabsContent>
 
-            <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
+            {/* Contacts Tab Content (Left Sidebar) */}
+            <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
               <div className="p-3">
                 <div className="relative">
-                  <Input 
-                    placeholder="Search contacts..." 
-                    className="border-0 bg-secondary text-sm pl-9" 
+                  <Input
+                    placeholder="Search contacts..."
+                    className="border-0 bg-secondary text-sm pl-9"
                     value={contactsSearchQuery}
                     onChange={(e) => setContactsSearchQuery(e.target.value)}
                   />
@@ -461,12 +488,19 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 </div>
               </div>
               <ScrollArea className="flex-grow">
-                {filteredContacts.length > 0 ? (
+                {onlineUsers.length === 0 && !contactsSearchQuery ? (
+                    <div className="flex justify-center items-center h-32">
+                         <p className="text-sm text-muted-foreground">No contacts available</p>
+                    </div>
+                ) : filteredContacts.length > 0 ? (
                   <div className="px-2">
-                    <p className="text-xs font-medium px-2 pt-2 pb-1 text-muted-foreground">Online</p>
+                    {/* Online Users */}
+                    {filteredContacts.filter(user => user.status === 'online').length > 0 && (
+                        <p className="text-xs font-medium px-2 pt-2 pb-1 text-muted-foreground">Online</p>
+                    )}
                     {filteredContacts.filter(user => user.status === 'online').map((user) => (
-                      <div 
-                        key={user.id} 
+                      <div
+                        key={user.id}
                         className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-secondary/50"
                         onClick={() => startChat(user.id)}
                       >
@@ -475,25 +509,26 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
                             <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                            user.status === 'online' ? 'bg-green-500' : 
-                            user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-                          }`} />
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-green-500' : user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`} />
                         </div>
                         <div>
                           <p className="font-medium">{user.username}</p>
                           <p className="text-xs text-muted-foreground">
-                            {user.status === 'online' ? 'Active now' : 
-                             user.status === 'away' ? 'Away' : 'Offline'}
+                            {user.status === 'online' ? 'Active now' :
+                              user.status === 'away' ? 'Away' : 'Offline'}
                           </p>
                         </div>
                       </div>
                     ))}
 
-                    <p className="text-xs font-medium px-2 pt-4 pb-1 text-muted-foreground">Offline</p>
+                    {/* Offline Users */}
+                    {filteredContacts.filter(user => user.status !== 'online').length > 0 && (
+                        <p className="text-xs font-medium px-2 pt-4 pb-1 text-muted-foreground">Offline</p>
+                    )}
                     {filteredContacts.filter(user => user.status !== 'online').map((user) => (
-                      <div 
-                        key={user.id} 
+                      <div
+                        key={user.id}
                         className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-secondary/50"
                         onClick={() => startChat(user.id)}
                       >
@@ -521,6 +556,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </ScrollArea>
             </TabsContent>
 
+            {/* Chat Area (Main Content) */}
             <div className="flex-grow flex flex-col h-full">
               {activeChatUserId && activeChatUser ? (
                 <>
@@ -531,10 +567,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
                           <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
                         </Avatar>
-                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                          activeChatUser.status === 'online' ? 'bg-green-500' : 
-                          'bg-gray-500'
-                        }`} />
+                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${activeChatUser.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
+                          }`} />
                       </div>
                       <div>
                         <p className="font-medium">{activeChatUser.username}</p>
@@ -578,8 +612,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     </div>
                   </div>
 
-                  <div 
-                    className={`flex-grow overflow-y-auto p-4 ${isDraggingFile ? 'bg-primary-50' : ''}`}
+                  <div
+                    className={`flex-grow overflow-y-auto p-4 ${isDraggingFile ? 'bg-primary-50' : ''}`} // Ensure primary-50 is defined in Tailwind config or use a default like bg-blue-50
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -592,37 +626,43 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       <div className="flex flex-col gap-4">
                         {messages.map((message, index) => {
                           const isCurrentUser = message.senderId === userId;
-                          // Check if this is a new sender or if more than 2 minutes have passed
-                          const showAvatar = index === 0 || 
-                            messages[index - 1].senderId !== message.senderId ||
-                            new Date(message.sentAt).getTime() - new Date(messages[index - 1].sentAt).getTime() > 120000;
+                          const prevMessage = messages[index - 1];
+                          const showAvatar = index === 0 ||
+                            (prevMessage && prevMessage.senderId !== message.senderId) ||
+                            (prevMessage && new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 120000);
 
                           return (
-                            <div 
-                              key={message.id} 
+                            <div
+                              key={message.id}
                               className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                             >
                               <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
-                                {!isCurrentUser && showAvatar && (
-                                  <Avatar className="h-8 w-8 mr-2">
+                                {!isCurrentUser && showAvatar && activeChatUser && ( // Added activeChatUser check
+                                  <Avatar className="h-8 w-8 mr-0 self-end mb-1"> {/* Adjusted margin for alignment */}
                                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
                                     <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
                                   </Avatar>
                                 )}
+                                 {isCurrentUser && showAvatar && (
+                                     <div className="w-8 h-8 ml-0 self-end mb-1"></div> // Placeholder for alignment
+                                 )}
+                                 {!showAvatar && ( // Add placeholder for consistent spacing when avatar is not shown
+                                    <div className={`w-8 ${isCurrentUser ? 'ml-2' : 'mr-2'}`}></div>
+                                 )}
+
+
                                 <div>
-                                  <div 
-                                    className={`rounded-lg p-3 ${
-                                      isCurrentUser 
-                                        ? 'bg-primary text-primary-foreground' 
+                                  <div
+                                    className={`rounded-lg p-3 ${isCurrentUser
+                                        ? 'bg-primary text-primary-foreground'
                                         : 'bg-secondary'
-                                    }`}
+                                      }`}
                                   >
                                     {renderMessageContent(message)}
                                   </div>
-                                  <div 
-                                    className={`text-xs text-muted-foreground mt-1 ${
-                                      isCurrentUser ? 'text-right' : 'text-left'
-                                    }`}
+                                  <div
+                                    className={`text-xs text-muted-foreground mt-1 ${isCurrentUser ? 'text-right' : 'text-left'
+                                      }`}
                                   >
                                     {formatMessageTime(message.sentAt)}
                                     {isCurrentUser && message.read && (
@@ -630,12 +670,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                                     )}
                                   </div>
                                 </div>
-                                {isCurrentUser && showAvatar && (
-                                  <Avatar className="h-8 w-8 ml-2">
-                                    <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`} />
-                                    <AvatarFallback>ME</AvatarFallback>
-                                  </Avatar>
-                                )}
+                                {/* Current user avatar placeholder removed, handled by spacing div or actual avatar */}
                               </div>
                             </div>
                           );
@@ -648,48 +683,52 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <MessageSquare className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <p className="text-muted-foreground">No messages yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Start a conversation with {activeChatUser.username}
-                        </p>
+                        {activeChatUser && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Start a conversation with {activeChatUser.username}
+                            </p>
+                        )}
                       </div>
                     )}
                   </div>
 
                   <div className="p-3 border-t">
                     <div className="relative">
-                      <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
                         onChange={handleFileInputChange}
+                        multiple={false} // Explicitly single file
+                        accept="image/*,application/pdf,.doc,.docx,.txt,.zip" // Example file types
                       />
-                      <Input 
-                        placeholder={`Message ${activeChatUser.username}...`}
+                      <Input
+                        placeholder={`Message ${activeChatUser?.username || 'selected user'}...`}
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
                         onKeyDown={handleKeyPress}
-                        className="pr-24"
+                        className="pr-32" // Increased padding for more buttons
                       />
                       <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Paperclip className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <Image className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="primary" 
-                          size="icon" 
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => fileInputRef.current?.click()}
+                                    >
+                                      <Paperclip className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Attach file</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        {/* Removed duplicate Image button, Paperclip can handle all files */}
+                        <Button
+                          variant="primary"
+                          size="icon"
                           className="h-8 w-8"
                           onClick={handleSendMessage}
                           disabled={!messageInput.trim()}
@@ -707,11 +746,11 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   </div>
                   <h3 className="text-xl font-medium mb-2">Your messages</h3>
                   <p className="text-muted-foreground text-center max-w-xs">
-                    Select a conversation to view your messages, or start a new conversation
+                    Select a conversation to view your messages, or start a new one.
                   </p>
-                  <Button 
-                    className="mt-4" 
-                    onClick={() => setShowUserSearch(true)}
+                  <Button
+                    className="mt-4"
+                    onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
                     New Conversation
@@ -724,42 +763,41 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       </CardContent>
 
       {/* Incoming call dialog */}
-      <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={() => rejectCall()}>
+      <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={(isOpen) => { if (!isOpen && incomingCall) rejectCall(); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Incoming Call</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6">
             <Avatar className="h-20 w-20 mb-4">
-              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId
-              }`} />
+              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId || 'default'
+                }`} />
               <AvatarFallback>
                 {getInitials(getUserById(incomingCall?.callerId || 0)?.username)}
               </AvatarFallback>
             </Avatar>
             <p className="text-xl font-semibold mb-1">
-              {getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId}
+              {getUserById(incomingCall?.callerId || 0)?.username || `User ${incomingCall?.callerId || 'Unknown'}`}
             </p>
             <p className="text-sm text-muted-foreground mb-8">
               {incomingCall?.type === 'video' ? 'Video call' : 'Audio call'}
             </p>
             <div className="flex gap-4">
-              <Button 
-                variant="destructive" 
-                size="icon" 
-                className="h-12 w-12 rounded-full"
+              <Button
+                variant="destructive"
+                size="lg" // Made buttons larger
+                className="rounded-full px-6 py-3"
                 onClick={() => rejectCall()}
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5 mr-2" /> Decline
               </Button>
-              <Button 
-                variant="default" 
-                size="icon" 
-                className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600"
+              <Button
+                variant="default"
+                size="lg" // Made buttons larger
+                className="rounded-full bg-green-500 hover:bg-green-600 px-6 py-3"
                 onClick={handleAnswerCall}
               >
-                <Phone className="h-6 w-6" />
+                <Phone className="h-5 w-5 mr-2" /> Accept
               </Button>
             </div>
           </div>
@@ -773,77 +811,77 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           setIsCallModalOpen(false);
         }
       }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg"> {/* Made dialog slightly wider for video */}
           <DialogHeader>
             <DialogTitle>
-              {activeCall?.type === 'video' ? 'Video Call' : 'Audio Call'} with {getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username}
+              {activeCall?.type === 'video' ? 'Video Call' : 'Audio Call'} with {getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || 'User'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
-              {activeCall?.type === 'video' && (
-                <video 
-                  ref={remoteVideoRef} 
-                  autoPlay 
-                  playsInline 
+              {activeCall?.type === 'video' && remoteStream && (
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
                   className="w-full h-full object-cover"
                 />
               )}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {!remoteStream && (
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage 
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
-                        getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
-                      }`} 
-                    />
-                    <AvatarFallback>
-                      {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
-              {activeCall?.type === 'video' && (
-                <div className="absolute bottom-2 right-2 w-1/4 aspect-video bg-black rounded-lg overflow-hidden border-2 border-background">
-                  <video 
-                    ref={localVideoRef} 
-                    autoPlay 
-                    playsInline 
-                    muted 
+              {/* Placeholder when video/remote stream is not available */}
+              {(!remoteStream || activeCall?.type !== 'video') && (
+                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                    <Avatar className="h-24 w-24"> {/* Larger avatar */}
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
+                          }`}
+                      />
+                      <AvatarFallback className="text-3xl">
+                        {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+              )}
+              {activeCall?.type === 'video' && localStream && (
+                <div className="absolute bottom-2 right-2 w-1/4 max-w-[120px] aspect-video bg-black rounded-lg overflow-hidden border-2 border-background">
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
                     className="w-full h-full object-cover"
                   />
                 </div>
               )}
             </div>
             <div className="flex justify-center gap-4">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={`h-10 w-10 rounded-full ${isMuted ? 'bg-red-100' : ''}`}
+              <Button
+                variant="outline"
+                size="icon"
+                className={`h-12 w-12 rounded-full ${isMuted ? 'bg-destructive hover:bg-destructive/80 text-white' : ''}`}
                 onClick={toggleMute}
               >
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
               </Button>
               {activeCall?.type === 'video' && (
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className={`h-10 w-10 rounded-full ${!isVideoEnabled ? 'bg-red-100' : ''}`}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`h-12 w-12 rounded-full ${!isVideoEnabled ? 'bg-destructive hover:bg-destructive/80 text-white' : ''}`}
                   onClick={toggleVideo}
                 >
-                  {isVideoEnabled ? <Camera className="h-5 w-5" /> : <CameraOff className="h-5 w-5" />}
+                  {isVideoEnabled ? <Camera className="h-6 w-6" /> : <CameraOff className="h-6 w-6" />}
                 </Button>
               )}
-              <Button 
-                variant="destructive" 
-                size="icon" 
-The code has been modified to filter out the current user from the list of users that can be messaged.                className="h-10 w-10 rounded-full"
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-12 w-12 rounded-full"
                 onClick={() => {
                   endCall();
                   setIsCallModalOpen(false);
                 }}
               >
-                <Phone className="h-5 w-5" />
+                <Phone className="h-6 w-6 transform rotate-[135deg]" /> {/* Rotated for hang up icon */}
               </Button>
             </div>
           </div>
@@ -851,49 +889,48 @@ The code has been modified to filter out the current user from the list of users
       </Dialog>
 
       {/* User search dialog */}
-      <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
+      <Dialog open={showUserSearch} onOpenChange={(isOpen) => {
+          setShowUserSearch(isOpen);
+          if (!isOpen) setContactsSearchQuery(''); // Clear search on close
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Start a conversation</DialogTitle>
+            <DialogTitle>Start a new conversation</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="relative">
-              <Input 
-                placeholder="Search for a user..." 
+          <div className="space-y-4 py-4">
+            <div className="relative px-1">
+              <Input
+                placeholder="Search for a user..."
                 value={contactsSearchQuery}
                 onChange={(e) => setContactsSearchQuery(e.target.value)}
                 className="pl-9"
               />
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Search className="h-4 w-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
             </div>
-            <div className="max-h-[300px] overflow-y-auto">
+            <ScrollArea className="max-h-[300px] px-1"> {/* Added ScrollArea */}
               {allUsersLoading ? (
-                    <div className="flex justify-center items-center py-8">
-                      <Spinner />
-                    </div>
-                  ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
-                    <div className="space-y-2">
-                      {filteredAllUsers
-                        .filter(user => user.id !== userId) // Filter out the current user
-                        .map((user) => (
-                          <Button
-                            key={user.id}
-                            variant="ghost"
-                            className="w-full justify-start p-2 h-auto"
-                            onClick={() => {
-                              console.log(`Clicked to start chat with: ${user.id} (${user.username})`);
-                              startChat(user.id);
-                            }}
-                          >
+                <div className="flex justify-center items-center py-8">
+                  <Spinner />
+                </div>
+              ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
+                <div className="space-y-1">
+                  {filteredAllUsers.filter(user => user.id !== userId).map((user) => ( // Exclude self
+                    <Button
+                      key={user.id}
+                      variant="ghost"
+                      className="w-full justify-start p-2 h-auto"
+                      onClick={() => {
+                        startChat(user.id);
+                      }}
+                    >
                       <div className="flex items-center gap-3">
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
                             <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                            user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
-                          }`} />
+                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
+                            }`} />
                         </div>
                         <div className="text-left">
                           <p className="font-medium">{user.username}</p>
@@ -907,10 +944,12 @@ The code has been modified to filter out the current user from the list of users
                 </div>
               ) : (
                 <div className="py-8 text-center">
-                  <p className="text-muted-foreground">No users found</p>
+                  <p className="text-muted-foreground">
+                    {contactsSearchQuery ? 'No users found matching your search.' : 'No other users found.'}
+                  </p>
                 </div>
               )}
-            </div>
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>
