@@ -19,7 +19,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { queryClient, apiRequest } from '@/lib/queryClient';
-import MainLayout from '@/components/layout/main-layout';
 import TestErrorLogger from '@/components/error/test-error-logger';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -276,20 +275,18 @@ function ErrorLogsPage() {
 
   if (error) {
     return (
-      <MainLayout>
-        <div className="container mx-auto py-8">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Failed to load error logs. Please try again.</AlertDescription>
-          </Alert>
-        </div>
-      </MainLayout>
+      <div className="container mx-auto py-8">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Failed to load error logs. Please try again.</AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   return (
-    <MainLayout>
+    <>
       <div className="container mx-auto py-6 space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -575,7 +572,7 @@ function ErrorLogsPage() {
             </CardFooter>
           </Card>
         </Tabs>
-      </div>
+      </div>,
 
       {/* Error Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
@@ -796,7 +793,7 @@ function ErrorLogsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MainLayout>
+    </>
   );
 }
 

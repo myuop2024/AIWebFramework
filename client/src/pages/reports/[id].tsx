@@ -414,6 +414,5 @@ export default function ReportDetail() {
           </Button>
         </CardFooter>
       </Card>
-    </MainLayout>
   );
 }
