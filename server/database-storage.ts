@@ -1510,4 +1510,78 @@ export class DatabaseStorage implements IStorage {
       return 0;
     }
   }
+  
+  // Role management operations
+  async getAllRoles(): Promise<Role[]> {
+    try {
+      return await db.select().from(roles).orderBy(asc(roles.name));
+    } catch (error) {
+      console.error('Error getting all roles:', error);
+      return [];
+    }
+  }
+
+  async getRoleById(id: number): Promise<Role | undefined> {
+    try {
+      const [role] = await db.select().from(roles).where(eq(roles.id, id));
+      return role;
+    } catch (error) {
+      console.error(`Error getting role by ID ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createRole(role: InsertRole): Promise<Role> {
+    try {
+      const [newRole] = await db.insert(roles).values(role).returning();
+      return newRole;
+    } catch (error) {
+      console.error('Error creating role:', error);
+      throw error;
+    }
+  }
+
+  async updateRole(id: number, data: Partial<Role>): Promise<Role | undefined> {
+    try {
+      if (Object.keys(data).length === 0) {
+        return this.getRoleById(id);
+      }
+
+      const [updatedRole] = await db
+        .update(roles)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(roles.id, id))
+        .returning();
+      
+      return updatedRole;
+    } catch (error) {
+      console.error(`Error updating role ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async deleteRole(id: number): Promise<boolean> {
+    try {
+      // Don't delete roles if they are in use by users
+      const usersWithRole = await db
+        .select()
+        .from(users)
+        .where(eq(users.role, id.toString()))
+        .limit(1);
+
+      if (usersWithRole.length > 0) {
+        console.log(`Cannot delete role ${id} as it is in use by users`);
+        return false;
+      }
+
+      const result = await db.delete(roles).where(eq(roles.id, id)).returning({ id: roles.id });
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting role ${id}:`, error);
+      return false;
+    }
+  }
 }

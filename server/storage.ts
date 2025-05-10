@@ -7,7 +7,8 @@ import {
   type Faq, type InsertFaq, type News, type InsertNews, type Message, type InsertMessage,
   type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
   type SystemSetting, type InsertSystemSetting,
-  type PhotoApproval, type InsertPhotoApproval, type ErrorLog, type InsertErrorLog
+  type PhotoApproval, type InsertPhotoApproval, type ErrorLog, type InsertErrorLog,
+  type Role, type InsertRole
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -147,6 +148,13 @@ export interface IStorage {
   updatePhotoApproval(id: number, data: Partial<PhotoApproval>): Promise<PhotoApproval | undefined>;
   approvePhotoApproval(id: number, approvedBy: number): Promise<PhotoApproval | undefined>;
   rejectPhotoApproval(id: number, approvedBy: number, notes?: string): Promise<PhotoApproval | undefined>;
+  
+  // Role management operations
+  getAllRoles(): Promise<Role[]>;
+  getRoleById(id: number): Promise<Role | undefined>; 
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, data: Partial<Role>): Promise<Role | undefined>;
+  deleteRole(id: number): Promise<boolean>;
   
   // Error log operations
   getErrorLog(id: number): Promise<ErrorLog | undefined>;
