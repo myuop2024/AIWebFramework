@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CommunicationCenter } from '@/components/communication/communication-center';
 import { PageHeader } from '@/components/ui/page-header';
-import { MainLayout } from '@/components/layout/main-layout';
+import MainLayout from '@/components/layout/main-layout';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { Separator } from '@/components/ui/separator';
 

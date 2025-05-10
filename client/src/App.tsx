@@ -17,6 +17,7 @@ import Training from "@/pages/training";
 import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
+import Communications from "@/pages/communications";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -68,6 +69,7 @@ function Router() {
       <ProtectedRoute path="/assignments" component={AssignmentsPage} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
+      <ProtectedRoute path="/communications" component={Communications} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       

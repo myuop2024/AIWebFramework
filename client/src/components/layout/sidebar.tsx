@@ -7,7 +7,7 @@ import {
   FileEdit, ClipboardList, Settings, BarChart,
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
-  Map as MapIcon
+  Map as MapIcon, Phone, Video, Headphones
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -54,6 +54,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5 mr-3" /> },
     { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5 mr-3" /> },
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
+    { path: "/communications", label: "Communications", icon: <Headphones className="h-5 w-5 mr-3" /> },
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
   ];
   
@@ -88,7 +89,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
   const supportLinks = [
     { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5 mr-3" /> },
-    { path: "/chat", label: "Chat Support", icon: <MessageSquare className="h-5 w-5 mr-3" /> },
   ];
 
   const handleLogout = async () => {
