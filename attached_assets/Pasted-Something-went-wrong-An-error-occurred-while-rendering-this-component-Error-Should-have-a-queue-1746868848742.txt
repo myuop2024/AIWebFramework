@@ -1,0 +1,17 @@
+Something went wrong
+An error occurred while rendering this component
+
+Error: Should have a queue. This is likely a bug in React. Please file an issue.
+
+Error: Should have a queue. This is likely a bug in React. Please file an issue.
+    at updateReducer (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=92b674bd:11730:19)
+    at updateState (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=92b674bd:12021:18)
+    at Object.useState (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=92b674bd:12753:24)
+    at Object.useState (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJA5E53X.js?v=92b674bd:1066:29)
+    at useBaseQuery (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=92b674bd:3012:29)
+    at useQuery (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=92b674bd:3068:10)
+    at getMessages (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/hooks/use-communication.ts:84:12)
+    at CommunicationCenter (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/communication/communication-center.tsx?t=1746868755663:74:77)
+    at renderWithHooks (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=92b674bd:11548:26)
+    at updateFunctionComponent (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=92b674bd:14582:28)
+This error has been automatically reported to our team.
