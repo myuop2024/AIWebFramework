@@ -300,21 +300,21 @@ export function UserForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
                             <SelectTrigger>
                               <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrator</SelectItem>
-                            <SelectItem value="supervisor">Supervisor</SelectItem>
-                            <SelectItem value="observer">Observer</SelectItem>
-                          </SelectContent>
-                        </Select>
+                            <SelectContent>
+                              <SelectItem value="admin">Administrator</SelectItem>
+                              <SelectItem value="supervisor">Supervisor</SelectItem>
+                              <SelectItem value="observer">Observer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
                         <FormDescription>
                           Determines user's access level and permissions.
                         </FormDescription>
@@ -351,21 +351,21 @@ export function UserForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Verification Status</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="verified">Verified</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="verified">Verified</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -414,7 +414,7 @@ export function UserForm({
                   />
 
                   {user && (
-                    <Alert variant="outline" className="bg-blue-50 border-blue-200">
+                    <Alert className="bg-blue-50 border border-blue-200">
                       <AlertCircle className="h-4 w-4 text-blue-500" />
                       <AlertTitle className="text-blue-700">Information</AlertTitle>
                       <AlertDescription className="text-blue-600">
