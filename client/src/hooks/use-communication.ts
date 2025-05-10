@@ -257,32 +257,24 @@ export function useCommunication(userId: number) {
   // Mark all messages from a user as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async (otherUserId: number) => {
-      // Get all unread messages from this sender
-      const messages = await fetch(`/api/communications/messages/${otherUserId}`).then(r => r.json());
-      const unreadMessages = messages.filter((m: any) => 
-        m.senderId === otherUserId && !m.read
-      );
-      
-      // Mark each message as read
-      if (unreadMessages.length === 0) return { count: 0 };
-      
-      const messageIds = unreadMessages.map((m: any) => m.id);
-      const response = await fetch(`/api/communications/messages/read`, {
+      // Use our dedicated endpoint to mark all messages from this sender as read
+      const response = await fetch(`/api/communications/messages/read-all/${otherUserId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ messageIds }),
       });
       
       if (!response.ok) throw new Error('Failed to mark all messages as read');
-      return { count: messageIds.length };
+      return response.json();
     },
     onSuccess: (_, variables) => {
+      // Invalidate both message list and conversations
       queryClient.invalidateQueries({ 
         queryKey: [`/api/communications/messages/${variables}`] 
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/communications/conversations'] 
+      });
+      
+      console.log(`Marked all messages from user ${variables} as read`);
     },
   });
 

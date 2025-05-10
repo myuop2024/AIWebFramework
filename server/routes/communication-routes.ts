@@ -141,7 +141,7 @@ router.post('/messages', async (req, res) => {
   }
 });
 
-// Mark messages as read
+// Mark individual messages as read
 router.patch('/messages/read', async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -171,7 +171,10 @@ router.patch('/messages/read', async (req, res) => {
           const senderOnline = communicationService.getUserStatus(message.senderId) === 'online';
           
           if (senderOnline) {
-            // The notification will be handled by the socket event listeners
+            communicationService.sendToUser(message.senderId, {
+              type: 'message-read',
+              messageId: message.id
+            });
           }
         }
       }
@@ -181,6 +184,42 @@ router.patch('/messages/read', async (req, res) => {
   } catch (error) {
     console.error('Error marking messages as read:', error);
     res.status(500).json({ error: 'Failed to mark messages as read' });
+  }
+});
+
+// Mark all messages from a specific sender as read
+router.patch('/messages/read-all/:senderId', async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const senderId = parseInt(req.params.senderId);
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (isNaN(senderId)) {
+      return res.status(400).json({ error: 'Invalid sender ID' });
+    }
+    
+    // Mark all unread messages from the sender as read
+    const count = await storage.markAllMessagesAsRead(senderId, userId);
+    
+    // Notify sender through WebSocket
+    if (communicationService) {
+      const senderOnline = communicationService.getUserStatus(senderId) === 'online';
+      
+      if (senderOnline) {
+        communicationService.sendToUser(senderId, {
+          type: 'all-messages-read',
+          by: userId
+        });
+      }
+    }
+    
+    res.json({ count });
+  } catch (error) {
+    console.error('Error marking all messages as read:', error);
+    res.status(500).json({ error: 'Failed to mark all messages as read' });
   }
 });
 

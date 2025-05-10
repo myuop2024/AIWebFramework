@@ -221,13 +221,16 @@ export class CommunicationService {
 
   /**
    * Send a message to a specific user
+   * Made public so it can be used by route handlers
    */
-  private sendToUser(userId: number, data: any) {
+  public sendToUser(userId: number, data: any) {
     const client = this.clients.get(userId);
     
     if (client && client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(data));
+      return true;
     }
+    return false;
   }
 
   /**
