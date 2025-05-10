@@ -86,7 +86,7 @@ export function useCommunication(userId: number) {
           // Invalidate queries to refresh message list
           queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.senderId}/${userId}`] });
           queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
-
+          
           // Show toast notification for new message if it's not from current user
           if (data.message.senderId !== userId) {
             const sender = onlineUsers.find(user => user.id === data.message.senderId);
@@ -220,7 +220,7 @@ export function useCommunication(userId: number) {
         },
       }));
     }
-
+    
     // Also send via HTTP for persistence
     sendMessageMutation.mutate({ receiverId, content, type });
   }, [socket, userId, sendMessageMutation]);
@@ -323,7 +323,7 @@ export function useCommunication(userId: number) {
 
       // Set up remote stream
       remoteStream.current = new MediaStream();
-
+      
       // Handle ICE candidate events
       pc.onicecandidate = (event) => {
         if (event.candidate && socket && socket.readyState === WebSocket.OPEN) {
