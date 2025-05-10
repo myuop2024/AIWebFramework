@@ -37,7 +37,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  
+
   const { 
     conversations, 
     conversationsLoading,
@@ -101,7 +101,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       const unreadMessages = messages.filter(m => 
         m.senderId === activeChatUserId && !m.read
       );
-      
+
       if (unreadMessages.length > 0) {
         markAllAsRead(activeChatUserId);
       }
@@ -113,7 +113,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     if (localStream && localVideoRef.current) {
       localVideoRef.current.srcObject = localStream;
     }
-    
+
     if (remoteStream && remoteVideoRef.current) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
@@ -132,7 +132,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingFile(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && activeChatUserId) {
       const file = e.dataTransfer.files[0];
       await handleFileUpload(file);
@@ -150,7 +150,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Process and upload file
   const handleFileUpload = async (file: File) => {
     if (!activeChatUserId) return;
-    
+
     try {
       // Handle different file types
       if (file.type.startsWith('image/')) {
@@ -199,7 +199,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Initialize a call
   const handleStartCall = async (callType: 'audio' | 'video') => {
     if (!activeChatUserId) return;
-    
+
     try {
       await startCall(activeChatUserId, callType);
       setIsCallModalOpen(true);
@@ -286,7 +286,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const getUserById = (id: number): CommunicationUser | undefined => {
     const onlineUser = onlineUsers.find(user => user.id === id);
     if (onlineUser) return onlineUser;
-    
+
     // If not in online users, check conversations
     const conversation = conversations?.find(conv => conv.userId === id);
     if (conversation) {
@@ -296,7 +296,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         status: 'offline'
       };
     }
-    
+
     // If not in conversations, check all users
     const allUser = allUsers?.find(user => user.id === id);
     if (allUser) {
@@ -306,7 +306,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         status: allUser.status
       };
     }
-    
+
     return undefined;
   };
 
@@ -317,7 +317,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const isUserOnline = (userId: number): boolean => {
     return onlineUsers.some(user => user.id === userId && user.status === 'online');
   };
-  
+
   // Start a chat with a user
   const startChat = (userId: number) => {
     setActiveChatUserId(userId);
@@ -342,7 +342,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </TabsList>
             </div>
           )}
-          
+
           <div className="flex h-full overflow-hidden">
             <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
@@ -434,7 +434,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 </Button>
               </div>
             </TabsContent>
-            
+
             <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col">
               <div className="p-3">
                 <div className="relative">
@@ -495,7 +495,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     </div>
                   )}
                 </div>
-                
+
                 {/* All Users Section */}
                 <div className="px-3 py-2 border-t mt-2">
                   <h3 className="text-sm font-medium">All Users</h3>
@@ -541,7 +541,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 </div>
               </ScrollArea>
             </TabsContent>
-            
+
             {/* Chat Area */}
             <div className="flex-1 h-full flex flex-col">
               {activeChatUserId && activeChatUser ? (
@@ -582,7 +582,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -602,7 +602,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       </TooltipProvider>
                     </div>
                   </div>
-                  
+
                   {/* Messages */}
                   <div
                     className={`flex-1 overflow-y-auto p-4 ${isDraggingFile ? 'bg-secondary/50' : ''}`}
@@ -620,7 +620,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           const isCurrentUser = message.senderId === userId;
                           const showAvatar = index === 0 || 
                             messages[index - 1].senderId !== message.senderId;
-                            
+
                           return (
                             <div 
                               key={message.id} 
@@ -632,7 +632,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                                   <AvatarFallback>{activeChatUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                               )}
-                              
+
                               <div className={`max-w-[70%] ${!isCurrentUser && !showAvatar ? 'ml-10' : ''}`}>
                                 <div className={`rounded-lg p-3 ${
                                   isCurrentUser 
@@ -652,7 +652,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                                   )}
                                 </div>
                               </div>
-                              
+
                               {isCurrentUser && showAvatar && (
                                 <Avatar className="h-8 w-8 ml-2">
                                   <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`} />
@@ -672,7 +672,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Message Input */}
                   <div className="border-t p-3">
                     <div className="flex items-center gap-2">
@@ -731,7 +731,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </div>
         </Tabs>
       </CardContent>
-      
+
       {/* Call Modal */}
       <Dialog open={isCallModalOpen} onOpenChange={setIsCallModalOpen}>
         <DialogContent className="max-w-md">
@@ -740,7 +740,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               {activeCall?.callerId === userId ? 'Calling...' : 'Call Connected'}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="relative aspect-video bg-secondary rounded-md overflow-hidden">
             {remoteStream && (
               <video
@@ -762,7 +762,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </div>
             )}
           </div>
-          
+
           <div className="flex justify-center gap-4 mt-4">
             <Button
               variant="secondary"
@@ -776,7 +776,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 <Volume2 className="h-5 w-5" />
               )}
             </Button>
-            
+
             <Button
               variant="secondary"
               size="icon"
@@ -789,7 +789,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 <CameraOff className="h-5 w-5" />
               )}
             </Button>
-            
+
             <Button
               variant="destructive"
               size="icon"
@@ -804,7 +804,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Incoming Call Dialog */}
       {incomingCall && (
         <Dialog open={!!incomingCall} onOpenChange={() => rejectCall()}>
@@ -812,7 +812,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             <DialogHeader>
               <DialogTitle>Incoming Call</DialogTitle>
             </DialogHeader>
-            
+
             <div className="flex flex-col items-center py-4">
               <Avatar className="h-20 w-20 mb-4">
                 <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
@@ -822,7 +822,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   {getUserById(incomingCall.callerId)?.username?.substring(0, 2).toUpperCase() || '??'}
                 </AvatarFallback>
               </Avatar>
-              
+
               <h3 className="text-lg font-medium">
                 {getUserById(incomingCall.callerId)?.username || 'Unknown User'} is calling...
               </h3>
@@ -830,7 +830,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 {incomingCall.type === 'video' ? 'Video Call' : 'Audio Call'}
               </p>
             </div>
-            
+
             <div className="flex justify-center gap-4">
               <Button
                 variant="destructive"
@@ -840,7 +840,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               >
                 <Phone className="h-6 w-6 rotate-135" />
               </Button>
-              
+
               <Button
                 variant="default"
                 size="icon"
@@ -855,14 +855,14 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </DialogContent>
         </Dialog>
       )}
-      
+
       {/* User Search Dialog */}
       <Dialog open={showUserSearch} onOpenChange={setShowUserSearch}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Find Users</DialogTitle>
           </DialogHeader>
-          
+
           <div className="relative mb-4">
             <Input 
               placeholder="Search for users..." 
@@ -872,7 +872,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             />
             <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
           </div>
-          
+
           <ScrollArea className="h-[300px]">
             {allUsersLoading ? (
               <div className="flex justify-center items-center h-32">
@@ -889,7 +889,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       <div className="relative">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
-                          <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{user?.username ? user.username.substring(0, 2).toUpperCase() : 'UK'}</AvatarFallback>
                         </Avatar>
                         <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
                           user.status === 'online' ? 'bg-green-500' : 'bg-gray-500'
