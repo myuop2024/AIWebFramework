@@ -19,6 +19,7 @@ import analyticsRoutes from './routes/analytics';
 import adminAnalyticsRoutes from './routes/admin-analytics';
 import adminUserRoutes from './routes/admin-users';
 import adminSystemRoutes from './routes/admin-system';
+import adminRolesRoutes from './routes/admin-roles';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
@@ -2052,6 +2053,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Admin system information routes
   app.use('/', adminSystemRoutes);
+  
+  // Admin role management routes
+  app.use('/', adminRolesRoutes);
 
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);
