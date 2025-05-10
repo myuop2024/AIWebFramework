@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, Plus, RefreshCw, Edit, MapPin, Download, Upload } from "lucide-react";
+import { MapPin, Plus, FileUp, FileDown, Edit, Eye, Trash2, Search, RefreshCw } from "lucide-react";
 
 // Types
 interface PollingStation {
@@ -26,189 +26,225 @@ interface PollingStation {
 }
 
 export function PollingStationManagement() {
-  const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch polling stations
   const { data: stations = [], isLoading, refetch } = useQuery<PollingStation[]>({
     queryKey: ['/api/admin/polling-stations']
   });
 
-  // Update station status
-  const updateStationStatus = useMutation({
-    mutationFn: async ({ stationId, isActive }: { stationId: number, isActive: boolean }) => {
+  // Filter stations based on search query
+  const filteredStations = stations.filter(station => {
+    const searchTerm = searchQuery.toLowerCase();
+    return (
+      station.name.toLowerCase().includes(searchTerm) ||
+      (station.code && station.code.toLowerCase().includes(searchTerm)) ||
+      (station.city && station.city.toLowerCase().includes(searchTerm)) ||
+      (station.region && station.region.toLowerCase().includes(searchTerm))
+    );
+  });
+
+  // Delete a polling station
+  const deleteStation = useMutation({
+    mutationFn: async (stationId: number) => {
       return apiRequest(
-        'PATCH',
-        `/api/admin/polling-stations/${stationId}`,
-        { isActive }
+        'DELETE',
+        `/api/admin/polling-stations/${stationId}`
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/polling-stations'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
       toast({
-        title: "Station updated",
-        description: "The polling station status has been updated successfully.",
+        title: "Station Deleted",
+        description: "The polling station has been deleted successfully.",
       });
     },
     onError: (error) => {
-      console.error('Error updating station status:', error);
+      console.error('Error deleting polling station:', error);
       toast({
-        title: "Failed to update station",
-        description: "There was an error updating the polling station status.",
+        title: "Failed to delete station",
+        description: "The polling station could not be deleted. It may be in use by assignments.",
         variant: "destructive",
       });
     }
   });
 
-  // Filter stations based on search term
-  const filteredStations = stations.filter(station => 
-    searchTerm === "" || 
-    station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (station.code && station.code.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (station.city && station.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (station.region && station.region.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Handle deleting a station
+  const handleDeleteStation = (id: number) => {
+    if (window.confirm("Are you sure you want to delete this polling station? This action cannot be undone.")) {
+      deleteStation.mutate(id);
+    }
+  };
 
-  // Handle station status toggle
-  const handleToggleStationStatus = (stationId: number, currentStatus: boolean = true) => {
-    updateStationStatus.mutate({ stationId, isActive: !currentStatus });
+  // Handle edit station - this would open a modal or navigate to edit page
+  const handleEditStation = (id: number) => {
+    toast({
+      title: "Edit Station",
+      description: "Edit functionality will be implemented soon.",
+    });
+  };
+
+  // Handle view map - this would open a map view
+  const handleViewMap = (id: number) => {
+    toast({
+      title: "View Map",
+      description: "Map view functionality will be implemented soon.",
+    });
+  };
+
+  // Handle adding a new station
+  const handleAddStation = () => {
+    toast({
+      title: "Add Station",
+      description: "Add station functionality will be implemented soon.",
+    });
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex justify-between items-center">
           <div>
             <CardTitle>Polling Station Management</CardTitle>
             <CardDescription>
-              View and manage polling stations for the election
+              Manage and organize polling stations
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-          <div className="relative flex-grow">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="Search stations by name, code, city..."
-              className="pl-8 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Search stations..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddStation}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Station
+              </Button>
+              <Button variant="outline">
+                <FileUp className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button variant="outline">
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
           </div>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Station
-          </Button>
-        </div>
 
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-10">
-            <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
-            <p className="text-gray-500">Loading polling stations...</p>
-          </div>
-        ) : filteredStations.length === 0 ? (
-          <div className="text-center py-8">
-            <h3 className="text-lg font-medium mb-1">No polling stations found</h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm 
-                ? "Try a different search term or clear the search" 
-                : "You haven't added any polling stations yet"}
-            </p>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Station
-            </Button>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Station Code</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStations.map((station) => (
-                  <TableRow key={station.id}>
-                    <TableCell className="font-medium">{station.name}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {station.code || `STA${String(station.id).padStart(3, '0')}`}
-                    </TableCell>
-                    <TableCell>
-                      {station.city ? `${station.city}${station.region ? `, ${station.region}` : ''}` : 'N/A'}
-                    </TableCell>
-                    <TableCell>{station.capacity || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={station.isActive ? "default" : "outline"}
-                        className={!station.isActive ? "text-gray-500" : undefined}
-                      >
-                        {station.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                        >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleToggleStationStatus(station.id, station.isActive)}
-                        >
-                          {station.isActive ? 'Deactivate' : 'Activate'}
-                        </Button>
-                        
-                        {station.latitude && station.longitude && (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
+              <p className="text-gray-500">Loading polling stations...</p>
+            </div>
+          ) : filteredStations.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                <MapPin className="h-6 w-6 text-gray-500" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">No stations found</h3>
+              <p className="text-gray-500">
+                {searchQuery ? "Try adjusting your search term" : "No polling stations have been added yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStations.map((station) => (
+                    <TableRow key={station.id}>
+                      <TableCell className="font-medium">{station.name}</TableCell>
+                      <TableCell className="font-mono text-xs">{station.code || `-`}</TableCell>
+                      <TableCell>
+                        {station.city ? (
+                          <span className="text-sm">{station.city}{station.region ? `, ${station.region}` : ''}</span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No location data</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {station.capacity ? (
+                          <Badge variant="outline">{station.capacity}</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
                           <Button 
                             variant="outline" 
                             size="sm"
+                            onClick={() => handleEditStation(station.id)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => handleViewMap(station.id)}
                           >
                             <MapPin className="h-4 w-4 mr-1" />
                             Map
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-red-600 text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteStation(station.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="text-sm text-gray-500">
-          Showing {filteredStations.length} of {stations.length} polling stations
+          {filteredStations.length} station{filteredStations.length !== 1 ? 's' : ''}
         </div>
+        {filteredStations.length > 10 && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" disabled>Previous</Button>
+            <span className="text-sm">Page 1 of 1</span>
+            <Button variant="outline" size="sm" disabled>Next</Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

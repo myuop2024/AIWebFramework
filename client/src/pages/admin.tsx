@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import AdminModal from "@/components/admin/admin-modal";
+import { AdminModal } from "@/components/admin/admin-modal";
 import AdminDashboard from "@/components/admin/admin-dashboard";
 import AdminLayout from "@/components/layout/admin-layout";
 import { 
@@ -196,72 +196,22 @@ export default function Admin() {
   const handleManageStations = () => {
     setIsActionLoading(true);
     
-    setTimeout(() => {
+    // Import dynamically to avoid circular dependencies
+    import('@/components/admin/polling-station-management').then(({ PollingStationManagement }) => {
       setIsActionLoading(false);
-      
-      // Create station list HTML from actual polling station data
-      let stationsHtml = '';
-      let stationCount = 0;
-      
-      // Get polling stations from systemStats
-      if (systemStats?.pollingStations && Array.isArray(systemStats.pollingStations)) {
-        stationCount = systemStats.pollingStations.length;
-        
-        if (systemStats.pollingStations.length > 0) {
-          systemStats.pollingStations.forEach(station => {
-            const stationCode = station.code || `STA${String(station.id).padStart(3, '0')}`;
-            const cityInfo = station.city ? `City: ${station.city}` : '';
-            const capacityInfo = station.capacity ? `Cap: ${station.capacity}` : '';
-            const locationInfo = [cityInfo, capacityInfo].filter(Boolean).join(', ');
-            
-            stationsHtml += `
-              <div class="p-3 bg-gray-50 rounded border flex justify-between items-center">
-                <div>
-                  <div class="font-medium">${station.name}</div>
-                  <div class="text-sm text-gray-500">Station Code: ${stationCode}</div>
-                  ${locationInfo ? `<div class="text-xs text-gray-500">${locationInfo}</div>` : ''}
-                </div>
-                <div class="flex gap-2">
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit</button>
-                  <button class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">View Map</button>
-                </div>
-              </div>
-            `;
-          });
-        } else {
-          stationsHtml = '<div class="p-4 text-center">No polling stations found</div>';
-        }
-      } else {
-        stationsHtml = '<div class="p-4 text-center">No polling station data available</div>';
-      }
-      
       openModal(
         "Polling Station Management", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">All Polling Stations (${stationCount})</h3>
-          <div class="mb-4">
-            <input type="text" placeholder="Search stations..." class="w-full p-2 border rounded mb-4" />
-            <div class="flex gap-2 mb-4">
-              <button class="px-3 py-1 bg-primary text-white rounded text-sm">Add Station</button>
-              <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Import</button>
-              <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Export</button>
-            </div>
-          </div>
-          
-          <div class="space-y-3">
-            ${stationsHtml}
-          </div>
-          
-          <div class="mt-4 flex justify-between">
-            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Previous</button>
-            <span class="text-sm">Page 1 of 1</span>
-            <button class="px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">Next</button>
-          </div>
-        </div>
-        `
+        <PollingStationManagement />
       );
-    }, 800);
+    }).catch(error => {
+      console.error('Error loading PollingStationManagement component:', error);
+      setIsActionLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load polling station management component",
+        variant: "destructive",
+      });
+    });
   };
   
   // Handler for managing assignments

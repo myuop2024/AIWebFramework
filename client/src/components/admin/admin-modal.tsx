@@ -1,14 +1,7 @@
-import React, { ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { ReactNode } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -18,49 +11,35 @@ interface AdminModalProps {
   showFooter?: boolean;
 }
 
-const AdminModal: React.FC<AdminModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  content,
-  showFooter = true,
-}) => {
+export function AdminModal({ isOpen, onClose, title, content, showFooter = false }: AdminModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
           <div>
             <DialogTitle>{title}</DialogTitle>
-            <DialogDescription className="sr-only">
-              Administrative action dialog
-            </DialogDescription>
+            {typeof content === "string" && <DialogDescription>{content}</DialogDescription>}
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full h-8 w-8 p-0">
             <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
           </Button>
         </DialogHeader>
-        <div className="mt-4">
-          {typeof content === 'string' ? (
-            <div dangerouslySetInnerHTML={{ __html: content }} />
-          ) : (
-            content
-          )}
-        </div>
+        
+        {typeof content === "string" ? (
+          <div dangerouslySetInnerHTML={{ __html: content }} />
+        ) : (
+          <div className="pt-2">{content}</div>
+        )}
+        
         {showFooter && (
-          <DialogFooter className="mt-6">
+          <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
-          </DialogFooter>
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AdminModal;
+}
