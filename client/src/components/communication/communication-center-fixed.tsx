@@ -73,10 +73,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Filter conversations based on search query
   const filteredConversations = conversations?.filter(conversation => {
-    if (!conversation) return false;
-    const username = conversation.username || '';
-    const query = searchQuery || '';
-    return username.toLowerCase().includes(query.toLowerCase());
+    if (!conversation || !conversation.username) return false;
+    const query = searchQuery?.toLowerCase() || '';
+    return conversation.username.toLowerCase().includes(query);
   }) || [];
 
   // Filter contacts based on search query
@@ -330,6 +329,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     setActiveChatUserId(userId);
     setShowUserSearch(false);
   };
+
+  // Reset active chat if conversation not found
+  useEffect(() => {
+    if (activeChatUserId && !conversations?.some(c => c.userId === activeChatUserId)) {
+      setActiveChatUserId(null);
+    }
+  }, [conversations, activeChatUserId]);
 
   return (
     <Card className="h-full border-none shadow-none">

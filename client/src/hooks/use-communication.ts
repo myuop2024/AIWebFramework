@@ -54,8 +54,12 @@ export function useCommunication(userId: number) {
     let isUnmounting = false;
     
     const connectWebSocket = () => {
-      if (isUnmounting || (ws?.readyState === WebSocket.OPEN)) {
-        return;
+      if (isUnmounting) return;
+      
+      // Close existing connection if any
+      if (ws) {
+        ws.close();
+        ws = null;
       }
       
       // Clear any existing reconnect timer
