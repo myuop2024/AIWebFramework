@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import React, { useEffect, Suspense } from "react";
 import NotFound from "@/pages/not-found";
@@ -69,7 +69,8 @@ function Router() {
       <ProtectedRoute path="/assignments" component={AssignmentsPage} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
-      <ProtectedRoute path="/communications" component={Communications} />
+      {/* Redirect communications route to /chat to avoid duplicate routes */}
+      <Route path="/communications" component={() => <Redirect to="/chat" />} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       
