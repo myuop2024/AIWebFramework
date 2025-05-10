@@ -58,14 +58,7 @@ export function RoleManagement() {
 
   // Fetch roles
   const { data: roles = [], isLoading } = useQuery<Role[]>({
-    queryKey: ['/api/admin/roles'],
-    // Fallback to some default roles if API isn't yet implemented
-    placeholderData: [
-      { id: 1, name: "Administrator", description: "Full access to all system functions and settings", isSystem: true },
-      { id: 2, name: "Observer", description: "Can submit reports and view assigned polling stations", isSystem: true },
-      { id: 3, name: "Supervisor", description: "Can review reports and manage observers", isSystem: true },
-      { id: 4, name: "Analyst", description: "View-only access to reports and analytics", isSystem: false },
-    ]
+    queryKey: ['/api/admin/roles']
   });
 
   // Add new role mutation
@@ -171,20 +164,21 @@ export function RoleManagement() {
     setIsAddOpen(true);
   };
 
-  // Permissions list - this could be fetched from API
+  // Permissions list - matches the permissions set in the database
   const availablePermissions = [
-    { id: "users.view", label: "View users" },
-    { id: "users.create", label: "Create users" },
-    { id: "users.edit", label: "Edit users" },
-    { id: "users.delete", label: "Delete users" },
-    { id: "reports.view", label: "View reports" },
-    { id: "reports.create", label: "Create reports" },
-    { id: "reports.approve", label: "Approve reports" },
-    { id: "stations.view", label: "View polling stations" },
-    { id: "stations.manage", label: "Manage polling stations" },
-    { id: "assignments.view", label: "View assignments" },
-    { id: "assignments.manage", label: "Manage assignments" },
-    { id: "system.settings", label: "System settings" },
+    { id: "admin", label: "Administrator Access" },
+    { id: "manage_users", label: "Manage Users" },
+    { id: "manage_roles", label: "Manage Roles" },
+    { id: "manage_polling_stations", label: "Manage Polling Stations" },
+    { id: "manage_assignments", label: "Manage Assignments" },
+    { id: "manage_reports", label: "Manage Reports" },
+    { id: "manage_events", label: "Manage Events" },
+    { id: "manage_settings", label: "Manage System Settings" },
+    { id: "view_analytics", label: "View Analytics" },
+    { id: "submit_reports", label: "Submit Reports" },
+    { id: "view_assignments", label: "View Assignments" },
+    { id: "view_polling_stations", label: "View Polling Stations" },
+    { id: "approve_users", label: "Approve User Registrations" },
   ];
 
   return (
