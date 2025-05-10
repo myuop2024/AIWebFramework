@@ -343,6 +343,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     return username.substring(0, 2).toUpperCase();
   };
 
+    const getInitialsFullName = (firstName?: string, lastName?: string): string => {
+        if (!firstName || !lastName) {
+            return "UN";
+        }
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    };
+
   // Format message time
   const formatMessageTime = (date: Date | string) => { // Allow string for flexibility if API returns string dates
     return formatDistanceToNow(new Date(date), { addSuffix: true });
@@ -360,7 +367,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       return {
         id: conversation.userId,
         username: conversation.username, // Assuming username exists and is string from conversation type
-        status: 'offline' // This user is from conversations, likely offline if not in onlineUsers
+        status: 'offline' ,// This user is from conversations, likely offline if not in onlineUsers
+           firstName: conversation.firstName,
+            lastName: conversation.lastName
       };
     }
 
@@ -369,7 +378,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
       return { // Construct a CommunicationUser object
         id: allUser.id,
         username: allUser.username, // Assuming username exists from API type
-        status: allUser.status || 'offline' // Ensure status is present
+        status: allUser.status || 'offline', // Ensure status is present
+          firstName: allUser.firstName,
+          lastName: allUser.lastName
       };
     }
 
@@ -460,18 +471,15 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           }`}
                         onClick={() => setActiveChatUserId(conversation.userId)}
                       >
-                        <div className="relative">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
-                            <AvatarFallback>{getInitials(conversation.username)}</AvatarFallback>
-                          </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                            isUserOnline(conversation.userId) ? 'bg-green-500' : 'bg-gray-500'
-                          }`} />
-                        </div>
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
+                          <AvatarFallback>{getInitials(conversation.firstName && conversation.lastName ? 
+                            `${conversation.firstName} ${conversation.lastName}` : conversation.username)}</AvatarFallback>
+                        </Avatar>
                         <div className="flex-1 overflow-hidden">
                           <div className="flex justify-between items-start">
-                            <p className="font-medium truncate">{conversation.username}</p>
+                            <p className="font-medium truncate">{conversation.firstName && conversation.lastName ? 
+                              `${conversation.firstName} ${conversation.lastName}` : conversation.username}</p>
                             <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(conversation.lastMessageAt), {
                                 addSuffix: false,
@@ -555,7 +563,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
-                            <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
                           </Avatar>
                           <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
                             user.status === 'online' ? 'bg-green-500' : 
@@ -563,7 +571,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           }`} />
                         </div>
                         <div>
-                          <p className="font-medium">{user.username}</p>
+                          <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
                           <p className="text-xs text-muted-foreground">
                             {user.status === 'online' ? 'Active now' :
                               user.status === 'away' ? 'Away' : 'Offline'}
@@ -615,7 +623,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       <div className="relative">
                         <Avatar className="h-9 w-9">
                           <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
-                          <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
+                          <AvatarFallback>{getInitials(activeChatUser.firstName && activeChatUser.lastName ? 
+                            `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username)}</AvatarFallback>
                         </Avatar>
                         <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
                           activeChatUser.status === 'online' ? 'bg-green-500' : 
@@ -623,7 +632,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         }`} />
                       </div>
                       <div>
-                        <p className="font-medium">{activeChatUser.username}</p>
+                        <p className="font-medium">{activeChatUser.firstName && activeChatUser.lastName ? 
+                              `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username}</p>
                         <p className="text-xs text-muted-foreground">
                           {activeChatUser.status === 'online' ? 'Online' : 'Offline'}
                         </p>
@@ -788,8 +798,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <Send className="h-4 w-4" />
                         </Button>
                       </div>
-                    </div>
-                  </div>
+                    </div>                  </div>
                 </>
               ) : (
                 <div className="flex-grow flex flex-col items-center justify-center p-4">
@@ -1044,7 +1053,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
-                            <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
                           </Avatar>
                           <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
                             user.status === 'online' ? 'bg-green-500' : 
@@ -1052,7 +1061,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           }`} />
                         </div>
                         <div className="text-left">
-                          <p className="font-medium">{user.username}</p>
+                          <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
                           <p className="text-xs text-muted-foreground">
                             {user.status === 'online' ? 'Online' : 'Offline'}
                           </p>

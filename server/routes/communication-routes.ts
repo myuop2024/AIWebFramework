@@ -90,6 +90,8 @@ router.get('/online-users', ensureAuthenticated, async (req, res, next) => {
     const usersWithStatus = allUsersFromDb.map(user => ({
       id: user.id,
       username: user.username,
+      firstName: user.firstName || null,
+      lastName: user.lastName || null,
       // Determine status based on activeUserIds from communicationService
       status: activeUserIds.includes(user.id) ? 'online' : 'offline',
       profileImage: user.profileImage || null, // Ensure consistent null or string

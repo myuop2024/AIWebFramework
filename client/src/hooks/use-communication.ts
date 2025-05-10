@@ -29,6 +29,9 @@ export interface Message {
 export interface User {
   id: number;
   username: string;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
   status: 'online' | 'offline' | 'away';
   profileImage?: string;
 }
