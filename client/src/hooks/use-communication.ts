@@ -53,6 +53,10 @@ export function useCommunication(userId: number) {
     let ws: WebSocket | null = null;
     
     const connectWebSocket = () => {
+      if (ws?.readyState === WebSocket.OPEN) {
+        return; // Already connected
+      }
+      
       // Clear any existing reconnect timer
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
