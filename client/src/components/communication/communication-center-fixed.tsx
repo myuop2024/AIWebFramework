@@ -1,911 +1,1121 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// import { Separator } from '@/components/ui/separator'; // Not used in the final version
+import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { formatDistanceToNow, parseISO } from 'date-fns'; // Added parseISO for robust date handling
+import { formatDistanceToNow } from 'date-fns';
 import {
-  MessageSquare, Phone, Video, Send, Paperclip, Image as ImageIcon, // Renamed Image to ImageIcon to avoid conflict
+  MessageSquare, Phone, Video, Send, Paperclip, Image, Mic,
   User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search,
-  Download, Check, CheckCheck // Added Check, CheckCheck for read receipts
+  Download, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useCommunication, type Message, type User as CommunicationUser, type Conversation } from '@/hooks/use-communication'; // Adjusted imports
+import { useCommunication, type Message, type User as CommunicationUser } from '@/hooks/use-communication';
 import { useQuery } from '@tanstack/react-query';
-import { Spinner } from '@/components/ui/spinner'; // Assuming Spinner is a valid component
+import { Spinner } from '@/components/ui/spinner';
 
 interface CommunicationCenterProps {
   userId: number;
   hideHeader?: boolean; // Optional prop to hide the header tabs
 }
 
-// Main component for the Communication Center
-export default function CommunicationCenter({ userId, hideHeader = false }: CommunicationCenterProps) {
-  // State for the current logged-in user's ID
+export function CommunicationCenter({ userId, hideHeader = false }: CommunicationCenterProps) {
+  // Keep track of current user ID for status management
   const currentUserId = userId;
-  // State for the currently active chat (user ID of the other person)
   const [activeChatUserId, setActiveChatUserId] = useState<number | null>(null);
-  // State for the message input field
   const [messageInput, setMessageInput] = useState('');
-  // State for managing the visibility of the call modal
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
-  // State to indicate if a file is being dragged over the chat area
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  // State for local audio mute status in a call
   const [isMuted, setIsMuted] = useState(false);
-  // State for local video enabled status in a call
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  // State for search query in the conversations list
   const [searchQuery, setSearchQuery] = useState('');
-  // State for search query in the contacts list and new conversation dialog
   const [contactsSearchQuery, setContactsSearchQuery] = useState('');
-  // State for managing the visibility of the new conversation/user search dialog
   const [showUserSearch, setShowUserSearch] = useState(false);
+  const messageEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Refs for various DOM elements
-  const messageEndRef = useRef<HTMLDivElement>(null); // For scrolling to the latest message
-  const fileInputRef = useRef<HTMLInputElement>(null); // For the file input
-  const localVideoRef = useRef<HTMLVideoElement>(null); // For the local video stream in a call
-  const remoteVideoRef = useRef<HTMLVideoElement>(null); // For the remote video stream in a call
-
-  // Destructuring values and functions from the useCommunication custom hook
   const {
-    conversations,          // List of current user's conversations
-    conversationsLoading,   // Loading state for conversations
-    onlineUsers,            // List of users currently online (real-time from WebSocket)
-    useGetMessages,         // Hook to fetch messages for a specific chat
-    sendMessage,            // Function to send a message
-    markAllAsRead,          // Function to mark all messages from a user as read
-    startCall,              // Function to initiate a call
-    answerCall,             // Function to answer an incoming call
-    rejectCall,             // Function to reject an incoming call
-    endCall,                // Function to end an active call
-    activeCall,             // Information about the current active call
-    incomingCall,           // Information about an incoming call
-    localStream,            // Local media stream (audio/video)
-    remoteStream,           // Remote media stream (audio/video)
-    isSocketConnected,      // Boolean indicating WebSocket connection status
-  } = useCommunication(currentUserId); // Initialize hook with the current user's ID
+    conversations,
+    conversationsLoading,
+    onlineUsers,
+    useGetMessages,
+    sendMessage,
+    markAsRead,
+    markAllAsRead,
+    startCall,
+    answerCall,
+    rejectCall,
+    endCall,
+    activeCall,
+    incomingCall,
+    localStream,
+    remoteStream
+  } = useCommunication(userId);
 
-  // Fetch all users from the API for site-wide search (e.g., in "New Conversation" dialog)
-  // This provides basic user info; real-time status is primarily derived from `onlineUsers` state from the hook.
-  const { data: allUsersFromApi, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({
-    queryKey: ['/api/communications/online-users'], // React Query key for caching
+  // Get all users for site-wide search
+  const { data: allUsers, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({ // Added type for clarity
+    queryKey: ['/api/communications/online-users'],
     queryFn: async () => {
       const response = await fetch('/api/communications/online-users');
-      if (!response.ok) throw new Error('Failed to fetch all users from API');
+      if (!response.ok) throw new Error('Failed to fetch users');
       return response.json();
     },
-    staleTime: 60000, // Cache data for 1 minute, as WebSocket `USERS_LIST` provides more frequent updates for status
-    refetchOnWindowFocus: false, // Less frequent refetching as WebSocket handles real-time status updates
+    staleTime: 10000 // 10 seconds
   });
 
-  // Fetch messages for the currently active chat
+  // Get messages for the active chat
   const { data: messages, isLoading: messagesLoading } =
-    useGetMessages(activeChatUserId); // `useGetMessages` is from `useCommunication` hook
+    useGetMessages(activeChatUserId);
 
-  // Callback function to get user details by ID.
-  // It prioritizes sources for the most up-to-date information, especially online status.
-  const getUserById = useCallback((id: number | null | undefined): CommunicationUser | undefined => {
-    if (typeof id !== 'number') return undefined; // Ensure ID is a number
-
-    // 1. Prioritize `onlineUsers` from the hook (most up-to-date status from WebSockets)
-    const onlineUserFromHook = onlineUsers.find(user => user.id === id);
-    if (onlineUserFromHook) {
-      return onlineUserFromHook; // This object should have the most accurate 'status'
-    }
-
-    // 2. Check `conversations` list (might have user details, but status could be stale if user just went offline)
-    const conversationUser = conversations?.find(conv => conv.userId === id);
-    if (conversationUser) {
-      return { // Construct a CommunicationUser object
-        id: conversationUser.userId,
-        username: conversationUser.username,
-        status: 'offline', // Assume offline if not found in the real-time `onlineUsers` list
-        firstName: conversationUser.firstName,
-        lastName: conversationUser.lastName,
-        profileImage: conversationUser.profileImage,
-        // role and parish might also be available on conversationUser if API provides them
-      };
-    }
-
-    // 3. Check `allUsersFromApi` (initial fetch, status is a snapshot and might be less real-time)
-    const userFromApi = allUsersFromApi?.find(user => user.id === id);
-    if (userFromApi) {
-      // The status from `allUsersFromApi` is based on the last API fetch,
-      // which itself checks the backend's communication service.
-      return userFromApi;
-    }
-    return undefined; // User not found in any source
-  }, [onlineUsers, conversations, allUsersFromApi]); // Dependencies for the useCallback
-
-  // Get the full user object for the currently active chat partner
-  const activeChatUser = activeChatUserId ? getUserById(activeChatUserId) : undefined;
-
-  // Filter conversations based on the search query in the "Chats" tab
+  // Filter conversations based on search query
   const filteredConversations = conversations?.filter(conversation => {
-    const query = searchQuery?.toLowerCase() || '';
-    // Search by full name (if available) or username
-    const userName = (conversation.firstName && conversation.lastName)
-        ? `${conversation.firstName} ${conversation.lastName}`.toLowerCase()
-        : conversation.username?.toLowerCase() || '';
-    return userName.includes(query);
-  }) || []; // Default to an empty array if conversations is undefined
-
-  // Filter ALL users from the API for the "New Conversation" dialog
-  // Excludes the current user and enriches with real-time status if available.
-  const filteredAllUsersForSearchDialog = allUsersFromApi?.filter(user => {
-    if (user.id === currentUserId) return false; // Exclude self from search results
-    const query = contactsSearchQuery?.toLowerCase() || '';
-    const userName = (user.firstName && user.lastName)
-        ? `${user.firstName} ${user.lastName}`.toLowerCase()
-        : user.username?.toLowerCase() || '';
-    return userName.includes(query);
-  }).map(user => { // Enrich with real-time status from `onlineUsers` if available
-      const onlineUser = onlineUsers.find(ou => ou.id === user.id);
-      return onlineUser ? onlineUser : user; // Prefer the `onlineUser` object if found, as it has live status
+    // Ensure conversation and username exist before attempting to use them
+    if (!conversation || typeof conversation.username !== 'string') return false;
+    const query = searchQuery?.toLowerCase() || ''; // searchQuery can be null/undefined, provide default
+    return conversation.username.toLowerCase().includes(query);
   }) || [];
 
-  // Filter ONLINE users for the "Contacts" tab.
-  // This list is derived directly from `onlineUsers` (real-time WebSocket data).
-  const filteredOnlineContacts = onlineUsers.filter(user => {
-    if (user.id === currentUserId) return false; // Exclude self from contacts list
-    const query = contactsSearchQuery?.toLowerCase() || '';
-     const userName = (user.firstName && user.lastName)
-        ? `${user.firstName} ${user.lastName}`.toLowerCase()
-        : user.username?.toLowerCase() || '';
-    return userName.includes(query);
+  // Filter contacts based on search query
+  // This is the likely location of the original error if user.username is undefined
+  const filteredContacts = onlineUsers.filter(user => {
+    // FIX: Use nullish coalescing to provide a default empty string if username is undefined or null
+    // This prevents calling .toLowerCase() on undefined.
+    const username = user?.username ?? "";
+    // contactsSearchQuery is initialized as '', so .toLowerCase() is safe on it.
+    return username.toLowerCase().includes(contactsSearchQuery.toLowerCase());
   });
 
-  // State for the media viewer modal (for images and files)
+  // Filter all users based on search query
+  const filteredAllUsers = allUsers?.filter(user => {
+    // FIX: Ensure user.username is treated as a string before .toLowerCase()
+    // and provide a default for the whole expression if allUsers is not yet available.
+    const username = user?.username ?? "";
+    // contactsSearchQuery is initialized as '', so .toLowerCase() is safe on it.
+    return username.toLowerCase().includes(contactsSearchQuery.toLowerCase());
+  }) || []; // Ensure filteredAllUsers is an empty array if allUsers is undefined (e.g., during loading)
+
+  // State for media viewer modal
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [viewedMedia, setViewedMedia] = useState<{
     type: 'image' | 'file';
-    content: string; // For image src, or stringified file data
-    fileData?: { name: string; size: number; type: string; url?: string }; // `url` for actual download
+    content: string;
+    fileData?: { name: string; size: number; type: string };
   } | null>(null);
 
-  // Function to open the media viewer modal
+  // Open media viewer
   const openMediaViewer = (message: Message) => {
     if (message.type === 'image') {
-      setViewedMedia({ type: 'image', content: message.content });
+      setViewedMedia({
+        type: 'image',
+        content: message.content
+      });
       setIsMediaViewerOpen(true);
     } else if (message.type === 'file') {
       try {
-        // Assuming message.content for 'file' type is a JSON string: { name, size, type, url }
         const fileData = JSON.parse(message.content);
-        setViewedMedia({ type: 'file', content: message.content, fileData });
+        setViewedMedia({
+          type: 'file',
+          content: message.content,
+          fileData
+        });
         setIsMediaViewerOpen(true);
       } catch (e) {
-        console.error('Failed to parse file data for viewer:', e, message.content);
-        // Fallback if parsing fails
-        setViewedMedia({ type: 'file', content: "Error displaying file info.", fileData: { name: "Invalid File Data", size: 0, type: "" } });
-        setIsMediaViewerOpen(true);
+        console.error('Failed to parse file data', e);
       }
     }
   };
 
-  // Helper function to format file size into readable units
+  // Format file size with appropriate units
   const formatFileSize = (sizeInBytes: number): string => {
-    if (sizeInBytes < 1024) return `${sizeInBytes} B`;
-    if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
-    // Add more units like MB, GB if necessary
-    return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (sizeInBytes < 1024) {
+      return `${sizeInBytes} B`;
+    } else if (sizeInBytes < 1024 * 1024) {
+      return `${(sizeInBytes / 1024).toFixed(2)} KB`;
+    } else if (sizeInBytes < 1024 * 1024 * 1024) {
+      return `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
+    } else {
+      return `${(sizeInBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
   };
 
-  // Function to render message content based on its type (text, image, file, system)
+  // Render message content based on type
   const renderMessageContent = (message: Message) => {
     switch (message.type) {
       case 'image':
         return (
-          <div className="mt-1"> {/* Small top margin for image messages */}
+          <div className="mt-2">
             <img
-              src={message.content} // Assuming content is base64 data URL or a direct image URL
+              src={message.content}
               alt="Shared image"
-              className="max-w-[250px] max-h-[250px] rounded-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
+              className="max-w-[200px] max-h-[200px] rounded-md object-contain cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => openMediaViewer(message)}
-              // Fallback image if the source fails to load
-              onError={(e) => (e.currentTarget.src = 'https://placehold.co/200x200/ccc/666?text=Image+Error')}
             />
           </div>
         );
       case 'file':
         try {
-          // Expect file content to be a JSON string with { name, size, type, url (optional) }
           const fileData = JSON.parse(message.content);
           return (
             <div
-              className="mt-1 flex items-center gap-2 p-2.5 bg-background dark:bg-slate-700 rounded-md cursor-pointer hover:bg-muted dark:hover:bg-slate-600 transition-colors"
+              className="mt-2 flex items-center gap-2 p-2 bg-secondary rounded-md cursor-pointer hover:bg-secondary/80 transition-colors"
               onClick={() => openMediaViewer(message)}
             >
-              <Paperclip className="h-5 w-5 text-primary shrink-0" /> {/* File icon */}
-              <div className="overflow-hidden"> {/* Container to handle text overflow */}
-                <p className="text-sm font-medium truncate">{fileData.name || 'Attached File'}</p>
+              <Paperclip className="h-4 w-4" />
+              <div>
+                <p className="text-sm font-medium">{fileData.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {fileData.size ? formatFileSize(fileData.size) : 'Size unknown'}
+                  {(fileData.size / 1024).toFixed(2)} KB
                 </p>
               </div>
             </div>
           );
         } catch (e) {
-          // Fallback if JSON parsing fails or content is not as expected
-          return <p className="text-sm text-red-500">Error displaying file: Invalid format.</p>;
+          return <p>{message.content}</p>;
         }
-      case 'system': // For system messages (e.g., "User X joined the call")
-        return <p className="text-xs italic text-muted-foreground px-2 py-1">{message.content}</p>;
-      default: // 'text' messages
-        return <p className="whitespace-pre-wrap break-words">{message.content}</p>; // Allows line breaks and wraps long words
+      case 'system':
+        return (
+          <p className="text-sm italic text-muted-foreground">{message.content}</p>
+        );
+      default:
+        return <p>{message.content}</p>;
     }
   };
 
-  // Effect to scroll to the bottom of the message list when new messages arrive
+
+  // Scroll to bottom of messages when messages change
   useEffect(() => {
     if (messageEndRef.current) {
       messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]); // Dependency: re-run when `messages` array changes
+  }, [messages]);
 
-  // Effect to mark messages as read when a chat is opened/active
+  // Mark messages as read when opening a chat
   useEffect(() => {
     if (activeChatUserId && messages?.length) {
-      // Filter for unread messages sent by the active chat partner to the current user
-      const unreadMessagesFromSender = messages.filter(m =>
-        m.senderId === activeChatUserId && m.receiverId === currentUserId && !m.read
+      const unreadMessages = messages.filter(m =>
+        m.senderId === activeChatUserId && !m.read
       );
-      if (unreadMessagesFromSender.length > 0) {
-        console.log(`[CommCenter] Marking all ${unreadMessagesFromSender.length} messages from ${activeChatUserId} as read.`);
-        markAllAsRead(activeChatUserId); // API call to mark messages as read; backend should notify sender
+
+      if (unreadMessages.length > 0) {
+        markAllAsRead(activeChatUserId);
       }
     }
-  }, [activeChatUserId, messages, markAllAsRead, currentUserId]); // Dependencies
+  }, [activeChatUserId, messages, markAllAsRead]);
 
-  // Effect to set up local and remote video streams in the call modal
+  // Set up video streams when in a call
   useEffect(() => {
-    if (localStream && localVideoRef.current) localVideoRef.current.srcObject = localStream;
-    if (remoteStream && remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
-  }, [localStream, remoteStream]); // Dependencies: re-run when streams change
+    if (localStream && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStream;
+    }
 
-  // Event handlers for drag-and-drop file uploads
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDraggingFile(true); };
-  const handleDragLeave = () => setIsDraggingFile(false);
+    if (remoteStream && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [localStream, remoteStream]);
+
+  // Handle file dropping
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingFile(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingFile(false);
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingFile(false);
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && activeChatUserId) {
-      await handleFileUpload(e.dataTransfer.files[0]); // Process the first dropped file
+      const file = e.dataTransfer.files[0];
+      await handleFileUpload(file);
     }
   };
 
-  // Event handler for file selection via the input element
+  // Handle file selection via input
   const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0 && activeChatUserId) {
-      await handleFileUpload(e.target.files[0]); // Process the selected file
-      if(fileInputRef.current) fileInputRef.current.value = ""; // Reset file input to allow selecting the same file again
+      const file = e.target.files[0];
+      await handleFileUpload(file);
     }
   };
 
-  // Function to process and send/upload a file
+  // Process and upload file
   const handleFileUpload = async (file: File) => {
-    if (!activeChatUserId) return; // Ensure a chat is active
-
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // Example: 5MB limit
-    if (file.size > MAX_FILE_SIZE) {
-        alert(`File is too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}.`);
-        return;
-    }
+    if (!activeChatUserId) return;
 
     try {
-      if (file.type.startsWith('image/')) { // Handle image files
+      // Handle different file types
+      if (file.type.startsWith('image/')) {
+        // For images, create a data URL and send as an image message
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result && typeof e.target.result === 'string') {
-            sendMessage(activeChatUserId, e.target.result, 'image'); // Send base64 data URL as content
+            sendMessage(activeChatUserId, e.target.result, 'image');
           }
         };
         reader.readAsDataURL(file);
-      } else { // Handle other file types
-        // In a production app, you would upload the `file` to a server/storage,
-        // get a downloadable URL, and then send that URL along with file metadata.
-        // For this example, we send file metadata as a JSON string.
-        // The backend/receiver would need to handle this (e.g., provide a download link if a URL was included).
-        const fileInfo = {
+      } else {
+        // For other files, upload to server first (we'll simulate this for now)
+        // In production, you would upload the file to your server and get a URL
+        sendMessage(
+          activeChatUserId,
+          JSON.stringify({
             name: file.name,
             size: file.size,
-            type: file.type,
-            url: "#" // Placeholder: In a real app, this would be the actual download URL after upload.
-        };
-        sendMessage(activeChatUserId, JSON.stringify(fileInfo), 'file');
+            type: file.type
+          }),
+          'file'
+        );
       }
     } catch (error) {
-      console.error('Error processing file for sending:', error);
-      alert('Error processing file. Please try again.');
+      console.error('Error uploading file:', error);
     }
   };
 
-  // Handler for sending a text message
+  // Handle sending a message
   const handleSendMessage = () => {
     if (messageInput.trim() && activeChatUserId) {
-      sendMessage(activeChatUserId, messageInput.trim()); // Send the trimmed message
-      setMessageInput(''); // Clear the input field
+      sendMessage(activeChatUserId, messageInput);
+      setMessageInput('');
     }
   };
 
-  // Handler for Enter key press in the message input to send message
+  // Handle key press for sending messages
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new line
-      e.preventDefault(); // Prevent default Enter behavior (e.g., new line in textarea)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
   };
 
-  // Handler to initiate a call (audio or video)
+  // Initialize a call
   const handleStartCall = async (callType: 'audio' | 'video') => {
     if (!activeChatUserId) return;
-    const callUser = getUserById(activeChatUserId); // Get details of the user to call
-    if (callUser?.status !== 'online') { // Check if the user is online
-        alert(`${callUser?.username || 'User'} is not online and cannot be called.`);
-        return;
+
+    try {
+      await startCall(activeChatUserId, callType);
+      setIsCallModalOpen(true);
+    } catch (error) {
+      console.error('Error starting call:', error);
     }
-    const callResult = await startCall(activeChatUserId, callType); // `startCall` is from `useCommunication`
-    if (callResult) setIsCallModalOpen(true); // Open call modal on success
   };
 
-  // Handler to answer an incoming call
+  // Answer an incoming call
   const handleAnswerCall = async () => {
-    const callResult = await answerCall(); // `answerCall` is from `useCommunication`
-    if (callResult) setIsCallModalOpen(true); // Open call modal
+    try {
+      await answerCall();
+      setIsCallModalOpen(true);
+    } catch (error) {
+      console.error('Error answering call:', error);
+    }
   };
 
-  // Toggle local audio mute state
+  // Toggle mute
   const toggleMute = () => {
     if (localStream) {
-      localStream.getAudioTracks().forEach(track => { track.enabled = !track.enabled; });
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
       setIsMuted(!isMuted);
     }
   };
 
-  // Toggle local video enabled state
+  // Toggle video
   const toggleVideo = () => {
     if (localStream) {
-      localStream.getVideoTracks().forEach(track => { track.enabled = !track.enabled; });
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
       setIsVideoEnabled(!isVideoEnabled);
     }
   };
 
-  // Helper to get user initials for avatars
-  const getInitials = (firstName?: string, lastName?: string, username?: string): string => {
-    if (firstName && lastName) return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    if (firstName) return `${firstName.substring(0, Math.min(firstName.length, 2))}`.toUpperCase(); // Use Math.min for short first names
-    if (username) return username.substring(0, Math.min(username.length, 2)).toUpperCase();
-    return '??'; // Default fallback
+  // Safely get user initials or provide default
+  const getInitials = (username?: string): string => {
+    if (!username || typeof username !== 'string') return 'UN'; // Check type for safety
+    return username.substring(0, 2).toUpperCase();
   };
 
-  // Helper to format message timestamps (e.g., "2 minutes ago")
-  const formatTimestamp = (dateInput: Date | string | undefined): string => {
-    if (!dateInput) return '';
-    try {
-      // Parse date string to Date object if necessary
-      const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-      return formatDistanceToNow(date, { addSuffix: true });
-    } catch (e) {
-      console.error("Error formatting date for message timestamp:", dateInput, e);
-      return "Invalid date";
+    const getInitialsFullName = (firstName?: string, lastName?: string): string => {
+        if (!firstName || !lastName) {
+            return "UN";
+        }
+        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    };
+
+  // Format message time
+  const formatMessageTime = (date: Date | string) => { // Allow string for flexibility if API returns string dates
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
+  };
+
+  // Get user by ID
+  const getUserById = (id: number): CommunicationUser | undefined => {
+    if (typeof id !== 'number') return undefined; // Basic type check
+
+    const onlineUser = onlineUsers.find(user => user.id === id);
+    if (onlineUser) return onlineUser;
+
+    const conversation = conversations?.find(conv => conv.userId === id);
+    if (conversation) {
+      return {
+        id: conversation.userId,
+        username: conversation.username, // Assuming username exists and is string from conversation type
+        status: 'offline' ,// This user is from conversations, likely offline if not in onlineUsers
+           firstName: conversation.firstName,
+            lastName: conversation.lastName
+      };
     }
-  };
 
-  // Helper to format timestamps for conversation list (e.g., "5m")
-  const formatConversationTimestamp = (dateInput: Date | string | undefined): string => {
-    if (!dateInput) return '';
-    try {
-      const date = typeof dateInput === 'string' ? parseISO(dateInput) : dateInput;
-      // More concise format for conversation list
-      return formatDistanceToNow(date, { addSuffix: false });
-    } catch (e) {
-      console.error("Error formatting date for conversation list:", dateInput, e);
-      return "Invalid date";
+    const allUser = allUsers?.find(user => user.id === id);
+    if (allUser) {
+      return { // Construct a CommunicationUser object
+        id: allUser.id,
+        username: allUser.username, // Assuming username exists from API type
+        status: allUser.status || 'offline', // Ensure status is present
+          firstName: allUser.firstName,
+          lastName: allUser.lastName
+      };
     }
+
+    return undefined;
   };
 
-  // Function to start a chat with a selected user
-  const startChatWithUser = (userToChat: CommunicationUser) => {
-    setActiveChatUserId(userToChat.id); // Set the active chat
-    // Attempt to switch to the "chats" tab if it's not already active
-    const chatsTabTrigger = document.querySelector('button[role="tab"][value="chats"]') as HTMLButtonElement | null;
-    if (chatsTabTrigger && chatsTabTrigger.getAttribute('data-state') !== 'active') {
-        chatsTabTrigger.click();
+
+  // Get active chat user
+  const activeChatUser = activeChatUserId ? getUserById(activeChatUserId) : undefined;
+
+  // Check if a user is online
+  const isUserOnline = (userId: number): boolean => {
+    // Always show current user as online if they're viewing the chat
+    if (userId === currentUserId) {
+      return true;
     }
-    setShowUserSearch(false); // Close the "New Conversation" dialog
-    setContactsSearchQuery(''); // Clear the search query from the dialog
+    return onlineUsers.some(user => user.id === userId && user.status === 'online');
   };
 
-  // Conditional rendering for WebSocket connection issues (optional, can be a small indicator)
-  // if (!isSocketConnected && !conversationsLoading) {
-  //   // This is an example of a more prominent disconnection message.
-  //   // You might prefer a smaller, less intrusive indicator.
-  // }
+  // Start a chat with a user
+  const startChat = (userId: number) => {
+    setActiveChatUserId(userId);
+    setShowUserSearch(false);
+    setContactsSearchQuery(''); // Clear search query after selecting a user
+  };
 
-  // Main JSX for the CommunicationCenter component
+  // Reset active chat if conversation not found or user becomes invalid
+  useEffect(() => {
+    if (activeChatUserId) {
+      const userExistsInConversations = conversations?.some(c => c.userId === activeChatUserId);
+      const userExistsInOnline = onlineUsers.some(u => u.id === activeChatUserId);
+      const userExistsInAllUsers = allUsers?.some(u => u.id === activeChatUserId);
+
+      if (!userExistsInConversations && !userExistsInOnline && !userExistsInAllUsers) {
+        // If user is not found anywhere, reset active chat
+        // This logic might need adjustment based on how users are populated/removed
+        // For now, we only reset if not in current conversations list
+        if (!userExistsInConversations && conversations && conversations.length > 0) {
+             // setActiveChatUserId(null); // Commented out to prevent losing chat if user briefly disconnects
+        }
+      }
+    }
+  }, [conversations, onlineUsers, allUsers, activeChatUserId]);
+
+
   return (
-    <TooltipProvider> {/* Provides context for all tooltips within */}
-      <Card className="h-full w-full flex flex-col border-none shadow-none bg-transparent">
-        <CardContent className="p-0 h-full flex flex-col overflow-hidden"> {/* Ensure CardContent allows flex layout */}
-          <Tabs defaultValue="chats" className="h-full flex flex-col">
-            {!hideHeader && ( // Conditionally render header with tabs
-              <div className="border-b px-4">
-                <TabsList className="justify-start bg-transparent border-none p-0">
-                  <TabsTrigger value="chats" className="py-3 text-sm data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none">
-                    <MessageSquare className="h-4 w-4 mr-2" /> Chats
-                  </TabsTrigger>
-                  <TabsTrigger value="contacts" className="py-3 text-sm data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary rounded-none">
-                    <Users className="h-4 w-4 mr-2" /> Contacts
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-            )}
-
-            <div className="flex flex-1 overflow-hidden"> {/* Main flex container for sidebar and chat area */}
-              {/* Sidebar for Chats & Contacts */}
-              {/* Sidebar is hidden on mobile (md breakpoint) when a chat is active */}
-              <div className={`w-full md:w-80 lg:w-96 border-r flex flex-col bg-background dark:bg-slate-800 ${activeChatUserId && 'hidden md:flex'}`}>
-                {/* Chats Tab Content */}
-                <TabsContent value="chats" className="mt-0 h-full flex flex-col">
-                  <div className="p-3"> {/* Search input for conversations */}
-                    <div className="relative">
-                      <Input
-                        placeholder="Search conversations..."
-                        className="border bg-muted text-sm pl-9 rounded-full h-9"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <ScrollArea className="flex-grow"> {/* Scrollable area for conversation list */}
-                    {conversationsLoading ? (
-                      <div className="flex justify-center items-center h-32"><Spinner /></div>
-                    ) : filteredConversations.length > 0 ? (
-                      <div className="px-2 space-y-1">
-                        {filteredConversations.map((conv) => {
-                          const userForConv = getUserById(conv.userId); // Get enriched user info for display
-                          return (
-                            <div
-                              key={conv.userId}
-                              className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${activeChatUserId === conv.userId ? 'bg-primary/10 dark:bg-primary/20' : 'hover:bg-muted dark:hover:bg-slate-700'}`}
-                              onClick={() => setActiveChatUserId(conv.userId)}
-                            >
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={userForConv?.profileImage || `https://avatar.vercel.sh/${userForConv?.username || conv.userId}.png?size=100`} />
-                                <AvatarFallback>{getInitials(userForConv?.firstName, userForConv?.lastName, userForConv?.username)}</AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 overflow-hidden">
-                                <div className="flex justify-between items-center">
-                                  <p className="font-semibold truncate text-sm">
-                                    {userForConv?.firstName && userForConv?.lastName ? `${userForConv.firstName} ${userForConv.lastName}` : userForConv?.username || 'Unknown User'}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground shrink-0 ml-2">
-                                    {formatConversationTimestamp(conv.lastMessageAt)}
-                                  </p>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {conv.lastMessageType === 'image' ? '🖼️ Image' : conv.lastMessageType === 'file' ? '📎 File' : conv.lastMessage}
-                                  </p>
-                                  {conv.unreadCount > 0 && (
-                                    <Badge /*variant="default_solid"*/ className="h-5 min-w-[20px] text-xs rounded-full p-0 flex items-center justify-center bg-primary text-primary-foreground">
-                                      {conv.unreadCount}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="text-center py-10 px-4">
-                        <p className="text-sm text-muted-foreground">
-                          {searchQuery ? 'No conversations match your search.' : 'No conversations yet.'}
-                        </p>
-                      </div>
-                    )}
-                  </ScrollArea>
-                  <div className="p-3 border-t mt-auto"> {/* "New Conversation" button at the bottom */}
-                    <Button variant="outline" className="w-full" onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }}>
-                      <UserPlus className="h-4 w-4 mr-2" /> New Conversation
-                    </Button>
-                  </div>
-                </TabsContent>
-
-                {/* Contacts Tab Content */}
-                <TabsContent value="contacts" className="mt-0 h-full flex flex-col">
-                  <div className="p-3"> {/* Search input for contacts */}
-                    <div className="relative">
-                      <Input
-                        placeholder="Search contacts..."
-                        className="border bg-muted text-sm pl-9 rounded-full h-9"
-                        value={contactsSearchQuery}
-                        onChange={(e) => setContactsSearchQuery(e.target.value)}
-                      />
-                      <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <ScrollArea className="flex-grow">
-                    {/* `filteredOnlineContacts` uses `onlineUsers` from the hook for real-time status */}
-                    {filteredOnlineContacts.length > 0 ? (
-                      <div className="px-2 space-y-1">
-                        <p className="text-xs font-medium px-2 pt-2 pb-1 text-muted-foreground">Online Contacts</p>
-                        {filteredOnlineContacts.map((user) => (
-                          <div
-                            key={user.id}
-                            className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer hover:bg-muted dark:hover:bg-slate-700"
-                            onClick={() => startChatWithUser(user)} // Use dedicated function to start chat
-                          >
-                            <div className="relative"> {/* Container for avatar and status dot */}
-                              <Avatar className="h-10 w-10">
-                                <AvatarImage src={user.profileImage || `https://avatar.vercel.sh/${user.username}.png?size=100`} />
-                                <AvatarFallback>{getInitials(user.firstName, user.lastName, user.username)}</AvatarFallback>
-                              </Avatar>
-                              {/* Online status indicator dot */}
-                              <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} title={user.status} />
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                              <p className="font-semibold truncate text-sm">
-                                {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
-                              </p>
-                              <p className="text-xs text-muted-foreground capitalize">{user.status}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                       <div className="text-center py-10 px-4">
-                        <p className="text-sm text-muted-foreground">
-                          {contactsSearchQuery ? 'No contacts match your search.' : 'No online contacts found.'}
-                        </p>
-                      </div>
-                    )}
-                  </ScrollArea>
-                </TabsContent>
-              </div>
-
-              {/* Chat Area (Main Content) */}
-              {/* Chat area is hidden on mobile if no chat is active, and takes full width if sidebar is hidden */}
-              <div className={`flex-1 flex flex-col h-full bg-slate-50 dark:bg-slate-900 ${!activeChatUserId && 'hidden md:flex'}`}>
-                {activeChatUser ? ( // If a chat is active, render the chat interface
-                  <>
-                    {/* Chat Header */}
-                    <div className="p-3 border-b flex items-center justify-between bg-background dark:bg-slate-800">
-                      <div className="flex items-center gap-3">
-                         {/* Back button for mobile to close active chat and show sidebar */}
-                         <Button variant="ghost" size="icon" className="md:hidden mr-1" onClick={() => setActiveChatUserId(null)}>
-                            <X className="h-5 w-5" />
-                        </Button>
-                        <div className="relative"> {/* Active chat user's avatar and status */}
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={activeChatUser.profileImage || `https://avatar.vercel.sh/${activeChatUser.username}.png?size=100`} />
-                            <AvatarFallback>{getInitials(activeChatUser.firstName, activeChatUser.lastName, activeChatUser.username)}</AvatarFallback>
-                          </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${activeChatUser.status === 'online' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} title={activeChatUser.status} />
-                        </div>
-                        <div> {/* Active chat user's name and status text */}
-                          <p className="font-semibold">
-                            {activeChatUser.firstName && activeChatUser.lastName ? `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username}
-                          </p>
-                          <p className="text-xs text-muted-foreground capitalize">{activeChatUser.status}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-1"> {/* Call buttons */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleStartCall('audio')} disabled={activeChatUser.status !== 'online' || !!activeCall || !!incomingCall}>
-                              <Phone className="h-5 w-5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Audio Call</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => handleStartCall('video')} disabled={activeChatUser.status !== 'online' || !!activeCall || !!incomingCall}>
-                              <Video className="h-5 w-5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Video Call</TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </div>
-
-                    {/* Message Display Area */}
-                    <div
-                      className={`flex-grow overflow-y-auto p-4 space-y-2 ${isDraggingFile ? 'outline-dashed outline-2 outline-primary' : ''}`} // Highlight on drag over
-                      onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-                    >
-                      {messagesLoading && !messages?.length ? ( // Show spinner only if loading and no messages are present yet
-                        <div className="flex justify-center items-center h-full"><Spinner /></div>
-                      ) : messages && messages.length > 0 ? (
-                        messages.map((message, index) => {
-                          const isCurrentUser = message.senderId === currentUserId;
-                          const prevMessage = messages[index - 1];
-                          const nextMessage = messages[index + 1]; // For message grouping
-
-                          // Determine if avatar should be shown (for received messages, not grouped with previous)
-                          const showAvatar = !isCurrentUser && (
-                            index === 0 || // First message
-                            prevMessage?.senderId !== message.senderId || // Different sender
-                            new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 5 * 60000 // More than 5 mins gap
-                          );
-
-                          // Determine message bubble border radius for grouping effect
-                          const isFirstInSenderGroup = index === 0 || prevMessage?.senderId !== message.senderId || new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 1 * 60000;
-                          const isLastInSenderGroup = index === messages.length - 1 || nextMessage?.senderId !== message.senderId || new Date(nextMessage.sentAt).getTime() - new Date(message.sentAt).getTime() > 1 * 60000;
-
-                          let borderRadiusClasses = "rounded-xl"; // Default full rounding
-                          if(isCurrentUser) { // Sent messages
-                            borderRadiusClasses = `${isFirstInSenderGroup ? 'rounded-tr-xl' : 'rounded-tr-md'} ${isLastInSenderGroup ? 'rounded-br-xl' : 'rounded-br-md'} rounded-l-xl`;
-                          } else { // Received messages
-                            borderRadiusClasses = `${isFirstInSenderGroup ? 'rounded-tl-xl' : 'rounded-tl-md'} ${isLastInSenderGroup ? 'rounded-bl-xl' : 'rounded-bl-md'} rounded-r-xl`;
-                          }
-
-                          return (
-                            <div key={message.id || index} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-2' : 'mt-0.5'}`}>
-                              <div className={`flex items-end gap-2 max-w-[75%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                                {showAvatar && activeChatUser && ( // Show avatar for received messages if conditions met
-                                  <Avatar className="h-8 w-8 self-end">
-                                    <AvatarImage src={activeChatUser.profileImage || `https://avatar.vercel.sh/${activeChatUser.username}.png?size=64`} />
-                                    <AvatarFallback>{getInitials(activeChatUser.firstName, activeChatUser.lastName, activeChatUser.username)}</AvatarFallback>
-                                  </Avatar>
-                                )}
-                                {/* Spacer for alignment when avatar is not shown, or for sent messages */}
-                                {(!showAvatar && !isCurrentUser) && <div className="w-8 shrink-0"></div>}
-
-                                {/* Message bubble */}
-                                <div className={`p-2.5 ${borderRadiusClasses} ${isCurrentUser ? 'bg-primary text-primary-foreground' : 'bg-background dark:bg-slate-700 shadow-sm'}`}>
-                                  {renderMessageContent(message)}
-                                  {/* Timestamp and read receipt */}
-                                  <div className={`text-xs mt-1.5 flex items-center ${isCurrentUser ? 'justify-end text-primary-foreground/80' : 'justify-start text-muted-foreground'}`}>
-                                    {formatTimestamp(message.sentAt)}
-                                    {isCurrentUser && ( // Show read receipts for sent messages
-                                        message.read ? <CheckCheck className="h-3.5 w-3.5 ml-1 text-blue-400" /> : <Check className="h-3.5 w-3.5 ml-1" />
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : ( // Placeholder if no messages in the chat
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                          <MessageSquare className="h-12 w-12 text-muted-foreground mb-3" />
-                          <p className="text-muted-foreground">No messages yet.</p>
-                          {activeChatUser && <p className="text-xs text-muted-foreground">Start the conversation with {activeChatUser.username}.</p>}
-                        </div>
-                      )}
-                      <div ref={messageEndRef} /> {/* Element to scroll to */}
-                    </div>
-
-                    {/* Message Input Area */}
-                    <div className="p-3 border-t bg-background dark:bg-slate-800">
-                      <div className="relative flex items-center gap-2">
-                        {/* Hidden file input, triggered by button */}
-                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileInputChange} accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" />
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
-                                    <Paperclip className="h-5 w-5" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>Attach File</TooltipContent>
-                        </Tooltip>
-                        <Input
-                          placeholder="Type a message..."
-                          value={messageInput}
-                          onChange={(e) => setMessageInput(e.target.value)}
-                          onKeyDown={handleKeyPress}
-                          className="flex-1 rounded-full pr-12 h-10" // Padding right for send button
-                        />
-                        {/* Send button positioned absolutely within the input's relative container */}
-                        <Button variant="primary" size="icon" className="absolute right-3 top-1/2 transform -translate-y-1/2 rounded-full h-8 w-8" onClick={handleSendMessage} disabled={!messageInput.trim()}>
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                ) : ( // Placeholder if no chat is active
-                  <div className="flex-grow flex flex-col items-center justify-center p-4 text-center">
-                    <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Select a chat or start a new one</h3>
-                    <p className="text-muted-foreground max-w-xs">Your conversations will appear here when you select them from the list.</p>
-                    <Button className="mt-6" onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }}>
-                      <UserPlus className="h-4 w-4 mr-2" /> New Conversation
-                    </Button>
-                  </div>
-                )}
-              </div>
+    <Card className="h-full border-none shadow-none">
+      <CardContent className="p-0 h-full">
+        <Tabs defaultValue="chats" className="h-full flex flex-col">
+          {!hideHeader && (
+            <div className="border-b px-4">
+              <TabsList className="justify-start bg-transparent border-b-0 px-0 py-1">
+                <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Chats
+                </TabsTrigger>
+                <TabsTrigger value="contacts" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                  <Users className="h-4 w-4 mr-2" />
+                  Contacts
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </Tabs>
-        </CardContent>
+          )}
 
-        {/* Media Viewer Modal */}
-        <Dialog open={isMediaViewerOpen} onOpenChange={setIsMediaViewerOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-4">
-            <DialogHeader>
-              <DialogTitle className="truncate">
-                {viewedMedia?.type === 'image' ? 'Image Preview' : viewedMedia?.fileData?.name || 'File Preview'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex-grow flex items-center justify-center overflow-auto py-4">
-              {viewedMedia?.type === 'image' ? (
-                <img src={viewedMedia.content} alt="Viewed media" className="max-w-full max-h-full object-contain rounded" />
-              ) : viewedMedia?.fileData ? (
-                <div className="text-center p-6 bg-muted rounded-lg">
-                  <Paperclip className="h-16 w-16 text-primary mx-auto mb-4" />
-                  <p className="font-semibold mb-1">{viewedMedia.fileData.name}</p>
-                  <p className="text-sm text-muted-foreground mb-1">{formatFileSize(viewedMedia.fileData.size)}</p>
-                  <p className="text-sm text-muted-foreground">{viewedMedia.fileData.type}</p>
+          <div className="flex h-full overflow-hidden"> {/* Main flex container for sidebars and chat area */}
+            {/* Chats Tab Content (Left Sidebar) */}
+            <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
+              <div className="p-3">
+                <div className="relative">
+                  <Input
+                    placeholder="Search conversations..."
+                    className="border-0 bg-secondary text-sm pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                 </div>
-              ) : <p>Cannot preview this file.</p>}
-            </div>
-            {/* Show download button if it's an image or if the file has a valid (non-placeholder) URL */}
-            { (viewedMedia?.type === 'image' || (viewedMedia?.fileData?.url && viewedMedia.fileData.url !== '#')) &&
-                <Button
-                    onClick={() => {
-                        if (!viewedMedia) return;
-                        const link = document.createElement('a');
-                        link.href = viewedMedia.type === 'image' ? viewedMedia.content : viewedMedia.fileData?.url || '#';
-                        link.download = viewedMedia.type === 'image' ? `image-${Date.now()}.png` : viewedMedia.fileData?.name || 'downloaded-file';
-                        if (link.href !== '#') { // Prevent download for placeholder URL
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        } else {
-                            alert("Download not available for this file at the moment.");
-                        }
-                    }}
-                    variant="outline"
-                    className="mt-auto" // Pushes button to bottom in flex container
-                >
-                    <Download className="h-4 w-4 mr-2" /> Download
-                </Button>
-            }
-          </DialogContent>
-        </Dialog>
-
-        {/* Incoming Call Dialog */}
-        <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={(isOpen) => { if (!isOpen && incomingCall) rejectCall(); }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader className="text-center">
-              <DialogTitle className="text-xl">Incoming Call</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col items-center justify-center py-6">
-              <Avatar className="h-24 w-24 mb-4 ring-4 ring-primary/20"> {/* Enhanced avatar styling */}
-                <AvatarImage src={getUserById(incomingCall?.callerId)?.profileImage || `https://avatar.vercel.sh/${getUserById(incomingCall?.callerId)?.username || 'user'}.png?size=128`} />
-                <AvatarFallback className="text-3xl">{getInitials(getUserById(incomingCall?.callerId)?.firstName, getUserById(incomingCall?.callerId)?.lastName, getUserById(incomingCall?.callerId)?.username)}</AvatarFallback>
-              </Avatar>
-              <p className="text-lg font-semibold mb-1">
-                {getUserById(incomingCall?.callerId)?.firstName && getUserById(incomingCall?.callerId)?.lastName ? `${getUserById(incomingCall?.callerId)?.firstName} ${getUserById(incomingCall?.callerId)?.lastName}` : getUserById(incomingCall?.callerId)?.username || `User ${incomingCall?.callerId}`}
-              </p>
-              <p className="text-sm text-muted-foreground mb-8 capitalize">
-                {incomingCall?.type} Call
-              </p>
-              <div className="flex gap-4">
-                <Button variant="destructive" size="lg" className="rounded-full px-6 py-3" onClick={() => rejectCall()}>
-                  <X className="h-5 w-5 mr-2" /> Decline
-                </Button>
-                <Button /*variant="success"*/ size="lg" className="rounded-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white" onClick={handleAnswerCall}> {/* Assuming success variant or direct styling */}
-                  <Phone className="h-5 w-5 mr-2" /> Accept
-                </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Active Call Dialog */}
-        <Dialog open={isCallModalOpen} onOpenChange={(open) => { if (!open) { endCall(); setIsCallModalOpen(false); } }}>
-          <DialogContent className="max-w-lg"> {/* Slightly wider for video */}
-            <DialogHeader>
-              <DialogTitle className="capitalize">
-                {activeCall?.type} Call with {getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.username || 'User'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              {/* Video display area */}
-              <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                {activeCall?.type === 'video' && remoteStream ? ( // Show remote video if available
-                  <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                ) : ( // Fallback to avatar if no remote video or audio call
-                  <Avatar className="h-32 w-32">
-                    <AvatarImage src={getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.profileImage || `https://avatar.vercel.sh/${getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.username || 'user'}.png?size=128`} />
-                    <AvatarFallback className="text-5xl">{getInitials(getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.firstName, getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.lastName, getUserById(activeCall?.callerId === currentUserId ? activeCall?.receiverId : activeCall?.callerId)?.username)}</AvatarFallback>
-                  </Avatar>
-                )}
-                {/* Local video preview (picture-in-picture style) */}
-                {activeCall?.type === 'video' && localStream && (
-                  <div className="absolute bottom-3 right-3 w-1/4 max-w-[120px] aspect-[3/4] bg-black rounded-md overflow-hidden border-2 border-background shadow-lg">
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+              <ScrollArea className="flex-grow">
+                {conversationsLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <p className="text-sm text-muted-foreground">Loading conversations...</p>
                   </div>
-                )}
-              </div>
-              {/* Call control buttons */}
-              <div className="flex justify-center gap-4 pt-2">
-                <Button variant={isMuted ? "destructive" : "outline"} size="icon" className="h-12 w-12 rounded-full" onClick={toggleMute}>
-                  {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
-                </Button>
-                {activeCall?.type === 'video' && ( // Show video toggle only for video calls
-                  <Button variant={!isVideoEnabled ? "destructive" : "outline"} size="icon" className="h-12 w-12 rounded-full" onClick={toggleVideo}>
-                    {isVideoEnabled ? <Camera className="h-6 w-6" /> : <CameraOff className="h-6 w-6" />}
-                  </Button>
-                )}
-                <Button /*variant="destructive_solid"*/ size="icon" className="h-12 w-12 rounded-full bg-red-600 hover:bg-red-700 text-white" onClick={() => { endCall(); setIsCallModalOpen(false); }}>
-                  <Phone className="h-6 w-6 transform rotate-[135deg]" /> {/* Rotated phone icon for hang up */}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* User Search Dialog for "New Conversation" */}
-        <Dialog open={showUserSearch} onOpenChange={(isOpen) => { setShowUserSearch(isOpen); if (!isOpen) setContactsSearchQuery(''); }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Start a new conversation</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <div className="relative px-1 mb-3">
-                <Input
-                  placeholder="Search by name or username..."
-                  value={contactsSearchQuery}
-                  onChange={(e) => setContactsSearchQuery(e.target.value)}
-                  className="pl-9 rounded-full h-10"
-                />
-                <Search className="h-4 w-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-              </div>
-              <ScrollArea className="max-h-[calc(70vh-120px)] min-h-[200px] px-1"> {/* Dynamic height for scroll area */}
-                {allUsersLoading ? (
-                  <div className="flex justify-center items-center py-8"><Spinner /></div>
-                ) : filteredAllUsersForSearchDialog.length > 0 ? (
-                  <div className="space-y-1">
-                    {filteredAllUsersForSearchDialog.map((user) => ( // `user` here is from `allUsersFromApi` enriched with `onlineUsers` status
-                      <Button
-                        key={user.id}
-                        variant="ghost"
-                        className="w-full justify-start p-2 h-auto" // Ensure button takes full width and content alignment
-                        onClick={() => startChatWithUser(user)}
+                ) : filteredConversations && filteredConversations.length > 0 ? (
+                  <div className="px-2">
+                    {filteredConversations.map((conversation) => (
+                      <div
+                        key={conversation.userId}
+                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${activeChatUserId === conversation.userId
+                            ? 'bg-secondary'
+                            : 'hover:bg-secondary/50'
+                          }`}
+                        onClick={() => setActiveChatUserId(conversation.userId)}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Avatar className="h-10 w-10">
-                              <AvatarImage src={user.profileImage || `https://avatar.vercel.sh/${user.username}.png?size=100`} />
-                              <AvatarFallback>{getInitials(user.firstName, user.lastName, user.username)}</AvatarFallback>
-                            </Avatar>
-                            {/* Status dot uses the status from the (potentially enriched) user object */}
-                            <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} title={user.status} />
-                          </div>
-                          <div className="text-left">
-                            <p className="font-medium text-sm">
-                                {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
+                          <AvatarFallback>{getInitials(conversation.firstName && conversation.lastName ? 
+                            `${conversation.firstName} ${conversation.lastName}` : conversation.username)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 overflow-hidden">
+                          <div className="flex justify-between items-start">
+                            <p className="font-medium truncate">{conversation.firstName && conversation.lastName ? 
+                              `${conversation.firstName} ${conversation.lastName}` : conversation.username}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                                addSuffix: false,
+                                includeSeconds: true // Consider removing for brevity if too frequent
+                              })}
                             </p>
-                            <p className="text-xs text-muted-foreground capitalize">{user.status}</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <p className="text-sm text-muted-foreground truncate">
+                              {conversation.lastMessageType === 'image'
+                                ? '🖼️ Image'
+                                : conversation.lastMessageType === 'file'
+                                  ? '📎 File'
+                                  : conversation.lastMessage}
+                            </p>
+                            {conversation.unreadCount > 0 && (
+                              <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                                {conversation.unreadCount}
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                      </Button>
+                      </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="py-8 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      {contactsSearchQuery ? 'No users found matching your search.' : 'No other users available to chat.'}
+                  <div className="flex flex-col items-center justify-center h-32 px-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      {searchQuery ? 'No matches found' : 'No conversations yet'}
+                    </p>
+                    {!searchQuery && (
+                      <p className="text-xs text-muted-foreground text-center mt-1">
+                        Start a new chat from Contacts or by searching users.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </ScrollArea>
+              <div className="p-3 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full flex items-center"
+                  onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }} // Clear search for new conversation
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  New Conversation
+                </Button>
+              </div>
+            </TabsContent>
+
+            {/* Contacts Tab Content (Left Sidebar) */}
+            <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
+              <div className="p-3">
+                <div className="relative">
+                  <Input
+                    placeholder="Search contacts..."
+                    className="border-0 bg-secondary text-sm pl-9"
+                    value={contactsSearchQuery}
+                    onChange={(e) => setContactsSearchQuery(e.target.value)}
+                  />
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                </div>
+              </div>
+              <ScrollArea className="flex-grow">
+                {onlineUsers.length === 0 && !contactsSearchQuery ? (
+                    <div className="flex justify-center items-center h-32">
+                         <p className="text-sm text-muted-foreground">No contacts available</p>
+                    </div>
+                ) : filteredContacts.length > 0 ? (
+                  <div className="px-2">
+                    {/* Online Users */}
+                    {filteredContacts.filter(user => user.status === 'online').length > 0 && (
+                        <p className="text-xs font-medium px-2 pt-2 pb-1 text-muted-foreground">Online</p>
+                    )}
+                    {filteredContacts.filter(user => user.status === 'online').map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-secondary/50"
+                        onClick={() => startChat(user.id)}
+                      >
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
+                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
+                          </Avatar>
+                          <span 
+                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                              user.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              user.status === 'online' ? 'Online' : 
+                              user.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.status === 'online' ? 'Active now' :
+                              user.status === 'away' ? 'Away' : 'Offline'}
+                          </p>
+                          {user.role && (
+                            <Badge variant="outline" className="text-xs mt-1 py-0 h-5">
+                              {user.role}
+                            </Badge>
+                          )}
+                          {user.parish && (
+                            <Badge variant="secondary" className="text-xs mt-1 ml-1 py-0 h-5">
+                              {user.parish}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Offline Users */}
+                    {filteredContacts.filter(user => user.status !== 'online').length > 0 && (
+                        <p className="text-xs font-medium px-2 pt-4 pb-1 text-muted-foreground">Offline</p>
+                    )}
+                    {filteredContacts.filter(user => user.status !== 'online').map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-secondary/50"
+                        onClick={() => startChat(user.id)}
+                      >
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                          </Avatar>
+                          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500 border-2 border-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{user.username}</p>
+                          <p className="text-xs text-muted-foreground">Offline</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex justify-center items-center h-32">
+                    <p className="text-sm text-muted-foreground">
+                      {contactsSearchQuery ? 'No contacts found' : 'No contacts available'}
                     </p>
                   </div>
                 )}
               </ScrollArea>
+            </TabsContent>
+
+            {/* Chat Area (Main Content) */}
+            <div className="flex-grow flex flex-col h-full">
+              {activeChatUserId && activeChatUser ? (
+                <>
+                  <div className="p-3 border-b flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="relative">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
+                          <AvatarFallback>{getInitials(activeChatUser.firstName && activeChatUser.lastName ? 
+                            `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username)}</AvatarFallback>
+                        </Avatar>
+                        <span 
+                            className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                              activeChatUser.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              activeChatUser.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              activeChatUser.status === 'online' ? 'Online' : 
+                              activeChatUser.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
+                      </div>
+                      <div>
+                        <p className="font-medium">{activeChatUser.firstName && activeChatUser.lastName ? 
+                              `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activeChatUser.status === 'online' ? 'Online' : 'Offline'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={activeChatUser.status !== 'online'}
+                              onClick={() => handleStartCall('audio')}
+                            >
+                              <Phone className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Audio call</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={activeChatUser.status !== 'online'}
+                              onClick={() => handleStartCall('video')}
+                            >
+                              <Video className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Video call</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`flex-grow overflow-y-auto p-4 ${isDraggingFile ? 'bg-primary-50' : ''}`} // Ensure primary-50 is defined in Tailwind config or use a default like bg-blue-50
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    {messagesLoading ? (
+                      <div className="flex justify-center items-center h-full">
+                        <Spinner />
+                      </div>
+                    ) : messages && messages.length > 0 ? (
+                      <div className="flex flex-col gap-4">
+                        {messages.map((message, index) => {
+                          const isCurrentUser = message.senderId === userId;
+                          const prevMessage = messages[index - 1];
+                          const showAvatar = index === 0 ||
+                            (prevMessage && prevMessage.senderId !== message.senderId) ||
+                            (prevMessage && new Date(message.sentAt).getTime() - new Date(prevMessage.sentAt).getTime() > 120000);
+
+                          return (
+                            <div
+                              key={message.id}
+                              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-2 max-w-[75%]`}>
+                                {!isCurrentUser && showAvatar && activeChatUser && ( // Added activeChatUser check
+                                  <Avatar className="h-8 w-8 mr-0 self-end mb-1"> {/* Adjusted margin for alignment */}
+                                    <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
+                                    <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
+                                  </Avatar>
+                                )}
+                                 {isCurrentUser && showAvatar && (
+                                     <div className="w-8 h-8 ml-0 self-end mb-1"></div> // Placeholder for alignment
+                                 )}
+                                 {!showAvatar && ( // Add placeholder for consistent spacing when avatar is not shown
+                                    <div className={`w-8 ${isCurrentUser ? 'ml-2' : 'mr-2'}`}></div>
+                                 )}
+
+
+                                <div>
+                                  <div
+                                    className={`rounded-lg p-3 ${isCurrentUser
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-secondary'
+                                      }`}
+                                  >
+                                    {renderMessageContent(message)}
+                                  </div>
+                                  <div
+                                    className={`text-xs text-muted-foreground mt-1 ${isCurrentUser ? 'text-right' : 'text-left'
+                                      }`}
+                                  >
+                                    {formatMessageTime(message.sentAt)}
+                                    {isCurrentUser && message.read && (
+                                      <span className="ml-1">✓</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Current user avatar placeholder removed, handled by spacing div or actual avatar */}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div ref={messageEndRef} />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <div className="bg-secondary rounded-full p-4 mb-3">
+                          <MessageSquare className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground">No messages yet</p>
+                        {activeChatUser && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Start a conversation with {activeChatUser.username}
+                            </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3 border-t">
+                    <div className="relative">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileInputChange}
+                        multiple={false} // Explicitly single file
+                        accept="image/*,application/pdf,.doc,.docx,.txt,.zip" // Example file types
+                      />
+                      <Input
+                        placeholder={`Message ${activeChatUser?.username || 'selected user'}...`}
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyDown={handleKeyPress}
+                        className="pr-32" // Increased padding for more buttons
+                      />
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => fileInputRef.current?.click()}
+                                    >
+                                      <Paperclip className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Attach file</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        {/**/}
+                        {/* Removed duplicate Image button, Paperclip can handle all files */}
+                        <Button
+                          variant="primary"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={handleSendMessage}
+                          disabled={!messageInput.trim()}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>                  </div>
+                </>
+              ) : (
+                <div className="flex-grow flex flex-col items-center justify-center p-4">
+                  <div className="bg-secondary rounded-full p-6 mb-4">
+                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">Your messages</h3>
+                  <p className="text-muted-foreground text-center max-w-xs">
+                    Select a conversation to view your messages, or start a new one.
+                  </p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => { setShowUserSearch(true); setContactsSearchQuery(''); }}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    New Conversation
+                  </Button>
+                </div>
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
-      </Card>
-    </TooltipProvider>
+          </div>
+        </Tabs>
+      </CardContent>
+
+      {/* Media Viewer Modal */}
+      <Dialog open={isMediaViewerOpen} onOpenChange={setIsMediaViewerOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>
+              {viewedMedia?.type === 'image' ? 'Image' :
+                viewedMedia?.fileData?.name || 'File'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center">
+            {viewedMedia?.type === 'image' ? (
+              <div className="flex flex-col items-center gap-4">
+                <img
+                  src={viewedMedia.content}
+                  alt="Full-size image"
+                  className="max-w-full max-h-[70vh] object-contain rounded-md"
+                />
+                <Button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = viewedMedia.content;
+                    link.download = 'image-' + Date.now() + '.jpg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Image
+                </Button>
+              </div>
+            ) : viewedMedia?.fileData ? (
+              <div className="flex flex-col items-center gap-4 w-full">
+                <div className="bg-secondary p-8 rounded-lg flex flex-col items-center">
+                  <Paperclip className="h-16 w-16 mb-4 text-primary" />
+                  <h3 className="text-lg font-medium mb-2">{viewedMedia.fileData.name}</h3>
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                    <p className="text-muted-foreground">File size:</p>
+                    <p className="font-medium">{formatFileSize(viewedMedia.fileData.size)}</p>
+
+                    <p className="text-muted-foreground">File type:</p>
+                    <p className="font-medium">{viewedMedia.fileData.type}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // In a real implementation, you would have a download URL
+                    // For now, we'll just demonstrate the UI
+                    alert('Download functionality would be implemented here');
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download File
+                </Button>
+              </div>
+            ) : (
+              <p>File information not available</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Incoming call dialog */}
+      <Dialog open={!!incomingCall && !isCallModalOpen} onOpenChange={(isOpen) => { if (!isOpen && incomingCall) rejectCall(); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Incoming Call</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-6">
+            <Avatar className="h-20 w-20 mb-4">
+              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId || 'default'
+                }`} />
+              <AvatarFallback>
+                {getInitials(getUserById(incomingCall?.callerId || 0)?.username)}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-xl font-semibold mb-1">
+              {getUserById(incomingCall?.callerId || 0)?.username || `User ${incomingCall?.callerId || 'Unknown'}`}
+            </p>
+            <p className="text-sm text-muted-foreground mb-8">
+              {incomingCall?.type === 'video' ? 'Video call' : 'Audio call'}
+            </p>
+            <div className="flex gap-4">
+              <Button
+                variant="destructive"
+                size="lg" // Made buttons larger
+                className="rounded-full px-6 py-3"
+                onClick={() => rejectCall()}
+              >
+                <X className="h-5 w-5 mr-2" /> Decline
+              </Button>
+              <Button
+                variant="default"
+                size="lg" // Made buttons larger
+                className="rounded-full bg-green-500 hover:bg-green-600 px-6 py-3"
+                onClick={handleAnswerCall}
+              >
+                <Phone className="h-5 w-5 mr-2" /> Accept
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Active call dialog */}
+      <Dialog open={isCallModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          endCall();
+          setIsCallModalOpen(false);
+        }
+      }}>
+        <DialogContent className="sm:max-w-lg"> {/* Made dialog slightly wider for video */}
+          <DialogHeader>
+            <DialogTitle>
+              {activeCall?.type === 'video' ? 'Video Call' : 'Audio Call'} with {getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || 'User'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+              {activeCall?.type === 'video' && remoteStream && (
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {/* Placeholder when video/remote stream is not available */}
+              {(!remoteStream || activeCall?.type !== 'video') && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                  <Avatar className="h-24 w-24"> {/* Larger avatar */}
+                    <AvatarImage
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
+                        }`}
+                    />
+                    <AvatarFallback className="text-3xl">
+                      {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              )}
+              {activeCall?.type === 'video' && localStream && (
+                <div className="absolute bottom-2 right-2 w-1/4 max-w-[120px] aspect-video bg-black rounded-lg overflow-hidden border-2 border-background">
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex justify-center gap-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className={`h-12 w-12 rounded-full ${isMuted ? 'bg-destructive hover:bg-destructive/80 text-white' : ''}`}
+                onClick={toggleMute}
+              >
+                {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+              </Button>
+              {activeCall?.type === 'video' && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`h-12 w-12 rounded-full ${!isVideoEnabled ? 'bg-destructive hover:bg-destructive/80 text-white' : ''}`}
+                  onClick={toggleVideo}
+                >
+                  {isVideoEnabled ? <Camera className="h-6 w-6" /> : <CameraOff className="h-6 w-6" />}
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="icon"
+                className="h-12 w-12 rounded-full"
+                onClick={() => {
+                  endCall();
+                  setIsCallModalOpen(false);
+                }}
+              >
+                <Phone className="h-6 w-6 transform rotate-[135deg]" /> {/* Rotated for hang up icon */}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* User search dialog */}
+      <Dialog open={showUserSearch} onOpenChange={(isOpen) => {
+        setShowUserSearch(isOpen);
+        if (!isOpen) setContactsSearchQuery(''); // Clear search on close
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Start a new conversation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="relative px-1">
+              <Input
+                placeholder="Search for a user..."
+                value={contactsSearchQuery}
+                onChange={(e) => setContactsSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+              <Search className="h-4 w-4 absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            </div>
+            <ScrollArea className="max-h-[300px] px-1"> {/* Added ScrollArea */}
+              {allUsersLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Spinner />
+                </div>
+              ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
+                <div className="space-y-1">
+                  {filteredAllUsers.filter(user => user.id !== userId).map((user) => ( // Exclude self
+                    <Button
+                      key={user.id}
+                      variant="ghost"
+                      className="w-full justify-start p-2 h-auto"
+                      onClick={() => {
+                        startChat(user.id);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
+                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
+                          </Avatar>
+                          <span 
+                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                              user.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              user.status === 'online' ? 'Online' : 
+                              user.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.status === 'online' ? 'Online' : 'Offline'}
+                          </p>
+                        </div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <p className="text-muted-foreground">
+                    {contactsSearchQuery ? 'No users found matching your search.' : 'No other users found.'}
+                  </p>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
