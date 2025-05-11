@@ -84,6 +84,50 @@ projectManagementRouter.get('/projects', requireAuth, async (req: Request, res: 
   }
 });
 
+// Special route to handle the "new" endpoint - redirects to the POST /projects endpoint
+projectManagementRouter.patch('/projects/new', requireAuth, async (req: Request, res: Response) => {
+  try {
+    console.log('Received PATCH to /projects/new, redirecting to POST /projects');
+    console.log('Request body:', JSON.stringify(req.body));
+    const userId = req.session.userId;
+    console.log('User ID from session:', userId);
+    
+    // Parse and validate the request body
+    const validatedData = insertProjectSchema.parse({
+      ...req.body,
+      ownerId: userId,
+    });
+    console.log('Validated project data:', JSON.stringify(validatedData));
+    
+    // Insert the project
+    const [createdProject] = await db.insert(projects).values(validatedData).returning();
+    console.log('Project created successfully with ID:', createdProject.id);
+    
+    // Add the creator as a project member with role 'owner'
+    await db.insert(projectMembers).values({
+      projectId: createdProject.id,
+      userId: userId,
+      role: 'owner',
+    });
+    console.log(`Added user ${userId} as project owner for project ${createdProject.id}`);
+    
+    res.status(200).json(createdProject);
+  } catch (error) {
+    console.error('Error creating project via PATCH /projects/new:', error);
+    if (error instanceof z.ZodError) {
+      console.error('Validation errors:', JSON.stringify(error.errors));
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
+    res.status(500).json({ message: 'Failed to create project' });
+  }
+});
+
+// For consistency also handle GET /projects/new
+projectManagementRouter.get('/projects/new', requireAuth, (req: Request, res: Response) => {
+  console.log('GET request to /projects/new - returning empty object');
+  res.json({}); 
+});
+
 // Get a specific project by ID
 projectManagementRouter.get('/projects/:id', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -154,16 +198,20 @@ projectManagementRouter.get('/projects/:id', requireAuth, async (req: Request, r
 // Create a new project
 projectManagementRouter.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
+    console.log('Creating new project with data:', JSON.stringify(req.body));
     const userId = req.session.userId;
+    console.log('User ID from session:', userId);
     
     // Parse and validate the request body
     const validatedData = insertProjectSchema.parse({
       ...req.body,
       ownerId: userId,
     });
+    console.log('Validated project data:', JSON.stringify(validatedData));
     
     // Insert the project
     const [createdProject] = await db.insert(projects).values(validatedData).returning();
+    console.log('Project created successfully with ID:', createdProject.id);
     
     // Add the creator as a project member with role 'owner'
     await db.insert(projectMembers).values({
@@ -171,11 +219,13 @@ projectManagementRouter.post('/projects', requireAuth, async (req: Request, res:
       userId: userId,
       role: 'owner',
     });
+    console.log(`Added user ${userId} as project owner for project ${createdProject.id}`);
     
     res.status(201).json(createdProject);
   } catch (error) {
     console.error('Error creating project:', error);
     if (error instanceof z.ZodError) {
+      console.error('Validation errors:', JSON.stringify(error.errors));
       return res.status(400).json({ message: 'Invalid data', errors: error.errors });
     }
     res.status(500).json({ message: 'Failed to create project' });

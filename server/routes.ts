@@ -2097,7 +2097,8 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   app.use('/api', supervisorRoutes);
 
   // Add project management routes
-  app.use('/api', projectManagementRoutes);
+  app.use('/api/project-management', projectManagementRoutes);
+  console.log('Project management routes registered at /api/project-management');
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
