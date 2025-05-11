@@ -305,7 +305,7 @@ const ProjectCreationForm: React.FC = () => {
                               </SelectItem>
                             ))
                           ) : (
-                            <SelectItem value="" disabled>No users available</SelectItem>
+                            <SelectItem value="no-users" disabled>No users available</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
