@@ -1,6 +1,8 @@
 import React from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { 
   Card, 
   CardContent, 
@@ -23,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
-const ProjectDetail: React.FC = () => {
+const ProjectDetailContent: React.FC = () => {
   const [match, params] = useRoute<{ id: string }>('/project-management/:id');
   const [, setLocation] = useLocation();
   
@@ -177,6 +179,15 @@ const ProjectDetail: React.FC = () => {
         </TabsContent>
       </Tabs>
     </div>
+  );
+};
+
+// Wrap the project detail page in an auth guard to ensure only authenticated users can access
+const ProjectDetail: React.FC = () => {
+  return (
+    <AuthGuard>
+      <ProjectDetailContent />
+    </AuthGuard>
   );
 };
 

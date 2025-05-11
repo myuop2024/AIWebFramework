@@ -1,6 +1,8 @@
 import React from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { 
   Card, 
   CardContent, 
@@ -63,7 +65,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const ProjectEditPage: React.FC = () => {
+const ProjectEditForm: React.FC = () => {
   const [match, params] = useRoute<{ id: string }>('/project-management/:id/edit');
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -390,6 +392,15 @@ const ProjectEditPage: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// Wrap the project edit form in an auth guard to ensure only authenticated users can access
+const ProjectEditPage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <ProjectEditForm />
+    </AuthGuard>
   );
 };
 
