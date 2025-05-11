@@ -203,7 +203,7 @@ export const DynamicForm = ({
       // Apply required validation
       if (field.required) {
         if (field.type === "checkbox") {
-          fieldSchema = fieldSchema.refine((val) => val === true, {
+          fieldSchema = fieldSchema.refine((val: boolean) => val === true, {
             message: `${field.label} is required`,
           });
         } else if (field.type === "file") {
@@ -471,7 +471,7 @@ export const DynamicForm = ({
         );
 
       default:
-        return null;
+        return <></>;
     }
   };
 
