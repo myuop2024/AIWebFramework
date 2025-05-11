@@ -1,67 +1,4 @@
-import dotenv from 'dotenv';
-import postgres from 'postgres';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
 
-// Initialize dotenv
-dotenv.config();
-
-// Get __dirname equivalent in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-/**
- * This script migrates the project management tables to the database.
- * It creates the necessary tables and constraints for the project management system.
- */
-async function migrateTables() {
-  console.log('Starting project management tables migration');
-
-  if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL environment variable is not set');
-    process.exit(1);
-  }
-
-  const sql = postgres(process.env.DATABASE_URL, { max: 1 });
-
-  try {
-    // Find the migrations folder - go up one level from __dirname (scripts) to project root
-    const projectRoot = path.join(__dirname, '..');
-    const migrationsFolder = path.join(projectRoot, 'migrations');
-
-    // Create the folder if it doesn't exist
-    if (!fs.existsSync(migrationsFolder)) {
-      fs.mkdirSync(migrationsFolder, { recursive: true });
-      console.log(`Created migrations folder at ${migrationsFolder}`);
-    }
-
-    // Get the SQL script content
-    const sqlScript = getProjectManagementSQL();
-    
-    // Save the SQL file for reference
-    fs.writeFileSync(
-      path.join(migrationsFolder, 'project-management.sql'),
-      sqlScript,
-      'utf8'
-    );
-
-    console.log('Running SQL migration for project management tables');
-    
-    // Execute the SQL directly
-    await sql.unsafe(sqlScript);
-    
-    console.log('Project management tables migrated successfully');
-  } catch (error) {
-    console.error('Error migrating project management tables:', error);
-    process.exit(1);
-  } finally {
-    await sql.end();
-  }
-}
-
-function getProjectManagementSQL() {
-  return `
 -- Create project management enums if they don't exist
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'project_status') THEN
@@ -206,11 +143,4 @@ CREATE INDEX IF NOT EXISTS idx_tasks_milestone_id ON tasks(milestone_id);
 CREATE INDEX IF NOT EXISTS idx_task_comments_task_id ON task_comments(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_attachments_task_id ON task_attachments(task_id);
 CREATE INDEX IF NOT EXISTS idx_task_history_task_id ON task_history(task_id);
-  `;
-}
-
-// Run the migration
-migrateTables().catch(err => {
-  console.error("Unhandled error in migration:", err);
-  process.exit(1);
-});
+  
