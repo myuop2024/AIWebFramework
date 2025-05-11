@@ -121,8 +121,31 @@ export function useCommunication(userId: number) {
   // --- WebSocket Connection and Management ---
   useEffect(() => {
     let reconnectTimer: NodeJS.Timeout | null = null;
+    let heartbeatTimer: NodeJS.Timeout | null = null;
     let wsInstance: WebSocket | null = null;
     let isUnmounting = false;
+    
+    // Heartbeat to detect silent connection drops
+    const startHeartbeat = (ws: WebSocket) => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+      }
+      
+      heartbeatTimer = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            // Send a lightweight ping message
+            ws.send(JSON.stringify({ type: 'heartbeat' }));
+          } catch (e) {
+            console.error('Failed to send heartbeat, connection might be dead:', e);
+            ws.close();
+          }
+        } else if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+          // Reconnect if connection is already closed
+          connectWebSocket();
+        }
+      }, 15000); // Every 15 seconds
+    };
 
     const connectWebSocket = () => {
       if (isUnmounting || (wsInstance && wsInstance.readyState === WebSocket.OPEN)) {
@@ -150,19 +173,34 @@ export function useCommunication(userId: number) {
           console.log('WebSocket connected successfully');
           if (wsInstance?.readyState === WebSocket.OPEN) {
             wsInstance.send(JSON.stringify({ type: WS_MSG_TYPES.REGISTER, userId }));
+            // Start heartbeat to keep connection alive
+            startHeartbeat(wsInstance);
           }
         };
 
         wsInstance.onclose = (event) => {
           console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
           setSocket(null); // Clear socket state
-          if (!isUnmounting && document.visibilityState !== 'hidden' && !reconnectTimer) {
-            console.log('Scheduling WebSocket reconnection...');
-            // Implement exponential backoff for better reconnection strategy
+          
+          // Always try to reconnect unless unmounting
+          if (!isUnmounting) {
+            // Clear any existing reconnection timer
+            if (reconnectTimer) {
+              clearTimeout(reconnectTimer);
+            }
+            
+            const backoffTime = Math.min(
+              30000, // Max 30 seconds
+              1000 + Math.floor(Math.random() * 3000) // Base time with jitter
+            );
+            
+            console.log(`Scheduling WebSocket reconnection in ${backoffTime}ms...`);
             reconnectTimer = setTimeout(() => {
-              console.log('Attempting to reconnect WebSocket...');
-              connectWebSocket();
-            }, 3000 + Math.random() * 2000); // Basic backoff with jitter
+              if (!isUnmounting && (document.visibilityState === 'visible' || document.visibilityState === 'prerender')) {
+                console.log('Attempting to reconnect WebSocket...');
+                connectWebSocket();
+              }
+            }, backoffTime);
           }
         };
 
@@ -244,6 +282,9 @@ export function useCommunication(userId: number) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
+      }
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
       }
       if (wsInstance) {
         wsInstance.onclose = null; // Prevent reconnection logic on manual close

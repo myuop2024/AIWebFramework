@@ -33,6 +33,9 @@ export class CommunicationService {
       // Set up ping response
       ws.on('pong', () => {
         ws.isAlive = true;
+        if (ws.userId) {
+          this.updateUserActivity(ws.userId);
+        }
       });
 
       // Handle messages
@@ -60,6 +63,12 @@ export class CommunicationService {
             case 'call-end':
               this.handleCallEnd(data);
               break;
+            case 'heartbeat':
+              // Just update the user's activity, no response needed
+              if (ws.userId) {
+                this.updateUserActivity(ws.userId);
+              }
+              break;
             default:
               console.warn('Unknown message type:', data.type);
           }
@@ -85,7 +94,7 @@ export class CommunicationService {
   }
 
   private startPingInterval() {
-    // Check connection state every 30 seconds
+    // Check connection state every 20 seconds
     this.pingInterval = setInterval(() => {
       this.wss.clients.forEach((ws: WebSocketClient) => {
         if (ws.isAlive === false) {
@@ -97,7 +106,10 @@ export class CommunicationService {
         ws.isAlive = false;
         ws.ping();
       });
-    }, 30000);
+      
+      // Broadcast updated user status every ping interval
+      this.broadcastUserList();
+    }, 20000);
   }
 
   public close() {
@@ -114,6 +126,9 @@ export class CommunicationService {
     // Store the client with its userId
     this.clients.set(userId, ws);
     ws.userId = userId;
+    
+    // Update user activity timestamp
+    this.updateUserActivity(userId);
 
     // Send the current user list to the newly connected client
     await this.broadcastUserList();
@@ -243,11 +258,27 @@ export class CommunicationService {
   /**
    * Get the status of a specific user
    */
+  // Track last activity time per user
+  private userLastActivity = new Map<number, number>();
+  
+  // Update user activity timestamp
+  private updateUserActivity(userId: number) {
+    this.userLastActivity.set(userId, Date.now());
+  }
+  
   public getUserStatus(userId: number): 'online' | 'offline' | 'away' {
     const client = this.clients.get(userId);
+    const lastActivity = this.userLastActivity.get(userId);
+    const now = Date.now();
     
     if (client && client.readyState === WebSocket.OPEN) {
+      this.updateUserActivity(userId);
       return 'online';
+    }
+    
+    // Consider a user "away" if they were active in the last 5 minutes
+    if (lastActivity && now - lastActivity < 5 * 60 * 1000) {
+      return 'away';
     }
     
     return 'offline';

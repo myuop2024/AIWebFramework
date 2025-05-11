@@ -565,10 +565,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
                              <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                            user.status === 'online' ? 'bg-green-500' : 
-                            user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-                          }`} />
+                          <span 
+                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                              user.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              user.status === 'online' ? 'Online' : 
+                              user.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
                         </div>
                         <div>
                           <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
@@ -636,10 +642,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                           <AvatarFallback>{getInitials(activeChatUser.firstName && activeChatUser.lastName ? 
                             `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username)}</AvatarFallback>
                         </Avatar>
-                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                          activeChatUser.status === 'online' ? 'bg-green-500' : 
-                          activeChatUser.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-                        }`} />
+                        <span 
+                            className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                              activeChatUser.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              activeChatUser.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              activeChatUser.status === 'online' ? 'Online' : 
+                              activeChatUser.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
                       </div>
                       <div>
                         <p className="font-medium">{activeChatUser.firstName && activeChatUser.lastName ? 
@@ -785,8 +797,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
+                                    <Buttonvariant="ghost"
                                       size="icon"
                                       className="h-8 w-8"
                                       onClick={() => fileInputRef.current?.click()}
@@ -1066,10 +1077,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
                              <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
                           </Avatar>
-                          <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                            user.status === 'online' ? 'bg-green-500' : 
-                            user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
-                          }`} />
+                          <span 
+                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                              user.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
+                            }`}
+                            title={
+                              user.status === 'online' ? 'Online' : 
+                              user.status === 'away' ? 'Away (inactive)' : 'Offline'
+                            }
+                          />
                         </div>
                         <div className="text-left">
                           <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
