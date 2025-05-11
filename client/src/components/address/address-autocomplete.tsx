@@ -200,6 +200,8 @@ export default function AddressAutocomplete({
     setSuggestions([]);
     setShowSuggestions(false);
     
+    console.log("Selected address suggestion:", suggestion);
+    
     // Get detailed information about the selected address
     getAddressDetails(suggestion);
   };

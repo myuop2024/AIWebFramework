@@ -338,6 +338,12 @@ export default function ProfileForm() {
                           if (detectedParish) {
                             console.log("Setting parish to:", detectedParish);
                             form.setValue("state", detectedParish);
+                            
+                            // Log form state after setting to debug
+                            setTimeout(() => {
+                              console.log("Form value for parish after setting:", form.getValues("state"));
+                              console.log("Form field state:", form.getFieldState("state"));
+                            }, 100);
                           }
                           
                           if (addressData.postalCode) {
@@ -380,9 +386,12 @@ export default function ProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parish</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
+                    <Select 
+                      onValueChange={value => {
+                        field.onChange(value);
+                        console.log("Parish select changed to:", value);
+                      }}
+                      value={field.value || ""}
                     >
                       <FormControl>
                         <SelectTrigger>

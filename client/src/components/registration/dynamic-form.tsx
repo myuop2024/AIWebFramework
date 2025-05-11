@@ -378,6 +378,12 @@ export const DynamicForm = ({
                     if (detectedParish && parishField) {
                       console.log("Setting parish to:", detectedParish);
                       form.setValue(parishField.name, detectedParish);
+                      
+                      // Log form state after setting to debug
+                      setTimeout(() => {
+                        console.log("Form value for parish after setting:", form.getValues(parishField.name));
+                        console.log("Form field state:", form.getFieldState(parishField.name));
+                      }, 100);
                     }
                     
                     // Process remaining fields (post office, country)
@@ -430,7 +436,7 @@ export const DynamicForm = ({
             </FormLabel>
             <Select
               onValueChange={(value) => form.setValue(field.name, value)}
-              defaultValue={form.getValues(field.name)}
+              value={form.getValues(field.name) || ""}
             >
               <FormControl>
                 <SelectTrigger>
