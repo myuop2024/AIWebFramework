@@ -28,6 +28,7 @@ import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
 import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
+import { encryptSensitiveFields, decryptProfileFields } from './services/encryption-service';
 import permissionRoutes from './routes/permission-routes';
 import supervisorRoutes from './routes/supervisor-routes';
 import errorLogRoutes from './routes/error-logs';
@@ -609,6 +610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId as number;
+      const userRole = req.session.role as string;
+      
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
       }
@@ -633,9 +636,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove sensitive data
       const { password, ...userWithoutPassword } = user;
 
+      // Decrypt profile data if the user has permission (admin/director roles)
+      const decryptedProfile = profile ? decryptProfileFields(profile, userRole) : null;
+
       res.status(200).json({
         user: userWithoutPassword,
-        profile: profile || null, // Ensure null instead of undefined if no profile
+        profile: decryptedProfile, // Ensure null instead of undefined if no profile
         documents: documents || []
       });
     } catch (error) {
@@ -647,16 +653,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
+app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId as number; // Type assertion (already verified in ensureAuthenticated)
+      const userRole = req.session.role as string;
       console.log(`Creating/updating profile for user ID: ${userId}`);
 
       try {
-        const profileData = insertUserProfileSchema.parse({
+        // Parse the incoming data with Zod schema
+        const rawProfileData = insertUserProfileSchema.parse({
           ...req.body,
           userId
         });
+
+        // Encrypt sensitive fields like ID number and bank account
+        const profileData = encryptSensitiveFields(rawProfileData);
 
         // Check if profile exists
         const existingProfile = await storage.getUserProfile(userId);
@@ -678,7 +689,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUser(userId, { verificationStatus: 'in-progress' });
         console.log(`User verification status updated for ${userId}`);
 
-        res.status(200).json(profile);
+        // Return decrypted data to authorized users, otherwise return as-is
+        const responseProfile = decryptProfileFields(profile, userRole);
+        res.status(200).json(responseProfile);
       } catch (validationError) {
         if (validationError instanceof ZodError) {
           console.error('Validation error in profile data:', validationError);
