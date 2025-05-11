@@ -1,5 +1,4 @@
-import express from 'express';
-import { storage } from '../storage'; // Assuming path is correct
+import { clientStorage } from '../storage'; // Client-side storage proxy
 import { z } from 'zod';
 import { CommunicationService } from '../services/communication-service'; // Assuming path is correct
 
