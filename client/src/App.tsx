@@ -39,6 +39,7 @@ import ScheduleMeeting from "@/pages/supervisor/schedule-meeting";
 import StationSchedulePage from "@/pages/roving/station-schedule";
 import AreaReportsPage from "@/pages/roving/area-reports";
 import ErrorLogsPage from "@/pages/admin/error-logs";
+import ProjectManagement from "@/pages/project-management";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
