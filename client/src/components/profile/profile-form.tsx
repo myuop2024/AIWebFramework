@@ -13,25 +13,95 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+
+// Jamaican banks and credit unions list
+const JAMAICAN_BANKS = [
+  "Bank of Jamaica",
+  "National Commercial Bank (NCB)",
+  "Scotiabank Jamaica",
+  "CIBC FirstCaribbean International Bank",
+  "Sagicor Bank",
+  "JN Bank",
+  "JMMB Bank",
+  "First Global Bank",
+  "Victoria Mutual Building Society",
+  "Jamaica National Building Society",
+  "COK Sodality Co-operative Credit Union",
+  "First Heritage Co-operative Credit Union",
+  "C&WJ Co-operative Credit Union",
+  "Jamaica Police Co-operative Credit Union",
+  "Jamaica Teachers' Association Co-operative Credit Union",
+  "St. Catherine Co-operative Credit Union",
+  "Churches Co-operative Credit Union",
+  "Manchester Co-operative Credit Union",
+  "Gateway Co-operative Credit Union",
+  "Other"
+];
+
+// Jamaican parishes
+const JAMAICAN_PARISHES = [
+  "Kingston",
+  "St. Andrew",
+  "St. Catherine",
+  "Clarendon",
+  "Manchester",
+  "St. Elizabeth",
+  "Westmoreland",
+  "Hanover",
+  "St. James",
+  "Trelawny",
+  "St. Ann",
+  "St. Mary",
+  "Portland",
+  "St. Thomas"
+];
+
+// ID types
+const ID_TYPES = [
+  "National ID",
+  "Passport",
+  "Driver's License",
+  "School ID",
+  "Work ID",
+  "Other"
+];
 
 // Profile form schema
 const profileSchema = z.object({
+  // Contact Information
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
   state: z.string().min(1, "Parish is required"),
-  zipCode: z.string().min(1, "Zip code is required"),
-  country: z.string().min(1, "Country is required"),
+  postOfficeRegion: z.string().min(1, "Post Office Region is required"),
+  country: z.string().min(1, "Country is required").default("Jamaica"),
+  
+  // Identification Information
   trn: z.string().min(1, "TRN is required"),
-  bankName: z.string().min(1, "Bank name is required"),
-  bankAccount: z.string().min(1, "Bank account number is required"),
   idType: z.string().min(1, "ID type is required"),
   idNumber: z.string().min(1, "ID number is required"),
+  
+  // Financial Information
+  bankName: z.string().min(1, "Bank name is required"),
+  bankBranchLocation: z.string().min(1, "Bank branch location is required"),
+  bankAccount: z.string().min(1, "Bank account number is required"),
+  accountType: z.string().min(1, "Account type is required"),
+  accountCurrency: z.string().min(1, "Currency is required").default("JMD"),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -42,6 +112,8 @@ export default function ProfileForm() {
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [showBankAccount, setShowBankAccount] = useState<boolean>(false);
+  const [showIdNumber, setShowIdNumber] = useState<boolean>(false);
 
   // Fetch the user's profile data
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
@@ -55,11 +127,14 @@ export default function ProfileForm() {
       address: "",
       city: "",
       state: "",
-      zipCode: "",
-      country: "",
+      postOfficeRegion: "",
+      country: "Jamaica",
       trn: "",
       bankName: "",
+      bankBranchLocation: "",
       bankAccount: "",
+      accountType: "Savings",
+      accountCurrency: "JMD",
       idType: "",
       idNumber: "",
     },
@@ -72,11 +147,14 @@ export default function ProfileForm() {
         address: profileData.profile.address || "",
         city: profileData.profile.city || "",
         state: profileData.profile.state || "",
-        zipCode: profileData.profile.zipCode || "",
-        country: profileData.profile.country || "",
+        postOfficeRegion: profileData.profile.postOfficeRegion || profileData.profile.zipCode || "",
+        country: profileData.profile.country || "Jamaica",
         trn: profileData.profile.trn || "",
         bankName: profileData.profile.bankName || "",
+        bankBranchLocation: profileData.profile.bankBranchLocation || "",
         bankAccount: profileData.profile.bankAccount || "",
+        accountType: profileData.profile.accountType || "Savings",
+        accountCurrency: profileData.profile.accountCurrency || "JMD",
         idType: profileData.profile.idType || "",
         idNumber: profileData.profile.idNumber || "",
       });
@@ -112,7 +190,7 @@ export default function ProfileForm() {
   if (isProfileLoading) {
     return (
       <div className="animate-pulse space-y-4">
-        {[...Array(6)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div key={i} className="space-y-2">
             <div className="h-4 bg-gray-200 rounded w-1/4"></div>
             <div className="h-10 bg-gray-200 rounded"></div>
@@ -127,6 +205,10 @@ export default function ProfileForm() {
       <div>
         <h2 className="text-2xl font-bold">Personal Information</h2>
         <p className="text-gray-600">Update your personal and financial information for verification.</p>
+        <div className="flex items-center mt-2 text-sm text-amber-600">
+          <Shield className="h-4 w-4 mr-1" />
+          <span>Sensitive information is encrypted and securely stored</span>
+        </div>
       </div>
 
       {error && (
@@ -147,7 +229,7 @@ export default function ProfileForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4">
+          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
             <h3 className="text-lg font-medium">Address Information</h3>
             
             <FormField
@@ -185,9 +267,23 @@ export default function ProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parish</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your parish" {...field} />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your parish" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {JAMAICAN_PARISHES.map((parish) => (
+                          <SelectItem key={parish} value={parish}>
+                            {parish}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -197,12 +293,12 @@ export default function ProfileForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="zipCode"
+                name="postOfficeRegion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Zip/Postal Code</FormLabel>
+                    <FormLabel>Post Office Region</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your zip code" {...field} />
+                      <Input placeholder="Enter your post office region" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -216,7 +312,7 @@ export default function ProfileForm() {
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your country" {...field} />
+                      <Input placeholder="Enter your country" {...field} defaultValue="Jamaica" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -225,8 +321,8 @@ export default function ProfileForm() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Financial Information</h3>
+          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
+            <h3 className="text-lg font-medium">Identification Information</h3>
             
             <FormField
               control={form.control}
@@ -245,47 +341,27 @@ export default function ProfileForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="bankName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bank Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your bank name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="bankAccount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bank Account Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your account number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Identification Information</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
                 name="idType"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ID Type</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Passport, Driver's License, etc." {...field} />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select ID type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {ID_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -297,8 +373,178 @@ export default function ProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>ID Number</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <div className="flex">
+                          <Input 
+                            className="pr-10" 
+                            type={showIdNumber ? "text" : "password"} 
+                            placeholder="Enter your ID number" 
+                            {...field} 
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-0 top-0"
+                            onClick={() => setShowIdNumber(!showIdNumber)}
+                          >
+                            {showIdNumber ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </FormControl>
+                    </div>
+                    <FormDescription className="text-xs flex items-center">
+                      <Lock className="h-3 w-3 mr-1" />
+                      Your ID information is encrypted and secure
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
+            <h3 className="text-lg font-medium">Financial Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="bankName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bank Name</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your bank" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {JAMAICAN_BANKS.map((bank) => (
+                          <SelectItem key={bank} value={bank}>
+                            {bank}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="bankBranchLocation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bank Branch Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your ID number" {...field} />
+                      <Input placeholder="Enter your bank branch location" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="bankAccount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bank Account Number</FormLabel>
+                  <div className="relative">
+                    <FormControl>
+                      <div className="flex">
+                        <Input 
+                          className="pr-10" 
+                          type={showBankAccount ? "text" : "password"} 
+                          placeholder="Enter your account number" 
+                          {...field} 
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0"
+                          onClick={() => setShowBankAccount(!showBankAccount)}
+                        >
+                          {showBankAccount ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                  </div>
+                  <FormDescription className="text-xs flex items-center">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Your account information is encrypted and secure
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="accountType"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Account Type</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Savings" id="savings" />
+                          <Label htmlFor="savings">Savings</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Checking" id="checking" />
+                          <Label htmlFor="checking">Checking</Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="accountCurrency"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Currency</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="JMD" id="jmd" />
+                          <Label htmlFor="jmd">JMD</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="USD" id="usd" />
+                          <Label htmlFor="usd">USD</Label>
+                        </div>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -46,21 +46,31 @@ export const users = pgTable("users", {
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
+  // Contact Information
   address: text("address"),
   city: text("city"),
-  state: text("state"),
-  zipCode: text("zip_code"),
+  state: text("state"), // This represents the Parish in Jamaica
+  postOfficeRegion: text("post_office_region"), // Replaces zipCode
   country: text("country"),
-  trn: text("trn"),
-  bankName: text("bank_name"),
-  bankAccount: text("bank_account"),
-  idType: text("id_type"),
+  // Identification Information
+  trn: text("trn"), // Tax Registration Number
+  idType: text("id_type"), // National ID, Passport, Driver's License, School ID, Work ID, Other
   idNumber: text("id_number"),
+  // Financial Information
+  bankName: text("bank_name"), // Will be dropdown with Jamaican banks
+  bankBranchLocation: text("bank_branch_location"), // New field for bank branch
+  bankAccount: text("bank_account"),
+  accountType: text("account_type"), // Savings or Checking
+  accountCurrency: text("account_currency").default("JMD"), // JMD or USD 
+  // Profile and verification 
   profilePhotoUrl: text("profile_photo_url"),
   idPhotoUrl: text("id_photo_url"),
   verificationStatus: text("verification_status"),
   verificationId: text("verification_id"),
   verifiedAt: timestamp("verified_at"),
+  // Encryption fields
+  encryptionIv: text("encryption_iv"), // Initialization vector for encrypted fields
+  isEncrypted: boolean("is_encrypted").default(false),
 });
 
 // Documents table
@@ -343,6 +353,9 @@ export const insertUserSchema = createInsertSchema(users)
 export const insertUserProfileSchema = createInsertSchema(userProfiles)
   .omit({
     id: true,
+    verifiedAt: true,
+    encryptionIv: true,
+    isEncrypted: true,
   });
 
 export const insertDocumentSchema = createInsertSchema(documents)
