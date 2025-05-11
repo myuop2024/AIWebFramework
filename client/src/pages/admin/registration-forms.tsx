@@ -395,7 +395,7 @@ const RegistrationFormsAdmin = () => {
               <SelectItem value="none">None</SelectItem>
               <SelectItem value="address">Address</SelectItem>
               <SelectItem value="city">City</SelectItem>
-              <SelectItem value="state">State/Parish</SelectItem>
+              <SelectItem value="state">Parish</SelectItem>
               <SelectItem value="zipCode">Zip/Postal Code</SelectItem>
               <SelectItem value="country">Country</SelectItem>
               <SelectItem value="idType">ID Type</SelectItem>

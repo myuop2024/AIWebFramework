@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 const profileSchema = z.object({
   address: z.string().min(1, "Address is required"),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
+  state: z.string().min(1, "Parish is required"),
   zipCode: z.string().min(1, "Zip code is required"),
   country: z.string().min(1, "Country is required"),
   trn: z.string().min(1, "TRN is required"),
@@ -184,9 +184,9 @@ export default function ProfileForm() {
                 name="state"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>State/Province</FormLabel>
+                    <FormLabel>Parish</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your state" {...field} />
+                      <Input placeholder="Enter your parish" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

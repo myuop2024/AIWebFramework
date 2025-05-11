@@ -549,7 +549,7 @@ export default function FormTemplatesPage() {
               <SelectItem value="dateOfBirth">Date of Birth</SelectItem>
               <SelectItem value="address">Address</SelectItem>
               <SelectItem value="city">City</SelectItem>
-              <SelectItem value="state">State/Province</SelectItem>
+              <SelectItem value="state">Parish</SelectItem>
               <SelectItem value="postalCode">Postal Code</SelectItem>
               <SelectItem value="country">Country</SelectItem>
               <SelectItem value="idNumber">ID Number</SelectItem>
