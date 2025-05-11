@@ -13,20 +13,28 @@ import { useQuery } from '@tanstack/react-query';
 import { Calendar } from '@/components/ui/calendar';
 import { Task } from '@shared/schema';
 
-// Placeholder until we implement real data fetching
-const mockTasks: (Task & { project: { name: string, color: string } })[] = [];
+// Define an interface for tasks with project info
+interface TaskWithProject extends Task {
+  project: {
+    name: string;
+    color: string;
+  }
+}
 
 const TasksCalendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // Load tasks from API - this is just a placeholder for now
-  const { data: tasks = [], isLoading } = useQuery({
+  // Load tasks from API with the current month
+  const { data: tasks = [], isLoading } = useQuery<TaskWithProject[]>({
     queryKey: ['/api/tasks', format(currentDate, 'yyyy-MM')],
     queryFn: async () => {
-      // This is a placeholder for future API integration
-      return new Promise<(Task & { project: { name: string, color: string } })[]>((resolve) => {
-        setTimeout(() => resolve(mockTasks), 500);
-      });
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+      const response = await fetch(`/api/tasks?month=${year}-${month.toString().padStart(2, '0')}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      return response.json();
     }
   });
 

@@ -69,22 +69,16 @@ const ProjectEditPage: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Mock data fetching for the project
+  // Fetch project data from the API
   const { data: project, isLoading } = useQuery({
     queryKey: ['/api/projects', params?.id],
     enabled: !!params?.id,
     queryFn: async () => {
-      return new Promise(resolve => {
-        setTimeout(() => resolve({ 
-          id: parseInt(params?.id || '0'), 
-          name: 'Edit Project', 
-          description: 'This is a placeholder for the project edit page.',
-          status: 'planning',
-          startDate: new Date(),
-          endDate: null,
-          ownerId: 1
-        }), 500);
-      });
+      const response = await fetch(`/api/projects/${params?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch project');
+      }
+      return response.json();
     }
   });
   
@@ -115,12 +109,22 @@ const ProjectEditPage: React.FC = () => {
     }
   }, [project, form]);
   
-  // Mock mutation for updating the project
+  // Real mutation for updating the project
   const updateProject = useMutation({
     mutationFn: async (data: FormValues) => {
-      return new Promise(resolve => {
-        setTimeout(() => resolve({ ...data, id: parseInt(params?.id || '0') }), 500);
+      const response = await fetch(`/api/projects/${params?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update project');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       // Invalidate queries to refetch data
@@ -242,28 +246,44 @@ const ProjectEditPage: React.FC = () => {
                 <FormField
                   control={form.control}
                   name="ownerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Owner</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value?.toString()}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select owner" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">User 1</SelectItem>
-                          <SelectItem value="2">User 2</SelectItem>
-                          <SelectItem value="3">User 3</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Fetch users for the dropdown
+                    const { data: users = [] } = useQuery({
+                      queryKey: ['/api/users'],
+                      queryFn: async () => {
+                        const response = await fetch('/api/users');
+                        if (!response.ok) {
+                          throw new Error('Failed to fetch users');
+                        }
+                        return response.json();
+                      }
+                    });
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Project Owner</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          defaultValue={field.value?.toString()}
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select owner" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {users.map((user: any) => (
+                              <SelectItem key={user.id} value={user.id.toString()}>
+                                {user.firstName} {user.lastName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
               

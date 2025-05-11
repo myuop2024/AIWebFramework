@@ -27,20 +27,18 @@ const projectStatusColumns = [
   { id: 'completed', name: 'Completed', icon: <CheckCircle className="h-4 w-4" /> }
 ];
 
-// Placeholder until we implement real data fetching
-const mockProjects: Project[] = [];
-
 const ProjectsKanban: React.FC = () => {
   const [location, setLocation] = useLocation();
   
-  // We'll replace this with real data fetching later
+  // Real data fetching from the API
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ['/api/projects'],
     queryFn: async () => {
-      // This is a placeholder for future API integration
-      return new Promise<Project[]>((resolve) => {
-        setTimeout(() => resolve(mockProjects), 500);
-      });
+      const response = await fetch('/api/projects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      return response.json();
     }
   });
   
