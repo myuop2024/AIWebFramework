@@ -284,16 +284,32 @@ export default function ProfileForm() {
                         initialValue={field.value || ""}
                         placeholder="Start typing your address to search..."
                         onAddressSelect={(addressData) => {
-                          // Update the address field
+                          // Update the address field with full address (including house number)
                           field.onChange(addressData.fullAddress);
+                          
+                          // Log the full address data for debugging
+                          console.log('Address selected:', addressData);
                           
                           // Auto-fill other address fields
                           if (addressData.city) {
                             form.setValue("city", addressData.city);
                           }
                           
+                          // Always set parish (state) - prioritize mapped parish values
                           if (addressData.state) {
-                            form.setValue("state", addressData.state);
+                            // Check if it's one of the recognized Jamaican parishes
+                            const matchingParish = JAMAICAN_PARISHES.find(parish => 
+                              addressData.state === parish || 
+                              addressData.state.includes(parish) ||
+                              (parish.startsWith("St.") && addressData.state.includes(parish.substring(4)))
+                            );
+                            
+                            // If we found a matching parish, use the standardized parish name
+                            if (matchingParish) {
+                              form.setValue("state", matchingParish);
+                            } else {
+                              form.setValue("state", addressData.state);
+                            }
                           }
                           
                           if (addressData.postalCode) {

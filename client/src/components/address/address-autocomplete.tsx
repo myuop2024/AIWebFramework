@@ -4,6 +4,51 @@ import { useHereMaps } from "@/lib/here-maps";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// List of Jamaican parishes for matching
+const JAMAICAN_PARISHES = [
+  "Kingston",
+  "St. Andrew",
+  "St. Catherine",
+  "Clarendon",
+  "Manchester",
+  "St. Elizabeth",
+  "Westmoreland",
+  "Hanover",
+  "St. James",
+  "Trelawny",
+  "St. Ann",
+  "St. Mary",
+  "Portland",
+  "St. Thomas"
+];
+
+// Find the correct Jamaican parish from address data
+const findJamaicanParish = (locationText: string): string | null => {
+  if (!locationText) return null;
+  
+  // First check for exact matches
+  for (const parish of JAMAICAN_PARISHES) {
+    if (locationText === parish) return parish;
+  }
+  
+  // Then check for partial matches (for cases where the parish might be part of a longer string)
+  for (const parish of JAMAICAN_PARISHES) {
+    if (locationText.includes(parish)) return parish;
+    
+    // Special case for St. parishes - also match without the period
+    if (parish.startsWith("St.") && locationText.includes(parish.replace("St.", "St"))) {
+      return parish;
+    }
+    
+    // Also check for the parish name without "St."
+    if (parish.startsWith("St.") && locationText.includes(parish.substring(4))) {
+      return parish;
+    }
+  }
+  
+  return null;
+};
+
 interface AddressAutocompleteProps {
   onAddressSelect: (address: any) => void;
   initialValue?: string;
@@ -182,7 +227,9 @@ export default function AddressAutocomplete({
       const geocodePromise = new Promise<any>((resolve, reject) => {
         geocodingService.geocode(
           {
-            q: suggestion.title
+            q: suggestion.title,
+            // Add more details to extract street numbers and parish info
+            details: 1
           },
           (result: any) => {
             if (result && result.items && result.items.length > 0) {
@@ -205,12 +252,46 @@ export default function AddressAutocomplete({
       
       const addressDetails = await geocodePromise;
       
+      // Extract street number and street from addressDetails if available
+      let streetWithNumber = '';
+      let streetName = addressDetails.address?.street || '';
+      let houseNumber = addressDetails.address?.houseNumber || '';
+      
+      // Log the full response for debugging
+      console.log('HERE Maps address details:', addressDetails);
+      console.log('HERE Maps address components:', {
+        houseNumber: addressDetails.address?.houseNumber,
+        street: addressDetails.address?.street,
+        district: addressDetails.address?.district,
+        city: addressDetails.address?.city,
+        county: addressDetails.address?.county,
+        state: addressDetails.address?.state,
+        postalCode: addressDetails.address?.postalCode,
+        country: addressDetails.address?.countryName
+      });
+      
+      // Combine house number and street name if available
+      if (houseNumber && streetName) {
+        streetWithNumber = `${houseNumber} ${streetName}`;
+      } else if (streetName) {
+        streetWithNumber = streetName;
+      }
+
+      // Extract specific parish information
+      const parish = findJamaicanParish(
+        addressDetails.address?.county || 
+        addressDetails.address?.state || 
+        addressDetails.address?.district || 
+        ''
+      );
+      
       // Format the address object for our application
       const formattedAddress = {
-        fullAddress: suggestion.title,
-        street: addressDetails.address?.street || '',
+        fullAddress: streetWithNumber ? streetWithNumber : suggestion.title,
+        street: streetWithNumber || streetName,
+        houseNumber: houseNumber,
         city: addressDetails.address?.city || '',
-        state: addressDetails.address?.state || addressDetails.address?.county || '',
+        state: parish || addressDetails.address?.state || addressDetails.address?.county || '',
         country: addressDetails.address?.countryName || '',
         postalCode: addressDetails.address?.postalCode || '',
         position: {

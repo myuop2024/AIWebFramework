@@ -313,7 +313,36 @@ export const DynamicForm = ({
                         form.setValue(otherField.name, addressData.city);
                       }
                       if (otherField.mapToProfileField === "state" && addressData.state) {
-                        form.setValue(otherField.name, addressData.state);
+                        // Check if it's one of the recognized Jamaican parishes
+                        const JAMAICAN_PARISHES = [
+                          "Kingston",
+                          "St. Andrew",
+                          "St. Catherine",
+                          "Clarendon",
+                          "Manchester",
+                          "St. Elizabeth",
+                          "Westmoreland",
+                          "Hanover",
+                          "St. James",
+                          "Trelawny",
+                          "St. Ann",
+                          "St. Mary",
+                          "Portland",
+                          "St. Thomas"
+                        ];
+                        
+                        const matchingParish = JAMAICAN_PARISHES.find(parish => 
+                          addressData.state === parish || 
+                          addressData.state.includes(parish) ||
+                          (parish.startsWith("St.") && addressData.state.includes(parish.substring(4)))
+                        );
+                        
+                        // If we found a matching parish, use the standardized parish name
+                        if (matchingParish) {
+                          form.setValue(otherField.name, matchingParish);
+                        } else {
+                          form.setValue(otherField.name, addressData.state);
+                        }
                       }
                       if (otherField.mapToProfileField === "zipCode" && addressData.postalCode) {
                         form.setValue(otherField.name, addressData.postalCode);
