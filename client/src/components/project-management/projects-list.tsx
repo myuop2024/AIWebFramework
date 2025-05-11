@@ -40,23 +40,32 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { type Project } from '@shared/schema';
 
-// Placeholder until we implement real data fetching
-const mockProjects: Project[] = [];
-
 const ProjectsList: React.FC = () => {
   const [location, setLocation] = useLocation();
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // We'll replace this with real data fetching later
+  // Real data fetching from the API
   const { data: projects, isLoading, error } = useQuery({
-    queryKey: ['/api/projects', statusFilter],
+    queryKey: ['/api/projects', statusFilter, searchTerm],
     queryFn: async () => {
-      // This is a placeholder for future API integration
-      // Later we'll fetch from the real API
-      return new Promise<Project[]>((resolve) => {
-        setTimeout(() => resolve(mockProjects), 500);
-      });
+      // Build query params
+      const params = new URLSearchParams();
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      if (searchTerm) {
+        params.append('search', searchTerm);
+      }
+      
+      const queryString = params.toString();
+      const url = `/api/projects${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch projects');
+      }
+      return response.json();
     }
   });
   
@@ -68,16 +77,8 @@ const ProjectsList: React.FC = () => {
     setLocation(`/project-management/${projectId}/edit`);
   };
   
-  // Filter projects based on search term and status filter
-  const filteredProjects = (projects || []).filter(project => {
-    const matchesSearch = !searchTerm || 
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = !statusFilter || statusFilter === 'all' || project.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  // The API now handles filtering, so we just use the returned projects directly
+  const filteredProjects = projects || [];
   
   return (
     <Card className="w-full">

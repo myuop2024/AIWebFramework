@@ -102,19 +102,24 @@ const ProjectAnalytics: React.FC = () => {
   // Fetch real analytics data from the API
   const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/analytics/projects'],
-    // The API will return real data from the database
-    // For now, we'll fall back to some placeholder data if the API doesn't provide everything
-    // This will be replaced with real data once the API is fully implemented
+    queryFn: async () => {
+      const response = await fetch('/api/analytics/projects');
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      return response.json();
+    },
+    // Transform the API response to match our expected structure
     select: (data) => ({
       totalProjects: data?.totalProjects ?? 0,
       completedProjects: data?.completedProjects ?? 0,
       totalTasks: data?.totalTasks ?? 0,
       completedTasks: data?.completedTasks ?? 0,
       activeUsers: data?.activeUsers ?? 0,
-      statusData: data?.statusData ?? mockStatusData,
-      priorityData: data?.priorityData ?? mockPriorityData,
-      progressData: data?.progressData ?? mockProjectProgressData,
-      userAssignmentData: data?.userAssignmentData ?? mockUserAssignmentData
+      statusData: data?.statusData ?? [],
+      priorityData: data?.priorityData ?? [],
+      progressData: data?.progressData ?? [],
+      userAssignmentData: data?.userAssignmentData ?? []
     })
   });
 
