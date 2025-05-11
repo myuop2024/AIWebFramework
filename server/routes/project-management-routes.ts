@@ -1,130 +1,281 @@
-import express from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
+import { storage } from '../database-storage';
 import { z } from 'zod';
-import { storage } from '../storage';
+import { db } from '../db';
 import { 
-  insertProjectSchema, 
-  insertTaskSchema, 
+  projects, 
+  tasks, 
+  milestones, 
+  projectMembers, 
+  taskCategories,
+  taskComments,
+  taskAttachments,
+  users,
+  insertProjectSchema,
+  insertTaskSchema,
   insertMilestoneSchema,
+  insertProjectMemberSchema,
   insertTaskCategorySchema,
   insertTaskCommentSchema,
-  insertProjectMemberSchema,
-  insertTaskCategoryAssignmentSchema,
-  insertTaskAttachmentSchema
+  projectStatusEnum,
+  taskStatusEnum,
+  taskPriorityEnum
 } from '@shared/schema';
-import { ensureAuthenticated, ensureAdmin, ensureSupervisor } from '../middleware/auth';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { eq, and, isNull, or, not, desc, asc, sql, inArray } from 'drizzle-orm';
 
-// Configure multer for task attachment uploads
-const attachmentStorage = multer.diskStorage({
-  destination: function(req, file, cb) {
-    const uploadDir = path.join(process.cwd(), 'uploads', 'tasks');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function(req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'task-attachment-' + uniqueSuffix + ext);
+export const projectManagementRouter = Router();
+
+// Authentication middleware
+const requireAuth = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: 'Authentication required' });
   }
-});
+  next();
+};
 
-const uploadAttachment = multer({ 
-  storage: attachmentStorage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
-
-const router = express.Router();
-
-// Projects routes
-router.get('/projects', ensureAuthenticated, async (req, res) => {
+// Get all projects (with filtering)
+projectManagementRouter.get('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
-    const filters = {
-      status: req.query.status as string | undefined,
-      ownerId: req.query.ownerId ? parseInt(req.query.ownerId as string) : undefined,
-      deleted: req.query.deleted === 'true' ? true : false
-    };
+    const { status, search, userId } = req.query;
     
-    // Storage methods will be implemented later
-    // const projects = await storage.getAllProjects(filters);
-    // res.json(projects);
+    let query = db.select().from(projects).where(eq(projects.deleted, false));
     
-    // For now, return empty array until storage methods are implemented
-    res.json([]);
+    // Apply filters
+    if (status && Object.values(projectStatusEnum.enumValues).includes(status as any)) {
+      query = query.where(eq(projects.status, status as any));
+    }
+    
+    if (userId) {
+      const userIdNum = parseInt(userId as string);
+      if (!isNaN(userIdNum)) {
+        // Get projects where user is a member
+        const projectIds = await db.select({ id: projectMembers.projectId })
+          .from(projectMembers)
+          .where(eq(projectMembers.userId, userIdNum));
+        
+        if (projectIds.length > 0) {
+          query = query.where(inArray(projects.id, projectIds.map(p => p.id)));
+        } else {
+          // User is not a member of any project
+          return res.json([]);
+        }
+      }
+    }
+    
+    if (search) {
+      const searchTerm = `%${search}%`;
+      query = query.where(
+        or(
+          sql`${projects.name} ILIKE ${searchTerm}`,
+          sql`${projects.description} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Add ordering
+    query = query.orderBy(desc(projects.updatedAt));
+    
+    const result = await query;
+    res.json(result);
   } catch (error) {
     console.error('Error fetching projects:', error);
     res.status(500).json({ message: 'Failed to fetch projects' });
   }
 });
 
-router.get('/projects/:id', ensureAuthenticated, async (req, res) => {
+// Get a specific project by ID
+projectManagementRouter.get('/projects/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const project = await storage.getProject(projectId);
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
     
-    // For now, return empty object until storage methods are implemented
-    // if (!project) {
-    //   return res.status(404).json({ message: 'Project not found' });
-    // }
+    const [project] = await db.select().from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.deleted, false)
+      ));
     
-    res.json({});
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Get project members
+    const members = await db.select({
+      id: projectMembers.id,
+      userId: projectMembers.userId,
+      role: projectMembers.role,
+      joinedAt: projectMembers.joinedAt,
+      user: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username,
+        email: users.email
+      }
+    })
+    .from(projectMembers)
+    .innerJoin(users, eq(projectMembers.userId, users.id))
+    .where(and(
+      eq(projectMembers.projectId, projectId),
+      eq(projectMembers.isActive, true)
+    ));
+    
+    // Get milestones 
+    const projectMilestones = await db.select().from(milestones)
+      .where(eq(milestones.projectId, projectId))
+      .orderBy(asc(milestones.sortOrder));
+    
+    // Get task counts by status
+    const taskStats = await db.select({
+      status: tasks.status,
+      count: sql<number>`count(*)`,
+    })
+    .from(tasks)
+    .where(eq(tasks.projectId, projectId))
+    .groupBy(tasks.status);
+    
+    const result = {
+      ...project,
+      members,
+      milestones: projectMilestones,
+      taskStats: Object.fromEntries(taskStats.map(stat => [stat.status, stat.count]))
+    };
+    
+    res.json(result);
   } catch (error) {
     console.error('Error fetching project:', error);
-    res.status(500).json({ message: 'Failed to fetch project' });
+    res.status(500).json({ message: 'Failed to fetch project details' });
   }
 });
 
-router.post('/projects', ensureSupervisor, async (req, res) => {
+// Create a new project
+projectManagementRouter.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
-    const validatedData = insertProjectSchema.parse(req.body);
-    // Storage methods will be implemented later
-    // const newProject = await storage.createProject(validatedData);
-    // res.status(201).json(newProject);
+    const userId = req.session.userId;
     
-    // For now, return success message until storage methods are implemented
-    res.status(201).json({ message: 'Project created successfully' });
+    // Parse and validate the request body
+    const validatedData = insertProjectSchema.parse({
+      ...req.body,
+      ownerId: userId,
+    });
+    
+    // Insert the project
+    const [createdProject] = await db.insert(projects).values(validatedData).returning();
+    
+    // Add the creator as a project member with role 'owner'
+    await db.insert(projectMembers).values({
+      projectId: createdProject.id,
+      userId: userId,
+      role: 'owner',
+    });
+    
+    res.status(201).json(createdProject);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid project data', errors: error.errors });
-    }
     console.error('Error creating project:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
     res.status(500).json({ message: 'Failed to create project' });
   }
 });
 
-router.patch('/projects/:id', ensureSupervisor, async (req, res) => {
+// Update a project
+projectManagementRouter.patch('/projects/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const updatedProject = await storage.updateProject(projectId, req.body);
+    const userId = req.session.userId;
     
-    // For now, return success message until storage methods are implemented
-    // if (!updatedProject) {
-    //   return res.status(404).json({ message: 'Project not found' });
-    // }
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
     
-    res.json({ message: 'Project updated successfully' });
+    // Check if project exists and user has permission
+    const [project] = await db.select().from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.deleted, false)
+      ));
+    
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Check if user is owner or has admin role
+    const [membership] = await db.select().from(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.isActive, true)
+      ));
+    
+    if (!membership || (membership.role !== 'owner' && membership.role !== 'admin')) {
+      return res.status(403).json({ message: 'Permission denied' });
+    }
+    
+    // Validate the update data
+    const validatedData = insertProjectSchema.partial().parse(req.body);
+    
+    // Update the project
+    const [updatedProject] = await db.update(projects)
+      .set({
+        ...validatedData,
+        updatedAt: new Date()
+      })
+      .where(eq(projects.id, projectId))
+      .returning();
+    
+    res.json(updatedProject);
   } catch (error) {
     console.error('Error updating project:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
     res.status(500).json({ message: 'Failed to update project' });
   }
 });
 
-router.delete('/projects/:id', ensureSupervisor, async (req, res) => {
+// Soft delete a project
+projectManagementRouter.delete('/projects/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
-    const hardDelete = req.query.hard === 'true';
-    // Storage methods will be implemented later
-    // const result = await storage.deleteProject(projectId, hardDelete);
+    const userId = req.session.userId;
     
-    // For now, return success message until storage methods are implemented
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Project not found' });
-    // }
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
+    
+    // Check if project exists
+    const [project] = await db.select().from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.deleted, false)
+      ));
+    
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Check if user is owner
+    const [membership] = await db.select().from(projectMembers)
+      .where(and(
+        eq(projectMembers.projectId, projectId),
+        eq(projectMembers.userId, userId),
+        eq(projectMembers.role, 'owner')
+      ));
+    
+    if (!membership) {
+      return res.status(403).json({ message: 'Permission denied' });
+    }
+    
+    // Soft delete the project
+    await db.update(projects)
+      .set({
+        deleted: true,
+        updatedAt: new Date()
+      })
+      .where(eq(projects.id, projectId));
     
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
@@ -133,539 +284,455 @@ router.delete('/projects/:id', ensureSupervisor, async (req, res) => {
   }
 });
 
-// Project members routes
-router.get('/projects/:projectId/members', ensureAuthenticated, async (req, res) => {
+// Get all tasks for a project
+projectManagementRouter.get('/projects/:id/tasks', requireAuth, async (req: Request, res: Response) => {
   try {
-    const projectId = parseInt(req.params.projectId);
-    // Storage methods will be implemented later
-    // const members = await storage.getProjectMembers(projectId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching project members:', error);
-    res.status(500).json({ message: 'Failed to fetch project members' });
-  }
-});
-
-router.post('/projects/:projectId/members', ensureSupervisor, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    const validatedData = insertProjectMemberSchema.parse({
-      ...req.body,
-      projectId
-    });
+    const projectId = parseInt(req.params.id);
+    const { status } = req.query;
     
-    // Storage methods will be implemented later
-    // const newMember = await storage.addProjectMember(validatedData);
-    res.status(201).json({ message: 'Member added to project successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid member data', errors: error.errors });
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
     }
-    console.error('Error adding project member:', error);
-    res.status(500).json({ message: 'Failed to add project member' });
-  }
-});
-
-router.patch('/project-members/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const memberId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const updatedMember = await storage.updateProjectMember(memberId, req.body);
     
-    // if (!updatedMember) {
-    //   return res.status(404).json({ message: 'Project member not found' });
-    // }
+    let query = db.select({
+      id: tasks.id,
+      title: tasks.title,
+      description: tasks.description,
+      status: tasks.status,
+      priority: tasks.priority,
+      assigneeId: tasks.assigneeId,
+      startDate: tasks.startDate,
+      dueDate: tasks.dueDate,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      sortOrder: tasks.sortOrder,
+      projectId: tasks.projectId,
+      milestoneId: tasks.milestoneId,
+      parentTaskId: tasks.parentTaskId,
+      assignee: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username
+      }
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assigneeId, users.id))
+    .where(eq(tasks.projectId, projectId));
     
-    res.json({ message: 'Project member updated successfully' });
-  } catch (error) {
-    console.error('Error updating project member:', error);
-    res.status(500).json({ message: 'Failed to update project member' });
-  }
-});
-
-router.delete('/project-members/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const memberId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.removeProjectMember(memberId);
+    // Apply status filter if provided
+    if (status && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+      query = query.where(eq(tasks.status, status as any));
+    }
     
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Project member not found' });
-    // }
+    // Order tasks by sort order and then by creation date
+    query = query.orderBy(asc(tasks.sortOrder), desc(tasks.createdAt));
     
-    res.json({ message: 'Member removed from project successfully' });
-  } catch (error) {
-    console.error('Error removing project member:', error);
-    res.status(500).json({ message: 'Failed to remove project member' });
-  }
-});
-
-// Tasks routes
-router.get('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    const filters = {
-      status: req.query.status as string | undefined,
-      assigneeId: req.query.assigneeId ? parseInt(req.query.assigneeId as string) : undefined,
-      milestoneId: req.query.milestoneId ? parseInt(req.query.milestoneId as string) : undefined,
-      priority: req.query.priority as string | undefined
-    };
-    
-    // Storage methods will be implemented later
-    // const tasks = await storage.getTasksForProject(projectId, filters);
-    res.json([]);
+    const result = await query;
+    res.json(result);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     res.status(500).json({ message: 'Failed to fetch tasks' });
   }
 });
 
-router.get('/tasks/:id', ensureAuthenticated, async (req, res) => {
+// Create a new task in a project
+projectManagementRouter.post('/projects/:id/tasks', requireAuth, async (req: Request, res: Response) => {
   try {
-    const taskId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const task = await storage.getTask(taskId);
+    const projectId = parseInt(req.params.id);
+    const userId = req.session.userId;
     
-    // if (!task) {
-    //   return res.status(404).json({ message: 'Task not found' });
-    // }
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
     
-    res.json({});
-  } catch (error) {
-    console.error('Error fetching task:', error);
-    res.status(500).json({ message: 'Failed to fetch task' });
-  }
-});
-
-router.get('/my-tasks', ensureAuthenticated, async (req, res) => {
-  try {
-    const userId = req.session.userId!;
-    const filters = {
-      status: req.query.status as string | undefined,
-      projectId: req.query.projectId ? parseInt(req.query.projectId as string) : undefined
-    };
+    // Check if project exists
+    const [project] = await db.select().from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.deleted, false)
+      ));
     
-    // Storage methods will be implemented later
-    // const tasks = await storage.getTasksForUser(userId, filters);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching user tasks:', error);
-    res.status(500).json({ message: 'Failed to fetch tasks' });
-  }
-});
-
-router.post('/projects/:projectId/tasks', ensureAuthenticated, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Validate task data
     const validatedData = insertTaskSchema.parse({
       ...req.body,
       projectId,
-      reporterId: req.session.userId
+      reporterId: userId
     });
     
-    // Storage methods will be implemented later
-    // const newTask = await storage.createTask(validatedData);
-    res.status(201).json({ message: 'Task created successfully' });
+    // Create the task
+    const [createdTask] = await db.insert(tasks).values(validatedData).returning();
+    
+    res.status(201).json(createdTask);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid task data', errors: error.errors });
-    }
     console.error('Error creating task:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
     res.status(500).json({ message: 'Failed to create task' });
   }
 });
 
-router.patch('/tasks/:id', ensureAuthenticated, async (req, res) => {
+// Get a specific task
+projectManagementRouter.get('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
-    const userId = req.session.userId!;
-    // Storage methods will be implemented later
-    // const updatedTask = await storage.updateTask(taskId, req.body, userId);
     
-    // if (!updatedTask) {
-    //   return res.status(404).json({ message: 'Task not found' });
-    // }
+    if (isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
     
-    res.json({ message: 'Task updated successfully' });
+    const [task] = await db.select({
+      id: tasks.id,
+      title: tasks.title,
+      description: tasks.description,
+      status: tasks.status,
+      priority: tasks.priority,
+      projectId: tasks.projectId,
+      assigneeId: tasks.assigneeId,
+      reporterId: tasks.reporterId,
+      milestoneId: tasks.milestoneId,
+      parentTaskId: tasks.parentTaskId,
+      startDate: tasks.startDate,
+      dueDate: tasks.dueDate,
+      estimatedHours: tasks.estimatedHours,
+      actualHours: tasks.actualHours,
+      completedAt: tasks.completedAt,
+      createdAt: tasks.createdAt,
+      updatedAt: tasks.updatedAt,
+      sortOrder: tasks.sortOrder,
+      metadata: tasks.metadata,
+      stationId: tasks.stationId,
+      assignee: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username
+      }
+    })
+    .from(tasks)
+    .leftJoin(users, eq(tasks.assigneeId, users.id))
+    .where(eq(tasks.id, taskId));
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    
+    // Get comments
+    const comments = await db.select({
+      id: taskComments.id,
+      content: taskComments.content,
+      createdAt: taskComments.createdAt,
+      isPrivate: taskComments.isPrivate,
+      user: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username
+      }
+    })
+    .from(taskComments)
+    .innerJoin(users, eq(taskComments.userId, users.id))
+    .where(eq(taskComments.taskId, taskId))
+    .orderBy(asc(taskComments.createdAt));
+    
+    // Get attachments
+    const attachments = await db.select().from(taskAttachments)
+      .where(eq(taskAttachments.taskId, taskId));
+    
+    const result = {
+      ...task,
+      comments,
+      attachments
+    };
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    res.status(500).json({ message: 'Failed to fetch task details' });
+  }
+});
+
+// Update a task
+projectManagementRouter.patch('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const taskId = parseInt(req.params.id);
+    const userId = req.session.userId;
+    
+    if (isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
+    }
+    
+    // Check if task exists
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
+    
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+    
+    // Validate update data
+    const validatedData = insertTaskSchema.partial().parse(req.body);
+    
+    // Update the task
+    const [updatedTask] = await db.update(tasks)
+      .set({
+        ...validatedData,
+        updatedAt: new Date()
+      })
+      .where(eq(tasks.id, taskId))
+      .returning();
+    
+    // Save task history
+    if (Object.keys(validatedData).length > 0) {
+      // Create history records for each changed field
+      const changedFields = Object.keys(validatedData).filter(
+        field => validatedData[field as keyof typeof validatedData] !== task[field as keyof typeof task]
+      );
+      
+      for (const field of changedFields) {
+        await db.insert(taskHistory).values({
+          taskId,
+          userId,
+          field,
+          oldValue: JSON.stringify(task[field as keyof typeof task]),
+          newValue: JSON.stringify(validatedData[field as keyof typeof validatedData])
+        });
+      }
+    }
+    
+    res.json(updatedTask);
   } catch (error) {
     console.error('Error updating task:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
     res.status(500).json({ message: 'Failed to update task' });
   }
 });
 
-router.delete('/tasks/:id', ensureAuthenticated, async (req, res) => {
+// Add a comment to a task
+projectManagementRouter.post('/tasks/:id/comments', requireAuth, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.deleteTask(taskId);
+    const userId = req.session.userId;
     
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Task not found' });
-    // }
-    
-    res.json({ message: 'Task deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting task:', error);
-    res.status(500).json({ message: 'Failed to delete task' });
-  }
-});
-
-// Task categories routes
-router.get('/projects/:projectId/categories', ensureAuthenticated, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    // Storage methods will be implemented later
-    // const categories = await storage.getTaskCategoriesForProject(projectId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching task categories:', error);
-    res.status(500).json({ message: 'Failed to fetch task categories' });
-  }
-});
-
-router.get('/task-categories/global', ensureAuthenticated, async (req, res) => {
-  try {
-    // Storage methods will be implemented later
-    // const categories = await storage.getGlobalTaskCategories();
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching global task categories:', error);
-    res.status(500).json({ message: 'Failed to fetch global task categories' });
-  }
-});
-
-router.post('/task-categories', ensureSupervisor, async (req, res) => {
-  try {
-    const validatedData = insertTaskCategorySchema.parse(req.body);
-    // Storage methods will be implemented later
-    // const newCategory = await storage.createTaskCategory(validatedData);
-    res.status(201).json({ message: 'Task category created successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid category data', errors: error.errors });
+    if (isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task ID' });
     }
-    console.error('Error creating task category:', error);
-    res.status(500).json({ message: 'Failed to create task category' });
-  }
-});
-
-router.patch('/task-categories/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const categoryId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const updatedCategory = await storage.updateTaskCategory(categoryId, req.body);
     
-    // if (!updatedCategory) {
-    //   return res.status(404).json({ message: 'Task category not found' });
-    // }
+    // Check if task exists
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId));
     
-    res.json({ message: 'Task category updated successfully' });
-  } catch (error) {
-    console.error('Error updating task category:', error);
-    res.status(500).json({ message: 'Failed to update task category' });
-  }
-});
-
-router.delete('/task-categories/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const categoryId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.deleteTaskCategory(categoryId);
-    
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Task category not found' });
-    // }
-    
-    res.json({ message: 'Task category deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting task category:', error);
-    res.status(500).json({ message: 'Failed to delete task category' });
-  }
-});
-
-// Task category assignments
-router.get('/tasks/:taskId/categories', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    // Storage methods will be implemented later
-    // const categories = await storage.getTaskCategories(taskId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching task categories:', error);
-    res.status(500).json({ message: 'Failed to fetch task categories' });
-  }
-});
-
-router.post('/tasks/:taskId/categories', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    const categoryId = parseInt(req.body.categoryId);
-    
-    const validatedData = insertTaskCategoryAssignmentSchema.parse({
-      taskId,
-      categoryId
-    });
-    
-    // Storage methods will be implemented later
-    // const assignment = await storage.assignCategoryToTask(validatedData);
-    res.status(201).json({ message: 'Category assigned to task successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid category assignment data', errors: error.errors });
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
     }
-    console.error('Error assigning category to task:', error);
-    res.status(500).json({ message: 'Failed to assign category to task' });
-  }
-});
-
-router.delete('/tasks/:taskId/categories/:categoryId', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    const categoryId = parseInt(req.params.categoryId);
     
-    // Storage methods will be implemented later
-    // const result = await storage.removeCategoryFromTask(taskId, categoryId);
-    
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Category assignment not found' });
-    // }
-    
-    res.json({ message: 'Category removed from task successfully' });
-  } catch (error) {
-    console.error('Error removing category from task:', error);
-    res.status(500).json({ message: 'Failed to remove category from task' });
-  }
-});
-
-// Milestones routes
-router.get('/projects/:projectId/milestones', ensureAuthenticated, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    // Storage methods will be implemented later
-    // const milestones = await storage.getMilestonesForProject(projectId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching milestones:', error);
-    res.status(500).json({ message: 'Failed to fetch milestones' });
-  }
-});
-
-router.get('/milestones/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const milestoneId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const milestone = await storage.getMilestone(milestoneId);
-    
-    // if (!milestone) {
-    //   return res.status(404).json({ message: 'Milestone not found' });
-    // }
-    
-    res.json({});
-  } catch (error) {
-    console.error('Error fetching milestone:', error);
-    res.status(500).json({ message: 'Failed to fetch milestone' });
-  }
-});
-
-router.post('/projects/:projectId/milestones', ensureSupervisor, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    const validatedData = insertMilestoneSchema.parse({
-      ...req.body,
-      projectId
-    });
-    
-    // Storage methods will be implemented later
-    // const newMilestone = await storage.createMilestone(validatedData);
-    res.status(201).json({ message: 'Milestone created successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid milestone data', errors: error.errors });
-    }
-    console.error('Error creating milestone:', error);
-    res.status(500).json({ message: 'Failed to create milestone' });
-  }
-});
-
-router.patch('/milestones/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const milestoneId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const updatedMilestone = await storage.updateMilestone(milestoneId, req.body);
-    
-    // if (!updatedMilestone) {
-    //   return res.status(404).json({ message: 'Milestone not found' });
-    // }
-    
-    res.json({ message: 'Milestone updated successfully' });
-  } catch (error) {
-    console.error('Error updating milestone:', error);
-    res.status(500).json({ message: 'Failed to update milestone' });
-  }
-});
-
-router.delete('/milestones/:id', ensureSupervisor, async (req, res) => {
-  try {
-    const milestoneId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.deleteMilestone(milestoneId);
-    
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Milestone not found' });
-    // }
-    
-    res.json({ message: 'Milestone deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting milestone:', error);
-    res.status(500).json({ message: 'Failed to delete milestone' });
-  }
-});
-
-// Task comments routes
-router.get('/tasks/:taskId/comments', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    // Storage methods will be implemented later
-    // const comments = await storage.getTaskComments(taskId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching task comments:', error);
-    res.status(500).json({ message: 'Failed to fetch task comments' });
-  }
-});
-
-router.post('/tasks/:taskId/comments', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    const userId = req.session.userId!;
-    
+    // Validate comment data
     const validatedData = insertTaskCommentSchema.parse({
       ...req.body,
       taskId,
       userId
     });
     
-    // Storage methods will be implemented later
-    // const newComment = await storage.addTaskComment(validatedData);
-    res.status(201).json({ message: 'Comment added to task successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid comment data', errors: error.errors });
-    }
-    console.error('Error adding task comment:', error);
-    res.status(500).json({ message: 'Failed to add task comment' });
-  }
-});
-
-router.patch('/task-comments/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const commentId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const updatedComment = await storage.updateTaskComment(commentId, req.body);
+    // Create the comment
+    const [comment] = await db.insert(taskComments).values(validatedData).returning();
     
-    // if (!updatedComment) {
-    //   return res.status(404).json({ message: 'Task comment not found' });
-    // }
+    // Get the user info for the response
+    const [userInfo] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      username: users.username
+    })
+    .from(users)
+    .where(eq(users.id, userId));
     
-    res.json({ message: 'Task comment updated successfully' });
-  } catch (error) {
-    console.error('Error updating task comment:', error);
-    res.status(500).json({ message: 'Failed to update task comment' });
-  }
-});
-
-router.delete('/task-comments/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const commentId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.deleteTaskComment(commentId);
-    
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Task comment not found' });
-    // }
-    
-    res.json({ message: 'Task comment deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting task comment:', error);
-    res.status(500).json({ message: 'Failed to delete task comment' });
-  }
-});
-
-// Task attachments routes
-router.get('/tasks/:taskId/attachments', ensureAuthenticated, async (req, res) => {
-  try {
-    const taskId = parseInt(req.params.taskId);
-    // Storage methods will be implemented later
-    // const attachments = await storage.getTaskAttachments(taskId);
-    res.json([]);
-  } catch (error) {
-    console.error('Error fetching task attachments:', error);
-    res.status(500).json({ message: 'Failed to fetch task attachments' });
-  }
-});
-
-router.post('/tasks/:taskId/attachments', ensureAuthenticated, uploadAttachment.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    const taskId = parseInt(req.params.taskId);
-    const userId = req.session.userId!;
-    
-    const attachmentData = {
-      taskId,
-      userId,
-      filename: req.file.filename,
-      originalFilename: req.file.originalname,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-      description: req.body.description || ''
+    const result = {
+      ...comment,
+      user: userInfo
     };
     
-    const validatedData = insertTaskAttachmentSchema.parse(attachmentData);
-    
-    // Storage methods will be implemented later
-    // const newAttachment = await storage.addTaskAttachment(validatedData);
-    
-    res.status(201).json({ message: 'Attachment added successfully' });
+    res.status(201).json(result);
   } catch (error) {
+    console.error('Error creating comment:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Invalid attachment data', errors: error.errors });
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
     }
-    console.error('Error adding task attachment:', error);
-    res.status(500).json({ message: 'Failed to add task attachment' });
+    res.status(500).json({ message: 'Failed to create comment' });
   }
 });
 
-router.delete('/task-attachments/:id', ensureAuthenticated, async (req, res) => {
+// Create a milestone for a project
+projectManagementRouter.post('/projects/:id/milestones', requireAuth, async (req: Request, res: Response) => {
   try {
-    const attachmentId = parseInt(req.params.id);
-    // Storage methods will be implemented later
-    // const result = await storage.deleteTaskAttachment(attachmentId);
+    const projectId = parseInt(req.params.id);
     
-    // if (!result) {
-    //   return res.status(404).json({ message: 'Task attachment not found' });
-    // }
+    if (isNaN(projectId)) {
+      return res.status(400).json({ message: 'Invalid project ID' });
+    }
     
-    res.json({ message: 'Task attachment deleted successfully' });
+    // Check if project exists
+    const [project] = await db.select().from(projects)
+      .where(and(
+        eq(projects.id, projectId),
+        eq(projects.deleted, false)
+      ));
+    
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    
+    // Validate milestone data
+    const validatedData = insertMilestoneSchema.parse({
+      ...req.body,
+      projectId
+    });
+    
+    // Create the milestone
+    const [milestone] = await db.insert(milestones).values(validatedData).returning();
+    
+    res.status(201).json(milestone);
   } catch (error) {
-    console.error('Error deleting task attachment:', error);
-    res.status(500).json({ message: 'Failed to delete task attachment' });
+    console.error('Error creating milestone:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Invalid data', errors: error.errors });
+    }
+    res.status(500).json({ message: 'Failed to create milestone' });
   }
 });
 
-// Task history routes
-router.get('/tasks/:taskId/history', ensureAuthenticated, async (req, res) => {
+// Analytics endpoint for projects
+projectManagementRouter.get('/analytics/projects', requireAuth, async (req: Request, res: Response) => {
   try {
-    const taskId = parseInt(req.params.taskId);
-    // Storage methods will be implemented later
-    // const history = await storage.getTaskHistory(taskId);
-    res.json([]);
+    // Get total projects count
+    const [totalProjects] = await db.select({
+      count: sql<number>`count(*)`
+    })
+    .from(projects)
+    .where(eq(projects.deleted, false));
+    
+    // Get completed projects count
+    const [completedProjects] = await db.select({
+      count: sql<number>`count(*)`
+    })
+    .from(projects)
+    .where(and(
+      eq(projects.deleted, false),
+      eq(projects.status, 'completed')
+    ));
+    
+    // Get total tasks count
+    const [totalTasks] = await db.select({
+      count: sql<number>`count(*)`
+    })
+    .from(tasks);
+    
+    // Get completed tasks count
+    const [completedTasks] = await db.select({
+      count: sql<number>`count(*)`
+    })
+    .from(tasks)
+    .where(eq(tasks.status, 'done'));
+    
+    // Get tasks by status
+    const tasksByStatus = await db.select({
+      status: tasks.status,
+      count: sql<number>`count(*)`
+    })
+    .from(tasks)
+    .groupBy(tasks.status);
+    
+    // Get tasks by priority
+    const tasksByPriority = await db.select({
+      priority: tasks.priority,
+      count: sql<number>`count(*)`
+    })
+    .from(tasks)
+    .groupBy(tasks.priority);
+    
+    // Get active users count (users with task assignments)
+    const [activeUsers] = await db.select({
+      count: sql<number>`count(distinct ${tasks.assigneeId})`
+    })
+    .from(tasks)
+    .where(not(isNull(tasks.assigneeId)));
+    
+    // Format the data for the frontend
+    const statusData = tasksByStatus.map(item => ({
+      name: item.status === 'backlog' ? 'Backlog' :
+           item.status === 'to_do' ? 'To Do' :
+           item.status === 'in_progress' ? 'In Progress' :
+           item.status === 'in_review' ? 'In Review' :
+           'Done',
+      value: Number(item.count),
+      color: item.status === 'backlog' ? '#94a3b8' :
+            item.status === 'to_do' ? '#60a5fa' :
+            item.status === 'in_progress' ? '#f59e0b' :
+            item.status === 'in_review' ? '#a78bfa' :
+            '#10b981'
+    }));
+    
+    const priorityData = tasksByPriority.map(item => ({
+      name: item.priority === 'low' ? 'Low' :
+           item.priority === 'medium' ? 'Medium' :
+           item.priority === 'high' ? 'High' :
+           'Urgent',
+      value: Number(item.count),
+      color: item.priority === 'low' ? '#94a3b8' :
+            item.priority === 'medium' ? '#60a5fa' :
+            item.priority === 'high' ? '#f59e0b' :
+            '#ef4444'
+    }));
+    
+    // Get top users by task completions
+    const userAssignmentData = await db.execute<{
+      name: string;
+      completed: number;
+      inProgress: number;
+      todo: number;
+    }>(sql`
+      SELECT 
+        CONCAT(u.first_name, ' ', LEFT(u.last_name, 1), '.') AS name,
+        COUNT(CASE WHEN t.status = 'done' THEN 1 ELSE NULL END) AS completed,
+        COUNT(CASE WHEN t.status = 'in_progress' THEN 1 ELSE NULL END) AS "inProgress",
+        COUNT(CASE WHEN t.status IN ('backlog', 'to_do') THEN 1 ELSE NULL END) AS todo
+      FROM tasks t
+      JOIN users u ON t.assignee_id = u.id
+      WHERE t.assignee_id IS NOT NULL
+      GROUP BY u.id, u.first_name, u.last_name
+      ORDER BY completed DESC
+      LIMIT 5
+    `);
+    
+    // Simple mock data for progress over time (can be replaced with actual data later)
+    const progressData = [
+      { name: 'Week 1', tasks: 5, completed: 2 },
+      { name: 'Week 2', tasks: 8, completed: 5 },
+      { name: 'Week 3', tasks: 10, completed: 7 },
+      { name: 'Week 4', tasks: 12, completed: 6 },
+      { name: 'Week 5', tasks: 15, completed: 10 },
+      { name: 'Week 6', tasks: 18, completed: 13 },
+    ];
+    
+    res.json({
+      totalProjects: Number(totalProjects.count),
+      completedProjects: Number(completedProjects.count),
+      totalTasks: Number(totalTasks.count),
+      completedTasks: Number(completedTasks.count),
+      activeUsers: Number(activeUsers.count),
+      statusData,
+      priorityData,
+      progressData,
+      userAssignmentData
+    });
   } catch (error) {
-    console.error('Error fetching task history:', error);
-    res.status(500).json({ message: 'Failed to fetch task history' });
+    console.error('Error fetching project analytics:', error);
+    res.status(500).json({ message: 'Failed to fetch analytics' });
   }
 });
 
-export default router;
+export default projectManagementRouter;
