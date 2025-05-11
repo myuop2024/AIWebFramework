@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
+import { AuthGuard } from '@/components/auth/auth-guard';
 import { 
   Card, 
   CardContent, 
