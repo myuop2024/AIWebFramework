@@ -520,7 +520,248 @@ projectManagementRouter.patch('/tasks/:id', requireAuth, async (req: Request, re
   }
 });
 
-// Add a comment to a task
+// Get tasks with filtering (for My Tasks page)
+projectManagementRouter.get('/tasks', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.session.userId;
+    const { view = 'assigned', status, priority, page = '1', search } = req.query;
+    const pageSize = 10;
+    const pageNumber = parseInt(page as string) || 1;
+    const offset = (pageNumber - 1) * pageSize;
+    
+    // Build base query
+    let query = db.select({
+      id: tasks.id,
+      title: tasks.title,
+      description: tasks.description,
+      status: tasks.status,
+      priority: tasks.priority,
+      projectId: tasks.projectId,
+      assigneeId: tasks.assigneeId,
+      reporterId: tasks.reporterId,
+      milestoneId: tasks.milestoneId,
+      startDate: tasks.startDate,
+      dueDate: tasks.dueDate,
+      createdAt: tasks.createdAt,
+      completedAt: tasks.completedAt,
+      project: {
+        id: projects.id,
+        name: projects.name,
+        code: projects.code
+      },
+      assignee: {
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        username: users.username
+      }
+    })
+    .from(tasks)
+    .leftJoin(projects, eq(tasks.projectId, projects.id))
+    .leftJoin(users, eq(tasks.assigneeId, users.id))
+    .where(eq(projects.deleted, false));
+    
+    // Apply view filter
+    if (view === 'assigned') {
+      query = query.where(eq(tasks.assigneeId, userId));
+    } else if (view === 'created') {
+      query = query.where(eq(tasks.reporterId, userId));
+    }
+    
+    // Apply status filter
+    if (status && status !== 'all' && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+      query = query.where(eq(tasks.status, status as any));
+    }
+    
+    // Apply priority filter
+    if (priority && priority !== 'all' && Object.values(taskPriorityEnum.enumValues).includes(priority as any)) {
+      query = query.where(eq(tasks.priority, priority as any));
+    }
+    
+    // Apply search filter
+    if (search) {
+      const searchTerm = `%${search}%`;
+      query = query.where(
+        or(
+          sql`${tasks.title} ILIKE ${searchTerm}`,
+          sql`${tasks.description} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Get total count for pagination
+    const countQuery = db.select({ count: sql<number>`count(*)` })
+      .from(tasks)
+      .leftJoin(projects, eq(tasks.projectId, projects.id))
+      .where(eq(projects.deleted, false));
+    
+    // Apply the same filters to count query
+    if (view === 'assigned') {
+      countQuery.where(eq(tasks.assigneeId, userId));
+    } else if (view === 'created') {
+      countQuery.where(eq(tasks.reporterId, userId));
+    }
+    
+    if (status && status !== 'all' && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+      countQuery.where(eq(tasks.status, status as any));
+    }
+    
+    if (priority && priority !== 'all' && Object.values(taskPriorityEnum.enumValues).includes(priority as any)) {
+      countQuery.where(eq(tasks.priority, priority as any));
+    }
+    
+    if (search) {
+      const searchTerm = `%${search}%`;
+      countQuery.where(
+        or(
+          sql`${tasks.title} ILIKE ${searchTerm}`,
+          sql`${tasks.description} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Execute queries
+    const [countResult] = await countQuery;
+    const totalCount = countResult?.count || 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    // Add pagination and ordering
+    query = query.limit(pageSize).offset(offset)
+      .orderBy(desc(tasks.updatedAt));
+    
+    const tasksResult = await query;
+    
+    res.json({
+      tasks: tasksResult,
+      page: pageNumber,
+      pageSize,
+      totalCount,
+      totalPages
+    });
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ message: 'Failed to fetch tasks' });
+  }
+});
+
+// Get milestones with filtering
+projectManagementRouter.get('/milestones', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { status, project, page = '1', search } = req.query;
+    const pageSize = 12; // For card grid layout
+    const pageNumber = parseInt(page as string) || 1;
+    const offset = (pageNumber - 1) * pageSize;
+    
+    // Build base query
+    let query = db.select({
+      id: milestones.id,
+      name: milestones.name,
+      description: milestones.description,
+      projectId: milestones.projectId,
+      dueDate: milestones.dueDate,
+      completedAt: milestones.completedAt,
+      status: milestones.status,
+      createdAt: milestones.createdAt,
+      updatedAt: milestones.updatedAt,
+      sortOrder: milestones.sortOrder,
+      project: {
+        id: projects.id,
+        name: projects.name,
+        status: projects.status
+      }
+    })
+    .from(milestones)
+    .innerJoin(projects, eq(milestones.projectId, projects.id))
+    .where(eq(projects.deleted, false));
+    
+    // Apply status filter
+    if (status && status !== 'all') {
+      query = query.where(eq(milestones.status, status as string));
+    }
+    
+    // Apply project filter
+    if (project && project !== 'all') {
+      const projectId = parseInt(project as string);
+      if (!isNaN(projectId)) {
+        query = query.where(eq(milestones.projectId, projectId));
+      }
+    }
+    
+    // Apply search filter
+    if (search) {
+      const searchTerm = `%${search}%`;
+      query = query.where(
+        or(
+          sql`${milestones.name} ILIKE ${searchTerm}`,
+          sql`${milestones.description} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Get total count for pagination
+    const countQuery = db.select({ count: sql<number>`count(*)` })
+      .from(milestones)
+      .innerJoin(projects, eq(milestones.projectId, projects.id))
+      .where(eq(projects.deleted, false));
+    
+    // Apply the same filters to count query
+    if (status && status !== 'all') {
+      countQuery.where(eq(milestones.status, status as string));
+    }
+    
+    if (project && project !== 'all') {
+      const projectId = parseInt(project as string);
+      if (!isNaN(projectId)) {
+        countQuery.where(eq(milestones.projectId, projectId));
+      }
+    }
+    
+    if (search) {
+      const searchTerm = `%${search}%`;
+      countQuery.where(
+        or(
+          sql`${milestones.name} ILIKE ${searchTerm}`,
+          sql`${milestones.description} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Execute count query
+    const [countResult] = await countQuery;
+    const totalCount = countResult?.count || 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    // Add pagination and ordering
+    query = query.limit(pageSize).offset(offset)
+      .orderBy(asc(milestones.dueDate));
+    
+    const milestonesResult = await query;
+    
+    // For each milestone, get associated tasks to calculate progress
+    const enhancedMilestones = await Promise.all(milestonesResult.map(async (milestone) => {
+      const milestoneTasks = await db.select()
+        .from(tasks)
+        .where(eq(tasks.milestoneId, milestone.id));
+      
+      return {
+        ...milestone,
+        tasks: milestoneTasks
+      };
+    }));
+    
+    res.json({
+      milestones: enhancedMilestones,
+      page: pageNumber,
+      pageSize,
+      totalCount,
+      totalPages
+    });
+  } catch (error) {
+    console.error('Error fetching milestones:', error);
+    res.status(500).json({ message: 'Failed to fetch milestones' });
+  }
+});
+
 projectManagementRouter.post('/tasks/:id/comments', requireAuth, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
