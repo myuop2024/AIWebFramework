@@ -1,268 +1,307 @@
-import { clientStorage } from '../storage'; // Client-side storage proxy
-import { z } from 'zod';
-import { CommunicationService } from '../services/communication-service'; // Assuming path is correct
 
-const router = express.Router();
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { clientStorage } from '../storage';
 
-// Reference to the communication service (will be set by server/routes.ts)
-let communicationService: CommunicationService | null = null;
-
-export function setCommunicationService(service: CommunicationService) {
-  communicationService = service;
-  console.log('[Router] CommunicationService has been set.'); // Log when service is set
+// Types
+export interface User {
+  id: number;
+  username: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  status: 'online' | 'offline' | 'away';
+  profileImage?: string | null;
+  role?: string | null;
+  parish?: string | null;
 }
 
-// --- Zod Schemas for Validation ---
-const messageSchema = z.object({
-  receiverId: z.number().int().positive(),
-  content: z.string().min(1), // Ensure content is not empty
-  type: z.enum(['text', 'file', 'image', 'system']).optional().default('text'),
-});
+export interface Message {
+  id: number;
+  senderId: number;
+  receiverId: number;
+  content: string;
+  type: 'text' | 'file' | 'image' | 'system';
+  read: boolean;
+  sentAt: Date;
+}
 
-const userIdParamSchema = z.object({
-  userId: z.string().refine(val => !isNaN(parseInt(val)), { message: "User ID must be a number." }).transform(val => parseInt(val)),
-});
+export interface Conversation {
+  userId: number;
+  username: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  lastMessage: string;
+  lastMessageType: string;
+  unreadCount: number;
+  lastMessageAt: Date;
+  profileImage?: string | null;
+}
 
-const senderIdParamSchema = z.object({
-  senderId: z.string().refine(val => !isNaN(parseInt(val)), { message: "Sender ID must be a number." }).transform(val => parseInt(val)),
-});
-
-const markMessagesReadSchema = z.object({
-  messageIds: z.array(z.number().int().positive()).min(1), // Must be an array of positive integers, at least one
-});
-
-// --- WebSocket Message Types (for consistency with frontend) ---
-const WS_NOTIFICATION_TYPES = {
-  NEW_MESSAGE: 'message', // Matches WS_MSG_TYPES.NEW_MESSAGE in useCommunication hook
+// WebSocket message types
+export const WS_MSG_TYPES = {
+  CONNECT: 'connect',
+  USERS: 'users',
+  NEW_MESSAGE: 'message',
   MESSAGE_READ: 'message-read',
   ALL_MESSAGES_READ: 'all-messages-read',
-  // It's good practice to also have a type for broadcasting user status updates if not already covered
-  // e.g., USER_STATUS_UPDATE: 'user-status-update' or rely on a full USERS_LIST broadcast
+  USER_STATUS: 'user-status',
+  ERROR: 'error',
 };
 
-// Middleware to check for authenticated user
-const ensureAuthenticated = (req: any, res: any, next: any) => { // Added types for req, res, next for clarity
-  if (!req.user?.id) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  // Make userId available directly on req for convenience, assuming req.user.id is number
-  req.userId = req.user.id as number;
-  next();
-};
-
-
-// Get all conversations for the current user
-router.get('/conversations', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const conversations = await storage.getRecentConversations(req.userId);
-    res.json(conversations);
-  } catch (error) {
-    console.error('Error getting conversations:', error);
-    next(error);
-  }
-});
-
-// Get messages between current user and another user
-router.get('/messages/:userId', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const paramValidation = userIdParamSchema.safeParse(req.params);
-    if (!paramValidation.success) {
-      return res.status(400).json({ error: 'Invalid user ID format', details: paramValidation.error.errors });
+export function useCommunication(userId: number) {
+  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastMessage, setLastMessage] = useState<Message | null>(null);
+  const [readMessages, setReadMessages] = useState<{messageId: number, readBy: number}[]>([]);
+  const [allReadNotifications, setAllReadNotifications] = useState<{by: number, from: number}[]>([]);
+  
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 5;
+  const baseReconnectDelay = 1000; // 1 second
+  
+  // Function to calculate exponential backoff delay
+  const getReconnectDelay = () => {
+    const attempt = Math.min(reconnectAttempts.current, 5); // Cap at 5 for max delay
+    const delay = baseReconnectDelay * Math.pow(2, attempt) + Math.random() * 1000;
+    return Math.min(delay, 30000); // Max 30 seconds
+  };
+  
+  // Connect to WebSocket
+  const connectWebSocket = useCallback(() => {
+    if (socket) {
+      // Close existing connection if any
+      socket.close();
     }
-    const otherUserId = paramValidation.data.userId;
-
-    const messages = await storage.getMessagesBetweenUsers(req.userId, otherUserId);
-    res.json(messages);
-  } catch (error) {
-    console.error('Error getting messages:', error);
-    next(error);
-  }
-});
-
-// Get all online users (including current user's perspective)
-router.get('/online-users', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const allUsersFromDb = await storage.getAllUsers(); // Assuming this fetches all users
-
-    if (!communicationService) {
-        console.warn('[Router /online-users] CommunicationService is NOT AVAILABLE. Online statuses will be inaccurate (all offline).');
-    }
-    // activeUserIds should be a list of user IDs that are currently connected via WebSocket
-    const activeUserIds = communicationService ? communicationService.getActiveUsers() : [];
-    console.log('[Router /online-users] Active User IDs from CommunicationService:', activeUserIds);
-
-    const usersWithStatus = allUsersFromDb.map(user => ({
-      id: user.id,
-      username: user.username,
-      firstName: user.firstName || null,
-      lastName: user.lastName || null,
-      // Correctly determine status based on activeUserIds from communicationService
-      // The CommunicationService is the source of truth for "online" status.
-      status: activeUserIds.includes(user.id) ? 'online' : 'offline',
-      profileImage: user.profileImage || null,
-      role: user.role || null,
-      parish: user.parish || null,
-    }));
-
-    // console.log('[Router /online-users] Sending users with status. Online users:', usersWithStatus.filter(u => u.status === 'online').map(u => u.id));
-    res.json(usersWithStatus);
-  } catch (error) {
-    console.error('Error getting online users:', error);
-    next(error);
-  }
-});
-
-// Send a message to another user
-router.post('/messages', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const validationResult = messageSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: validationResult.error.errors,
-      });
-    }
-
-    const { receiverId, content, type } = validationResult.data;
-
-    if (receiverId === req.userId) {
-        return res.status(400).json({ error: 'Cannot send messages to yourself.' });
-    }
-
-    const receiver = await storage.getUser(receiverId);
-    if (!receiver) {
-      return res.status(404).json({ error: 'Receiver not found' });
-    }
-
-    const messageData = {
-      senderId: req.userId,
-      receiverId,
-      content,
-      type,
-      read: false,
-      sentAt: new Date(),
-    };
-
-    const createdMessage = await storage.createMessage(messageData);
-
-    if (communicationService) {
-      // Notify the receiver via WebSocket
-      communicationService.sendToUser(receiverId, {
-        type: WS_NOTIFICATION_TYPES.NEW_MESSAGE,
-        message: createdMessage, // Send the full message object
-      });
-      // Optionally, also notify the sender's other sessions if they are connected elsewhere
-      // This confirms to the sender's other devices that the message was sent.
-      // communicationService.sendToUser(req.userId, {
-      //   type: WS_NOTIFICATION_TYPES.NEW_MESSAGE, // Can be the same type or a specific confirmation type
-      //   message: createdMessage,
-      //   isConfirmation: true // Optional flag
-      // });
-    } else {
-        console.warn('[Router /messages] CommunicationService not available. Real-time notification not sent.');
-    }
-
-    res.status(201).json(createdMessage);
-  } catch (error) {
-    console.error('Error sending message:', error);
-    next(error);
-  }
-});
-
-// Mark individual messages as read
-router.patch('/messages/read', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const validationResult = markMessagesReadSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Invalid request data for marking messages as read',
-        details: validationResult.error.errors,
-      });
-    }
-    const { messageIds } = validationResult.data;
-
-    const updatedMessages = [];
-    const messagesToNotifySenderAbout = [];
-
-    for (const messageId of messageIds) {
-      const message = await storage.getMessage(messageId);
-
-      if (message && message.receiverId === req.userId && !message.read) {
-        const updatedMessage = await storage.markMessageAsRead(messageId);
-        updatedMessages.push(updatedMessage);
-        messagesToNotifySenderAbout.push({ messageId: updatedMessage.id, senderId: message.senderId, readBy: req.userId });
-      } else if (message && message.receiverId === req.userId && message.read) {
-        updatedMessages.push(message);
-      }
-    }
-
-    if (communicationService && messagesToNotifySenderAbout.length > 0) {
-      for (const { messageId, senderId, readBy } of messagesToNotifySenderAbout) {
-        if (communicationService.getUserStatus(senderId) === 'online') { // Check if sender is online
-          communicationService.sendToUser(senderId, {
-            type: WS_NOTIFICATION_TYPES.MESSAGE_READ,
-            messageId: messageId,
-            readBy: readBy
-          });
+    
+    // Determine WebSocket URL based on environment
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const baseUrl = window.location.host;
+    const wsUrl = `${protocol}//${baseUrl}/ws`;
+    
+    console.log(`Connecting to WebSocket at ${wsUrl}... (User ID: ${userId})`);
+    
+    try {
+      const newSocket = new WebSocket(wsUrl);
+      
+      newSocket.onopen = () => {
+        console.log('WebSocket connected successfully');
+        setConnected(true);
+        setError(null);
+        reconnectAttempts.current = 0;
+        
+        // Send initial connection message with user ID
+        newSocket.send(JSON.stringify({
+          type: WS_MSG_TYPES.CONNECT,
+          userId: userId
+        }));
+      };
+      
+      newSocket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
+          
+          switch (data.type) {
+            case WS_MSG_TYPES.USERS:
+              setOnlineUsers(data.users);
+              break;
+            case WS_MSG_TYPES.NEW_MESSAGE:
+              setLastMessage(data.message);
+              break;
+            case WS_MSG_TYPES.MESSAGE_READ:
+              setReadMessages(prev => [...prev, { messageId: data.messageId, readBy: data.readBy }]);
+              break;
+            case WS_MSG_TYPES.ALL_MESSAGES_READ:
+              setAllReadNotifications(prev => [...prev, { by: data.by, from: data.from }]);
+              break;
+            case WS_MSG_TYPES.ERROR:
+              setError(data.message || 'Unknown WebSocket error');
+              break;
+            default:
+              // Handle unknown message type
+              break;
+          }
+        } catch (err) {
+          console.error('Error parsing WebSocket message:', err);
         }
+      };
+      
+      newSocket.onclose = (event) => {
+        console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
+        setConnected(false);
+        
+        // Attempt to reconnect unless this was a normal close (1000) or max attempts reached
+        if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
+          reconnectAttempts.current += 1;
+          const delay = getReconnectDelay();
+          console.log(`Scheduling WebSocket reconnection in ${Math.round(delay)}ms...`);
+          
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('Attempting to reconnect WebSocket...');
+            connectWebSocket();
+          }, delay);
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          setError('Maximum reconnection attempts reached. Please refresh the page.');
+        }
+      };
+      
+      newSocket.onerror = (err) => {
+        console.error('WebSocket error:', err);
+        setError('WebSocket connection error');
+      };
+      
+      setSocket(newSocket);
+    } catch (err) {
+      console.error('Error creating WebSocket:', err);
+      setError('Failed to create WebSocket connection');
+    }
+  }, [userId, socket]);
+  
+  // Clean up function
+  const cleanUp = useCallback(() => {
+    console.log('Cleaning up WebSocket connection...');
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close(1000, 'Component unmounted');
+    }
+  }, [socket]);
+  
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (userId) {
+      connectWebSocket();
+    }
+    
+    // Set up global error handler for unhandled WebSocket errors
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.message && event.message.includes('WebSocket')) {
+        setError(`Global WebSocket error: ${event.message}`);
       }
+    };
+    
+    window.addEventListener('error', handleGlobalError);
+    console.log('Global error handlers initialized');
+    
+    return () => {
+      cleanUp();
+      window.removeEventListener('error', handleGlobalError);
+    };
+  }, [userId, connectWebSocket, cleanUp]);
+  
+  // Send a message
+  const sendMessage = useCallback(async (receiverId: number, content: string, type: 'text' | 'file' | 'image' | 'system' = 'text') => {
+    try {
+      // First save the message to the database through the REST API
+      const message = await clientStorage.createMessage({
+        receiverId,
+        content,
+        type
+      });
+      
+      // If successfully saved, we don't need to do anything else as the server
+      // will broadcast this message through the WebSocket connection
+      return message;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setError('Failed to send message');
+      throw error;
     }
-    res.json(updatedMessages);
-  } catch (error) {
-    console.error('Error marking messages as read:', error);
-    next(error);
-  }
-});
-
-
-// Mark all messages from a specific sender as read by the current user
-router.patch('/messages/read-all/:senderId', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const paramValidation = senderIdParamSchema.safeParse(req.params);
-    if (!paramValidation.success) {
-      return res.status(400).json({ error: 'Invalid sender ID format', details: paramValidation.error.errors });
+  }, []);
+  
+  // Mark a message as read
+  const markMessageAsRead = useCallback(async (messageId: number) => {
+    try {
+      return await clientStorage.markMessageAsRead(messageId);
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      setError('Failed to mark message as read');
+      throw error;
     }
-    const senderIdToMark = paramValidation.data.senderId;
-
-    const count = await storage.markAllMessagesAsRead(senderIdToMark, req.userId);
-
-    if (communicationService && count > 0) {
-      if (communicationService.getUserStatus(senderIdToMark) === 'online') {
-        communicationService.sendToUser(senderIdToMark, {
-          type: WS_NOTIFICATION_TYPES.ALL_MESSAGES_READ,
-          by: req.userId,
-          from: senderIdToMark
-        });
-      }
+  }, []);
+  
+  // Mark all messages from a user as read
+  const markAllMessagesAsRead = useCallback(async (senderId: number) => {
+    try {
+      return await clientStorage.markAllMessagesAsRead(senderId, userId);
+    } catch (error) {
+      console.error('Error marking all messages as read:', error);
+      setError('Failed to mark all messages as read');
+      throw error;
     }
-    res.json({ count });
-  } catch (error) {
-    console.error('Error marking all messages as read:', error);
-    next(error);
-  }
-});
-
-// Get user status (primarily for checking if a user exists and their DB record, real-time status from communicationService)
-router.get('/user-status/:userId', ensureAuthenticated, async (req, res, next) => {
-  try {
-    const paramValidation = userIdParamSchema.safeParse(req.params);
-    if (!paramValidation.success) {
-      return res.status(400).json({ error: 'Invalid user ID format', details: paramValidation.error.errors });
+  }, [userId]);
+  
+  // Get messages between current user and another user
+  const getMessagesBetweenUsers = useCallback(async (otherUserId: number) => {
+    try {
+      return await clientStorage.getMessagesBetweenUsers(userId, otherUserId);
+    } catch (error) {
+      console.error('Error getting messages:', error);
+      setError('Failed to get messages');
+      throw error;
     }
-    const targetUserId = paramValidation.data.userId;
-
-    const user = await storage.getUser(targetUserId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+  }, [userId]);
+  
+  // Get recent conversations
+  const getRecentConversations = useCallback(async () => {
+    try {
+      return await clientStorage.getRecentConversations(userId);
+    } catch (error) {
+      console.error('Error getting conversations:', error);
+      setError('Failed to get conversations');
+      throw error;
     }
+  }, [userId]);
+  
+  // Get all users (for user selection)
+  const getAllUsers = useCallback(async () => {
+    try {
+      return await clientStorage.getAllUsers();
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      setError('Failed to get users');
+      throw error;
+    }
+  }, []);
+  
+  // Reset notification state for a specific message or all messages
+  const resetNotification = useCallback((messageId?: number) => {
+    if (messageId) {
+      setLastMessage(prev => 
+        prev && prev.id === messageId ? null : prev
+      );
+    } else {
+      setLastMessage(null);
+    }
+  }, []);
+  
+  return {
+    connected,
+    onlineUsers,
+    lastMessage,
+    readMessages,
+    allReadNotifications,
+    error,
+    sendMessage,
+    markMessageAsRead,
+    markAllMessagesAsRead,
+    getMessagesBetweenUsers,
+    getRecentConversations,
+    getAllUsers,
+    resetNotification,
+    reconnect: connectWebSocket,
+    endConnection: cleanUp,
+  };
+}
 
-    // Get real-time status from CommunicationService if available
-    const status = communicationService ? communicationService.getUserStatus(targetUserId) : 'offline';
-    res.json({ userId: targetUserId, username: user.username, status });
-  } catch (error) {
-    console.error('Error getting user status:', error);
-    next(error);
-  }
-});
-
-export default router;
+// Export types for server-side communication routes
+export type { User, Message, Conversation };
