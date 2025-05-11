@@ -34,6 +34,38 @@ const requireAuth = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+// Get users for project assignments
+projectManagementRouter.get('/users', requireAuth, async (req: Request, res: Response) => {
+  try {
+    console.log('Fetching users for project management');
+    
+    // Only select necessary user information for dropdown selection
+    const usersList = await db.select({
+      id: users.id,
+      username: users.username,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email
+    })
+    .from(users)
+    .where(
+      and(
+        // Do not include deleted users
+        eq(users.isActive, true),
+        // You can add more conditions here if needed
+      )
+    )
+    .orderBy(asc(users.lastName), asc(users.firstName));
+    
+    console.log(`Found ${usersList.length} active users`);
+    
+    res.json(usersList);
+  } catch (error) {
+    console.error('Error fetching users for project management:', error);
+    res.status(500).json({ message: 'Failed to fetch users' });
+  }
+});
+
 // Get all projects (with filtering)
 projectManagementRouter.get('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
