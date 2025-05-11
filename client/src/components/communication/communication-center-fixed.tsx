@@ -25,6 +25,8 @@ interface CommunicationCenterProps {
 }
 
 export function CommunicationCenter({ userId, hideHeader = false }: CommunicationCenterProps) {
+  // Keep track of current user ID for status management
+  const currentUserId = userId;
   const [activeChatUserId, setActiveChatUserId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState('');
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
@@ -393,6 +395,10 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Check if a user is online
   const isUserOnline = (userId: number): boolean => {
+    // Always show current user as online if they're viewing the chat
+    if (userId === currentUserId) {
+      return true;
+    }
     return onlineUsers.some(user => user.id === userId && user.status === 'online');
   };
 

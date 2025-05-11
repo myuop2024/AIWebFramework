@@ -134,8 +134,8 @@ export function useCommunication(userId: number) {
       heartbeatTimer = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           try {
-            // Send a lightweight ping message
-            ws.send(JSON.stringify({ type: 'heartbeat' }));
+            // Send a lightweight ping message with user ID to maintain connection
+            ws.send(JSON.stringify({ type: 'heartbeat', userId }));
           } catch (e) {
             console.error('Failed to send heartbeat, connection might be dead:', e);
             ws.close();
@@ -144,7 +144,7 @@ export function useCommunication(userId: number) {
           // Reconnect if connection is already closed
           connectWebSocket();
         }
-      }, 15000); // Every 15 seconds
+      }, 10000); // Every 10 seconds - more frequent to ensure reliable connection
     };
 
     const connectWebSocket = () => {

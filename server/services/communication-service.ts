@@ -298,6 +298,11 @@ export class CommunicationService {
           onlineUsers.push({
             id: userId,
             username: user.username,
+            firstName: user.firstName || null,
+            lastName: user.lastName || null,
+            role: user.role || null,
+            parish: user.parish || null,
+            profileImage: user.profileImage || null,
             status: 'online'
           });
         }
