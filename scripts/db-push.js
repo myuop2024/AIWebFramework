@@ -28,7 +28,11 @@ async function migrateTables() {
         verification_status TEXT NOT NULL DEFAULT 'pending',
         device_id TEXT,
         training_status TEXT NOT NULL DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        two_factor_secret TEXT,
+        two_factor_enabled BOOLEAN DEFAULT false,
+        two_factor_verified BOOLEAN DEFAULT false,
+        recovery_codes JSONB
       );
 
       CREATE TABLE IF NOT EXISTS user_profiles (
@@ -37,15 +41,23 @@ async function migrateTables() {
         address TEXT,
         city TEXT,
         state TEXT,
-        zip_code TEXT,
+        post_office_region TEXT,
         country TEXT,
         trn TEXT,
         bank_name TEXT,
+        bank_branch_location TEXT,
         bank_account TEXT,
+        account_type TEXT,
+        account_currency TEXT DEFAULT 'JMD',
         id_type TEXT,
         id_number TEXT,
         profile_photo_url TEXT,
-        id_photo_url TEXT
+        id_photo_url TEXT,
+        verification_status TEXT,
+        verification_id TEXT,
+        verified_at TIMESTAMP,
+        encryption_iv TEXT,
+        is_encrypted BOOLEAN DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS documents (
@@ -65,14 +77,18 @@ async function migrateTables() {
         city TEXT NOT NULL,
         state TEXT NOT NULL,
         zip_code TEXT,
+        post_office_region TEXT,
         country TEXT NOT NULL DEFAULT 'Jamaica',
-        coordinates JSONB,
+        coordinates TEXT,
         constituency TEXT,
         division TEXT,
         station_code TEXT UNIQUE,
         station_type TEXT,
-        capacity INTEGER,
+        capacity INTEGER DEFAULT 5,
+        latitude DOUBLE PRECISION,
+        longitude DOUBLE PRECISION,
         notes TEXT,
+        status TEXT DEFAULT 'active' NOT NULL,
         active BOOLEAN NOT NULL DEFAULT true
       );
 
@@ -223,6 +239,30 @@ async function migrateTables() {
         processed_at TIMESTAMP,
         notes TEXT
       );
+
+      -- Add missing columns to existing tables if they don't exist
+      ALTER TABLE IF EXISTS users
+        ADD COLUMN IF NOT EXISTS two_factor_secret TEXT,
+        ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS two_factor_verified BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS recovery_codes JSONB;
+
+      ALTER TABLE IF EXISTS user_profiles
+        ADD COLUMN IF NOT EXISTS post_office_region TEXT,
+        ADD COLUMN IF NOT EXISTS bank_branch_location TEXT,
+        ADD COLUMN IF NOT EXISTS account_type TEXT,
+        ADD COLUMN IF NOT EXISTS account_currency TEXT DEFAULT 'JMD',
+        ADD COLUMN IF NOT EXISTS verification_status TEXT,
+        ADD COLUMN IF NOT EXISTS verification_id TEXT,
+        ADD COLUMN IF NOT EXISTS verified_at TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS encryption_iv TEXT,
+        ADD COLUMN IF NOT EXISTS is_encrypted BOOLEAN DEFAULT false;
+
+      ALTER TABLE IF EXISTS polling_stations
+        ADD COLUMN IF NOT EXISTS post_office_region TEXT,
+        ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION,
+        ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
     `);
 
     console.log('All tables created successfully');
