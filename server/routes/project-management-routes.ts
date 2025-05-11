@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
+import { ensureAuthenticated } from '../middleware/auth';
 import { 
   projects, 
   tasks, 
@@ -26,16 +27,11 @@ import { eq, and, isNull, or, not, desc, asc, sql, inArray } from 'drizzle-orm';
 
 export const projectManagementRouter = Router();
 
-// Authentication middleware
-const requireAuth = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-};
+// We're using the global ensureAuthenticated middleware instead of a local one
+// This provides consistent authentication behavior across the application
 
 // Get users for project assignments
-projectManagementRouter.get('/users', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/users', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('Fetching users for project management');
     
@@ -61,7 +57,7 @@ projectManagementRouter.get('/users', requireAuth, async (req: Request, res: Res
 });
 
 // Get all projects (with filtering)
-projectManagementRouter.get('/projects', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/projects', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const { status, search, userId } = req.query;
     
@@ -111,7 +107,7 @@ projectManagementRouter.get('/projects', requireAuth, async (req: Request, res: 
 });
 
 // Special route to handle the "new" endpoint - redirects to the POST /projects endpoint
-projectManagementRouter.patch('/projects/new', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.patch('/projects/new', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('Received PATCH to /projects/new, redirecting to POST /projects');
     console.log('Request body:', JSON.stringify(req.body));
@@ -149,13 +145,13 @@ projectManagementRouter.patch('/projects/new', requireAuth, async (req: Request,
 });
 
 // For consistency also handle GET /projects/new
-projectManagementRouter.get('/projects/new', requireAuth, (req: Request, res: Response) => {
+projectManagementRouter.get('/projects/new', ensureAuthenticated, (req: Request, res: Response) => {
   console.log('GET request to /projects/new - returning empty object');
   res.json({}); 
 });
 
 // Get a specific project by ID
-projectManagementRouter.get('/projects/:id', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/projects/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     if (isNaN(projectId)) {
@@ -222,7 +218,7 @@ projectManagementRouter.get('/projects/:id', requireAuth, async (req: Request, r
 });
 
 // Create a new project
-projectManagementRouter.post('/projects', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.post('/projects', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('Creating new project with data:', JSON.stringify(req.body));
     const userId = req.session.userId;
@@ -259,7 +255,7 @@ projectManagementRouter.post('/projects', requireAuth, async (req: Request, res:
 });
 
 // Update a project
-projectManagementRouter.patch('/projects/:id', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.patch('/projects/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     const userId = req.session.userId;
@@ -314,7 +310,7 @@ projectManagementRouter.patch('/projects/:id', requireAuth, async (req: Request,
 });
 
 // Soft delete a project
-projectManagementRouter.delete('/projects/:id', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.delete('/projects/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     const userId = req.session.userId;
@@ -362,7 +358,7 @@ projectManagementRouter.delete('/projects/:id', requireAuth, async (req: Request
 });
 
 // Get all tasks for a project
-projectManagementRouter.get('/projects/:id/tasks', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/projects/:id/tasks', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     const { status } = req.query;
@@ -414,7 +410,7 @@ projectManagementRouter.get('/projects/:id/tasks', requireAuth, async (req: Requ
 });
 
 // Create a new task in a project
-projectManagementRouter.post('/projects/:id/tasks', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.post('/projects/:id/tasks', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     const userId = req.session.userId;
@@ -455,7 +451,7 @@ projectManagementRouter.post('/projects/:id/tasks', requireAuth, async (req: Req
 });
 
 // Get a specific task
-projectManagementRouter.get('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/tasks/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
     
@@ -535,7 +531,7 @@ projectManagementRouter.get('/tasks/:id', requireAuth, async (req: Request, res:
 });
 
 // Update a task
-projectManagementRouter.patch('/tasks/:id', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.patch('/tasks/:id', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
     const userId = req.session.userId;
@@ -597,7 +593,7 @@ projectManagementRouter.patch('/tasks/:id', requireAuth, async (req: Request, re
 });
 
 // Get tasks with filtering (for My Tasks page)
-projectManagementRouter.get('/tasks', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/tasks', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     const { view = 'assigned', status, priority, page = '1', search } = req.query;
@@ -721,7 +717,7 @@ projectManagementRouter.get('/tasks', requireAuth, async (req: Request, res: Res
 });
 
 // Get milestones with filtering
-projectManagementRouter.get('/milestones', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/milestones', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const { status, project, page = '1', search } = req.query;
     const pageSize = 12; // For card grid layout
@@ -838,7 +834,7 @@ projectManagementRouter.get('/milestones', requireAuth, async (req: Request, res
   }
 });
 
-projectManagementRouter.post('/tasks/:id/comments', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.post('/tasks/:id/comments', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
     const userId = req.session.userId;
@@ -890,7 +886,7 @@ projectManagementRouter.post('/tasks/:id/comments', requireAuth, async (req: Req
 });
 
 // Create a milestone for a project
-projectManagementRouter.post('/projects/:id/milestones', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.post('/projects/:id/milestones', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const projectId = parseInt(req.params.id);
     
@@ -929,7 +925,7 @@ projectManagementRouter.post('/projects/:id/milestones', requireAuth, async (req
 });
 
 // Analytics endpoint for projects
-projectManagementRouter.get('/analytics/projects', requireAuth, async (req: Request, res: Response) => {
+projectManagementRouter.get('/analytics/projects', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     // Get total projects count
     const [totalProjects] = await db.select({
