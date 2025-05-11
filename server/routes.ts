@@ -33,6 +33,7 @@ import permissionRoutes from './routes/permission-routes';
 import supervisorRoutes from './routes/supervisor-routes';
 import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
+import projectManagementRoutes from './routes/project-management-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
@@ -2094,6 +2095,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Add supervisor routes
   app.use('/api', supervisorRoutes);
+
+  // Add project management routes
+  app.use('/api', projectManagementRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
