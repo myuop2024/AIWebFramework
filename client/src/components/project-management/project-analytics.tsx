@@ -99,27 +99,23 @@ const ProjectAnalytics: React.FC = () => {
     userAssignmentData: typeof mockUserAssignmentData;
   }
 
-  // Replace with actual API call when backend is ready
+  // Fetch real analytics data from the API
   const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/analytics/projects'],
-    queryFn: async () => {
-      // Mock data for now
-      return new Promise<AnalyticsData>(resolve => {
-        setTimeout(() => {
-          resolve({
-            totalProjects: 8,
-            completedProjects: 3,
-            totalTasks: 30,
-            completedTasks: 15,
-            activeUsers: 8,
-            statusData: mockStatusData,
-            priorityData: mockPriorityData,
-            progressData: mockProjectProgressData,
-            userAssignmentData: mockUserAssignmentData
-          });
-        }, 1000);
-      });
-    }
+    // The API will return real data from the database
+    // For now, we'll fall back to some placeholder data if the API doesn't provide everything
+    // This will be replaced with real data once the API is fully implemented
+    select: (data) => ({
+      totalProjects: data?.totalProjects ?? 0,
+      completedProjects: data?.completedProjects ?? 0,
+      totalTasks: data?.totalTasks ?? 0,
+      completedTasks: data?.completedTasks ?? 0,
+      activeUsers: data?.activeUsers ?? 0,
+      statusData: data?.statusData ?? mockStatusData,
+      priorityData: data?.priorityData ?? mockPriorityData,
+      progressData: data?.progressData ?? mockProjectProgressData,
+      userAssignmentData: data?.userAssignmentData ?? mockUserAssignmentData
+    })
   });
 
   if (isLoading) {
@@ -190,7 +186,7 @@ const ProjectAnalytics: React.FC = () => {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {analyticsData?.statusData?.map((entry, index) => (
+                        {(analyticsData?.statusData || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -214,7 +210,7 @@ const ProjectAnalytics: React.FC = () => {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {analyticsData?.priorityData?.map((entry, index) => (
+                        {(analyticsData?.priorityData || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
