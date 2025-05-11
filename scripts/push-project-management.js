@@ -62,20 +62,10 @@ async function migrateTables() {
 
 function getProjectManagementSQL() {
   return `
--- Create project management enums if they don't exist
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'project_status') THEN
-        CREATE TYPE project_status AS ENUM ('planning', 'active', 'on_hold', 'completed', 'cancelled');
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_priority') THEN
-        CREATE TYPE task_priority AS ENUM ('low', 'medium', 'high', 'urgent');
-    END IF;
-
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status') THEN
-        CREATE TYPE task_status AS ENUM ('backlog', 'to_do', 'in_progress', 'in_review', 'done');
-    END IF;
-END $$;
+-- Using TEXT fields instead of ENUM types for better compatibility
+-- Project statuses: 'planning', 'active', 'on_hold', 'completed', 'cancelled'
+-- Task priorities: 'low', 'medium', 'high', 'urgent'
+-- Task statuses: 'backlog', 'to_do', 'in_progress', 'in_review', 'done'
 
 -- Create project management tables if they don't exist
 CREATE TABLE IF NOT EXISTS projects (
@@ -84,7 +74,7 @@ CREATE TABLE IF NOT EXISTS projects (
     description TEXT,
     start_date TIMESTAMP,
     end_date TIMESTAMP,
-    status project_status NOT NULL DEFAULT 'planning',
+    status TEXT NOT NULL DEFAULT 'planning',
     owner_id INTEGER NOT NULL REFERENCES users(id),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
@@ -130,8 +120,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT,
-    status task_status NOT NULL DEFAULT 'backlog',
-    priority task_priority NOT NULL DEFAULT 'medium',
+    status TEXT NOT NULL DEFAULT 'backlog',
+    priority TEXT NOT NULL DEFAULT 'medium',
     project_id INTEGER NOT NULL REFERENCES projects(id),
     assignee_id INTEGER REFERENCES users(id),
     reporter_id INTEGER NOT NULL REFERENCES users(id),
@@ -150,9 +140,18 @@ CREATE TABLE IF NOT EXISTS tasks (
 );
 
 -- Add self-reference for parent tasks
-ALTER TABLE tasks 
-ADD CONSTRAINT IF NOT EXISTS tasks_parent_task_id_fkey 
-FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE SET NULL;
+-- Use DO block to conditionally add constraint
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'tasks_parent_task_id_fkey'
+    ) THEN
+        ALTER TABLE tasks 
+        ADD CONSTRAINT tasks_parent_task_id_fkey 
+        FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE SET NULL;
+    END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS task_category_assignments (
     id SERIAL PRIMARY KEY,
