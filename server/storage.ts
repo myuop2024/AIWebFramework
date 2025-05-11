@@ -193,6 +193,68 @@ export interface IStorage {
     olderThan?: Date;
     allResolved?: boolean;
   }): Promise<number>;
+  
+  // Project Management System - Projects
+  getProject(id: number): Promise<Project | undefined>;
+  getAllProjects(filters?: { status?: string, ownerId?: number, deleted?: boolean }): Promise<Project[]>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: number, data: Partial<Project>): Promise<Project | undefined>;
+  deleteProject(id: number, hardDelete?: boolean): Promise<boolean>;
+  
+  // Project Members
+  getProjectMembers(projectId: number): Promise<(ProjectMember & { user: User })[]>;
+  getProjectMembershipsForUser(userId: number): Promise<(ProjectMember & { project: Project })[]>;
+  addProjectMember(member: InsertProjectMember): Promise<ProjectMember>;
+  updateProjectMember(id: number, data: Partial<ProjectMember>): Promise<ProjectMember | undefined>;
+  removeProjectMember(id: number): Promise<boolean>;
+  
+  // Project Tasks
+  getTask(id: number): Promise<Task | undefined>;
+  getTasksForProject(projectId: number, filters?: { 
+    status?: string, 
+    assigneeId?: number, 
+    milestoneId?: number, 
+    priority?: string 
+  }): Promise<Task[]>;
+  getTasksForUser(userId: number, filters?: { status?: string, projectId?: number }): Promise<Task[]>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTask(id: number, data: Partial<Task>, userId?: number): Promise<Task | undefined>;
+  deleteTask(id: number): Promise<boolean>;
+  
+  // Task Categories
+  getTaskCategory(id: number): Promise<TaskCategory | undefined>;
+  getTaskCategoriesForProject(projectId: number): Promise<TaskCategory[]>;
+  getGlobalTaskCategories(): Promise<TaskCategory[]>;
+  createTaskCategory(category: InsertTaskCategory): Promise<TaskCategory>;
+  updateTaskCategory(id: number, data: Partial<TaskCategory>): Promise<TaskCategory | undefined>;
+  deleteTaskCategory(id: number): Promise<boolean>;
+  
+  // Task Category Assignments
+  assignCategoryToTask(assignment: InsertTaskCategoryAssignment): Promise<TaskCategoryAssignment>;
+  removeCategoryFromTask(taskId: number, categoryId: number): Promise<boolean>;
+  getTaskCategories(taskId: number): Promise<TaskCategory[]>;
+  
+  // Task Comments
+  getTaskComments(taskId: number): Promise<(TaskComment & { user: User })[]>;
+  addTaskComment(comment: InsertTaskComment): Promise<TaskComment>;
+  updateTaskComment(id: number, data: Partial<TaskComment>): Promise<TaskComment | undefined>;
+  deleteTaskComment(id: number): Promise<boolean>;
+  
+  // Task Attachments
+  getTaskAttachments(taskId: number): Promise<TaskAttachment[]>;
+  addTaskAttachment(attachment: InsertTaskAttachment): Promise<TaskAttachment>;
+  deleteTaskAttachment(id: number): Promise<boolean>;
+  
+  // Milestones
+  getMilestone(id: number): Promise<Milestone | undefined>;
+  getMilestonesForProject(projectId: number): Promise<Milestone[]>;
+  createMilestone(milestone: InsertMilestone): Promise<Milestone>;
+  updateMilestone(id: number, data: Partial<Milestone>): Promise<Milestone | undefined>;
+  deleteMilestone(id: number): Promise<boolean>;
+  
+  // Task History
+  getTaskHistory(taskId: number): Promise<(TaskHistory & { user: User })[]>;
+  addTaskHistory(history: InsertTaskHistory): Promise<TaskHistory>;
 }
 
 // Import DatabaseStorage implementation

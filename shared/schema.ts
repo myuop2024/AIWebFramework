@@ -837,7 +837,7 @@ export const projectMembers = pgTable('project_members', {
 export const taskCategories = pgTable('task_categories', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
-  color: text('color', { length: 20 }).default('#808080'),
+  color: text('color').default('#808080'),
   description: text('description'),
   projectId: integer('project_id').references(() => projects.id),
   isGlobal: boolean('is_global').default(false),
@@ -857,6 +857,9 @@ export const milestones = pgTable('milestones', {
   sortOrder: integer('sort_order').default(0),
 });
 
+// Tasks table - have to declare type first to avoid circular dependency issue
+export type TasksTable = typeof tasks;
+
 // Tasks table
 export const tasks = pgTable('tasks', {
   id: serial('id').primaryKey(),
@@ -868,7 +871,7 @@ export const tasks = pgTable('tasks', {
   assigneeId: integer('assignee_id').references(() => users.id),
   reporterId: integer('reporter_id').references(() => users.id).notNull(),
   milestoneId: integer('milestone_id').references(() => milestones.id),
-  parentTaskId: integer('parent_task_id').references(() => tasks.id),
+  parentTaskId: integer('parent_task_id'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   startDate: timestamp('start_date'),
@@ -973,10 +976,8 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
     fields: [tasks.milestoneId],
     references: [milestones.id],
   }),
-  parentTask: one(tasks, {
-    fields: [tasks.parentTaskId],
-    references: [tasks.id],
-  }),
+  // We'll handle the parent-child relationship differently
+  // by using the parentTaskId as a custom relation
   subtasks: many(tasks, { relationName: 'subtasks' }),
   categories: many(taskCategoryAssignments),
   comments: many(taskComments),
