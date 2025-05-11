@@ -271,11 +271,45 @@ export default function ProfileForm() {
               control={form.control}
               name="address"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Street Address</FormLabel>
+                <FormItem className="mb-2">
+                  <FormLabel>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span>Street Address</span>
+                    </div>
+                  </FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Enter your street address" {...field} />
+                    <div className="relative">
+                      <AddressAutocomplete 
+                        initialValue={field.value || ""}
+                        placeholder="Start typing your address to search..."
+                        onAddressSelect={(addressData) => {
+                          // Update the address field
+                          field.onChange(addressData.fullAddress);
+                          
+                          // Auto-fill other address fields
+                          if (addressData.city) {
+                            form.setValue("city", addressData.city);
+                          }
+                          
+                          if (addressData.state) {
+                            form.setValue("state", addressData.state);
+                          }
+                          
+                          if (addressData.postalCode) {
+                            form.setValue("postOfficeRegion", addressData.postalCode);
+                          }
+                          
+                          if (addressData.country) {
+                            form.setValue("country", addressData.country);
+                          }
+                        }}
+                      />
+                    </div>
                   </FormControl>
+                  <FormDescription>
+                    Start typing your address to see suggestions from HERE Maps
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

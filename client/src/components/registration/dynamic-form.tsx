@@ -20,8 +20,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, MapPin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import AddressAutocomplete from "@/components/address/address-autocomplete";
 
 // Types for form field configuration from registration form schema
 export interface FormField {
@@ -287,6 +288,52 @@ export const DynamicForm = ({
       case "email":
       case "tel":
       case "number":
+        // Check if this is a field mapped to address - use address autocomplete
+        if (field.mapToProfileField === "address") {
+          return (
+            <FormItem>
+              <FormLabel>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span>{field.label}</span>
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </div>
+              </FormLabel>
+              <FormControl>
+                <AddressAutocomplete 
+                  initialValue={form.getValues(field.name) || ""}
+                  placeholder={field.placeholder || "Start typing to search for address..."}
+                  onAddressSelect={(addressData) => {
+                    // Set the value for this field
+                    form.setValue(field.name, addressData.fullAddress);
+                    
+                    // Look for other address-related fields to auto-fill
+                    fields.forEach((otherField) => {
+                      if (otherField.mapToProfileField === "city" && addressData.city) {
+                        form.setValue(otherField.name, addressData.city);
+                      }
+                      if (otherField.mapToProfileField === "state" && addressData.state) {
+                        form.setValue(otherField.name, addressData.state);
+                      }
+                      if (otherField.mapToProfileField === "zipCode" && addressData.postalCode) {
+                        form.setValue(otherField.name, addressData.postalCode);
+                      }
+                      if (otherField.mapToProfileField === "country" && addressData.country) {
+                        form.setValue(otherField.name, addressData.country);
+                      }
+                    });
+                  }}
+                />
+              </FormControl>
+              {field.helpText && (
+                <FormDescription>{field.helpText}</FormDescription>
+              )}
+              <FormMessage />
+            </FormItem>
+          );
+        }
+        
+        // Standard text input for non-address fields
         return (
           <FormItem>
             <FormLabel>
