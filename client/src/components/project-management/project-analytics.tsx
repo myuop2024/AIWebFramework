@@ -20,7 +20,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -85,12 +86,25 @@ const StatsCard = ({ title, value, icon, description }: {
 );
 
 const ProjectAnalytics: React.FC = () => {
+  // Define analytics data interface
+  interface AnalyticsData {
+    totalProjects: number;
+    completedProjects: number;
+    totalTasks: number;
+    completedTasks: number;
+    activeUsers: number;
+    statusData: typeof mockStatusData;
+    priorityData: typeof mockPriorityData;
+    progressData: typeof mockProjectProgressData;
+    userAssignmentData: typeof mockUserAssignmentData;
+  }
+
   // Replace with actual API call when backend is ready
-  const { data: analyticsData, isLoading } = useQuery({
+  const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['/api/analytics/projects'],
     queryFn: async () => {
       // Mock data for now
-      return new Promise(resolve => {
+      return new Promise<AnalyticsData>(resolve => {
         setTimeout(() => {
           resolve({
             totalProjects: 8,
@@ -171,12 +185,12 @@ const ProjectAnalytics: React.FC = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {analyticsData?.statusData.map((entry, index) => (
+                        {analyticsData?.statusData?.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -195,12 +209,12 @@ const ProjectAnalytics: React.FC = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {analyticsData?.priorityData.map((entry, index) => (
+                        {analyticsData?.priorityData?.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
