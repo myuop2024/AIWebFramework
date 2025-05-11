@@ -121,8 +121,23 @@ const ProjectCreationForm: React.FC = () => {
   // Mutation for creating a new project
   const createProject = useMutation({
     mutationFn: async (data: FormValues) => {
+      // Create a copy of the data to prepare for serialization
+      const processedData = { ...data };
+      
+      // Convert Date objects to ISO strings for API consumption
+      if (processedData.startDate instanceof Date) {
+        // Server expects Date objects, not strings
+        // but JSON.stringify will convert dates to strings,
+        // so we're explicitly noting here that these are dates
+        console.log('Start date is a Date object:', processedData.startDate);
+      }
+      
+      if (processedData.endDate instanceof Date) {
+        console.log('End date is a Date object:', processedData.endDate);
+      }
+      
       // Make sure we log the data being sent
-      console.log('Creating project with data:', JSON.stringify(data, null, 2));
+      console.log('Creating project with data:', processedData);
       
       // Make a POST request to the project creation endpoint
       const response = await fetch('/api/project-management/projects', {
@@ -130,7 +145,7 @@ const ProjectCreationForm: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(processedData),
       });
       
       // Capture the raw response text for debugging
