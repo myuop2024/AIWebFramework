@@ -18,6 +18,18 @@ interface RegistrationForm {
   version: number;
 }
 
+// TypeScript interface for user profile data
+interface ProfileData {
+  address?: string;
+  city?: string;
+  state?: string; // This is the Parish field
+  zipCode?: string;
+  country?: string;
+  idType?: string;
+  idNumber?: string;
+  // Add any other profile fields you may need
+}
+
 const DynamicRegister = () => {
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +40,21 @@ const DynamicRegister = () => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 
+  // Profile creation mutation
+  const createProfileMutation = useMutation({
+    mutationFn: async (data: ProfileData) => {
+      return apiRequest('POST', '/api/users/profile', data);
+    },
+    onSuccess: () => {
+      // Clear stored profile data after successful submission
+      sessionStorage.removeItem('registration_profile_data');
+    },
+    onError: (error: any) => {
+      console.error('Failed to create profile:', error);
+      // We don't show this error to the user as registration was still successful
+    }
+  });
+
   // Registration mutation
   const registerMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -36,6 +63,18 @@ const DynamicRegister = () => {
     onSuccess: () => {
       setRegistrationSuccess(true);
       setError(null);
+      
+      // Check if we have profile data to submit
+      const storedProfileData = sessionStorage.getItem('registration_profile_data');
+      if (storedProfileData) {
+        try {
+          const profileData = JSON.parse(storedProfileData) as ProfileData;
+          // Submit profile data
+          createProfileMutation.mutate(profileData);
+        } catch (e) {
+          console.error('Error parsing stored profile data:', e);
+        }
+      }
     },
     onError: (error: any) => {
       setError(error?.message || 'Registration failed. Please try again.');
@@ -46,17 +85,29 @@ const DynamicRegister = () => {
   const handleRegister = (data: any) => {
     const formDataObj = formData as RegistrationForm;
     const userData: Record<string, any> = {};
+    const profileData: ProfileData = {};
     
-    // Map form fields to user data structure based on mapToUserField and mapToProfileField
+    // Map form fields to user data structure and profile data
     if (formDataObj && formDataObj.fields) {
       formDataObj.fields.forEach((field) => {
+        // Handle user fields
         if (field.mapToUserField && data[field.name] !== undefined) {
           userData[field.mapToUserField] = data[field.name];
         }
+        
+        // Handle profile fields
+        if (field.mapToProfileField && data[field.name] !== undefined) {
+          profileData[field.mapToProfileField as keyof ProfileData] = data[field.name];
+        }
       });
     }
+
+    // Store profile data in session storage for use after successful registration
+    if (Object.keys(profileData).length > 0) {
+      sessionStorage.setItem('registration_profile_data', JSON.stringify(profileData));
+    }
     
-    // Profile data will be submitted in a separate step after user creation
+    // Register the user first, then we'll handle profile data after login
     registerMutation.mutate(userData);
   };
 
