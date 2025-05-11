@@ -74,7 +74,7 @@ const ProjectsList: React.FC = () => {
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = !statusFilter || project.status === statusFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || project.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -100,7 +100,7 @@ const ProjectsList: React.FC = () => {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="planning">Planning</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
