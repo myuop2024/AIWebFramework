@@ -61,19 +61,19 @@ const formSchema = z.object({
   description: z.string().optional(),
   status: z.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   startDate: z.date().optional(),
-  endDate: z.date().optional().refine(
-    (date, ctx) => {
-      // Get the start date from context
-      const startDate = ctx.parent.startDate;
-      // If no end date or no start date, validation passes
-      if (!date || !startDate) return true;
-      // Otherwise, check that end date is after start date
-      return date > startDate;
-    }, {
-    message: "End date must be after start date",
-  }).optional(),
+  endDate: z.date().optional(),
   ownerId: z.number().optional(), // Allow for owner selection but don't require it
-});
+}).refine(
+  (data) => {
+    // If no end date or no start date, validation passes
+    if (!data.endDate || !data.startDate) return true;
+    // Otherwise, check that end date is after start date
+    return data.endDate > data.startDate;
+  }, {
+    message: "End date must be after start date",
+    path: ["endDate"], // This indicates which field has the error
+  }
+);
 
 type FormValues = z.infer<typeof formSchema>;
 
