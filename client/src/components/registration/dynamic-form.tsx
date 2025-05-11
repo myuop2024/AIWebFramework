@@ -234,8 +234,8 @@ export const DynamicForm = ({
   const sortedFields = [...fields].sort((a, b) => a.order - b.order);
 
   // Render appropriate field component based on field type
-  const renderField = (field: FormField) => {
-    if (field.isAdminOnly) return null;
+  const renderField = (field: FormField): React.ReactElement => {
+    if (field.isAdminOnly) return <></>;
 
     switch (field.type) {
       case "password":
