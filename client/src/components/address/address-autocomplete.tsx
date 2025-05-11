@@ -85,6 +85,9 @@ export default function AddressAutocomplete({
   disabled = false
 }: AddressAutocompleteProps) {
   const { H, isLoaded, loadError } = useHereMaps();
+  // Debug the incoming initialValue
+  console.log("Address Autocomplete initialValue:", initialValue);
+  
   const [inputValue, setInputValue] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
