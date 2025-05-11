@@ -74,10 +74,11 @@ function Router() {
       <Route path="/communications" component={() => <Redirect to="/chat" />} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
-      <ProtectedRoute path="/project-management" component={ProjectManagement} />
-      <ProtectedRoute path="/project-management/:id" component={React.lazy(() => import("@/pages/project-management/detail"))} />
-      <ProtectedRoute path="/project-management/:id/edit" component={React.lazy(() => import("@/pages/project-management/edit"))} />
+      {/* Project Management Routes - specific routes must come before dynamic routes */}
       <ProtectedRoute path="/project-management/new" component={React.lazy(() => import("@/pages/project-management/new"))} />
+      <ProtectedRoute path="/project-management/:id/edit" component={React.lazy(() => import("@/pages/project-management/edit"))} />
+      <ProtectedRoute path="/project-management/:id" component={React.lazy(() => import("@/pages/project-management/detail"))} />
+      <ProtectedRoute path="/project-management" component={ProjectManagement} />
       
       {/* Admin Routes (require admin or director role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
