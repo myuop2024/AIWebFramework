@@ -277,13 +277,31 @@ export default function AddressAutocomplete({
         streetWithNumber = streetName;
       }
 
-      // Extract specific parish information
-      const parish = findJamaicanParish(
-        addressDetails.address?.county || 
-        addressDetails.address?.state || 
-        addressDetails.address?.district || 
-        ''
-      );
+      // Extract parish information - try to find it in all address components
+      // First check if the city field actually contains a parish name (common in Jamaica)
+      let parish = null;
+      
+      // Check city first (often contains the parish in Jamaican addresses)
+      if (addressDetails.address?.city) {
+        parish = findJamaicanParish(addressDetails.address.city);
+      }
+      
+      // If not found in city, check other fields
+      if (!parish) {
+        parish = findJamaicanParish(
+          addressDetails.address?.district || 
+          addressDetails.address?.county || 
+          addressDetails.address?.state || 
+          ''
+        );
+      }
+      
+      // Special handling for Kingston and other areas
+      if (addressDetails.address?.city === "Kingston" || 
+          addressDetails.address?.district === "Kingston" ||
+          (addressDetails.address?.label && addressDetails.address?.label.includes("Kingston"))) {
+        parish = "Kingston";
+      }
       
       // Format the address object for our application
       const formattedAddress = {

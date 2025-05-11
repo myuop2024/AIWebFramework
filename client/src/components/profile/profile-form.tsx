@@ -290,26 +290,54 @@ export default function ProfileForm() {
                           // Log the full address data for debugging
                           console.log('Address selected:', addressData);
                           
-                          // Auto-fill other address fields
+                          // Process the parish field first
+                          let detectedParish = null;
+                          
+                          // Check if the city field is actually a parish (common in Jamaica)
                           if (addressData.city) {
-                            form.setValue("city", addressData.city);
+                            const cityContainsParish = JAMAICAN_PARISHES.find(parish => 
+                              addressData.city === parish || 
+                              addressData.city.includes(parish) ||
+                              (parish.startsWith("St.") && addressData.city.includes(parish.substring(4)))
+                            );
+                            
+                            if (cityContainsParish) {
+                              // Use the standardized parish name
+                              detectedParish = cityContainsParish;
+                              // Don't set city if it's actually a parish
+                            } else {
+                              // Only set city if it's not a parish
+                              form.setValue("city", addressData.city);
+                            }
                           }
                           
-                          // Always set parish (state) - prioritize mapped parish values
-                          if (addressData.state) {
-                            // Check if it's one of the recognized Jamaican parishes
-                            const matchingParish = JAMAICAN_PARISHES.find(parish => 
+                          // Try to get parish from state field if not found in city
+                          if (!detectedParish && addressData.state) {
+                            const stateContainsParish = JAMAICAN_PARISHES.find(parish => 
                               addressData.state === parish || 
                               addressData.state.includes(parish) ||
                               (parish.startsWith("St.") && addressData.state.includes(parish.substring(4)))
                             );
                             
-                            // If we found a matching parish, use the standardized parish name
-                            if (matchingParish) {
-                              form.setValue("state", matchingParish);
+                            if (stateContainsParish) {
+                              detectedParish = stateContainsParish;
                             } else {
-                              form.setValue("state", addressData.state);
+                              // Only use state as parish if we haven't found a parish yet
+                              detectedParish = addressData.state;
                             }
+                          }
+                          
+                          // Special case for Kingston
+                          if (!detectedParish && 
+                             (addressData.fullAddress?.includes("Kingston") || 
+                              addressData.city?.includes("Kingston"))) {
+                            detectedParish = "Kingston";
+                          }
+                          
+                          // Set the parish (state) field if we found it
+                          if (detectedParish) {
+                            console.log("Setting parish to:", detectedParish);
+                            form.setValue("state", detectedParish);
                           }
                           
                           if (addressData.postalCode) {
@@ -354,7 +382,7 @@ export default function ProfileForm() {
                     <FormLabel>Parish</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
