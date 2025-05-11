@@ -8,7 +8,13 @@ import {
   type RegistrationForm, type InsertRegistrationForm, type UserImportLog, type InsertUserImportLog,
   type SystemSetting, type InsertSystemSetting,
   type PhotoApproval, type InsertPhotoApproval, type ErrorLog, type InsertErrorLog,
-  type Role, type InsertRole
+  type Role, type InsertRole,
+  // Project Management Types
+  type Project, type InsertProject, type ProjectMember, type InsertProjectMember,
+  type Milestone, type InsertMilestone, type Task, type InsertTask,
+  type TaskCategory, type InsertTaskCategory, type TaskCategoryAssignment, type InsertTaskCategoryAssignment,
+  type TaskComment, type InsertTaskComment, type TaskAttachment, type InsertTaskAttachment,
+  type TaskHistory, type InsertTaskHistory
 } from "@shared/schema";
 
 // Interface for storage operations

@@ -1,7 +1,8 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, doublePrecision } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, doublePrecision, date, varchar, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { TrainingSystemConfig } from "./moodle-types";
+import { relations } from "drizzle-orm";
 
 // System settings for global application configuration
 export const systemSettings = pgTable("system_settings", {
@@ -784,3 +785,334 @@ export interface ErrorLogDeleteCriteria {
   source?: string;
   olderThan?: Date;
 }
+
+// ---------------------------------
+// Project Management System Schema
+// ---------------------------------
+
+// Project status enum
+export const projectStatusEnum = pgEnum('project_status', [
+  'planning', 'active', 'on_hold', 'completed', 'cancelled'
+]);
+
+// Task priority enum
+export const taskPriorityEnum = pgEnum('task_priority', [
+  'low', 'medium', 'high', 'urgent'
+]);
+
+// Task status enum
+export const taskStatusEnum = pgEnum('task_status', [
+  'backlog', 'to_do', 'in_progress', 'in_review', 'done'
+]);
+
+// Projects table
+export const projects = pgTable('projects', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  status: projectStatusEnum('status').default('planning').notNull(),
+  ownerId: integer('owner_id').references(() => users.id).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  deleted: boolean('deleted').default(false),
+  metadata: jsonb('metadata'),
+  priority: integer('priority').default(0),
+  code: text('code'),
+});
+
+// Project members (users assigned to projects)
+export const projectMembers = pgTable('project_members', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id').references(() => projects.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  role: text('role').default('member').notNull(),
+  joinedAt: timestamp('joined_at').defaultNow(),
+  leftAt: timestamp('left_at'),
+  isActive: boolean('is_active').default(true),
+});
+
+// Task Categories
+export const taskCategories = pgTable('task_categories', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  color: text('color', { length: 20 }).default('#808080'),
+  description: text('description'),
+  projectId: integer('project_id').references(() => projects.id),
+  isGlobal: boolean('is_global').default(false),
+});
+
+// Milestones table
+export const milestones = pgTable('milestones', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  projectId: integer('project_id').references(() => projects.id).notNull(),
+  dueDate: timestamp('due_date'),
+  completedAt: timestamp('completed_at'),
+  status: text('status').default('active').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  sortOrder: integer('sort_order').default(0),
+});
+
+// Tasks table
+export const tasks = pgTable('tasks', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description'),
+  status: taskStatusEnum('status').default('backlog').notNull(),
+  priority: taskPriorityEnum('priority').default('medium').notNull(),
+  projectId: integer('project_id').references(() => projects.id).notNull(),
+  assigneeId: integer('assignee_id').references(() => users.id),
+  reporterId: integer('reporter_id').references(() => users.id).notNull(),
+  milestoneId: integer('milestone_id').references(() => milestones.id),
+  parentTaskId: integer('parent_task_id').references(() => tasks.id),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  startDate: timestamp('start_date'),
+  dueDate: timestamp('due_date'),
+  estimatedHours: real('estimated_hours'),
+  actualHours: real('actual_hours'),
+  completedAt: timestamp('completed_at'),
+  sortOrder: integer('sort_order').default(0),
+  metadata: jsonb('metadata'),
+  stationId: integer('station_id').references(() => pollingStations.id),
+});
+
+// Task Category Assignments (many-to-many between tasks and categories)
+export const taskCategoryAssignments = pgTable('task_category_assignments', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id').references(() => tasks.id).notNull(),
+  categoryId: integer('category_id').references(() => taskCategories.id).notNull(),
+});
+
+// Task Comments
+export const taskComments = pgTable('task_comments', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id').references(() => tasks.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  isPrivate: boolean('is_private').default(false),
+  mentionedUserIds: integer('mentioned_user_ids').array(),
+  attachments: jsonb('attachments'),
+});
+
+// Task Attachments
+export const taskAttachments = pgTable('task_attachments', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id').references(() => tasks.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  filename: text('filename').notNull(),
+  originalFilename: text('original_filename').notNull(),
+  fileSize: integer('file_size').notNull(),
+  mimeType: text('mime_type').notNull(),
+  uploadedAt: timestamp('uploaded_at').defaultNow(),
+  description: text('description'),
+  metadata: jsonb('metadata'),
+});
+
+// Task History
+export const taskHistory = pgTable('task_history', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id').references(() => tasks.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  field: text('field').notNull(),
+  oldValue: jsonb('old_value'),
+  newValue: jsonb('new_value'),
+  changedAt: timestamp('changed_at').defaultNow(),
+});
+
+// Set up relations
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [projects.ownerId],
+    references: [users.id],
+  }),
+  tasks: many(tasks),
+  milestones: many(milestones),
+  members: many(projectMembers),
+}));
+
+export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectMembers.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const taskCategoriesRelations = relations(taskCategories, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [taskCategories.projectId],
+    references: [projects.id],
+  }),
+  tasks: many(taskCategoryAssignments),
+}));
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
+  assignee: one(users, {
+    fields: [tasks.assigneeId],
+    references: [users.id],
+  }),
+  reporter: one(users, {
+    fields: [tasks.reporterId],
+    references: [users.id],
+  }),
+  milestone: one(milestones, {
+    fields: [tasks.milestoneId],
+    references: [milestones.id],
+  }),
+  parentTask: one(tasks, {
+    fields: [tasks.parentTaskId],
+    references: [tasks.id],
+  }),
+  subtasks: many(tasks, { relationName: 'subtasks' }),
+  categories: many(taskCategoryAssignments),
+  comments: many(taskComments),
+  attachments: many(taskAttachments),
+  station: one(pollingStations, {
+    fields: [tasks.stationId],
+    references: [pollingStations.id],
+  }),
+}));
+
+export const taskCategoryAssignmentsRelations = relations(taskCategoryAssignments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskCategoryAssignments.taskId],
+    references: [tasks.id],
+  }),
+  category: one(taskCategories, {
+    fields: [taskCategoryAssignments.categoryId],
+    references: [taskCategories.id],
+  }),
+}));
+
+export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskComments.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskComments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAttachments.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskAttachments.userId],
+    references: [users.id],
+  }),
+}));
+
+export const milestonesRelations = relations(milestones, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [milestones.projectId],
+    references: [projects.id],
+  }),
+  tasks: many(tasks),
+}));
+
+export const taskHistoryRelations = relations(taskHistory, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskHistory.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskHistory.userId],
+    references: [users.id],
+  }),
+}));
+
+// Create insert schemas for all tables
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
+  id: true,
+  joinedAt: true,
+});
+
+export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({
+  id: true,
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const insertTaskCategoryAssignmentSchema = createInsertSchema(taskCategoryAssignments).omit({
+  id: true,
+});
+
+export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertMilestoneSchema = createInsertSchema(milestones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  completedAt: true,
+});
+
+export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({
+  id: true,
+  changedAt: true,
+});
+
+// Define types for the schemas
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
+
+export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
+export type ProjectMember = typeof projectMembers.$inferSelect;
+
+export type InsertTaskCategory = z.infer<typeof insertTaskCategorySchema>;
+export type TaskCategory = typeof taskCategories.$inferSelect;
+
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
+
+export type InsertTaskCategoryAssignment = z.infer<typeof insertTaskCategoryAssignmentSchema>;
+export type TaskCategoryAssignment = typeof taskCategoryAssignments.$inferSelect;
+
+export type InsertTaskComment = z.infer<typeof insertTaskCommentSchema>;
+export type TaskComment = typeof taskComments.$inferSelect;
+
+export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
+export type TaskAttachment = typeof taskAttachments.$inferSelect;
+
+export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
+export type Milestone = typeof milestones.$inferSelect;
+
+export type InsertTaskHistory = z.infer<typeof insertTaskHistorySchema>;
+export type TaskHistory = typeof taskHistory.$inferSelect;
