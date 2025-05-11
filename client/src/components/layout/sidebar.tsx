@@ -216,6 +216,13 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                         <DropdownMenuItem asChild>
                           <Link href="/project-management/analytics">Analytics</Link>
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/tasks">My Tasks</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/milestones">Milestones</Link>
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
