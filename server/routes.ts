@@ -637,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password, ...userWithoutPassword } = user;
 
       // Decrypt profile data if the user has permission (admin/director roles)
-      const decryptedProfile = profile ? decryptProfileFields(profile, userRole) : null;
+      const decryptedProfile = decryptProfileFields(profile, userRole);
 
       res.status(200).json({
         user: userWithoutPassword,
@@ -690,7 +690,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         console.log(`User verification status updated for ${userId}`);
 
         // Return decrypted data to authorized users, otherwise return as-is
-        const responseProfile = decryptProfileFields(profile, userRole);
+        const responseProfile = profile ? decryptProfileFields(profile, userRole) : null;
         res.status(200).json(responseProfile);
       } catch (validationError) {
         if (validationError instanceof ZodError) {

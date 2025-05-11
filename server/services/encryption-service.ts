@@ -116,6 +116,7 @@ export function shouldEncryptField(fieldName: string): boolean {
  * @returns True if the user can view sensitive data
  */
 export function canViewSensitiveData(userRole: string): boolean {
+  if (!userRole) return false;
   const authorizedRoles = ['admin', 'director', 'supervisor'];
   return authorizedRoles.includes(userRole.toLowerCase());
 }
@@ -159,9 +160,10 @@ export function encryptSensitiveFields(data: Record<string, any>): Record<string
  * @returns Profile with decrypted fields if user has permission
  */
 export function decryptProfileFields(
-  profile: Record<string, any>, 
+  profile: Record<string, any> | null | undefined, 
   userRole: string
-): Record<string, any> {
+): Record<string, any> | null | undefined {
+  if (!profile) return profile;
   // Return the original profile if not encrypted or user doesn't have permission
   if (!profile.isEncrypted || !canViewSensitiveData(userRole)) {
     return profile;

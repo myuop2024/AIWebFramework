@@ -115,8 +115,41 @@ export default function ProfileForm() {
   const [showBankAccount, setShowBankAccount] = useState<boolean>(false);
   const [showIdNumber, setShowIdNumber] = useState<boolean>(false);
 
+  // Define profile data type
+  interface ProfileResponse {
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      [key: string]: any;
+    };
+    profile: {
+      id: number;
+      userId: number;
+      address: string | null;
+      city: string | null;
+      state: string | null;
+      postOfficeRegion: string | null;
+      zipCode: string | null;
+      country: string | null;
+      trn: string | null;
+      bankName: string | null;
+      bankBranchLocation: string | null;
+      bankAccount: string | null;
+      accountType: string | null;
+      accountCurrency: string | null;
+      idType: string | null;
+      idNumber: string | null;
+      [key: string]: any;
+    } | null;
+    documents: any[];
+  }
+
   // Fetch the user's profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery({
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<ProfileResponse>({
     queryKey: ['/api/users/profile'],
   });
 
@@ -142,21 +175,22 @@ export default function ProfileForm() {
 
   // Update form values when profile data is loaded
   useEffect(() => {
-    if (profileData?.profile) {
+    if (profileData && profileData.profile) {
+      const profile = profileData.profile;
       form.reset({
-        address: profileData.profile.address || "",
-        city: profileData.profile.city || "",
-        state: profileData.profile.state || "",
-        postOfficeRegion: profileData.profile.postOfficeRegion || profileData.profile.zipCode || "",
-        country: profileData.profile.country || "Jamaica",
-        trn: profileData.profile.trn || "",
-        bankName: profileData.profile.bankName || "",
-        bankBranchLocation: profileData.profile.bankBranchLocation || "",
-        bankAccount: profileData.profile.bankAccount || "",
-        accountType: profileData.profile.accountType || "Savings",
-        accountCurrency: profileData.profile.accountCurrency || "JMD",
-        idType: profileData.profile.idType || "",
-        idNumber: profileData.profile.idNumber || "",
+        address: profile.address || "",
+        city: profile.city || "",
+        state: profile.state || "",
+        postOfficeRegion: profile.postOfficeRegion || profile.zipCode || "",
+        country: profile.country || "Jamaica",
+        trn: profile.trn || "",
+        bankName: profile.bankName || "",
+        bankBranchLocation: profile.bankBranchLocation || "",
+        bankAccount: profile.bankAccount || "",
+        accountType: profile.accountType || "Savings",
+        accountCurrency: profile.accountCurrency || "JMD",
+        idType: profile.idType || "",
+        idNumber: profile.idNumber || "",
       });
     }
   }, [profileData, form]);
