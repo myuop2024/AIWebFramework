@@ -7,7 +7,8 @@ import {
   FileEdit, ClipboardList, Settings, BarChart,
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
-  Map as MapIcon, Phone, Video, Headphones
+  Map as MapIcon, Phone, Video, Headphones,
+  Kanban, Trello
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -56,6 +57,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
     { path: "/communications", label: "Communications", icon: <Headphones className="h-5 w-5 mr-3" /> },
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
+    { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5 mr-3" /> },
   ];
   
   // Define role-based permissions
@@ -170,6 +172,49 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/polling-stations/export">Export Stations</Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              );
+            }
+            
+            // Special case for Project Management - show dropdown
+            if (link.path === "/project-management") {
+              const isActive = location.startsWith("/project-management");
+              return (
+                <div key={link.path}>
+                  <div 
+                    className={`flex items-center justify-between py-2 px-3 mb-1 rounded-lg ${
+                      isActive
+                        ? 'bg-primary-light/10 text-primary' 
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Link 
+                      href={link.path}
+                      className="flex items-center flex-1"
+                    >
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="focus:outline-none">
+                        <ChevronDown className="h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/new">Create New Project</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/kanban">Kanban Board</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/calendar">Calendar View</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/project-management/analytics">Analytics</Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
