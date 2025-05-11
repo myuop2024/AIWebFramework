@@ -797,6 +797,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                                 <TooltipContent>Attach file</TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
+                        {/**/}
                         {/* Removed duplicate Image button, Paperclip can handle all files */}
                         <Button
                           variant="primary"
