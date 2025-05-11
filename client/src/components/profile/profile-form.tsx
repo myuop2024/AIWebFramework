@@ -26,9 +26,10 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, Shield, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
+import AddressAutocomplete from "@/components/address/address-autocomplete";
 
 // Jamaican banks and credit unions list
 const JAMAICAN_BANKS = [
