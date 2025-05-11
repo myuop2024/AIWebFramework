@@ -9,6 +9,7 @@ import {
   taskCategories,
   taskComments,
   taskAttachments,
+  taskHistory,
   users,
   insertProjectSchema,
   insertTaskSchema,
@@ -16,6 +17,7 @@ import {
   insertProjectMemberSchema,
   insertTaskCategorySchema,
   insertTaskCommentSchema,
+  insertTaskHistorySchema,
   projectStatusEnum,
   taskStatusEnum,
   taskPriorityEnum
@@ -492,14 +494,19 @@ projectManagementRouter.patch('/tasks/:id', requireAuth, async (req: Request, re
         field => validatedData[field as keyof typeof validatedData] !== task[field as keyof typeof task]
       );
       
-      for (const field of changedFields) {
-        await db.insert(taskHistory).values({
-          taskId,
-          userId,
-          field,
+      // Only add history records if task has changed
+      if (changedFields.length > 0) {
+        const historyData = changedFields.map(field => ({
+          taskId: taskId,
+          userId: userId,
+          field: field,
           oldValue: JSON.stringify(task[field as keyof typeof task]),
           newValue: JSON.stringify(validatedData[field as keyof typeof validatedData])
-        });
+        }));
+        
+        if (historyData.length > 0) {
+          await db.insert(taskHistory).values(historyData);
+        }
       }
     }
     
@@ -707,15 +714,65 @@ projectManagementRouter.get('/analytics/projects', requireAuth, async (req: Requ
       LIMIT 5
     `);
     
-    // Simple mock data for progress over time (can be replaced with actual data later)
-    const progressData = [
-      { name: 'Week 1', tasks: 5, completed: 2 },
-      { name: 'Week 2', tasks: 8, completed: 5 },
-      { name: 'Week 3', tasks: 10, completed: 7 },
-      { name: 'Week 4', tasks: 12, completed: 6 },
-      { name: 'Week 5', tasks: 15, completed: 10 },
-      { name: 'Week 6', tasks: 18, completed: 13 },
-    ];
+    // Get weekly tasks and completion data
+    const sixWeeksAgo = new Date();
+    sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 6 * 7); // Go back 6 weeks
+    
+    // Get data for task creation and completion by week
+    const weeklyTaskData = await db.execute<{
+      week_name: string;
+      week_start: string;
+      tasks: number;
+      completed: number;
+    }>(sql`
+      WITH weeks AS (
+        SELECT 
+          generate_series(
+            date_trunc('week', ${sixWeeksAgo}::timestamp),
+            date_trunc('week', current_date),
+            '1 week'::interval
+          ) AS week_start
+      ),
+      task_counts AS (
+        SELECT 
+          date_trunc('week', created_at) AS week_start,
+          COUNT(*) AS tasks_created
+        FROM tasks
+        WHERE created_at >= ${sixWeeksAgo}::timestamp
+        GROUP BY week_start
+      ),
+      completion_counts AS (
+        SELECT 
+          date_trunc('week', completed_at) AS week_start,
+          COUNT(*) AS tasks_completed
+        FROM tasks
+        WHERE 
+          completed_at IS NOT NULL AND
+          completed_at >= ${sixWeeksAgo}::timestamp
+        GROUP BY week_start
+      )
+      SELECT 
+        to_char(w.week_start, 'Mon DD') AS week_name,
+        w.week_start::text,
+        COALESCE(tc.tasks_created, 0) AS tasks,
+        COALESCE(cc.tasks_completed, 0) AS completed
+      FROM weeks w
+      LEFT JOIN task_counts tc ON w.week_start = tc.week_start
+      LEFT JOIN completion_counts cc ON w.week_start = cc.week_start
+      ORDER BY w.week_start
+    `);
+    
+    // Format the weekly data
+    const progressData = Array.isArray(weeklyTaskData) ? weeklyTaskData.map((week: {
+      week_name: string;
+      week_start: string;
+      tasks: number;
+      completed: number;
+    }) => ({
+      name: week.week_name,
+      tasks: Number(week.tasks),
+      completed: Number(week.completed)
+    })) : [];
     
     res.json({
       totalProjects: Number(totalProjects.count),
