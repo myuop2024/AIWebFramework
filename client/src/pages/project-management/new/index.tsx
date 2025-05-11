@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { 
   Card, 
   CardContent, 
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Select,
@@ -41,6 +41,16 @@ import { useForm } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 import { CalendarIcon } from 'lucide-react';
 
+// Fix the circular reference error with a proper type definition first
+interface ProjectFormSchema {
+  name: string;
+  description?: string;
+  status: 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
+  startDate?: Date;
+  endDate?: Date;
+  ownerId?: number;
+}
+
 // Form schema for new project
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -50,20 +60,47 @@ const formSchema = z.object({
   status: z.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   startDate: z.date().optional(),
   endDate: z.date().optional().refine(
-    (date) => !date || !formSchema.shape.startDate.safeParse(date).success || 
-    date > formSchema.shape.startDate.parse(date), {
+    (date, ctx) => {
+      // Get the start date from context
+      const startDate = ctx.parent.startDate;
+      // If no end date or no start date, validation passes
+      if (!date || !startDate) return true;
+      // Otherwise, check that end date is after start date
+      return date > startDate;
+    }, {
     message: "End date must be after start date",
-    path: ["endDate"],
   }).optional(),
-  ownerId: z.number().optional(),
+  ownerId: z.number().optional(), // Allow for owner selection but don't require it
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
+// Type for users returned from API
+interface User {
+  id: number;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
 
 const NewProjectPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Fetch users for project owner selection
+  const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
+    queryKey: ['/api/project-management/users'],
+    onError: (error) => {
+      console.error('Failed to fetch users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load users. Please try refreshing the page.',
+        variant: 'destructive',
+      });
+    }
+  });
   
   // Form setup with default values
   const form = useForm<FormValues>({
@@ -81,6 +118,9 @@ const NewProjectPage: React.FC = () => {
   // Mutation for creating a new project
   const createProject = useMutation({
     mutationFn: async (data: FormValues) => {
+      // Make sure we log the data being sent
+      console.log('Creating project with data:', JSON.stringify(data, null, 2));
+      
       // Make a POST request to the project creation endpoint
       const response = await fetch('/api/project-management/projects', {
         method: 'POST',
@@ -90,14 +130,41 @@ const NewProjectPage: React.FC = () => {
         body: JSON.stringify(data),
       });
       
+      // Capture the raw response text for debugging
+      const responseText = await response.text();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create project');
+        // Try to parse the error response
+        let errorMessage = 'Failed to create project';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.message || errorMessage;
+          
+          // Check for validation errors from Zod
+          if (errorData.errors && Array.isArray(errorData.errors)) {
+            const validationErrors = errorData.errors.map((err: any) => 
+              `${err.path.join('.')} - ${err.message}`
+            ).join(', ');
+            errorMessage = `Validation errors: ${validationErrors}`;
+          }
+        } catch (e) {
+          console.error('Failed to parse error response:', responseText);
+        }
+        throw new Error(errorMessage);
       }
       
-      return response.json();
+      // Parse the successful response
+      try {
+        return JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse successful response:', responseText);
+        throw new Error('Received invalid response from server');
+      }
     },
     onSuccess: (data: any) => {
+      // Log success for debugging
+      console.log('Project created successfully:', data);
+      
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects'] });
@@ -107,13 +174,13 @@ const NewProjectPage: React.FC = () => {
         description: "The project has been created successfully.",
       });
       
-      // Navigate to project detail
+      // Navigate to project management dashboard
       setLocation(`/project-management`);
     },
     onError: (error: any) => {
       console.error("Project creation error:", error);
       toast({
-        title: "Error",
+        title: "Error creating project",
         description: error.message || "Failed to create the project. Please try again.",
         variant: "destructive",
       });
@@ -211,16 +278,32 @@ const NewProjectPage: React.FC = () => {
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         defaultValue={field.value?.toString()}
+                        disabled={isLoadingUsers}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select owner" />
+                            {isLoadingUsers ? (
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                <span>Loading users...</span>
+                              </div>
+                            ) : (
+                              <SelectValue placeholder="Select project owner" />
+                            )}
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="1">User 1</SelectItem>
-                          <SelectItem value="2">User 2</SelectItem>
-                          <SelectItem value="3">User 3</SelectItem>
+                          {users && users.length > 0 ? (
+                            users.map((user) => (
+                              <SelectItem key={user.id} value={user.id.toString()}>
+                                {user.firstName && user.lastName 
+                                  ? `${user.firstName} ${user.lastName} (${user.username})`
+                                  : user.username}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="" disabled>No users available</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />

@@ -48,13 +48,7 @@ projectManagementRouter.get('/users', requireAuth, async (req: Request, res: Res
       email: users.email
     })
     .from(users)
-    .where(
-      and(
-        // Do not include deleted users
-        eq(users.isActive, true),
-        // You can add more conditions here if needed
-      )
-    )
+    // No filter needed - show all users since isActive might not be available in all user tables
     .orderBy(asc(users.lastName), asc(users.firstName));
     
     console.log(`Found ${usersList.length} active users`);
