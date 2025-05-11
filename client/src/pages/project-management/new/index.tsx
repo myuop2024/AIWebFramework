@@ -86,10 +86,11 @@ interface User {
   email: string | null;
 }
 
-const NewProjectPage: React.FC = () => {
+const ProjectCreationForm: React.FC = () => {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // Fetch users for project owner selection
   const { data: users, isLoading: isLoadingUsers } = useQuery<User[]>({
@@ -415,6 +416,15 @@ const NewProjectPage: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+// Wrap the project form in an auth guard to ensure only authenticated users can access
+const NewProjectPage: React.FC = () => {
+  return (
+    <AuthGuard>
+      <ProjectCreationForm />
+    </AuthGuard>
   );
 };
 
