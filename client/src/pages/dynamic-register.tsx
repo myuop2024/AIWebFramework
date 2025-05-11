@@ -35,7 +35,7 @@ const DynamicRegister = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch the active registration form
-  const { data: formData, isLoading: isFormLoading, error: formError } = useQuery({
+  const { data: formData, isLoading: isFormLoading, error: formError } = useQuery<RegistrationForm>({
     queryKey: ['/api/registration-forms/active'],
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });

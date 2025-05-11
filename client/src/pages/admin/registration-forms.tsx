@@ -489,7 +489,7 @@ const RegistrationFormsAdmin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {registrationForms && registrationForms.map((form: RegistrationForm) => (
+                    {registrationForms && Array.isArray(registrationForms) && registrationForms.map((form: RegistrationForm) => (
                       <TableRow key={form.id}>
                         <TableCell className="font-medium">{form.name}</TableCell>
                         <TableCell>{form.description}</TableCell>
