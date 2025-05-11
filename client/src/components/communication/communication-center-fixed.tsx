@@ -797,7 +797,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Buttonvariant="ghost"
+                                    <Button
+                                      variant="ghost"
                                       size="icon"
                                       className="h-8 w-8"
                                       onClick={() => fileInputRef.current?.click()}
