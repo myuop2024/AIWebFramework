@@ -78,16 +78,29 @@ const NewProjectPage: React.FC = () => {
     },
   });
   
-  // Mock mutation for creating a new project
+  // Mutation for creating a new project
   const createProject = useMutation({
     mutationFn: async (data: FormValues) => {
-      return new Promise(resolve => {
-        setTimeout(() => resolve({ ...data, id: Math.floor(Math.random() * 1000) }), 500);
+      // Make a POST request to the project creation endpoint
+      const response = await fetch('/api/project-management/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create project');
+      }
+      
+      return response.json();
     },
     onSuccess: (data: any) => {
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects'] });
       
       toast({
         title: "Project created",
@@ -95,12 +108,13 @@ const NewProjectPage: React.FC = () => {
       });
       
       // Navigate to project detail
-      setLocation(`/project-management/${data.id}`);
+      setLocation(`/project-management`);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Project creation error:", error);
       toast({
         title: "Error",
-        description: "Failed to create the project. Please try again.",
+        description: error.message || "Failed to create the project. Please try again.",
         variant: "destructive",
       });
     }

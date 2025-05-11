@@ -71,10 +71,10 @@ const ProjectEditPage: React.FC = () => {
   
   // Fetch project data from the API
   const { data: project, isLoading } = useQuery({
-    queryKey: ['/api/projects', params?.id],
+    queryKey: ['/api/project-management/projects', params?.id],
     enabled: !!params?.id,
     queryFn: async () => {
-      const response = await fetch(`/api/projects/${params?.id}`);
+      const response = await fetch(`/api/project-management/projects/${params?.id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch project');
       }
@@ -112,7 +112,7 @@ const ProjectEditPage: React.FC = () => {
   // Real mutation for updating the project
   const updateProject = useMutation({
     mutationFn: async (data: FormValues) => {
-      const response = await fetch(`/api/projects/${params?.id}`, {
+      const response = await fetch(`/api/project-management/projects/${params?.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,8 @@ const ProjectEditPage: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to update project');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update project');
       }
       
       return response.json();
@@ -129,15 +130,16 @@ const ProjectEditPage: React.FC = () => {
     onSuccess: () => {
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', params?.id] });
+      queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects', params?.id] });
       
       toast({
         title: "Project updated",
         description: "The project has been updated successfully.",
       });
       
-      // Navigate back to project detail
-      setLocation(`/project-management/${params?.id}`);
+      // Navigate back to project list
+      setLocation(`/project-management`);
     },
     onError: () => {
       toast({
