@@ -80,9 +80,9 @@ function Router() {
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       {/* Project Management Routes - specific routes must come before dynamic routes */}
       <ProtectedRoute path="/project-management/dashboard" component={ProjectDashboard} />
-      <ProtectedRoute path="/project-management/new" component={React.lazy(() => import("@/pages/project-management/new"))} />
-      <ProtectedRoute path="/project-management/:id/edit" component={React.lazy(() => import("@/pages/project-management/edit"))} />
-      <ProtectedRoute path="/project-management/:id" component={React.lazy(() => import("@/pages/project-management/detail"))} />
+      <ProtectedRoute path="/project-management/new" component={ProjectNew} />
+      <ProtectedRoute path="/project-management/:id/edit" component={ProjectEdit} />
+      <ProtectedRoute path="/project-management/:id" component={ProjectDetail} />
       <ProtectedRoute path="/project-management" component={ProjectManagement} />
       
       {/* Admin Routes (require admin or director role) */}

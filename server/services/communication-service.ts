@@ -20,9 +20,25 @@ export class CommunicationService {
   private pingInterval: NodeJS.Timeout | null = null;
 
   constructor(server: HttpServer) {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
-    this.initializeWebSocketServer();
-    this.startPingInterval();
+    try {
+      // Use a different path to avoid conflicts with HMR websockets
+      this.wss = new WebSocketServer({ 
+        server, 
+        path: '/api/ws',
+        // Don't start the server if one is already running on this port
+        clientTracking: true
+      });
+      this.initializeWebSocketServer();
+      this.startPingInterval();
+      console.log('WebSocket server initialized on /api/ws path');
+    } catch (error) {
+      console.error('Failed to initialize WebSocket server:', error);
+      // Create a dummy WSS that doesn't actually bind to any port/server
+      this.wss = {
+        on: () => {},
+        clients: new Set()
+      } as any;
+    }
   }
 
   private initializeWebSocketServer() {

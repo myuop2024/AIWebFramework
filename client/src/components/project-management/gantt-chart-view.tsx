@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Timeline from 'react-calendar-timeline';
-import 'react-calendar-timeline/lib/Timeline.css';
+// Temporarily comment out timeline import due to package issues
+// import Timeline from 'react-calendar-timeline';
 import moment from 'moment';
 import { Card } from "@/components/ui/card";
 import { CardContent } from "@/components/ui/card";
@@ -225,19 +225,13 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
         <CardContent>
           {timelineData.items.length > 0 ? (
             <div className="h-[400px] border rounded">
-              <Timeline
-                groups={timelineData.groups}
-                items={timelineData.items}
-                defaultTimeStart={moment().add(-1, 'month').valueOf()}
-                defaultTimeEnd={moment().add(2, 'month').valueOf()}
-                visibleTimeStart={timelineProps.visibleTimeStart}
-                visibleTimeEnd={timelineProps.visibleTimeEnd}
-                onTimeChange={handleTimeChange}
-                stackItems
-                itemHeightRatio={0.8}
-                canMove={false}
-                canResize={false}
-              />
+              {/* Temporarily replaced with placeholder due to package issues */}
+              <div className="flex flex-col items-center justify-center h-full">
+                <p className="text-muted-foreground">Timeline visualization temporarily unavailable</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  The project has {timelineData.items.length} scheduled tasks
+                </p>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">

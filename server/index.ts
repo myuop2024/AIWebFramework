@@ -202,16 +202,49 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
 
-    // Use the port from environment variable or fallback to 3001
-    // This serves both the API and the client
-    const port = process.env.PORT || 3001;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port}`);
-    });
+    // Try a range of ports if the default one is unavailable
+    const startPort = parseInt(process.env.PORT || "3001");
+    let port = startPort;
+    const maxPortAttempts = 10;
+    
+    // Function to attempt binding to a port
+    const startServer = (portToUse: number): Promise<boolean> => {
+      return new Promise((resolve) => {
+        server.once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${portToUse} is already in use, trying next port...`);
+            resolve(false);
+          } else {
+            console.error(`Server error:`, err);
+            resolve(false);
+          }
+        });
+        
+        server.once('listening', () => {
+          log(`Server is running on port ${portToUse}`);
+          resolve(true);
+        });
+        
+        // Try to listen on the port
+        server.listen({
+          port: portToUse,
+          host: "0.0.0.0",
+          reusePort: true,
+        });
+      });
+    };
+    
+    // Try ports sequentially
+    let serverStarted = false;
+    for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
+      port = startPort + attempt;
+      serverStarted = await startServer(port);
+      if (serverStarted) break;
+    }
+    
+    if (!serverStarted) {
+      log(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
+    }
   } catch (error) {
     console.error('Server initialization error:', error);
     
@@ -225,13 +258,50 @@ app.use((req, res, next) => {
       serveStatic(app);
     }
     
-    const port = process.env.PORT || 3001;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port} (limited functionality mode - database connection failed)`);
-    });
+    // Try a range of ports if the default one is unavailable
+    const startPort = parseInt(process.env.PORT || "3001");
+    let port = startPort;
+    const maxPortAttempts = 10;
+    
+    // Function to attempt binding to a port
+    const startServer = (portToUse: number): Promise<boolean> => {
+      return new Promise((resolve) => {
+        server.once('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${portToUse} is already in use, trying next port...`);
+            resolve(false);
+          } else {
+            console.error(`Server error:`, err);
+            resolve(false);
+          }
+        });
+        
+        server.once('listening', () => {
+          log(`Server is running on port ${portToUse}`);
+          resolve(true);
+        });
+        
+        // Try to listen on the port
+        server.listen({
+          port: portToUse,
+          host: "0.0.0.0",
+          reusePort: true,
+        });
+      });
+    };
+    
+    // Try ports sequentially
+    let serverStarted = false;
+    for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
+      port = startPort + attempt;
+      serverStarted = await startServer(port);
+      if (serverStarted) break;
+    }
+    
+    if (!serverStarted) {
+      log(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
+    } else {
+      log(`Server successfully started on port ${port}`);
+    }
   }
 })();

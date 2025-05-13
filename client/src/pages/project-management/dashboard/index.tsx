@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation } from 'wouter';
 import { AuthGuard } from '@/components/auth/auth-guard';
-import ProjectDashboardWidgets from '@/components/project-management/dashboard-widgets';
+import { DashboardWidgetGrid } from '@/components/project-management/dashboard-widgets-simplified';
 import { Button } from '@/components/ui/button';
 import { Plus, LayoutGrid } from 'lucide-react';
 
@@ -31,7 +31,7 @@ const ProjectDashboardContent: React.FC = () => {
         </Button>
       </div>
 
-      <ProjectDashboardWidgets />
+      <DashboardWidgetGrid />
     </div>
   );
 };

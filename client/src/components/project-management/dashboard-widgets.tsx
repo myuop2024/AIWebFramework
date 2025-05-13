@@ -193,7 +193,7 @@ interface TaskPriorityData {
 
 // Task Priority Widget
 export function TaskPriorityWidget() {
-  const { data, isLoading, error, refetch } = useQuery<TaskPriorityData[]>({
+  const { data = [], isLoading, error, refetch } = useQuery<TaskPriorityData[]>({
     queryKey: ['/api/project-management/stats/tasks-by-priority'],
   });
 
@@ -285,7 +285,7 @@ interface ActivityData {
 
 // Recent Activity Widget
 export function RecentActivityWidget() {
-  const { data, isLoading, error, refetch } = useQuery<ActivityData[]>({
+  const { data = [], isLoading, error, refetch } = useQuery<ActivityData[]>({
     queryKey: ['/api/project-management/activities/recent'],
   });
 
@@ -409,7 +409,7 @@ export function RecentActivityWidget() {
       </CardHeader>
       <CardContent className="overflow-auto h-[300px] pt-0">
         <div className="space-y-4">
-          {activities.map((activity) => (
+          {data.map((activity) => (
             <div key={activity.id} className="flex gap-3">
               <div className="flex-shrink-0 mt-1">
                 {getActivityIcon(activity.activityType)}
@@ -449,7 +449,7 @@ interface TaskDeadlineData {
 
 // Upcoming Deadlines Widget
 export function UpcomingDeadlinesWidget() {
-  const { data, isLoading, error, refetch } = useQuery<TaskDeadlineData[]>({
+  const { data = [], isLoading, error, refetch } = useQuery<TaskDeadlineData[]>({
     queryKey: ['/api/project-management/tasks/upcoming-deadlines'],
   });
 
@@ -579,7 +579,7 @@ export function UpcomingDeadlinesWidget() {
       </CardHeader>
       <CardContent className="overflow-auto h-[300px] pt-0">
         <div className="space-y-4">
-          {upcomingDeadlines.map((task) => (
+          {data.map((task) => (
             <div key={task.id} className="p-3 border rounded-lg">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
