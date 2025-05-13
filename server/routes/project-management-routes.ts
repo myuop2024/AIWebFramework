@@ -224,11 +224,25 @@ projectManagementRouter.post('/projects', ensureAuthenticated, async (req: Reque
     const userId = req.session.userId;
     console.log('User ID from session:', userId);
     
-    // Parse and validate the request body
-    const validatedData = insertProjectSchema.parse({
+    // Handle date conversion - the client sends ISO strings, but the schema expects Date objects
+    const bodyWithParsedDates = {
       ...req.body,
       ownerId: userId,
-    });
+    };
+    
+    // Convert date strings to Date objects if they exist
+    if (bodyWithParsedDates.startDate && typeof bodyWithParsedDates.startDate === 'string') {
+      bodyWithParsedDates.startDate = new Date(bodyWithParsedDates.startDate);
+      console.log('Converted startDate to Date object:', bodyWithParsedDates.startDate);
+    }
+    
+    if (bodyWithParsedDates.endDate && typeof bodyWithParsedDates.endDate === 'string') {
+      bodyWithParsedDates.endDate = new Date(bodyWithParsedDates.endDate);
+      console.log('Converted endDate to Date object:', bodyWithParsedDates.endDate);
+    }
+    
+    // Parse and validate the request body
+    const validatedData = insertProjectSchema.parse(bodyWithParsedDates);
     console.log('Validated project data:', JSON.stringify(validatedData));
     
     // Insert the project

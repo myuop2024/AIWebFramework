@@ -121,26 +121,29 @@ const ProjectCreationForm: React.FC = () => {
   // Mutation for creating a new project
   const createProject = useMutation({
     mutationFn: async (data: FormValues) => {
-      // Create a copy of the data to prepare for serialization
-      const processedData = { ...data };
-      
-      // Convert Date objects to ISO strings for API consumption
-      if (processedData.startDate instanceof Date) {
-        // Server expects Date objects, not strings
-        // but JSON.stringify will convert dates to strings,
-        // so we're explicitly noting here that these are dates
-        console.log('Start date is a Date object:', processedData.startDate);
-      }
-      
-      if (processedData.endDate instanceof Date) {
-        console.log('End date is a Date object:', processedData.endDate);
-      }
-      
-      // Make sure we log the data being sent
-      console.log('Creating project with data:', processedData);
-      
-      // Make a POST request to the project creation endpoint
-      const response = await fetch('/api/project-management/projects', {
+      try {
+        // Create a copy of the data to prepare for serialization
+        const processedData = { ...data };
+        
+        // Ensure dates are properly formatted for the server
+        // The server expects Date objects, but they get serialized to strings during JSON.stringify
+        // Our validation approach uses a schema that expects Date objects on the server side
+        console.log('Original data:', data);
+        
+        // Log the date types for debugging
+        if (processedData.startDate) {
+          console.log('Start date type:', typeof processedData.startDate, processedData.startDate);
+        }
+        
+        if (processedData.endDate) {
+          console.log('End date type:', typeof processedData.endDate, processedData.endDate);
+        }
+        
+        // Make sure we log the data being sent
+        console.log('Creating project with data:', JSON.stringify(processedData, null, 2));
+        
+        // Make a POST request to the project creation endpoint
+        const response = await fetch('/api/project-management/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,12 +161,17 @@ const ProjectCreationForm: React.FC = () => {
           const errorData = JSON.parse(responseText);
           errorMessage = errorData.message || errorMessage;
           
+          console.error('Server error response:', errorData);
+          
           // Check for validation errors from Zod
           if (errorData.errors && Array.isArray(errorData.errors)) {
             const validationErrors = errorData.errors.map((err: any) => 
               `${err.path.join('.')} - ${err.message}`
             ).join(', ');
             errorMessage = `Validation errors: ${validationErrors}`;
+            
+            // Log specific validation errors for debugging
+            console.error('Validation errors:', errorData.errors);
           }
         } catch (e) {
           console.error('Failed to parse error response:', responseText);
@@ -177,6 +185,10 @@ const ProjectCreationForm: React.FC = () => {
       } catch (e) {
         console.error('Failed to parse successful response:', responseText);
         throw new Error('Received invalid response from server');
+      }
+      } catch (error) {
+        console.error('Error in project creation mutation:', error);
+        throw error;
       }
     },
     onSuccess: (data: any) => {
