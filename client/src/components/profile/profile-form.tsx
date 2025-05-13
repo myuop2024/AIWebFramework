@@ -52,6 +52,34 @@ const JAMAICAN_BANKS = [
   "Churches Co-operative Credit Union",
   "Manchester Co-operative Credit Union",
   "Gateway Co-operative Credit Union",
+  "Community & Workers of Jamaica Co-operative Credit Union",
+  "EduCom Co-operative Credit Union",
+  "Grace Co-operative Credit Union",
+  "JPS & Partners Co-operative Credit Union",
+  "St. Thomas Co-operative Credit Union",
+  "Other"
+];
+
+// Bank branch locations
+const COMMON_BRANCH_LOCATIONS = [
+  "Kingston - Downtown",
+  "Kingston - New Kingston",
+  "Kingston - Half Way Tree",
+  "Kingston - Liguanea",
+  "Spanish Town",
+  "Portmore",
+  "Montego Bay",
+  "Ocho Rios",
+  "May Pen",
+  "Mandeville",
+  "Port Antonio",
+  "Savanna-la-Mar",
+  "Falmouth",
+  "Brown's Town",
+  "Black River",
+  "Morant Bay",
+  "Santa Cruz",
+  "Linstead",
   "Other"
 ];
 
@@ -452,9 +480,35 @@ export default function ProfileForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tax Registration Number (TRN)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your TRN" {...field} />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <div className="flex">
+                        <Input 
+                          className="pr-10" 
+                          type={showIdNumber ? "text" : "password"} 
+                          placeholder="Enter your TRN (9 digits)" 
+                          {...field} 
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0"
+                          onClick={() => setShowIdNumber(!showIdNumber)}
+                        >
+                          {showIdNumber ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                  </div>
+                  <FormDescription className="text-xs flex items-center">
+                    <Lock className="h-3 w-3 mr-1" />
+                    Your TRN is encrypted and securely stored
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -569,9 +623,23 @@ export default function ProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank Branch Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your bank branch location" {...field} />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select branch location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {COMMON_BRANCH_LOCATIONS.map((location) => (
+                          <SelectItem key={location} value={location}>
+                            {location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -650,24 +718,25 @@ export default function ProfileForm() {
                 control={form.control}
                 name="accountCurrency"
                 render={({ field }) => (
-                  <FormItem className="space-y-3">
+                  <FormItem>
                     <FormLabel>Currency</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex space-x-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="JMD" id="jmd" />
-                          <Label htmlFor="jmd">JMD</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="USD" id="usd" />
-                          <Label htmlFor="usd">USD</Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="JMD">Jamaican Dollar (JMD)</SelectItem>
+                        <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                        <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                        <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
+                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
