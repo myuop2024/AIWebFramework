@@ -147,7 +147,7 @@ app.use((req, res, next) => {
 
 (async () => {
   let dbConnected = false;
-  let server;
+  let server: Server;
   
   try {
     // Check database connection

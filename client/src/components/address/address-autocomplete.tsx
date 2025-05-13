@@ -161,6 +161,7 @@ export default function AddressAutocomplete({
           {
             q: query,
             at: '18.0179,-76.8099', // Kingston, Jamaica as center point
+            in: 'countryCode:JAM', // Filter to Jamaica specifically
             limit: 5
           },
           (result: any) => {
@@ -359,43 +360,113 @@ export default function AddressAutocomplete({
   return (
     <div className="relative w-full">
       <div className="relative">
-        <Input
-          ref={inputRef}
-          type="text"
-          className={cn(className)}
-          placeholder={placeholder}
-          value={inputValue}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          disabled={disabled || !isLoaded || !!loadError}
-        />
-        {isSearching && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-          </div>
-        )}
+        <div className="relative">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <Input
+            ref={inputRef}
+            type="text"
+            className={cn("pl-9 transition-shadow focus:shadow-blue-100", 
+              isLoaded ? "border-gray-300 hover:border-gray-400" : "border-gray-200 bg-gray-50", 
+              className
+            )}
+            placeholder={isLoaded ? placeholder : "Loading map service..."}
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            disabled={disabled || !isLoaded || !!loadError}
+          />
+          {isSearching ? (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+            </div>
+          ) : isLoaded && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4 text-green-500" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            </div>
+          )}
+        </div>
       </div>
 
       {showSuggestions && (
         <div
           ref={suggestionListRef}
-          className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto"
+          className="absolute z-50 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200 max-h-60 overflow-auto divide-y divide-gray-100"
         >
           {suggestions.map((suggestion) => (
             <div
               key={suggestion.id}
-              className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer"
+              className="px-4 py-3 text-sm hover:bg-blue-50 cursor-pointer transition-colors duration-150"
               onClick={() => handleSelectSuggestion(suggestion)}
             >
-              {suggestion.title}
+              <div className="flex items-start">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-4 w-4 mt-0.5 mr-2 text-blue-600 flex-shrink-0" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <div>
+                  <div className="font-medium text-gray-800">{suggestion.title}</div>
+                  {suggestion.address && suggestion.address.countryName && (
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      {suggestion.address.countryName}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {loadError && (
-        <div className="mt-1 text-sm text-red-500">
-          Error loading maps: {loadError.message}
+        <div className="mt-1 text-sm text-red-500 flex items-center bg-red-50 p-2 rounded border border-red-200">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-4 w-4 mr-1 flex-shrink-0" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Map service unavailable: {loadError.message}
         </div>
       )}
     </div>
