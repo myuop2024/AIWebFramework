@@ -187,7 +187,7 @@ export class CommunicationService {
   }
 
   private handleCallOffer(data: any) {
-    const { callerId, receiverId, offer, type } = data;
+    const { callerId, receiverId, offer, callType } = data;
     if (!callerId || !receiverId || !offer) {
       console.error('Invalid call offer:', data);
       return;
@@ -199,7 +199,7 @@ export class CommunicationService {
       callerId,
       receiverId,
       offer,
-      type
+      callType
     });
   }
 

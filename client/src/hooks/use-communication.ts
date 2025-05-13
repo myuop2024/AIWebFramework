@@ -576,7 +576,7 @@ export function useCommunication(userId: number) {
         type: WS_MSG_TYPES.CALL_OFFER,
         callerId: userId,
         receiverId,
-        type,
+        callType: type,
         offer,
       }));
 
@@ -618,7 +618,7 @@ export function useCommunication(userId: number) {
         callerId: incomingCall.callerId,
         receiverId: userId,
         answer,
-        type: incomingCall.type, // Include call type in answer message
+        callType: incomingCall.type, // Include call type in answer message
       }));
 
       setActiveCall({ ...incomingCall, receiverId: userId, answer }); // Current user is receiver
