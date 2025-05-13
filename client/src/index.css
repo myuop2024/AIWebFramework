@@ -3,48 +3,62 @@
 @tailwind utilities;
 
 :root {
-      --background: 0 0% 100%;
---foreground: 20 14.3% 4.1%;
---muted: 60 4.8% 95.9%;
---muted-foreground: 25 5.3% 44.7%;
---popover: 0 0% 100%;
---popover-foreground: 20 14.3% 4.1%;
---card: 0 0% 100%;
---card-foreground: 20 14.3% 4.1%;
---border: 20 5.9% 90%;
---input: 20 5.9% 90%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 60 4.8% 95.9%;
---secondary-foreground: 24 9.8% 10%;
---accent: 60 4.8% 95.9%;
---accent-foreground: 24 9.8% 10%;
---destructive: 0 84.2% 60.2%;
---destructive-foreground: 60 9.1% 97.8%;
---ring: 20 14.3% 4.1%;
---radius: 0.5rem;
+  /* Modern UI color scheme with vibrant primary color */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215 16% 47%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --primary: 222 100% 54%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222 47% 11%;
+  --accent: 216 34% 62%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --success: 142 71% 45%;
+  --success-foreground: 210 40% 98%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 210 40% 98%;
+  --info: 206 100% 50%;
+  --info-foreground: 210 40% 98%;
+  --ring: 215 20% 65%;
+  --radius: 0.5rem;
   }
   .dark {
-      --background: 240 10% 3.9%;
---foreground: 0 0% 98%;
---muted: 240 3.7% 15.9%;
---muted-foreground: 240 5% 64.9%;
---popover: 240 10% 3.9%;
---popover-foreground: 0 0% 98%;
---card: 240 10% 3.9%;
---card-foreground: 0 0% 98%;
---border: 240 3.7% 15.9%;
---input: 240 3.7% 15.9%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 240 3.7% 15.9%;
---secondary-foreground: 0 0% 98%;
---accent: 240 3.7% 15.9%;
---accent-foreground: 0 0% 98%;
---destructive: 0 62.8% 30.6%;
---destructive-foreground: 0 0% 98%;
---ring: 240 4.9% 83.9%;
---radius: 0.5rem;
+  /* Modern dark theme with elevated surfaces and improved contrast */
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 45% 7%;
+  --popover-foreground: 210 40% 98%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+  --primary: 224 76% 54%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 215 27% 42%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 40.6%;
+  --destructive-foreground: 210 40% 98%;
+  --success: 142 70% 45%;
+  --success-foreground: 210 40% 98%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 210 40% 98%;
+  --info: 206 100% 50%;
+  --info-foreground: 210 40% 98%;
+  --ring: 216 34% 40%;
+  --radius: 0.5rem;
   }
 
 @layer base {
@@ -54,5 +68,57 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+}
+
+@layer components {
+  /* Modern card styles with subtle shadows */
+  .card-modern {
+    @apply bg-card rounded-lg border shadow-sm transition-all hover:shadow-md;
+  }
+  
+  /* Glass effect for elevated content */
+  .glass-panel {
+    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-800/50 shadow-xl;
+  }
+  
+  /* Gradient backgrounds for feature sections */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground;
+  }
+  
+  /* Improved dashboard tiles */
+  .dashboard-tile {
+    @apply p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all;
+  }
+  
+  /* Status badges with consistent styling */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .status-badge-success {
+    @apply status-badge bg-success/20 text-success-foreground;
+  }
+  
+  .status-badge-warning {
+    @apply status-badge bg-warning/20 text-warning-foreground;
+  }
+  
+  .status-badge-danger {
+    @apply status-badge bg-destructive/20 text-destructive-foreground;
+  }
+  
+  .status-badge-info {
+    @apply status-badge bg-info/20 text-info-foreground;
+  }
+  
+  /* Modern button animations */
+  .btn-animate {
+    @apply transition-transform active:scale-95;
   }
 }

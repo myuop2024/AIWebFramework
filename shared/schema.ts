@@ -929,6 +929,65 @@ export const taskHistory = pgTable('task_history', {
   changedAt: timestamp('changed_at').defaultNow(),
 });
 
+// Audit Logs for detailed tracking of user activities
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  action: text('action').notNull(),
+  resourceType: text('resource_type').notNull(),
+  resourceId: text('resource_id'),
+  details: jsonb('details'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  timestamp: timestamp('timestamp').defaultNow(),
+  status: text('status').default('success'),
+  relatedEntityId: integer('related_entity_id'), // For related resources or context
+});
+
+// Project Templates for frequently created project types
+export const projectTemplates = pgTable('project_templates', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  createdById: integer('created_by_id').references(() => users.id),
+  isPublic: boolean('is_public').default(false),
+  templateData: jsonb('template_data').notNull(), // Contains tasks, milestones, etc.
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  category: text('category'),
+  tags: text('tags').array(),
+  usageCount: integer('usage_count').default(0),
+});
+
+// Time Tracking entries for tasks
+export const timeEntries = pgTable('time_entries', {
+  id: serial('id').primaryKey(),
+  taskId: integer('task_id').references(() => tasks.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  description: text('description'),
+  startTime: timestamp('start_time').notNull(),
+  endTime: timestamp('end_time'),
+  duration: integer('duration'), // Duration in seconds
+  billable: boolean('billable').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  isRunning: boolean('is_running').default(false),
+});
+
+// Dashboard Widgets configuration
+export const dashboardWidgets = pgTable('dashboard_widgets', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  widgetType: text('widget_type').notNull(),
+  position: integer('position').default(0),
+  size: text('size').default('medium'),
+  settings: jsonb('settings').default({}),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  title: text('title'),
+  isActive: boolean('is_active').default(true),
+});
+
 // Set up relations
 export const projectsRelations = relations(projects, ({ one, many }) => ({
   owner: one(users, {
