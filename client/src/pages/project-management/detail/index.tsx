@@ -36,21 +36,13 @@ import { useToast } from '@/hooks/use-toast';
 const ProjectDetailContent: React.FC = () => {
   const [match, params] = useRoute<{ id: string }>('/project-management/:id');
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   
-  // We'll implement real data fetching later
-  const { data: project, isLoading } = useQuery({
-    queryKey: ['/api/projects', params?.id],
-    enabled: !!params?.id,
-    queryFn: async () => {
-      return new Promise(resolve => {
-        setTimeout(() => resolve({ 
-          id: parseInt(params?.id || '0'), 
-          name: 'Project Detail Page', 
-          description: 'This is a placeholder for the project detail page.',
-          status: 'planning'
-        }), 500);
-      });
-    }
+  // Real data fetching from API
+  const { data: project, isLoading, error } = useQuery({
+    queryKey: ['/api/project-management/projects', params?.id],
+    enabled: !!params?.id
   });
   
   const handleBack = () => {
