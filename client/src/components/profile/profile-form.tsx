@@ -149,14 +149,24 @@ const profileSchema = z.object({
   country: z.string().min(1, "Country is required").default("Jamaica"),
   
   // Identification Information
-  trn: z.string().min(1, "TRN is required"),
+  trn: z.string()
+    .min(1, "TRN is required")
+    .refine(
+      (val) => /^\d{9}$/.test(val.replace(/-/g, "")), 
+      { message: "TRN must be 9 digits (e.g., 123-456-789)" }
+    ),
   idType: z.string().min(1, "ID type is required"),
   idNumber: z.string().min(1, "ID number is required"),
   
   // Financial Information
   bankName: z.string().min(1, "Bank name is required"),
   bankBranchLocation: z.string().min(1, "Bank branch location is required"),
-  bankAccount: z.string().min(1, "Bank account number is required"),
+  bankAccount: z.string()
+    .min(1, "Bank account number is required")
+    .refine(
+      (val) => /^\d{5,18}$/.test(val.replace(/[-\s]/g, "")), 
+      { message: "Please enter a valid bank account number (5-18 digits)" }
+    ),
   accountType: z.string().min(1, "Account type is required"),
   accountCurrency: z.string().min(1, "Currency is required").default("JMD"),
 });
@@ -293,11 +303,11 @@ export default function ProfileForm() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Personal Information</h2>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl shadow-sm border border-blue-100">
+        <h2 className="text-2xl font-bold text-blue-900">Personal Information</h2>
         <p className="text-gray-600">Update your personal and financial information for verification.</p>
-        <div className="flex items-center mt-2 text-sm text-amber-600">
-          <Shield className="h-4 w-4 mr-1" />
+        <div className="flex items-center mt-3 text-sm text-amber-700 bg-amber-50 rounded-lg p-2 border border-amber-200">
+          <Shield className="h-4 w-4 mr-2 flex-shrink-0" />
           <span>Sensitive information is encrypted and securely stored</span>
         </div>
       </div>
@@ -532,7 +542,24 @@ export default function ProfileForm() {
                           className="pr-10" 
                           type={showIdNumber ? "text" : "password"} 
                           placeholder="Enter your TRN (9 digits)" 
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={11}
                           {...field} 
+                          onChange={(e) => {
+                            // Format TRN as 123-456-789
+                            const value = e.target.value.replace(/[^0-9]/g, "");
+                            if (value.length <= 9) {
+                              let formatted = value;
+                              if (value.length > 3) {
+                                formatted = value.slice(0, 3) + "-" + value.slice(3);
+                              }
+                              if (value.length > 6) {
+                                formatted = formatted.slice(0, 7) + "-" + formatted.slice(7);
+                              }
+                              field.onChange(formatted);
+                            }
+                          }}
                         />
                         <Button
                           type="button"
@@ -704,7 +731,19 @@ export default function ProfileForm() {
                           className="pr-10" 
                           type={showBankAccount ? "text" : "password"} 
                           placeholder="Enter your account number" 
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          maxLength={18}
                           {...field} 
+                          onChange={(e) => {
+                            // Format bank account with dashes every 4 digits
+                            const value = e.target.value.replace(/[^0-9]/g, "");
+                            if (value.length <= 18) {
+                              // Group digits in sets of 4 with dashes
+                              const formatted = value.replace(/(.{4})/g, "$1-").replace(/-$/, "");
+                              field.onChange(formatted);
+                            }
+                          }}
                         />
                         <Button
                           type="button"
