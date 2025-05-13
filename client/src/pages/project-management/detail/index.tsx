@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
@@ -19,11 +19,19 @@ import {
   Calendar, 
   Users, 
   BarChart2,
-  FileText
+  FileText,
+  Download,
+  Filter,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import GanttChartView from '@/components/project-management/gantt-chart-view';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const ProjectDetailContent: React.FC = () => {
   const [match, params] = useRoute<{ id: string }>('/project-management/:id');
