@@ -20,7 +20,7 @@ const FormFieldOptionSchema = z.object({
 const FormFieldSchema = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.enum(['text', 'email', 'password', 'tel', 'number', 'select', 'checkbox', 'textarea', 'file', 'date', 'radio', 'time', 'image', 'signature', 'location']),
+  type: z.enum(['text', 'email', 'password', 'tel', 'number', 'select', 'checkbox', 'textarea', 'file', 'date', 'radio', 'time', 'image', 'signature', 'location', 'datetime-local', 'observation']),
   label: z.string(),
   placeholder: z.string().optional(),
   helpText: z.string().optional(),

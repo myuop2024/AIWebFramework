@@ -426,7 +426,7 @@ export default function FormTemplatesPage() {
   );
   
   // Make sure we include all standard categories even if no templates exist for them yet
-  const standardCategories = ['polling', 'incident', 'observation', 'checklist', 'evaluation'];
+  const standardCategories = ['polling', 'incident', 'observation', 'checklist', 'evaluation', 'standardObservation'];
   const categories = Array.from(new Set([...templateCategories, ...standardCategories]));
 
   const renderFieldEditor = () => {
