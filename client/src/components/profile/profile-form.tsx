@@ -101,6 +101,34 @@ const JAMAICAN_PARISHES = [
   "St. Thomas"
 ];
 
+// Common post office regions in Jamaica
+const POST_OFFICE_REGIONS = [
+  "Kingston 5",
+  "Kingston 6",
+  "Kingston 7",
+  "Kingston 8",
+  "Kingston 10",
+  "Kingston 11",
+  "Kingston 19",
+  "Kingston 20",
+  "Spanish Town",
+  "Portmore",
+  "May Pen",
+  "Mandeville",
+  "Montego Bay",
+  "Ocho Rios",
+  "Savanna-la-Mar",
+  "Port Antonio",
+  "Morant Bay",
+  "Falmouth",
+  "Black River",
+  "Santa Cruz",
+  "Linstead",
+  "Old Harbour",
+  "Brown's Town",
+  "Other"
+];
+
 // ID types
 const ID_TYPES = [
   "National ID",
@@ -447,9 +475,26 @@ export default function ProfileForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Post Office Region</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter your post office region" {...field} />
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select post office region" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {POST_OFFICE_REGIONS.map((region) => (
+                          <SelectItem key={region} value={region}>
+                            {region}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-xs">
+                      The postal code or post office region for your mailing address
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
