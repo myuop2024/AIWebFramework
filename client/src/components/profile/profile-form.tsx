@@ -691,24 +691,26 @@ export default function ProfileForm() {
                 control={form.control}
                 name="accountType"
                 render={({ field }) => (
-                  <FormItem className="space-y-3">
+                  <FormItem>
                     <FormLabel>Account Type</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex space-x-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Savings" id="savings" />
-                          <Label htmlFor="savings">Savings</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Checking" id="checking" />
-                          <Label htmlFor="checking">Checking</Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select account type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Savings">Savings Account</SelectItem>
+                        <SelectItem value="Checking">Checking Account</SelectItem>
+                        <SelectItem value="Current">Current Account</SelectItem>
+                        <SelectItem value="Fixed">Fixed Deposit</SelectItem>
+                        <SelectItem value="Money_Market">Money Market Account</SelectItem>
+                        <SelectItem value="Business">Business Account</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
