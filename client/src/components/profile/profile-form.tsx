@@ -330,8 +330,11 @@ export default function ProfileForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
-            <h3 className="text-lg font-medium">Address Information</h3>
+          <div className="space-y-4 p-5 bg-white rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-blue-800 flex items-center">
+              <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+              Address Information
+            </h3>
             
             <FormField
               control={form.control}
@@ -526,8 +529,17 @@ export default function ProfileForm() {
             </div>
           </div>
 
-          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
-            <h3 className="text-lg font-medium">Identification Information</h3>
+          <div className="space-y-4 p-5 bg-white rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-blue-800 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <circle cx="9" cy="10" r="2" />
+                <path d="M15 8h2" />
+                <path d="M15 12h2" />
+                <path d="M7 16h10" />
+              </svg>
+              Identification Information
+            </h3>
             
             <FormField
               control={form.control}
@@ -657,8 +669,16 @@ export default function ProfileForm() {
             </div>
           </div>
 
-          <div className="space-y-4 p-4 bg-slate-50 rounded-lg">
-            <h3 className="text-lg font-medium">Financial Information</h3>
+          <div className="space-y-4 p-5 bg-white rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-blue-800 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <line x1="2" y1="10" x2="22" y2="10" />
+                <line x1="7" y1="15" x2="9" y2="15" />
+                <line x1="11" y1="15" x2="13" y2="15" />
+              </svg>
+              Financial Information
+            </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
