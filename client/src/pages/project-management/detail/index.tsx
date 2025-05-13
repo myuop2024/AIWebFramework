@@ -187,6 +187,12 @@ const ProjectDetailContent: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+        
+        <TabsContent value="permissions">
+          {project && (
+            <PermissionsManager projectId={parseInt(params?.id || '0')} />
+          )}
+        </TabsContent>
       </Tabs>
     </div>
   );
