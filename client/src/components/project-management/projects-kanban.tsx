@@ -29,27 +29,27 @@ const projectStatusColumns = [
 
 const ProjectsKanban: React.FC = () => {
   const [location, setLocation] = useLocation();
-  
-  // Real data fetching from the API
+
+  // Fetch projects data
   const { data: projects, isLoading, error } = useQuery({
-    queryKey: ['/api/projects'],
+    queryKey: ['/api/project-management/projects'],
     queryFn: async () => {
-      const response = await fetch('/api/projects');
+      const response = await fetch('/api/project-management/projects');
       if (!response.ok) {
         throw new Error('Failed to fetch projects');
       }
       return response.json();
     }
   });
-  
+
   const handleViewProject = (projectId: number) => {
     setLocation(`/project-management/${projectId}`);
   };
-  
+
   const handleNewProject = () => {
     setLocation('/project-management/new');
   };
-  
+
   // Group projects by status
   const groupedProjects = (projects || []).reduce((acc, project) => {
     if (!acc[project.status]) {
@@ -58,7 +58,7 @@ const ProjectsKanban: React.FC = () => {
     acc[project.status].push(project);
     return acc;
   }, {} as Record<string, Project[]>);
-  
+
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -78,7 +78,7 @@ const ProjectsKanban: React.FC = () => {
                 </Button>
               )}
             </div>
-            
+
             <div className="space-y-3">
               {isLoading ? (
                 Array(3).fill(0).map((_, i) => (

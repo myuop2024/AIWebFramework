@@ -97,7 +97,7 @@ interface ProjectStatusData {
 // Project Status Chart Widget
 export function ProjectStatusWidget() {
   const { data, isLoading, error, refetch } = useQuery<ProjectStatusData[]>({
-    queryKey: ['/api/project-management/stats/projects-by-status'],
+    queryKey: ['/api/project-management/analytics/projects'],
   });
 
   if (isLoading) {

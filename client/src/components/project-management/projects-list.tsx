@@ -47,7 +47,7 @@ const ProjectsList: React.FC = () => {
   
   // Real data fetching from the API
   const { data: projects, isLoading, error } = useQuery({
-    queryKey: ['/api/projects', statusFilter, searchTerm],
+    queryKey: ['/api/project-management/projects', statusFilter, searchTerm],
     queryFn: async () => {
       // Build query params
       const params = new URLSearchParams();
@@ -59,7 +59,7 @@ const ProjectsList: React.FC = () => {
       }
       
       const queryString = params.toString();
-      const url = `/api/projects${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/project-management/projects${queryString ? `?${queryString}` : ''}`;
       
       const response = await fetch(url);
       if (!response.ok) {
