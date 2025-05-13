@@ -228,8 +228,8 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
               <Timeline
                 groups={timelineData.groups}
                 items={timelineData.items}
-                defaultTimeStart={moment().add(-1, 'month')}
-                defaultTimeEnd={moment().add(2, 'month')}
+                defaultTimeStart={moment().add(-1, 'month').valueOf()}
+                defaultTimeEnd={moment().add(2, 'month').valueOf()}
                 visibleTimeStart={timelineProps.visibleTimeStart}
                 visibleTimeEnd={timelineProps.visibleTimeEnd}
                 onTimeChange={handleTimeChange}

@@ -23,13 +23,15 @@ import {
   Download,
   Filter,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Shield
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import GanttChartView from '@/components/project-management/gantt-chart-view';
+import PermissionsManager from '@/components/project-management/permissions-manager';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,7 +42,16 @@ const ProjectDetailContent: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   
   // Real data fetching from API
-  const { data: project, isLoading, error } = useQuery({
+  const { data: project, isLoading, error } = useQuery<{
+    id: number;
+    name: string;
+    description?: string;
+    status: string;
+    startDate?: string;
+    endDate?: string;
+    ownerId: number;
+    tasks?: any[];
+  }>({
     queryKey: ['/api/project-management/projects', params?.id],
     enabled: !!params?.id
   });
@@ -115,7 +126,7 @@ const ProjectDetailContent: React.FC = () => {
       </Card>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="overview" className="flex items-center justify-center">
             <FileText className="h-4 w-4 mr-2" />
             Overview
@@ -131,6 +142,10 @@ const ProjectDetailContent: React.FC = () => {
           <TabsTrigger value="team" className="flex items-center justify-center">
             <Users className="h-4 w-4 mr-2" />
             Team
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center justify-center">
+            <Shield className="h-4 w-4 mr-2" />
+            Permissions
           </TabsTrigger>
         </TabsList>
         
@@ -157,14 +172,9 @@ const ProjectDetailContent: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="timeline">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground">Project timeline will be displayed here</p>
-            </CardContent>
-          </Card>
+          {project && (
+            <GanttChartView projectId={parseInt(params?.id || '0')} />
+          )}
         </TabsContent>
         
         <TabsContent value="team">
