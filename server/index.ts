@@ -146,26 +146,40 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  let dbConnected = false;
+  let server;
+  
   try {
     // Check database connection
-    await checkDbConnection();
+    dbConnected = await checkDbConnection();
     console.log('Database connection successful');
     
     // Initialize default data
     await initializeDefaultData();
-    
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    console.log('Continuing with server startup despite database issues...');
+  }
+  
+  try {
     // Add health check endpoint
     app.get('/api/health', async (req, res) => {
-      const dbConnected = await checkDbConnection();
+      const dbStatus = await checkDbConnection().catch(() => false);
       res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        database: dbConnected ? 'connected' : 'disconnected',
+        database: dbStatus ? 'connected' : 'disconnected',
         environment: process.env.NODE_ENV || 'development'
       });
     });
     
-    const server = await registerRoutes(app);
+    // Setup uploads directory and log
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    app.use('/uploads', express.static(uploadsDir));
+    console.log(`Serving static files from: ${uploadsDir}`);
+    
+    // Setup routes
+    server = await registerRoutes(app);
 
     // Register error monitoring middleware
     app.use(errorMonitor);
@@ -174,7 +188,7 @@ app.use((req, res, next) => {
     app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
-
+      
       // Log the error with our enhanced logger
       logger.error('Uncaught error', err, { 
         path: req.path, 
@@ -193,115 +207,66 @@ app.use((req, res, next) => {
       }
     });
 
-    // importantly only setup vite in development and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
+    // Setup Vite for development or static files for production
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
 
-    // Try a range of ports if the default one is unavailable
-    const startPort = parseInt(process.env.PORT || "3001");
-    let port = startPort;
+    // Start the server with port fallback mechanism
+    const startPort = parseInt(process.env.PORT || "5000");
     const maxPortAttempts = 10;
-    
-    // Function to attempt binding to a port
-    const startServer = (portToUse: number): Promise<boolean> => {
-      return new Promise((resolve) => {
-        server.once('error', (err: any) => {
-          if (err.code === 'EADDRINUSE') {
-            console.log(`Port ${portToUse} is already in use, trying next port...`);
-            resolve(false);
-          } else {
-            console.error(`Server error:`, err);
-            resolve(false);
-          }
-        });
-        
-        server.once('listening', () => {
-          log(`Server is running on port ${portToUse}`);
-          resolve(true);
-        });
-        
-        // Try to listen on the port
-        server.listen({
-          port: portToUse,
-          host: "0.0.0.0",
-          reusePort: true,
-        });
-      });
-    };
-    
-    // Try ports sequentially
+    let port = startPort;
     let serverStarted = false;
+    
+    // Try multiple ports in sequence
     for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
-      port = startPort + attempt;
-      serverStarted = await startServer(port);
-      if (serverStarted) break;
+      const portToTry = startPort + attempt;
+      try {
+        await new Promise<void>((resolve, reject) => {
+          // Set up error and listening event handlers
+          const errorHandler = (err: any) => {
+            server.removeListener('listening', listeningHandler);
+            if (err.code === 'EADDRINUSE') {
+              console.log(`Port ${portToTry} is in use, trying next port...`);
+              resolve(); // Continue to next port
+            } else {
+              reject(err); // Propagate other errors
+            }
+          };
+          
+          const listeningHandler = () => {
+            server.removeListener('error', errorHandler);
+            port = portToTry;
+            serverStarted = true;
+            resolve();
+          };
+          
+          server.once('error', errorHandler);
+          server.once('listening', listeningHandler);
+          
+          // Try binding to the port
+          server.listen({
+            port: portToTry,
+            host: "0.0.0.0",
+          });
+        });
+        
+        if (serverStarted) break;
+      } catch (err) {
+        console.error(`Error starting server on port ${portToTry}:`, err);
+      }
     }
     
-    if (!serverStarted) {
-      log(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
+    if (serverStarted) {
+      console.log(`Server is running on port ${port}`);
+    } else {
+      console.error(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
+      process.exit(1); // Exit with error code
     }
   } catch (error) {
-    console.error('Server initialization error:', error);
-    
-    // Still start the server even if DB connection fails 
-    // This ensures the UI can still load, even if backend APIs might fail
-    const server = await registerRoutes(app);
-    
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-    
-    // Try a range of ports if the default one is unavailable
-    const startPort = parseInt(process.env.PORT || "3001");
-    let port = startPort;
-    const maxPortAttempts = 10;
-    
-    // Function to attempt binding to a port
-    const startServer = (portToUse: number): Promise<boolean> => {
-      return new Promise((resolve) => {
-        server.once('error', (err: any) => {
-          if (err.code === 'EADDRINUSE') {
-            console.log(`Port ${portToUse} is already in use, trying next port...`);
-            resolve(false);
-          } else {
-            console.error(`Server error:`, err);
-            resolve(false);
-          }
-        });
-        
-        server.once('listening', () => {
-          log(`Server is running on port ${portToUse}`);
-          resolve(true);
-        });
-        
-        // Try to listen on the port
-        server.listen({
-          port: portToUse,
-          host: "0.0.0.0",
-          reusePort: true,
-        });
-      });
-    };
-    
-    // Try ports sequentially
-    let serverStarted = false;
-    for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
-      port = startPort + attempt;
-      serverStarted = await startServer(port);
-      if (serverStarted) break;
-    }
-    
-    if (!serverStarted) {
-      log(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
-    } else {
-      log(`Server successfully started on port ${port}`);
-    }
+    console.error('Fatal server error:', error);
+    process.exit(1);
   }
 })();

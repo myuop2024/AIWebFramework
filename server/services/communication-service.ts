@@ -7,6 +7,10 @@ interface User {
   id: number;
   username: string;
   status: 'online' | 'offline' | 'away';
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string | null;
+  profileImageUrl?: string | null;
 }
 
 interface WebSocketClient extends WebSocket {
@@ -96,13 +100,12 @@ export class CommunicationService {
       // Handle disconnection
       ws.on('close', () => {
         // Find and remove the disconnected client
-        for (const [userId, client] of this.clients.entries()) {
+        Array.from(this.clients.entries()).forEach(([userId, client]) => {
           if (client === ws) {
             console.log(`User ${userId} disconnected`);
             this.clients.delete(userId);
-            break;
           }
-        }
+        });
 
         this.broadcastUserList();
       });
@@ -199,7 +202,7 @@ export class CommunicationService {
       callerId,
       receiverId,
       offer,
-      callType
+      callType: callType || 'video'
     });
   }
 
@@ -307,9 +310,13 @@ export class CommunicationService {
     // Get all users who are currently online
     const onlineUsers: User[] = [];
     
-    for (const [userId, client] of this.clients.entries()) {
+    // Use Array.from to convert the entries iterator to an array we can safely iterate
+    await Promise.all(Array.from(this.clients.entries()).map(async ([userId, client]) => {
       try {
         const user = await storage.getUser(userId);
+        // Also fetch profile to get profile photo
+        const profile = await storage.getUserProfile(userId);
+        
         if (user) {
           onlineUsers.push({
             id: userId,
@@ -317,15 +324,14 @@ export class CommunicationService {
             firstName: user.firstName || null,
             lastName: user.lastName || null,
             role: user.role || null,
-            parish: user.parish || null,
-            profileImage: user.profileImage || null,
+            profileImageUrl: profile?.profilePhotoUrl || null,
             status: 'online'
           });
         }
       } catch (error) {
         console.error(`Error fetching user ${userId}:`, error);
       }
-    }
+    }));
 
     // Send the online user list to all connected clients
     const data = {
