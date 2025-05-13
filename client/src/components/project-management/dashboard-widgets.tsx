@@ -88,9 +88,15 @@ const CHART_COLORS = [
   '#c026d3', // fuchsia-600
 ];
 
+interface ProjectStatusData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
 // Project Status Chart Widget
 export function ProjectStatusWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<ProjectStatusData[]>({
     queryKey: ['/api/project-management/stats/projects-by-status'],
   });
 
@@ -179,9 +185,15 @@ export function ProjectStatusWidget() {
   );
 }
 
+interface TaskPriorityData {
+  name: string;
+  value: number;
+  color?: string;
+}
+
 // Task Priority Widget
 export function TaskPriorityWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<TaskPriorityData[]>({
     queryKey: ['/api/project-management/stats/tasks-by-priority'],
   });
 
@@ -262,9 +274,18 @@ export function TaskPriorityWidget() {
   );
 }
 
+interface ActivityData {
+  id: number;
+  activityType: string;
+  user: { name: string; avatar: string | null };
+  description: string;
+  projectName: string;
+  timestamp: string;
+}
+
 // Recent Activity Widget
 export function RecentActivityWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<ActivityData[]>({
     queryKey: ['/api/project-management/activities/recent'],
   });
 
@@ -417,9 +438,18 @@ export function RecentActivityWidget() {
   );
 }
 
+interface TaskDeadlineData {
+  id: number;
+  title: string;
+  projectName: string;
+  dueDate: string;
+  priority: string;
+  assignee: { name: string; avatar: string | null };
+}
+
 // Upcoming Deadlines Widget
 export function UpcomingDeadlinesWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<TaskDeadlineData[]>({
     queryKey: ['/api/project-management/tasks/upcoming-deadlines'],
   });
 

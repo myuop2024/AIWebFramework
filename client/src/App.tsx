@@ -40,6 +40,10 @@ import StationSchedulePage from "@/pages/roving/station-schedule";
 import AreaReportsPage from "@/pages/roving/area-reports";
 import ErrorLogsPage from "@/pages/admin/error-logs";
 import ProjectManagement from "@/pages/project-management";
+import ProjectDashboard from "@/pages/project-management/dashboard";
+import ProjectDetail from "@/pages/project-management/detail";
+import ProjectEdit from "@/pages/project-management/edit";
+import ProjectNew from "@/pages/project-management/new";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -75,6 +79,7 @@ function Router() {
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       {/* Project Management Routes - specific routes must come before dynamic routes */}
+      <ProtectedRoute path="/project-management/dashboard" component={ProjectDashboard} />
       <ProtectedRoute path="/project-management/new" component={React.lazy(() => import("@/pages/project-management/new"))} />
       <ProtectedRoute path="/project-management/:id/edit" component={React.lazy(() => import("@/pages/project-management/edit"))} />
       <ProtectedRoute path="/project-management/:id" component={React.lazy(() => import("@/pages/project-management/detail"))} />
