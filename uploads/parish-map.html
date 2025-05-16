@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jamaica Parish Map</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+    .map-container {
+      position: relative;
+      height: 600px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .parish-button {
+      padding: 8px 12px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      position: relative;
+    }
+    .parish-button:hover {
+      background: #f0f0f0;
+    }
+    .parish-button.active {
+      background: #4169E1;
+      color: white;
+      border-color: #2a4cbb;
+    }
+    .parish-count {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 20px;
+      height: 20px;
+      background: #4169E1;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .jamaica-map {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #e0e8f0;
+    }
+    .parish {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      background: rgba(100,100,100,0.8);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      transform: translate(-50%, -50%);
+      transition: all 0.3s;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .parish.selected {
+      background: #4169E1;
+      transform: translate(-50%, -50%) scale(1.2);
+      box-shadow: 0 0 0 4px rgba(65,105,225,0.3);
+    }
+    .parish-label {
+      position: absolute;
+      white-space: nowrap;
+      font-size: 12px;
+      transform: translateX(-50%);
+      font-weight: 500;
+    }
+    .parish-label.selected {
+      font-weight: bold;
+      color: #4169E1;
+    }
+    .station {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+      transform: translate(-50%, -50%);
+      z-index: 1;
+    }
+    .station.active {
+      background: #22c55e;
+    }
+    .station.issue {
+      background: #ef4444;
+    }
+    .station:hover {
+      transform: translate(-50%, -50%) scale(1.3);
+      z-index: 3;
+    }
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+      font-size: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .badge-item {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .badge-blue {
+      background: rgba(65,105,225,0.1);
+      color: #4169E1;
+      border: 1px solid rgba(65,105,225,0.2);
+    }
+    .badge-green {
+      background: rgba(34,197,94,0.1);
+      color: #22c55e;
+      border: 1px solid rgba(34,197,94,0.2);
+    }
+    .badge-purple {
+      background: rgba(139,92,246,0.1);
+      color: #8b5cf6;
+      border: 1px solid rgba(139,92,246,0.2);
+    }
+    /* Jamaica outline shape */
+    .jamaica-outline {
+      position: absolute;
+      width: 80%;
+      height: 60%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #d3dde7;
+      border: 2px solid #555;
+      border-radius: 40% 60% 50% 40%;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Jamaica Electoral Map - Parish Regions</h1>
+    <p>This interactive map shows polling stations across Jamaica, organized by parish regions. Select a parish to highlight its boundaries and view stations in that area.</p>
+    
+    <div class="controls">
+      <button id="all-parishes" class="parish-button active">All Parishes</button>
+      <div id="parish-buttons"></div>
+    </div>
+    
+    <div class="map-container">
+      <div class="jamaica-map" id="map">
+        <div class="jamaica-outline"></div>
+        <!-- Parishes will be added dynamically -->
+      </div>
+      
+      <div class="legend">
+        <div style="font-weight:bold; margin-bottom:8px;">Map Legend</div>
+        <div class="legend-item">
+          <div class="legend-color" style="background:#22c55e;"></div>
+          <span>Active Station</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background:#ef4444;"></div>
+          <span>Issue Reported</span>
+        </div>
+      </div>
+      
+      <div class="badge">
+        <div id="parish-badge" class="badge-item badge-green">
+          <strong>Viewing:</strong> All Parishes
+        </div>
+        <div id="station-badge" class="badge-item badge-purple">
+          <strong>Stations:</strong> <span id="station-count">0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Parish data with approximate positions and station counts
+      const parishes = [
+        { id: 1, name: "Kingston", stationCount: 35, x: 70, y: 60 },
+        { id: 2, name: "St. Andrew", stationCount: 42, x: 65, y: 55 },
+        { id: 3, name: "St. Catherine", stationCount: 38, x: 60, y: 50 },
+        { id: 4, name: "Clarendon", stationCount: 27, x: 50, y: 55 },
+        { id: 5, name: "Manchester", stationCount: 23, x: 40, y: 50 },
+        { id: 6, name: "St. Elizabeth", stationCount: 19, x: 30, y: 60 },
+        { id: 7, name: "Westmoreland", stationCount: 18, x: 20, y: 70 },
+        { id: 8, name: "Hanover", stationCount: 14, x: 20, y: 30 },
+        { id: 9, name: "St. James", stationCount: 29, x: 30, y: 25 },
+        { id: 10, name: "Trelawny", stationCount: 16, x: 40, y: 30 },
+        { id: 11, name: "St. Ann", stationCount: 22, x: 50, y: 35 },
+        { id: 12, name: "St. Mary", stationCount: 17, x: 60, y: 30 },
+        { id: 13, name: "Portland", stationCount: 15, x: 70, y: 25 },
+        { id: 14, name: "St. Thomas", stationCount: 16, x: 75, y: 40 }
+      ];
+      
+      // Get DOM elements
+      const map = document.getElementById('map');
+      const parishButtons = document.getElementById('parish-buttons');
+      const allParishesButton = document.getElementById('all-parishes');
+      const parishBadge = document.getElementById('parish-badge');
+      const stationCount = document.getElementById('station-count');
+      
+      let selectedParish = null;
+      const stations = [];
+      
+      // Create parish buttons
+      parishes.forEach(parish => {
+        const button = document.createElement('button');
+        button.className = 'parish-button';
+        button.textContent = parish.name;
+        button.setAttribute('data-parish', parish.name);
+        
+        const countBadge = document.createElement('span');
+        countBadge.className = 'parish-count';
+        countBadge.textContent = parish.stationCount;
+        button.appendChild(countBadge);
+        
+        button.addEventListener('click', () => selectParish(parish.name));
+        parishButtons.appendChild(button);
+      });
+      
+      // All parishes button
+      allParishesButton.addEventListener('click', () => selectParish(null));
+      
+      // Add parishes to map
+      parishes.forEach(parish => {
+        // Parish marker
+        const parishEl = document.createElement('div');
+        parishEl.className = 'parish';
+        parishEl.textContent = parish.id;
+        parishEl.style.left = `${parish.x}%`;
+        parishEl.style.top = `${parish.y}%`;
+        parishEl.setAttribute('data-parish', parish.name);
+        parishEl.title = parish.name;
+        parishEl.addEventListener('click', () => selectParish(parish.name));
+        
+        // Parish label
+        const labelEl = document.createElement('div');
+        labelEl.className = 'parish-label';
+        labelEl.textContent = parish.name;
+        labelEl.style.left = `${parish.x}%`;
+        labelEl.style.top = `${parish.y + 7}%`;
+        labelEl.setAttribute('data-parish', parish.name);
+        
+        map.appendChild(parishEl);
+        map.appendChild(labelEl);
+        
+        // Add station markers
+        const stationCount = Math.min(5, Math.floor(parish.stationCount * 0.15));
+        for (let i = 0; i < stationCount; i++) {
+          const stationEl = document.createElement('div');
+          const isActive = Math.random() > 0.2;
+          stationEl.className = `station ${isActive ? 'active' : 'issue'}`;
+          
+          // Position around parish center with offset
+          const offsetX = (Math.random() - 0.5) * 15;
+          const offsetY = (Math.random() - 0.5) * 15;
+          stationEl.style.left = `${parish.x + offsetX}%`;
+          stationEl.style.top = `${parish.y + offsetY}%`;
+          stationEl.setAttribute('data-parish', parish.name);
+          stationEl.title = `${parish.name} Polling Station ${i+1} - ${isActive ? 'Active' : 'Issue Reported'}`;
+          
+          stations.push(stationEl);
+          map.appendChild(stationEl);
+        }
+      });
+      
+      // Update station count display
+      updateStationCount();
+      
+      // Select a parish
+      function selectParish(parishName) {
+        selectedParish = parishName;
+        
+        // Update button states
+        document.querySelectorAll('.parish-button').forEach(button => {
+          if ((button.getAttribute('data-parish') === parishName) || 
+              (button.id === 'all-parishes' && parishName === null)) {
+            button.classList.add('active');
+          } else {
+            button.classList.remove('active');
+          }
+        });
+        
+        // Update parish markers and labels
+        document.querySelectorAll('.parish').forEach(marker => {
+          if (marker.getAttribute('data-parish') === parishName) {
+            marker.classList.add('selected');
+          } else {
+            marker.classList.remove('selected');
+          }
+        });
+        
+        document.querySelectorAll('.parish-label').forEach(label => {
+          if (label.getAttribute('data-parish') === parishName) {
+            label.classList.add('selected');
+          } else {
+            label.classList.remove('selected');
+          }
+        });
+        
+        // Show/hide stations
+        stations.forEach(station => {
+          if (parishName === null || station.getAttribute('data-parish') === parishName) {
+            station.style.display = 'block';
+          } else {
+            station.style.display = 'none';
+          }
+        });
+        
+        // Update info badges
+        if (parishName) {
+          parishBadge.className = 'badge-item badge-blue';
+          parishBadge.innerHTML = `<strong>Parish:</strong> ${parishName}`;
+        } else {
+          parishBadge.className = 'badge-item badge-green';
+          parishBadge.innerHTML = '<strong>Viewing:</strong> All Parishes';
+        }
+        
+        updateStationCount();
+      }
+      
+      function updateStationCount() {
+        const visibleCount = Array.from(stations).filter(s => 
+          s.style.display !== 'none'
+        ).length;
+        
+        stationCount.textContent = visibleCount;
+      }
+    });
+  </script>
+</body>
+</html>
