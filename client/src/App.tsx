@@ -45,7 +45,7 @@ import ProjectDashboard from "@/pages/project-management/dashboard";
 import ProjectDetail from "@/pages/project-management/detail";
 import ProjectEdit from "@/pages/project-management/edit";
 import ProjectNew from "@/pages/project-management/new";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
 import { initGlobalErrorHandlers } from "@/lib/error-logger";

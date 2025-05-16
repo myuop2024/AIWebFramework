@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, User as AuthUser } from "@/hooks/useAuth";
 import { Menu, Search, Bell, MessageSquare, User } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -19,8 +19,11 @@ interface TopNavigationProps {
 
 export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
+  
+  // Create a safe user object that's properly typed
+  const userData = user as AuthUser | undefined;
 
   // Set page title based on location
   useEffect(() => {
@@ -54,10 +57,9 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
 
   const [, navigate] = useLocation();
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await logoutMutation.mutateAsync();
-      navigate("/login"); // Redirect to login page after successful logout
+      logout(); // This uses Replit Auth logout
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -80,8 +82,10 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
           </button>
           <div className="ml-2 md:ml-0">
             <h2 className="text-lg font-medium text-gray-800">{pageTitle}</h2>
-            {user && (
-              <p className="text-sm text-gray-500">Welcome back, <span>{user.firstName}</span></p>
+            {userData && (
+              <p className="text-sm text-gray-500">
+                Welcome back, <span>{userData.firstName || userData.email || 'Observer'}</span>
+              </p>
             )}
           </div>
         </div>

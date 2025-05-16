@@ -50,11 +50,12 @@ export const idCardTemplates = pgTable("id_card_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  template: jsonb("template").notNull(),
+  template: jsonb("template_data").notNull(),
   isActive: boolean("is_active").default(false),
+  securityFeatures: jsonb("security_features"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by").references(() => users.id),
+  // Removed created_by as it doesn't exist in the current database
 });
 
 export const idCardTemplateSchema = createInsertSchema(idCardTemplates)
