@@ -3,17 +3,8 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Import with fallback to handle potential path resolution issues
-let logClientError: (error: any) => Promise<void>;
-try {
-  // Try the standard import first
-  const errorLogger = require('@/lib/error-logger');
-  logClientError = errorLogger.logClientError;
-} catch (error) {
-  // Fallback to relative path if the alias import fails
-  const errorLogger = require('../../lib/error-logger');
-  logClientError = errorLogger.logClientError;
-}
+// Import directly using ES modules
+import { logClientError } from '@/lib/error-logger';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

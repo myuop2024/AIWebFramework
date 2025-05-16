@@ -171,5 +171,6 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   );
 };
 
-// Default export for lazy loading
+// Export both as named and default export to support both import styles
+export { InteractiveMap };
 export default InteractiveMap;

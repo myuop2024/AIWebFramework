@@ -29,14 +29,20 @@ export function errorHandler(err: any, req: Request, res: Response, _next: NextF
   const statusCode = err.statusCode || err.status || 500;
   
   // Log based on error severity
-  if (statusCode >= 500) {
-    logger.error('Server error in API request', err, requestInfo);
-  } else if (statusCode >= 400) {
-    logger.warn('Client error in API request', { 
-      message: err.message,
-      stack: err.stack,
-      ...requestInfo 
-    });
+  try {
+    if (statusCode >= 500) {
+      logger.error('Server error in API request', err, requestInfo);
+    } else if (statusCode >= 400) {
+      logger.warn('Client error in API request', { 
+        message: err.message,
+        stack: err.stack,
+        ...requestInfo 
+      });
+    }
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+    // Fallback to basic console logging
+    console.error('Original error:', err.message);
   }
   
   // Return error response
