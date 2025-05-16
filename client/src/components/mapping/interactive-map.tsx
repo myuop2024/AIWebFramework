@@ -171,6 +171,5 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   );
 };
 
-// Export both as named and default export to support both import styles
-export { InteractiveMap };
+// Export only as default to avoid duplicate export errors
 export default InteractiveMap;
