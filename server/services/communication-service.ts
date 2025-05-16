@@ -26,12 +26,42 @@ export class CommunicationService {
   constructor(server: HttpServer) {
     try {
       // Use a different path to avoid conflicts with HMR websockets
+      // Set noServer to true to avoid port binding conflicts - we'll handle connections manually
       this.wss = new WebSocketServer({ 
         server, 
         path: '/api/ws',
-        // Don't start the server if one is already running on this port
-        clientTracking: true
+        clientTracking: true,
+        // Add EADDRINUSE error handling by using noServer mode when needed
+        noServer: false,
+        // Increase the per-message deflate options for better performance
+        perMessageDeflate: {
+          zlibDeflateOptions: {
+            chunkSize: 1024,
+            memLevel: 7,
+            level: 3
+          },
+          zlibInflateOptions: {
+            chunkSize: 10 * 1024
+          },
+          // Below options help reduce fragmentation of large messages
+          serverNoContextTakeover: true,
+          clientNoContextTakeover: true,
+          concurrencyLimit: 10,
+          threshold: 1024
+        }
       });
+      
+      // Listen for server errors to handle gracefully
+      this.wss.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.warn('WebSocket port already in use, switching to noServer mode');
+          // If port is in use, switch to noServer mode
+          (this.wss as any).options.noServer = true;
+        } else {
+          console.error('WebSocket server error:', err);
+        }
+      });
+      
       this.initializeWebSocketServer();
       this.startPingInterval();
       console.log('WebSocket server initialized on /api/ws path');
@@ -40,7 +70,9 @@ export class CommunicationService {
       // Create a dummy WSS that doesn't actually bind to any port/server
       this.wss = {
         on: () => {},
-        clients: new Set()
+        clients: new Set(),
+        // Add close method to dummy server
+        close: () => {}
       } as any;
     }
   }

@@ -22,6 +22,7 @@ interface HereMapsApi {
     DomMarker: any;
     Group: any;
     Polyline: any;
+    Polygon: any;
   };
   geo: {
     LineString: any;

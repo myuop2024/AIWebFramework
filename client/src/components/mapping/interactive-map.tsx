@@ -16,9 +16,19 @@ interface MapRoute {
   width?: number;
 }
 
+interface MapPolygon {
+  id: number;
+  points: Array<{ lat: number; lng: number }>;
+  color?: string;
+  fillOpacity?: number;
+  lineWidth?: number;
+  onClick?: (id: number) => void;
+}
+
 interface InteractiveMapProps {
   markers?: MapMarker[];
   routes?: MapRoute[];
+  polygons?: MapPolygon[];
   centerLat?: number;
   centerLng?: number;
   zoom?: number;
@@ -39,6 +49,7 @@ interface InteractiveMapProps {
 export const InteractiveMap = forwardRef(({
   markers = [],
   routes = [],
+  polygons = [],
   centerLat = 18.0179, // Kingston, Jamaica default
   centerLng = -76.8099,
   zoom = 12,
@@ -55,6 +66,7 @@ export const InteractiveMap = forwardRef(({
   const [map, setMap] = useState<any>(null);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [mapRoutes, setMapRoutes] = useState<any[]>([]);
+  const [mapPolygons, setMapPolygons] = useState<any[]>([]);
 
   // Initialize map when HERE API is loaded
   useEffect(() => {
@@ -344,6 +356,94 @@ export const InteractiveMap = forwardRef(({
       map.setZoom(zoom);
     }
   }, [map, zoom]);
+  
+  // Add or update polygons when they change
+  useEffect(() => {
+    if (!map || !H) return;
+    
+    // Safely remove previous polygons
+    if (mapPolygons.length > 0) {
+      try {
+        mapPolygons.forEach(polygon => {
+          try {
+            if (map.getObjects().includes(polygon)) {
+              map.removeObject(polygon);
+            }
+          } catch (e) {
+            console.log('Could not remove old polygon:', e);
+          }
+        });
+      } catch (e) {
+        console.log('Error cleaning up old polygons:', e);
+      }
+    }
+    
+    const newMapPolygons: any[] = [];
+    
+    // Add new polygons (regions)
+    polygons.forEach(polygon => {
+      if (polygon.points.length < 3) {
+        console.warn('Polygon needs at least 3 points:', polygon);
+        return; // Skip invalid polygons
+      }
+      
+      try {
+        // Create line string for the polygon boundary
+        const lineString = new H.geo.LineString();
+        
+        // Add points to line string
+        polygon.points.forEach(point => {
+          lineString.pushPoint({ lat: point.lat, lng: point.lng });
+        });
+        
+        // Create polygon with styling (using type assertion since H.map.Polygon might not be in the type definition)
+        const herePolygon = new (H as any).map.Polygon(lineString, {
+          style: {
+            lineWidth: polygon.lineWidth || 2,
+            strokeColor: polygon.color || '#0063FF',
+            fillColor: polygon.color || '#0063FF',
+            lineJoin: 'round',
+            lineCap: 'round',
+            opacity: polygon.fillOpacity || 0.3
+          },
+          data: polygon.id
+        });
+        
+        // Add click event if provided
+        if (polygon.onClick) {
+          herePolygon.addEventListener('tap', () => {
+            polygon.onClick?.(polygon.id);
+          });
+        }
+        
+        // Add to map and track
+        map.addObject(herePolygon);
+        newMapPolygons.push(herePolygon);
+      } catch (error) {
+        console.error('Error creating polygon:', error);
+      }
+    });
+    
+    setMapPolygons(newMapPolygons);
+    
+    return () => {
+      try {
+        if (map) {
+          newMapPolygons.forEach(polygon => {
+            try {
+              if (map.getObjects().includes(polygon)) {
+                map.removeObject(polygon);
+              }
+            } catch (e) {
+              console.log('Error removing polygon in cleanup:', e);
+            }
+          });
+        }
+      } catch (e) {
+        console.log('Error in polygons cleanup:', e);
+      }
+    };
+  }, [map, H, polygons]);
 
   if (loadError) {
     return (

@@ -67,6 +67,7 @@ function Router() {
       <ProtectedRoute path="/polling-stations/create" component={React.lazy(() => import("@/pages/polling-stations/create"))} />
       <ProtectedRoute path="/polling-stations/import" component={React.lazy(() => import("@/pages/polling-stations/import"))} />
       <ProtectedRoute path="/polling-stations/map" component={React.lazy(() => import("@/pages/polling-stations/map"))} />
+      <ProtectedRoute path="/polling-stations/regions" component={React.lazy(() => import("@/pages/polling-stations/regions"))} />
       <ProtectedRoute path="/polling-stations/export" component={React.lazy(() => import("@/pages/polling-stations/export"))} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />

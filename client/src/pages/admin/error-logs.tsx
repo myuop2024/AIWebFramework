@@ -30,7 +30,7 @@ interface FilterOptions {
   source?: string;
   level?: string;
   userId?: number;
-  resolved?: boolean;
+  resolved?: boolean | string; // Allow string type for API query parameters
   startDate?: string;
   endDate?: string;
   searchTerm?: string;
@@ -52,9 +52,9 @@ function ErrorLogsPage() {
   React.useEffect(() => {
     // Update filters based on active tab
     if (activeTab === 'resolved') {
-      setFilters(f => ({ ...f, resolved: 'true' }));
+      setFilters(f => ({ ...f, resolved: 'true' as string }));
     } else if (activeTab === 'unresolved') {
-      setFilters(f => ({ ...f, resolved: 'false' }));
+      setFilters(f => ({ ...f, resolved: 'false' as string }));
     } else {
       // For 'all' tab, remove resolved filter
       setFilters(f => {
@@ -364,7 +364,7 @@ function ErrorLogsPage() {
                           <SelectValue placeholder="All levels" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All levels</SelectItem>
+                          <SelectItem value="all_levels">All levels</SelectItem>
                           <SelectItem value="error">Error</SelectItem>
                           <SelectItem value="warning">Warning</SelectItem>
                           <SelectItem value="info">Info</SelectItem>
@@ -384,7 +384,7 @@ function ErrorLogsPage() {
                           <SelectValue placeholder="All sources" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All sources</SelectItem>
+                          <SelectItem value="all_sources">All sources</SelectItem>
                           <SelectItem value="client">Client</SelectItem>
                           <SelectItem value="server">Server</SelectItem>
                           <SelectItem value="express">Express</SelectItem>

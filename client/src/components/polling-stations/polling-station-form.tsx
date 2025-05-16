@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import AddressAutocomplete from "@/components/address/address-autocomplete";
@@ -22,8 +22,8 @@ const pollingStationFormSchema = z.object({
   contactPhone: z.string().optional(),
   address: z.string().min(5, { message: "Address is required" }),
   city: z.string().min(2, { message: "City is required" }),
-  state: z.string().min(2, { message: "State/Parish is required" }),
-  zipCode: z.string().optional(),
+  state: z.string().min(2, { message: "Parish is required" }),
+  zipCode: z.string().optional().describe("Post Office Region"),
   notes: z.string().optional(),
   latitude: z.coerce.number().min(-90).max(90),
   longitude: z.coerce.number().min(-180).max(180),
@@ -249,10 +249,13 @@ export default function PollingStationForm({
               name="zipCode"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Postal/Zip Code</FormLabel>
+                  <FormLabel>Post Office Region</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Postal code" />
+                    <Input {...field} placeholder="Post office region" />
                   </FormControl>
+                  <FormDescription className="text-xs">
+                    The postal code or post office region for the polling station's mailing address
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

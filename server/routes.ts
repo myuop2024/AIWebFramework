@@ -34,6 +34,7 @@ import supervisorRoutes from './routes/supervisor-routes';
 import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
 import projectManagementRoutes from './routes/project-management-routes';
+import regionsRoutes from './routes/regions-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
@@ -2102,6 +2103,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Add project management routes
   app.use('/api/project-management', projectManagementRoutes);
   console.log('Project management routes registered at /api/project-management');
+  
+  // Add regions routes for parish/polling station regions
+  app.use('/api/regions', regionsRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used

@@ -11,6 +11,7 @@ import path from "path";
 import { requestLogger, errorMonitor } from "./middleware/error-monitoring";
 import logger from "./utils/logger";
 import { attachUser } from "./middleware/auth";
+import { Server } from "http";
 
 /**
  * Initialize default data in the database
@@ -215,8 +216,9 @@ app.use((req, res, next) => {
     }
 
     // Start the server with port fallback mechanism
-    const startPort = parseInt(process.env.PORT || "5000");
-    const maxPortAttempts = 10;
+    // Using alternative port since 5000 seems to be in use
+    const startPort = parseInt(process.env.PORT || "3100");
+    const maxPortAttempts = 15;
     let port = startPort;
     let serverStarted = false;
     
