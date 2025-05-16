@@ -1,5 +1,5 @@
 import express from "express";
-import { hasRole } from "../middleware/auth";
+import { hasRoleMiddleware as hasRole } from "../middleware/auth";
 import { storage } from "../storage";
 import { z } from "zod";
 import multer from 'multer';

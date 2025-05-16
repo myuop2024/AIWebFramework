@@ -1,63 +1,71 @@
-/**
- * Authentication middleware for protecting routes
- */
+import { Request, Response, NextFunction } from "express";
+import { storage } from "../storage";
+import logger from "../utils/logger";
 
-import { Request, Response, NextFunction } from 'express';
-import { User } from '@shared/schema';
-import logger from '../utils/logger';
-
-/**
- * Enhanced type definition for Express Request with typed user property
- */
+// Add type declaration to modify the Request type
 declare global {
   namespace Express {
     interface Request {
-      user?: Omit<User, 'password'>;
+      locals?: {
+        user?: any;
+      };
     }
   }
 }
 
 /**
- * Middleware to ensure a user is authenticated
- * Enforces type safety with session values
+ * Middleware to attach user to the request
+ * Uses req.user.claims.sub from Replit Auth if it exists
+ */
+export const attachUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.user && (req.user as any).claims?.sub) {
+      const userId = (req.user as any).claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user) {
+        // Store user directly in request for easy access
+        req.locals = req.locals || {};
+        req.locals.user = user;
+        logger.debug(`Attached user ${userId} to request`);
+      } else {
+        logger.warn(`User ${userId} found in session but not in database`);
+      }
+    }
+    next();
+  } catch (error) {
+    logger.error("Error attaching user to request", error);
+    next();
+  }
+};
+
+/**
+ * Middleware to ensure user is authenticated
+ * This is a utility middleware that can be used in addition to 
+ * the Replit Auth isAuthenticated middleware
  */
 export const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // Check if session exists and userId is set
-  if (!req.session || !req.session.userId) {
-    logger.warn('Authentication failed: userId is undefined, session exists: ' + !!req.session);
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    logger.warn('Unauthorized access attempt', {
+      path: req.path, 
+      ip: req.ip
+    });
     return res.status(401).json({ 
       message: 'Unauthorized', 
-      details: 'Session expired or invalid. Please log in again.' 
+      details: 'You must be logged in to access this resource' 
     });
   }
   
-  // Additional validation that userId is a number
-  if (typeof req.session.userId !== 'number') {
-    const metadata = {
-      sessionData: {
-        userId: req.session.userId,
-        typeOfUserId: typeof req.session.userId
-      },
-      requestPath: req.path
-    };
-    logger.error('Authentication error: userId exists but is not a number', new Error('Type validation failed'), metadata);
-    return res.status(401).json({ 
-      message: 'Unauthorized', 
-      details: 'Invalid session format. Please log in again.' 
-    });
-  }
-  
-  // Valid session, continue to next middleware or route handler
+  // User is authenticated, continue to the next middleware or route handler
   next();
 };
 
 /**
- * Middleware to ensure a user is an admin
- * Includes enhanced error handling and logging
+ * Middleware to ensure user has admin role
  */
 export const ensureAdmin = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Admin check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -65,81 +73,55 @@ export const ensureAdmin = async (req: Request, res: Response, next: NextFunctio
     });
   }
   
-  // Then check if the user has admin role
-  const role = req.session.role;
-  if (role !== 'admin' && role !== 'director') { // Allow directors same access as admins
-    logger.warn(`Admin access denied: User ${req.session.userId} with role ${role} attempted admin action`);
-    return res.status(403).json({ 
-      message: 'Forbidden', 
-      details: 'You do not have permission to access this resource' 
-    });
-  }
-  
-  // Admin user, continue to next middleware or route handler
-  next();
-};
-
-/**
- * Middleware to attach current user information to request
- * Useful for routes that need user context but don't require authentication
- */
-export const attachUser = async (req: Request, res: Response, next: NextFunction) => {
-  if (req.session && req.session.userId) {
-    // User is authenticated, get full user info from database
-    try {
-      // Note: Here we would typically query the database for the full user object
-      // For now, we just add the user ID from the session
-      req.user = {
-        id: req.session.userId,
-        observerId: req.session.observerId || '',
-        role: req.session.role || 'user',
-        // Add other fields here as needed
-      } as Omit<User, 'password'>;
-    } catch (error) {
-      logger.error('Error attaching user to request', error as Error);
-      // Continue without attaching user rather than failing the request
-    }
-  }
-  
-  next();
-};
-
-/**
- * Middleware to ensure a user has one of the specified roles
- * @param allowedRoles Array of roles that are allowed to access the route
- */
-export const hasRole = (allowedRoles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    // First ensure the user is authenticated
-    if (!req.session || !req.session.userId) {
-      logger.warn('Role check failed: No authenticated user');
+  try {
+    // Get user ID from Replit Auth session
+    const userId = (req.user as any).claims?.sub;
+    
+    if (!userId) {
+      logger.warn('Admin check failed: No user ID in session');
       return res.status(401).json({ 
         message: 'Unauthorized', 
-        details: 'You must be logged in to access this resource' 
+        details: 'Invalid session, please login again' 
       });
     }
     
-    // Then check if the user has one of the allowed roles
-    const role = req.session.role;
-    if (!role || !allowedRoles.includes(role)) {
-      logger.warn(`Access denied: User ${req.session.userId} with role ${role} attempted restricted action. Allowed roles: ${allowedRoles.join(', ')}`);
+    // Get user from database
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      logger.warn(`Admin check failed: User ${userId} not found in database`);
+      return res.status(404).json({ 
+        message: 'Not Found', 
+        details: 'User not found' 
+      });
+    }
+    
+    // Check if user has admin role
+    if (user.role !== 'admin') {
+      logger.warn(`Admin access denied: User ${userId} with role ${user.role} attempted to access admin resource`);
       return res.status(403).json({ 
         message: 'Forbidden', 
         details: 'You do not have permission to access this resource' 
       });
     }
     
-    // User has allowed role, continue to next middleware or route handler
+    // User is an admin, continue to next middleware or route handler
     next();
-  };
+  } catch (error) {
+    logger.error('Error in admin authorization middleware', error);
+    return res.status(500).json({ 
+      message: 'Internal Server Error', 
+      details: 'An error occurred while checking permissions' 
+    });
+  }
 };
 
 /**
- * Middleware to ensure user is a supervisor or higher role
+ * Middleware to ensure user has supervisor role or higher
  */
 export const ensureSupervisor = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Supervisor check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -147,28 +129,55 @@ export const ensureSupervisor = async (req: Request, res: Response, next: NextFu
     });
   }
   
-  // Then check if the user has supervisor or higher role
-  const role = req.session.role;
-  const allowedRoles = ['supervisor', 'admin', 'director'];
-  
-  if (!role || !allowedRoles.includes(role)) {
-    logger.warn(`Supervisor access denied: User ${req.session.userId} with role ${role} attempted supervisor action`);
-    return res.status(403).json({ 
-      message: 'Forbidden', 
-      details: 'You do not have permission to access this resource' 
+  try {
+    // Get user ID from Replit Auth session
+    const userId = (req.user as any).claims?.sub;
+    
+    if (!userId) {
+      logger.warn('Supervisor check failed: No user ID in session');
+      return res.status(401).json({ 
+        message: 'Unauthorized', 
+        details: 'Invalid session, please login again' 
+      });
+    }
+    
+    // Get user from database
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      logger.warn(`Supervisor check failed: User ${userId} not found in database`);
+      return res.status(404).json({ 
+        message: 'Not Found', 
+        details: 'User not found' 
+      });
+    }
+    
+    // Check if user has supervisor or admin role
+    if (user.role !== 'supervisor' && user.role !== 'admin') {
+      logger.warn(`Supervisor access denied: User ${userId} with role ${user.role} attempted to access supervisor resource`);
+      return res.status(403).json({ 
+        message: 'Forbidden', 
+        details: 'You do not have permission to access this resource' 
+      });
+    }
+    
+    // User is a supervisor, continue to next middleware or route handler
+    next();
+  } catch (error) {
+    logger.error('Error in supervisor authorization middleware', error);
+    return res.status(500).json({ 
+      message: 'Internal Server Error', 
+      details: 'An error occurred while checking permissions' 
     });
   }
-  
-  // Supervisor or higher, continue to next middleware or route handler
-  next();
 };
 
 /**
- * Middleware to ensure user is a roving observer or higher role
+ * Middleware to ensure user has roving observer role or higher
  */
 export const ensureRovingObserver = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Roving observer check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -176,28 +185,117 @@ export const ensureRovingObserver = async (req: Request, res: Response, next: Ne
     });
   }
   
-  // Then check if the user has roving observer or higher role
-  const role = req.session.role;
-  const allowedRoles = ['roving_observer', 'supervisor', 'admin', 'director'];
-  
-  if (!role || !allowedRoles.includes(role)) {
-    logger.warn(`Roving observer access denied: User ${req.session.userId} with role ${role} attempted roving observer action`);
-    return res.status(403).json({ 
-      message: 'Forbidden', 
-      details: 'You do not have permission to access this resource' 
+  try {
+    // Get user ID from Replit Auth session
+    const userId = (req.user as any).claims?.sub;
+    
+    if (!userId) {
+      logger.warn('Roving observer check failed: No user ID in session');
+      return res.status(401).json({ 
+        message: 'Unauthorized', 
+        details: 'Invalid session, please login again' 
+      });
+    }
+    
+    // Get user from database
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      logger.warn(`Roving observer check failed: User ${userId} not found in database`);
+      return res.status(404).json({ 
+        message: 'Not Found', 
+        details: 'User not found' 
+      });
+    }
+    
+    // Check if user has roving_observer, supervisor, or admin role
+    if (user.role !== 'roving_observer' && user.role !== 'supervisor' && user.role !== 'admin') {
+      logger.warn(`Roving observer access denied: User ${userId} with role ${user.role} attempted to access roving observer resource`);
+      return res.status(403).json({ 
+        message: 'Forbidden', 
+        details: 'You do not have permission to access this resource' 
+      });
+    }
+    
+    // User is a roving observer, continue to next middleware or route handler
+    next();
+  } catch (error) {
+    logger.error('Error in roving observer authorization middleware', error);
+    return res.status(500).json({ 
+      message: 'Internal Server Error', 
+      details: 'An error occurred while checking permissions' 
     });
   }
-  
-  // Roving observer or higher, continue to next middleware or route handler
-  next();
 };
 
 /**
  * Middleware to ensure user is a director (highest role)
  */
+/**
+ * Middleware factory to check if user has one of the specified roles
+ * @param allowedRoles Array of roles that are allowed to access the resource
+ * @returns Express middleware function
+ */
+export const hasRoleMiddleware = (allowedRoles: string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    // First ensure the user is authenticated
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      logger.warn('Role check failed: No authenticated user');
+      return res.status(401).json({ 
+        message: 'Unauthorized', 
+        details: 'You must be logged in to access this resource' 
+      });
+    }
+    
+    try {
+      // Get user ID from Replit Auth session
+      const userId = (req.user as any).claims?.sub;
+      
+      if (!userId) {
+        logger.warn('Role check failed: No user ID in session');
+        return res.status(401).json({ 
+          message: 'Unauthorized', 
+          details: 'Invalid session, please login again' 
+        });
+      }
+      
+      // Get user from database
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        logger.warn(`Role check failed: User ${userId} not found in database`);
+        return res.status(404).json({ 
+          message: 'Not Found', 
+          details: 'User not found' 
+        });
+      }
+      
+      // Check if user has one of the allowed roles
+      if (!allowedRoles.includes(user.role)) {
+        logger.warn(`Access denied: User ${userId} with role ${user.role} attempted to access resource requiring one of ${allowedRoles.join(', ')}`);
+        return res.status(403).json({ 
+          message: 'Forbidden', 
+          details: 'You do not have permission to access this resource' 
+        });
+      }
+      
+      // User has required role, attach user to request and continue
+      req.locals = req.locals || {};
+      req.locals.user = user;
+      next();
+    } catch (error) {
+      logger.error('Error in role middleware:', error);
+      return res.status(500).json({ 
+        message: 'Internal Server Error', 
+        details: 'An error occurred while checking permissions' 
+      });
+    }
+  };
+};
+
 export const ensureDirector = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Director check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -205,19 +303,60 @@ export const ensureDirector = async (req: Request, res: Response, next: NextFunc
     });
   }
   
-  // Then check if the user has director role or admin role (admin has highest permissions)
-  const role = req.session.role;
-  
-  if (role !== 'director' && role !== 'admin') {
-    logger.warn(`Director/admin access denied: User ${req.session.userId} with role ${role} attempted privileged action`);
-    return res.status(403).json({ 
-      message: 'Forbidden', 
-      details: 'You do not have permission to access this resource' 
+  try {
+    // Get user ID from Replit Auth session
+    const userId = (req.user as any).claims?.sub;
+    
+    if (!userId) {
+      logger.warn('Director check failed: No user ID in session');
+      return res.status(401).json({ 
+        message: 'Unauthorized', 
+        details: 'Invalid session, please login again' 
+      });
+    }
+    
+    // Get user from database
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      logger.warn(`Director check failed: User ${userId} not found in database`);
+      return res.status(404).json({ 
+        message: 'Not Found', 
+        details: 'User not found' 
+      });
+    }
+    
+    // Check if user has director or admin role
+    if (user.role !== 'director' && user.role !== 'admin') {
+      logger.warn(`Director access denied: User ${userId} with role ${user.role} attempted to access director resource`);
+      return res.status(403).json({ 
+        message: 'Forbidden', 
+        details: 'You do not have permission to access this resource' 
+      });
+    }
+    
+    // User is a director, continue to next middleware or route handler
+    next();
+  } catch (error) {
+    logger.error('Error in director authorization middleware', error);
+    return res.status(500).json({ 
+      message: 'Internal Server Error', 
+      details: 'An error occurred while checking permissions' 
     });
   }
+};
+
+/**
+ * Utility function to check if a user has a specific role
+ */
+export const checkUserRole = (user: any, roles: string | string[]): boolean => {
+  if (!user || !user.role) return false;
   
-  // Director, continue to next middleware or route handler
-  next();
+  if (Array.isArray(roles)) {
+    return roles.includes(user.role);
+  }
+  
+  return user.role === roles;
 };
 
 export default {
@@ -227,5 +366,6 @@ export default {
   ensureRovingObserver,
   ensureDirector,
   attachUser,
-  hasRole
+  checkUserRole,
+  hasRole: hasRoleMiddleware
 };

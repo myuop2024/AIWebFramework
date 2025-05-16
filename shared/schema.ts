@@ -1,8 +1,33 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real, doublePrecision, date, varchar, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  jsonb,
+  real,
+  doublePrecision,
+  date,
+  varchar,
+  pgEnum,
+  index,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { TrainingSystemConfig } from "./moodle-types";
 import { relations } from "drizzle-orm";
+
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 // System settings for global application configuration
 export const systemSettings = pgTable("system_settings", {
@@ -20,21 +45,42 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings)
     updatedAt: true,
   });
 
+// ID Card templates table
+export const idCardTemplates = pgTable("id_card_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  template: jsonb("template").notNull(),
+  isActive: boolean("is_active").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+export const idCardTemplateSchema = createInsertSchema(idCardTemplates)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
 // Users table
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
-  observerId: text("observer_id").notNull().unique(),
+  id: varchar("id").primaryKey().notNull(),
+  username: text("username").unique(),
+  password: text("password"),
+  email: text("email").unique(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  observerId: text("observer_id").unique(),
   phoneNumber: text("phone_number"),
-  role: text("role").notNull().default("observer"),
-  verificationStatus: text("verification_status").notNull().default("pending"),
+  role: text("role").default("observer"),
+  verificationStatus: text("verification_status").default("pending"),
   deviceId: text("device_id"),
-  trainingStatus: text("training_status").notNull().default("pending"),
+  trainingStatus: text("training_status").default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
+  profileImageUrl: varchar("profile_image_url"),
+  updatedAt: timestamp("updated_at").defaultNow(),
   // Two-factor authentication fields
   twoFactorSecret: text("two_factor_secret"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
@@ -46,7 +92,7 @@ export const users = pgTable("users", {
 // User profile table for KYC
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   // Contact Information
   address: text("address"),
   city: text("city"),
@@ -77,7 +123,7 @@ export const userProfiles = pgTable("user_profiles", {
 // Documents table
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   documentType: text("document_type").notNull(),
   documentUrl: text("document_url").notNull(),
   ocrText: text("ocr_text"),
@@ -104,7 +150,7 @@ export const pollingStations = pgTable("polling_stations", {
 // User-polling station assignments
 export const assignments = pgTable("assignments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
   isPrimary: boolean("is_primary").default(false),
   assignedAt: timestamp("assigned_at").defaultNow(),
@@ -129,13 +175,13 @@ export const formTemplates = pgTable("form_templates", {
   category: text("category").notNull(), // e.g., "polling", "incident", "observation"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
 });
 
 // Observer reports
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
   templateId: integer("template_id").references(() => formTemplates.id),
   reportType: text("report_type").notNull(),
@@ -144,7 +190,7 @@ export const reports = pgTable("reports", {
   status: text("status").notNull().default("submitted"),
   submittedAt: timestamp("submitted_at").defaultNow(),
   reviewedAt: timestamp("reviewed_at"),
-  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
   checkinTime: timestamp("checkin_time"),
   checkoutTime: timestamp("checkout_time"),
   mileageTraveled: integer("mileage_traveled"),
@@ -181,7 +227,7 @@ export const events = pgTable("events", {
 // User event participation
 export const eventParticipation = pgTable("event_participation", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   eventId: integer("event_id").notNull().references(() => events.id),
   status: text("status").notNull().default("registered"),
   completionStatus: text("completion_status"),
@@ -213,8 +259,8 @@ export const newsEntries = pgTable("news_entries", {
 // Chat messages
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").references(() => users.id),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  receiverId: varchar("receiver_id").references(() => users.id),
   content: text("content").notNull(),
   type: text("type").default("text").notNull(), // text, file, image, system
   read: boolean("read").default(false),
@@ -233,7 +279,7 @@ export const registrationForms = pgTable("registration_forms", {
   fields: jsonb("fields").notNull(), // Array of registration field definitions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
   version: integer("version").default(1).notNull(),
 });
 
@@ -241,7 +287,7 @@ export const registrationForms = pgTable("registration_forms", {
 export const userImportLogs = pgTable("user_import_logs", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
-  importedBy: integer("imported_by").references(() => users.id),
+  importedBy: varchar("imported_by").references(() => users.id),
   totalRecords: integer("total_records").notNull(),
   successCount: integer("success_count").notNull(),
   failureCount: integer("failure_count").notNull(),
@@ -269,7 +315,7 @@ export const trainingIntegrations = pgTable("training_integrations", {
 // User training content progress
 export const trainingProgress = pgTable("training_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   contentId: text("content_id").notNull(), // External content ID (e.g., moodle_course_123)
   contentType: text("content_type").notNull(), // course, meeting, webinar, etc.
   source: text("source").notNull(), // moodle, zoom, internal
@@ -283,7 +329,7 @@ export const trainingProgress = pgTable("training_progress", {
 // External user mappings
 export const externalUserMappings = pgTable("external_user_mappings", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   system: text("system").notNull(), // moodle, zoom, etc.
   externalId: text("external_id").notNull(), // ID in the external system
   externalUsername: text("external_username"),
@@ -296,10 +342,10 @@ export const externalUserMappings = pgTable("external_user_mappings", {
 // Pending profile photo approvals
 export const photoApprovals = pgTable("photo_approvals", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
   photoUrl: text("photo_url").notNull(),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
-  approvedBy: integer("approved_by").references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   processedAt: timestamp("processed_at"),
   notes: text("notes"),
@@ -341,14 +387,155 @@ export const verificationSettingsSchema = z.object({
 
 export type VerificationSettings = z.infer<typeof verificationSettingsSchema>;
 
+// ID Card Templates are already defined above
+
+// Project management insert schemas will be defined later after the tables are created
+
+// Error logs for application monitoring
+export const errorLogs = pgTable("error_logs", {
+  id: serial("id").primaryKey(),
+  level: text("level").notNull(), // error, warning, info
+  message: text("message").notNull(),
+  stack: text("stack"),
+  metadata: jsonb("metadata"),
+  userId: varchar("user_id").references(() => users.id),
+  userAgent: text("user_agent"),
+  path: text("path"),
+  timestamp: timestamp("timestamp").defaultNow(),
+  resolved: boolean("resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+});
+
+export type ErrorLog = typeof errorLogs.$inferSelect;
+export type InsertErrorLog = typeof errorLogs.$inferInsert;
+
+export interface ErrorLogQueryOptions {
+  limit?: number;
+  offset?: number;
+  startDate?: Date;
+  endDate?: Date;
+  level?: string;
+  resolved?: boolean;
+  userId?: string;
+  path?: string;
+}
+
+export interface ErrorLogDeleteCriteria {
+  olderThan?: Date;
+  level?: string;
+  resolved?: boolean;
+}
+
+// Project Management Enums
+export const projectStatusEnum = ["planning", "active", "completed", "on_hold", "cancelled"] as const;
+export const taskStatusEnum = ["pending", "in_progress", "completed", "blocked", "cancelled"] as const;
+export const taskPriorityEnum = ["low", "medium", "high", "urgent"] as const;
+export const projectMemberRoleEnum = ["owner", "manager", "member", "viewer"] as const;
+
+// Project Management Tables
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  status: text("status").default("planning").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const milestones = pgTable("milestones", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  dueDate: date("due_date"),
+  status: text("status").default("pending").notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const taskCategories = pgTable("task_categories", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id),
+  name: text("name").notNull(),
+  color: text("color"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id),
+  milestoneId: integer("milestone_id").references(() => milestones.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").default("pending").notNull(),
+  priority: text("priority").default("medium"),
+  dueDate: date("due_date"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  categoryId: integer("category_id").references(() => taskCategories.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const projectMembers = pgTable("project_members", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").references(() => projects.id),
+  userId: varchar("user_id").references(() => users.id),
+  role: text("role").default("member"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const taskComments = pgTable("task_comments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id),
+  userId: varchar("user_id").references(() => users.id),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const taskAttachments = pgTable("task_attachments", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id),
+  userId: varchar("user_id").references(() => users.id),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileType: text("file_type"),
+  fileSize: integer("file_size"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const taskHistory = pgTable("task_history", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id),
+  userId: varchar("user_id").references(() => users.id),
+  action: text("action").notNull(),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define insert schemas
 export const insertUserSchema = createInsertSchema(users)
   .omit({
     id: true,
     createdAt: true,
+    updatedAt: true,
     observerId: true,
     verificationStatus: true,
     trainingStatus: true,
+  });
+
+export const upsertUserSchema = createInsertSchema(users)
+  .omit({
+    createdAt: true,
+    updatedAt: true,
   });
 
 export const insertUserProfileSchema = createInsertSchema(userProfiles)
@@ -403,7 +590,6 @@ export const insertReportAttachmentSchema = createInsertSchema(reportAttachments
     uploadedAt: true,
     ocrProcessed: true,
     ocrText: true,
-    encryptionIv: true,
   });
 
 export const insertEventSchema = createInsertSchema(events)
@@ -414,8 +600,6 @@ export const insertEventSchema = createInsertSchema(events)
 export const insertEventParticipationSchema = createInsertSchema(eventParticipation)
   .omit({
     id: true,
-    completionStatus: true,
-    certificateUrl: true,
   });
 
 export const insertFaqSchema = createInsertSchema(faqEntries)
@@ -435,161 +619,52 @@ export const insertNewsSchema = createInsertSchema(newsEntries)
 export const insertMessageSchema = createInsertSchema(messages)
   .omit({
     id: true,
-    read: true,
     sentAt: true,
   });
 
-export const messageTypeSchema = z.enum(messageTypeEnum);
-
-// Field definitions for form templates
-export const formFieldSchema = z.object({
-  id: z.string().uuid().optional(),
-  type: z.enum([
-    'text', 'textarea', 'number', 'email', 'tel', 'date', 'time', 'datetime',
-    'checkbox', 'radio', 'select', 'file', 'image', 'signature', 'location'
-  ]),
-  label: z.string().min(1, "Label is required"),
-  name: z.string().min(1, "Field name is required"),
-  required: z.boolean().default(false),
-  placeholder: z.string().optional(),
-  helpText: z.string().optional(),
-  options: z.array(
-    z.object({
-      label: z.string(),
-      value: z.string(),
-    })
-  ).optional(),
-  validation: z.object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-    pattern: z.string().optional(),
-    customMessage: z.string().optional(),
-  }).optional(),
-  defaultValue: z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.array(z.string()),
-    z.null()
-  ]).optional().nullable(),
-  isEncrypted: z.boolean().default(false),
-  isHidden: z.boolean().default(false),
-  order: z.number().optional(),
-  conditional: z.object({
-    field: z.string(),
-    value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())])
-  }).optional(),
-});
-
-export const formSectionSchema = z.object({
-  id: z.string().uuid().optional(),
-  title: z.string().min(1, "Section title is required"),
-  description: z.string().optional(),
-  order: z.number().optional(),
-  fields: z.array(formFieldSchema)
-});
-
-export const formTemplateExtendedSchema = z.object({
-  name: z.string().min(3, "Name is required and must be at least 3 characters"),
-  description: z.string().optional(),
-  category: z.string().min(1, "Category is required"),
-  sections: z.array(formSectionSchema),
-  isEncrypted: z.boolean().default(false),
-  createdBy: z.number().optional(),
-});
-
-export const loginUserSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-  deviceId: z.string().optional(), // Device fingerprint for security binding
-});
-
-// Define types
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-
-export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
-export type UserProfile = typeof userProfiles.$inferSelect;
-
-export type InsertDocument = z.infer<typeof insertDocumentSchema>;
-export type Document = typeof documents.$inferSelect;
-
-export type InsertPollingStation = z.infer<typeof insertPollingStationSchema>;
-export type PollingStation = typeof pollingStations.$inferSelect;
-
-export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
-export type Assignment = typeof assignments.$inferSelect;
-
-export type InsertFormTemplate = z.infer<typeof insertFormTemplateSchema>;
-export type FormTemplate = typeof formTemplates.$inferSelect;
-
-export type InsertReport = z.infer<typeof insertReportSchema>;
-export type Report = typeof reports.$inferSelect;
-
-export type InsertReportAttachment = z.infer<typeof insertReportAttachmentSchema>;
-export type ReportAttachment = typeof reportAttachments.$inferSelect;
-
-export type InsertEvent = z.infer<typeof insertEventSchema>;
-export type Event = typeof events.$inferSelect;
-
-export type InsertEventParticipation = z.infer<typeof insertEventParticipationSchema>;
-export type EventParticipation = typeof eventParticipation.$inferSelect;
-
-// Error logging system
-export const errorLogs = pgTable("error_logs", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  source: text("source").notNull(), // 'client', 'server', 'socket', 'webrtc', etc.
-  level: text("level").notNull().default("error"), // 'error', 'warning', 'info'
-  message: text("message").notNull(),
-  code: text("code"),
-  stack: text("stack"),
-  url: text("url"), // For client-side errors
-  userAgent: text("user_agent"),
-  path: text("path"), // Route or API endpoint
-  method: text("method"), // HTTP method
-  context: jsonb("context"), // Additional contextual data
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  resolved: boolean("resolved").default(false),
-  resolvedAt: timestamp("resolved_at"),
-  resolvedBy: integer("resolved_by").references(() => users.id),
-  resolutionNotes: text("resolution_notes"),
-});
-
-export const insertErrorLogSchema = createInsertSchema(errorLogs)
+export const insertRegistrationFormSchema = createInsertSchema(registrationForms)
   .omit({
     id: true,
     createdAt: true,
-    resolved: true,
-    resolvedAt: true,
-    resolvedBy: true,
-    resolutionNotes: true,
+    updatedAt: true,
   });
 
-//ErrorLog types moved to line 722
+export const insertUserImportLogSchema = createInsertSchema(userImportLogs)
+  .omit({
+    id: true,
+    importedAt: true,
+  });
 
-export type InsertFaq = z.infer<typeof insertFaqSchema>;
-export type Faq = typeof faqEntries.$inferSelect;
+// Bulk user import schema
+export const bulkUserImportSchema = z.object({
+  users: z.array(
+    z.object({
+      username: z.string().optional(),
+      email: z.string().email(),
+      firstName: z.string(),
+      lastName: z.string(),
+      phoneNumber: z.string().optional(),
+      role: z.string().default("observer"),
+    })
+  ),
+  options: z.object({
+    verificationStatus: z.string().default("pending"),
+    sendWelcomeEmail: z.boolean().default(false),
+    generateTemporaryPasswords: z.boolean().default(true),
+    autoGenerateObserverIds: z.boolean().default(true),
+  }).optional(),
+});
 
-export type InsertNews = z.infer<typeof insertNewsSchema>;
-export type News = typeof newsEntries.$inferSelect;
-
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
-export type Message = typeof messages.$inferSelect;
-
-// Training schema
 export const insertTrainingIntegrationSchema = createInsertSchema(trainingIntegrations)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
-    lastSyncTime: true,
   });
 
 export const insertTrainingProgressSchema = createInsertSchema(trainingProgress)
   .omit({
     id: true,
-    completedAt: true,
     lastAccessedAt: true,
   });
 
@@ -603,576 +678,272 @@ export const insertExternalUserMappingSchema = createInsertSchema(externalUserMa
 export const insertPhotoApprovalSchema = createInsertSchema(photoApprovals)
   .omit({
     id: true,
-    status: true,
-    approvedBy: true,
     createdAt: true,
     processedAt: true,
   });
 
-// Registration form schemas
-export const registrationFieldSchema = z.object({
-  id: z.string().uuid().optional(),
-  type: z.enum([
-    'text', 'textarea', 'number', 'email', 'tel', 'date', 'select',
-    'checkbox', 'radio', 'file'
-  ]),
-  label: z.string().min(1, "Label is required"),
-  name: z.string().min(1, "Field name is required"),
-  required: z.boolean().default(false),
-  placeholder: z.string().optional(),
-  helpText: z.string().optional(),
-  options: z.array(
-    z.object({
-      label: z.string(),
-      value: z.string(),
-    })
-  ).optional(),
-  validation: z.object({
-    min: z.number().optional(),
-    max: z.number().optional(),
-    pattern: z.string().optional(),
-    customMessage: z.string().optional(),
-  }).optional(),
-  defaultValue: z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.array(z.string()),
-    z.null()
-  ]).optional().nullable(),
-  isHidden: z.boolean().default(false),
-  order: z.number().optional(),
-  isUserEditable: z.boolean().default(true), // Can users modify this field after registration
-  isAdminOnly: z.boolean().default(false), // Only visible/editable by admins
-  mapToUserField: z.string().optional(), // Maps to a field in the users table
-  mapToProfileField: z.string().optional(), // Maps to a field in the userProfiles table
+// Login schema
+export const loginUserSchema = z.object({
+  username: z.string().min(1, { message: "Username is required" }),
+  password: z.string().min(1, { message: "Password is required" }),
+  deviceId: z.string().optional(),
 });
 
-export const insertRegistrationFormSchema = createInsertSchema(registrationForms)
-  .omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    version: true,
-  })
-  .extend({
-    fields: z.array(registrationFieldSchema)
-  });
-
-export const insertUserImportLogSchema = createInsertSchema(userImportLogs)
-  .omit({
-    id: true,
-    importedAt: true,
-  });
-
-export const bulkUserImportSchema = z.object({
-  users: z.array(z.record(z.string(), z.any())),
-  options: z.object({
-    verificationStatus: z.enum(['pending', 'verified', 'rejected']).default('pending'),
-    sendWelcomeEmails: z.boolean().default(false),
-    generatePasswords: z.boolean().default(true),
-    defaultRole: z.enum(['observer', 'admin', 'supervisor']).default('observer'),
-  }),
-  mappings: z.record(z.string(), z.string()).optional(), // Maps CSV/form headers to user fields
-});
-
-export type LoginUser = z.infer<typeof loginUserSchema>;
-
-// Registration form types
-export type RegistrationField = z.infer<typeof registrationFieldSchema>;
-export type InsertRegistrationForm = z.infer<typeof insertRegistrationFormSchema>;
-export type RegistrationForm = typeof registrationForms.$inferSelect;
-
-export type InsertUserImportLog = z.infer<typeof insertUserImportLogSchema>;
-export type UserImportLog = typeof userImportLogs.$inferSelect;
-export type BulkUserImport = z.infer<typeof bulkUserImportSchema>;
-
-// Define types for training integration
-export type InsertTrainingIntegration = z.infer<typeof insertTrainingIntegrationSchema>;
-export type TrainingIntegration = typeof trainingIntegrations.$inferSelect;
-
-export type InsertTrainingProgress = z.infer<typeof insertTrainingProgressSchema>;
-export type TrainingProgress = typeof trainingProgress.$inferSelect;
-
-export type InsertExternalUserMapping = z.infer<typeof insertExternalUserMappingSchema>;
-export type ExternalUserMapping = typeof externalUserMappings.$inferSelect;
-
-// ID Card Templates table
-export const idCardTemplates = pgTable("id_card_templates", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  templateData: jsonb("template_data").notNull(),
-  isActive: boolean("is_active").notNull().default(false),
-  securityFeatures: jsonb("security_features").notNull().default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// ID card template schema for validation
-export const idCardTemplateSchema = z.object({
-  name: z.string().min(1, "Template name is required"),
-  description: z.string().optional(),
-  templateData: z.object({
-    background: z.string().optional(), // Base64 or URL for background
-    logo: z.string().optional(), // Base64 or URL for logo
-    elements: z.array(z.object({
-      type: z.enum(['text', 'image', 'qrcode', 'barcode']),
-      x: z.number(), // X position
-      y: z.number(), // Y position
-      width: z.number().optional(),
-      height: z.number().optional(),
-      value: z.string().optional(), // Static text or data field name
-      fieldName: z.string().optional(), // Reference to user data field
-      style: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
-    })),
-    dimensions: z.object({
-      width: z.number(),
-      height: z.number(),
-    }),
-  }),
-  securityFeatures: z.object({
-    watermark: z.string().optional(),
-    hologram: z.string().optional(),
-    qrEncryption: z.boolean().optional(),
-    otherFeatures: z.array(z.string()).optional(),
-  }).optional().default({}),
-  isActive: z.boolean().optional().default(false),
-});
-
-// Create insert schema for ID card templates
-export const insertIdCardTemplateSchema = createInsertSchema(idCardTemplates);
-
-// Form field type definitions
-export type FormField = z.infer<typeof formFieldSchema>;
-export type FormSection = z.infer<typeof formSectionSchema>;
-export type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
-
-// ID card template types
-export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
-export type InsertIdCardTemplate = z.infer<typeof insertIdCardTemplateSchema>;
-
-// Photo approval types
-export type PhotoApproval = typeof photoApprovals.$inferSelect;
-export type InsertPhotoApproval = z.infer<typeof insertPhotoApprovalSchema>;
-
-// System setting types
+// Type definitions
 export type SystemSetting = typeof systemSettings.$inferSelect;
-export type InsertSystemSetting = z.infer<typeof insertSystemSettingSchema>;
+export type InsertSystemSetting = typeof insertSystemSettingSchema._type;
 
-// Error log types
-export type ErrorLog = typeof errorLogs.$inferSelect;
-export type InsertErrorLog = z.infer<typeof insertErrorLogSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof insertUserSchema._type;
+export type UpsertUser = typeof upsertUserSchema._type;
+export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
+export type InsertIdCardTemplate = typeof idCardTemplateSchema._type;
 
-// Error log query options
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = typeof insertUserProfileSchema._type;
+
+export type Document = typeof documents.$inferSelect;
+export type InsertDocument = typeof insertDocumentSchema._type;
+
+export type PollingStation = typeof pollingStations.$inferSelect;
+export type InsertPollingStation = typeof insertPollingStationSchema._type;
+
+export type Assignment = typeof assignments.$inferSelect;
+export type InsertAssignment = typeof insertAssignmentSchema._type;
+
+export type FormTemplate = typeof formTemplates.$inferSelect;
+export type InsertFormTemplate = typeof insertFormTemplateSchema._type;
+
+export type Report = typeof reports.$inferSelect;
+export type InsertReport = typeof insertReportSchema._type;
+
+export type ReportAttachment = typeof reportAttachments.$inferSelect;
+export type InsertReportAttachment = typeof insertReportAttachmentSchema._type;
+
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = typeof insertEventSchema._type;
+
+export type EventParticipation = typeof eventParticipation.$inferSelect;
+export type InsertEventParticipation = typeof insertEventParticipationSchema._type;
+
+export type Faq = typeof faqEntries.$inferSelect;
+export type InsertFaq = typeof insertFaqSchema._type;
+
+export type News = typeof newsEntries.$inferSelect;
+export type InsertNews = typeof insertNewsSchema._type;
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof insertMessageSchema._type;
+
+export type RegistrationForm = typeof registrationForms.$inferSelect;
+export type InsertRegistrationForm = typeof insertRegistrationFormSchema._type;
+
+export type UserImportLog = typeof userImportLogs.$inferSelect;
+export type InsertUserImportLog = typeof insertUserImportLogSchema._type;
+
+export type TrainingIntegration = typeof trainingIntegrations.$inferSelect;
+export type InsertTrainingIntegration = typeof insertTrainingIntegrationSchema._type;
+
+export type TrainingProgress = typeof trainingProgress.$inferSelect;
+export type InsertTrainingProgress = typeof insertTrainingProgressSchema._type;
+
+export type ExternalUserMapping = typeof externalUserMappings.$inferSelect;
+export type InsertExternalUserMapping = typeof insertExternalUserMappingSchema._type;
+
+export type PhotoApproval = typeof photoApprovals.$inferSelect;
+export type InsertPhotoApproval = typeof insertPhotoApprovalSchema._type;
+
+export type Session = typeof sessions.$inferSelect;
+
+// Form template extended schema
+export const formFieldSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  label: z.string(),
+  required: z.boolean().default(false),
+  options: z.array(z.object({
+    label: z.string(),
+    value: z.string()
+  })).optional(),
+  defaultValue: z.any().optional(),
+  placeholder: z.string().optional(),
+  description: z.string().optional(),
+});
+
+export const formTemplateExtendedSchema = insertFormTemplateSchema.extend({
+  fields: z.array(formFieldSchema)
+});
+
+// ErrorLog types and schema
 export interface ErrorLogQueryOptions {
-  status?: 'open' | 'resolved';
-  level?: string;
-  source?: string;
-  search?: string;
+  limit?: number;
+  offset?: number;
+  status?: string;
   startDate?: Date;
   endDate?: Date;
-  page?: number;
-  limit?: number;
-  userId?: number;
-}
-
-// Error log delete criteria
-export interface ErrorLogDeleteCriteria {
-  ids?: number[];
-  status?: 'open' | 'resolved';
-  level?: string;
+  errorType?: string;
   source?: string;
-  olderThan?: Date;
 }
 
-// ---------------------------------
-// Project Management System Schema
-// ---------------------------------
+export interface ErrorLogDeleteCriteria {
+  resolvedOnly?: boolean;
+  olderThan?: Date;
+  errorType?: string;
+  source?: string;
+}
 
-// Project status enum
-export const projectStatusEnum = pgEnum('project_status', [
-  'planning', 'active', 'on_hold', 'completed', 'cancelled'
-]);
+// Type definitions for login data
+export type LoginData = z.infer<typeof loginUserSchema>;
 
-// Task priority enum
-export const taskPriorityEnum = pgEnum('task_priority', [
-  'low', 'medium', 'high', 'urgent'
-]);
-
-// Task status enum
-export const taskStatusEnum = pgEnum('task_status', [
-  'backlog', 'to_do', 'in_progress', 'in_review', 'done'
-]);
-
-// Projects table
-export const projects = pgTable('projects', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  startDate: timestamp('start_date'),
-  endDate: timestamp('end_date'),
-  status: projectStatusEnum('status').default('planning').notNull(),
-  ownerId: integer('owner_id').references(() => users.id).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  deleted: boolean('deleted').default(false),
-  metadata: jsonb('metadata'),
-  priority: integer('priority').default(0),
-  code: text('code'),
-});
-
-// Project members (users assigned to projects)
-export const projectMembers = pgTable('project_members', {
-  id: serial('id').primaryKey(),
-  projectId: integer('project_id').references(() => projects.id).notNull(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  role: text('role').default('member').notNull(),
-  joinedAt: timestamp('joined_at').defaultNow(),
-  leftAt: timestamp('left_at'),
-  isActive: boolean('is_active').default(true),
-});
-
-// Task Categories
-export const taskCategories = pgTable('task_categories', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  color: text('color').default('#808080'),
-  description: text('description'),
-  projectId: integer('project_id').references(() => projects.id),
-  isGlobal: boolean('is_global').default(false),
-});
-
-// Milestones table
-export const milestones = pgTable('milestones', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  projectId: integer('project_id').references(() => projects.id).notNull(),
-  dueDate: timestamp('due_date'),
-  completedAt: timestamp('completed_at'),
-  status: text('status').default('active').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  sortOrder: integer('sort_order').default(0),
-});
-
-// Tasks table - have to declare type first to avoid circular dependency issue
-export type TasksTable = typeof tasks;
-
-// Tasks table
-export const tasks = pgTable('tasks', {
-  id: serial('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  status: taskStatusEnum('status').default('backlog').notNull(),
-  priority: taskPriorityEnum('priority').default('medium').notNull(),
-  projectId: integer('project_id').references(() => projects.id).notNull(),
-  assigneeId: integer('assignee_id').references(() => users.id),
-  reporterId: integer('reporter_id').references(() => users.id).notNull(),
-  milestoneId: integer('milestone_id').references(() => milestones.id),
-  parentTaskId: integer('parent_task_id'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  startDate: timestamp('start_date'),
-  dueDate: timestamp('due_date'),
-  estimatedHours: real('estimated_hours'),
-  actualHours: real('actual_hours'),
-  completedAt: timestamp('completed_at'),
-  sortOrder: integer('sort_order').default(0),
-  metadata: jsonb('metadata'),
-  stationId: integer('station_id').references(() => pollingStations.id),
-});
-
-// Task Category Assignments (many-to-many between tasks and categories)
-export const taskCategoryAssignments = pgTable('task_category_assignments', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id).notNull(),
-  categoryId: integer('category_id').references(() => taskCategories.id).notNull(),
-});
-
-// Task Comments
-export const taskComments = pgTable('task_comments', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id).notNull(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  content: text('content').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  isPrivate: boolean('is_private').default(false),
-  mentionedUserIds: integer('mentioned_user_ids').array(),
-  attachments: jsonb('attachments'),
-});
-
-// Task Attachments
-export const taskAttachments = pgTable('task_attachments', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id).notNull(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  filename: text('filename').notNull(),
-  originalFilename: text('original_filename').notNull(),
-  fileSize: integer('file_size').notNull(),
-  mimeType: text('mime_type').notNull(),
-  uploadedAt: timestamp('uploaded_at').defaultNow(),
-  description: text('description'),
-  metadata: jsonb('metadata'),
-});
-
-// Task History
-export const taskHistory = pgTable('task_history', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id).notNull(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  field: text('field').notNull(),
-  oldValue: jsonb('old_value'),
-  newValue: jsonb('new_value'),
-  changedAt: timestamp('changed_at').defaultNow(),
-});
-
-// Audit Logs for detailed tracking of user activities
-export const auditLogs = pgTable('audit_logs', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id),
-  action: text('action').notNull(),
-  resourceType: text('resource_type').notNull(),
-  resourceId: text('resource_id'),
-  details: jsonb('details'),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  timestamp: timestamp('timestamp').defaultNow(),
-  status: text('status').default('success'),
-  relatedEntityId: integer('related_entity_id'), // For related resources or context
-});
-
-// Project Templates for frequently created project types
-export const projectTemplates = pgTable('project_templates', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  createdById: integer('created_by_id').references(() => users.id),
-  isPublic: boolean('is_public').default(false),
-  templateData: jsonb('template_data').notNull(), // Contains tasks, milestones, etc.
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  category: text('category'),
-  tags: text('tags').array(),
-  usageCount: integer('usage_count').default(0),
-});
-
-// Time Tracking entries for tasks
-export const timeEntries = pgTable('time_entries', {
-  id: serial('id').primaryKey(),
-  taskId: integer('task_id').references(() => tasks.id).notNull(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  description: text('description'),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
-  duration: integer('duration'), // Duration in seconds
-  billable: boolean('billable').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  isRunning: boolean('is_running').default(false),
-});
-
-// Dashboard Widgets configuration
-export const dashboardWidgets = pgTable('dashboard_widgets', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  widgetType: text('widget_type').notNull(),
-  position: integer('position').default(0),
-  size: text('size').default('medium'),
-  settings: jsonb('settings').default({}),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-  title: text('title'),
-  isActive: boolean('is_active').default(true),
-});
-
-// Set up relations
-export const projectsRelations = relations(projects, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [projects.ownerId],
-    references: [users.id],
-  }),
-  tasks: many(tasks),
-  milestones: many(milestones),
-  members: many(projectMembers),
+// Export relations
+export const userRelations = relations(users, ({ many, one }) => ({
+  profiles: many(userProfiles),
+  documents: many(documents),
+  assignments: many(assignments),
+  reports: many(reports),
+  eventParticipations: many(eventParticipation),
+  sentMessages: many(messages, { relationName: "sender" }),
+  receivedMessages: many(messages, { relationName: "receiver" }),
 }));
 
-export const projectMembersRelations = relations(projectMembers, ({ one }) => ({
-  project: one(projects, {
-    fields: [projectMembers.projectId],
-    references: [projects.id],
-  }),
+export const userProfileRelations = relations(userProfiles, ({ one }) => ({
   user: one(users, {
-    fields: [projectMembers.userId],
+    fields: [userProfiles.userId],
     references: [users.id],
   }),
 }));
 
-export const taskCategoriesRelations = relations(taskCategories, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [taskCategories.projectId],
-    references: [projects.id],
+export const documentRelations = relations(documents, ({ one }) => ({
+  user: one(users, {
+    fields: [documents.userId],
+    references: [users.id],
   }),
-  tasks: many(taskCategoryAssignments),
 }));
 
-export const tasksRelations = relations(tasks, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [tasks.projectId],
-    references: [projects.id],
-  }),
-  assignee: one(users, {
-    fields: [tasks.assigneeId],
+export const pollingStationRelations = relations(pollingStations, ({ many }) => ({
+  assignments: many(assignments),
+  reports: many(reports),
+}));
+
+export const assignmentRelations = relations(assignments, ({ one }) => ({
+  user: one(users, {
+    fields: [assignments.userId],
     references: [users.id],
   }),
-  reporter: one(users, {
-    fields: [tasks.reporterId],
-    references: [users.id],
-  }),
-  milestone: one(milestones, {
-    fields: [tasks.milestoneId],
-    references: [milestones.id],
-  }),
-  // We'll handle the parent-child relationship differently
-  // by using the parentTaskId as a custom relation
-  subtasks: many(tasks, { relationName: 'subtasks' }),
-  categories: many(taskCategoryAssignments),
-  comments: many(taskComments),
-  attachments: many(taskAttachments),
-  station: one(pollingStations, {
-    fields: [tasks.stationId],
+  pollingStation: one(pollingStations, {
+    fields: [assignments.stationId],
     references: [pollingStations.id],
   }),
 }));
 
-export const taskCategoryAssignmentsRelations = relations(taskCategoryAssignments, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskCategoryAssignments.taskId],
-    references: [tasks.id],
-  }),
-  category: one(taskCategories, {
-    fields: [taskCategoryAssignments.categoryId],
-    references: [taskCategories.id],
-  }),
-}));
-
-export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskComments.taskId],
-    references: [tasks.id],
-  }),
-  user: one(users, {
-    fields: [taskComments.userId],
+export const formTemplateRelations = relations(formTemplates, ({ many, one }) => ({
+  reports: many(reports),
+  createdBy: one(users, {
+    fields: [formTemplates.createdBy],
     references: [users.id],
   }),
 }));
 
-export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskAttachments.taskId],
-    references: [tasks.id],
-  }),
+export const reportRelations = relations(reports, ({ one, many }) => ({
   user: one(users, {
-    fields: [taskAttachments.userId],
+    fields: [reports.userId],
+    references: [users.id],
+  }),
+  pollingStation: one(pollingStations, {
+    fields: [reports.stationId],
+    references: [pollingStations.id],
+  }),
+  template: one(formTemplates, {
+    fields: [reports.templateId],
+    references: [formTemplates.id],
+  }),
+  reviewer: one(users, {
+    fields: [reports.reviewedBy],
+    references: [users.id],
+  }),
+  attachments: many(reportAttachments),
+}));
+
+export const reportAttachmentRelations = relations(reportAttachments, ({ one }) => ({
+  report: one(reports, {
+    fields: [reportAttachments.reportId],
+    references: [reports.id],
+  }),
+}));
+
+export const eventRelations = relations(events, ({ many }) => ({
+  participations: many(eventParticipation),
+}));
+
+export const eventParticipationRelations = relations(eventParticipation, ({ one }) => ({
+  user: one(users, {
+    fields: [eventParticipation.userId],
+    references: [users.id],
+  }),
+  event: one(events, {
+    fields: [eventParticipation.eventId],
+    references: [events.id],
+  }),
+}));
+
+export const messageRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "sender",
+  }),
+  receiver: one(users, {
+    fields: [messages.receiverId],
+    references: [users.id],
+    relationName: "receiver",
+  }),
+}));
+
+export const registrationFormRelations = relations(registrationForms, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [registrationForms.createdBy],
     references: [users.id],
   }),
 }));
 
-export const milestonesRelations = relations(milestones, ({ one, many }) => ({
-  project: one(projects, {
-    fields: [milestones.projectId],
-    references: [projects.id],
-  }),
-  tasks: many(tasks),
-}));
-
-export const taskHistoryRelations = relations(taskHistory, ({ one }) => ({
-  task: one(tasks, {
-    fields: [taskHistory.taskId],
-    references: [tasks.id],
-  }),
-  user: one(users, {
-    fields: [taskHistory.userId],
+export const userImportLogRelations = relations(userImportLogs, ({ one }) => ({
+  importedBy: one(users, {
+    fields: [userImportLogs.importedBy],
     references: [users.id],
   }),
 }));
 
-// Create insert schemas for all tables
-export const insertProjectSchema = createInsertSchema(projects).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const trainingProgressRelations = relations(trainingProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [trainingProgress.userId],
+    references: [users.id],
+  }),
+}));
 
-export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({
-  id: true,
-  joinedAt: true,
-});
+export const externalUserMappingRelations = relations(externalUserMappings, ({ one }) => ({
+  user: one(users, {
+    fields: [externalUserMappings.userId],
+    references: [users.id],
+  }),
+}));
 
-export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({
-  id: true,
-});
+export const photoApprovalRelations = relations(photoApprovals, ({ one }) => ({
+  user: one(users, {
+    fields: [photoApprovals.userId],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [photoApprovals.approvedBy],
+    references: [users.id],
+  }),
+}));
 
-export const insertTaskSchema = createInsertSchema(tasks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  completedAt: true,
-});
-
-export const insertTaskCategoryAssignmentSchema = createInsertSchema(taskCategoryAssignments).omit({
-  id: true,
-});
-
-export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({
-  id: true,
-  uploadedAt: true,
-});
-
-export const insertMilestoneSchema = createInsertSchema(milestones).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  completedAt: true,
-});
-
-export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({
-  id: true,
-  changedAt: true,
-});
-
-// Define types for the schemas
-export type InsertProject = z.infer<typeof insertProjectSchema>;
-export type Project = typeof projects.$inferSelect;
-
-export type InsertProjectMember = z.infer<typeof insertProjectMemberSchema>;
-export type ProjectMember = typeof projectMembers.$inferSelect;
-
-export type InsertTaskCategory = z.infer<typeof insertTaskCategorySchema>;
-export type TaskCategory = typeof taskCategories.$inferSelect;
-
-export type InsertTask = z.infer<typeof insertTaskSchema>;
-export type Task = typeof tasks.$inferSelect;
-
-export type InsertTaskCategoryAssignment = z.infer<typeof insertTaskCategoryAssignmentSchema>;
-export type TaskCategoryAssignment = typeof taskCategoryAssignments.$inferSelect;
-
-export type InsertTaskComment = z.infer<typeof insertTaskCommentSchema>;
-export type TaskComment = typeof taskComments.$inferSelect;
-
-export type InsertTaskAttachment = z.infer<typeof insertTaskAttachmentSchema>;
-export type TaskAttachment = typeof taskAttachments.$inferSelect;
-
-export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
-export type Milestone = typeof milestones.$inferSelect;
-
-export type InsertTaskHistory = z.infer<typeof insertTaskHistorySchema>;
-export type TaskHistory = typeof taskHistory.$inferSelect;
+// Project management insert schemas
+export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertMilestoneSchema = createInsertSchema(milestones).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true });
+export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true });

@@ -1,10 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import session from "express-session";
-import pgSession from "connect-pg-simple";
+import { setupAuth, getSession } from "./replitAuth";
 import { pool, checkDbConnection } from "./db";
-import MemoryStore from "memorystore";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
 import path from "path";
@@ -12,6 +10,7 @@ import { requestLogger, errorMonitor } from "./middleware/error-monitoring";
 import logger from "./utils/logger";
 import { attachUser } from "./middleware/auth";
 import { Server } from "http";
+import passport from "passport";
 
 /**
  * Initialize default data in the database
@@ -35,26 +34,6 @@ async function initializeDefaultData() {
   }
 }
 
-// Create session store
-const createSessionStore = () => {
-  try {
-    // Try to use PostgreSQL session store
-    const PostgreSQLStore = pgSession(session);
-    return new PostgreSQLStore({
-      pool,
-      tableName: 'session',
-      createTableIfMissing: true
-    });
-  } catch (error) {
-    // Fallback to memory store if PostgreSQL fails
-    console.error('Failed to create PostgreSQL session store, falling back to memory store:', error);
-    const MemorySessionStore = MemoryStore(session);
-    return new MemorySessionStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
-  }
-};
-
 const app = express();
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
@@ -76,44 +55,21 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 // Make storage available to all routes via app.locals
 app.locals.storage = storage;
 
-// Set up session middleware with enhanced debugging
-const sessionStore = createSessionStore();
-
-// Log session store type
-logger.info('Using session store type: ' + (sessionStore.constructor ? sessionStore.constructor.name : 'Unknown'));
-
-app.use(session({
-  store: sessionStore,
-  secret: process.env.SESSION_SECRET || 'observer-session-secret',
-  resave: true, // Changed to true to ensure session is saved on each request
-  saveUninitialized: false,
-  name: 'observer.sid', // Custom name to avoid conflicts
-  cookie: { 
-    secure: false, // Set to false to ensure cookies work in development environment
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/'
-  }
-}));
+// Apply error monitoring middleware
+app.use(requestLogger);
 
 // Add session debug middleware
 app.use((req, res, next) => {
   // Log session data on each request
-  logger.debug('Session state', { 
-    sessionId: req.sessionID,
-    hasUserId: !!req.session.userId,
-    path: req.path 
-  });
-  
+  if (req.session) {
+    logger.debug('Session state', { 
+      sessionID: req.sessionID,
+      isAuthenticated: req.isAuthenticated?.() || false,
+      path: req.path 
+    });
+  }
   next();
 });
-
-// Apply error monitoring middleware
-app.use(requestLogger);
-
-// Attach user information to request when available
-app.use(attachUser);
 
 // Original request logging middleware - will keep for now for backward compatibility
 app.use((req, res, next) => {
@@ -163,6 +119,10 @@ app.use((req, res, next) => {
   }
   
   try {
+    // Set up Replit Auth (this will configure passport and session)
+    await setupAuth(app);
+    logger.info('Replit Auth integration configured successfully');
+    
     // Add health check endpoint
     app.get('/api/health', async (req, res) => {
       const dbStatus = await checkDbConnection().catch(() => false);
@@ -170,7 +130,8 @@ app.use((req, res, next) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         database: dbStatus ? 'connected' : 'disconnected',
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        auth: 'replit'
       });
     });
     

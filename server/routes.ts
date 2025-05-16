@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import { storage, IStorage } from "./storage";
 import { CommunicationService } from "./services/communication-service";
@@ -12,6 +13,7 @@ import {
   formTemplateExtendedSchema
 } from "@shared/schema";
 import { ensureAuthenticated, ensureAdmin } from './middleware/auth';
+import { isAuthenticated } from './replitAuth';
 import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';
@@ -51,7 +53,6 @@ try {
   // If DatabaseStorage doesn't exist, create a placeholder
   DatabaseStorage = class {};
 }
-import express from "express";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -64,6 +65,42 @@ import { createHash } from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // API endpoint to get authenticated user data
+  app.get('/api/auth/user', async (req, res) => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      
+      const userId = (req.user as any).claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: 'Invalid user session' });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Remove any sensitive data
+      const safeUser = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        observerId: user.observerId,
+        role: user.role,
+        profileImageUrl: user.profileImageUrl
+      };
+      
+      res.status(200).json(safeUser);
+    } catch (error) {
+      console.error('Error fetching authenticated user:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
 
   // Setup static file serving for uploads directory
   const uploadsDir = path.join(process.cwd(), 'uploads');
