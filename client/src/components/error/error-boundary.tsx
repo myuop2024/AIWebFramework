@@ -2,11 +2,18 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-// Safe fix for the import without using alias
-import { logClientError } from '@/lib/error-logger';
 
-// If the above fails in the build process, uncomment this alternative import:
-// import { logClientError } from '../../lib/error-logger';
+// Import with fallback to handle potential path resolution issues
+let logClientError: (error: any) => Promise<void>;
+try {
+  // Try the standard import first
+  const errorLogger = require('@/lib/error-logger');
+  logClientError = errorLogger.logClientError;
+} catch (error) {
+  // Fallback to relative path if the alias import fails
+  const errorLogger = require('../../lib/error-logger');
+  logClientError = errorLogger.logClientError;
+}
 
 interface ErrorBoundaryProps {
   children: ReactNode;
