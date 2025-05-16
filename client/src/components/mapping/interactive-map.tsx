@@ -1,483 +1,319 @@
-import { useEffect, useRef, useState, forwardRef, ForwardedRef } from "react";
-import { useHereMaps } from "@/lib/here-maps";
-import { Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
-interface MapMarker {
-  lat: number;
-  lng: number;
-  text?: string;
-  id?: string | number;
-  type?: 'default' | 'current' | 'selected' | 'issue' | 'warning';
-}
+// Jamaica parish boundary data
+import { jamaicaParishBoundaries } from '@/data/jamaica-parishes';
 
-interface MapRoute {
-  points: Array<{ lat: number; lng: number }>;
-  color?: string;
-  width?: number;
-}
-
-interface MapPolygon {
-  id: number;
-  points: Array<{ lat: number; lng: number }>;
-  color?: string;
-  fillOpacity?: number;
-  lineWidth?: number;
-  onClick?: (id: number) => void;
+interface PollingStation {
+  id: string;
+  name: string;
+  address: string;
+  parish: string;
+  stationCode: string;
+  status: string;
+  latitude: number;
+  longitude: number;
 }
 
 interface InteractiveMapProps {
-  markers?: MapMarker[];
-  routes?: MapRoute[];
-  polygons?: MapPolygon[];
-  centerLat?: number;
-  centerLng?: number;
-  zoom?: number;
-  height?: string;
-  width?: string;
-  className?: string;
-  onMarkerClick?: (markerId: string | number) => void;
-  onMapClick?: (lat: number, lng: number) => void;
-  showControls?: boolean;
-  onBoundsChanged?: (bounds: {
-    north: number;
-    south: number;
-    east: number;
-    west: number;
-  }) => void;
+  pollingStations: PollingStation[];
+  selectedParish: string | null;
 }
 
-export const InteractiveMap = forwardRef(({
-  markers = [],
-  routes = [],
-  polygons = [],
-  centerLat = 18.0179, // Kingston, Jamaica default
-  centerLng = -76.8099,
-  zoom = 12,
-  height = "500px",
-  width = "100%",
-  className = "",
-  onMarkerClick,
-  onMapClick,
-  showControls = true,
-  onBoundsChanged,
-}: InteractiveMapProps, ref: ForwardedRef<any>) => {
+export default function InteractiveMap({ pollingStations, selectedParish }: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const { H, isLoaded, loadError } = useHereMaps();
-  const [map, setMap] = useState<any>(null);
-  const [mapMarkers, setMapMarkers] = useState<any[]>([]);
-  const [mapRoutes, setMapRoutes] = useState<any[]>([]);
-  const [mapPolygons, setMapPolygons] = useState<any[]>([]);
+  const [mapObject, setMapObject] = useState<any>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const { toast } = useToast();
 
-  // Initialize map when HERE API is loaded
+  // Initialize the map
   useEffect(() => {
-    if (!isLoaded || !H || !mapRef.current) return;
-
-    // Create platform with API key
-    const platform = new H.service.Platform({
-      apikey: import.meta.env.VITE_HERE_API_KEY as string,
-    });
-
-    // Get map types
-    const defaultLayers = platform.createDefaultLayers();
-
-    // Create map instance
-    const newMap = new H.Map(
-      mapRef.current,
-      defaultLayers.vector.normal.map,
-      {
-        center: { lat: centerLat, lng: centerLng },
-        zoom: zoom,
-        pixelRatio: window.devicePixelRatio || 1,
-      }
-    );
-    
-    // Expose map instance to parent component via ref
-    if (ref) {
-      if (typeof ref === 'function') {
-        ref(newMap);
-      } else {
-        ref.current = newMap;
-      }
-    }
-
-    // Add map interaction and controls
-    const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(newMap));
-    
-    if (showControls) {
-      const ui = H.ui.UI.createDefault(newMap, defaultLayers);
-    }
-
-    // Event listeners
-    if (onMapClick) {
-      newMap.addEventListener('tap', (evt: any) => {
-        // Only trigger if not clicking on a marker
-        if (evt.target instanceof H.map.Marker) return;
-        
-        const position = newMap.screenToGeo(
-          evt.currentPointer.viewportX,
-          evt.currentPointer.viewportY
-        );
-        
-        onMapClick(position.lat, position.lng);
+    // Check if HERE Maps API key is available
+    if (!import.meta.env.VITE_HERE_API_KEY) {
+      toast({
+        title: "Map API Key Missing",
+        description: "The HERE Maps API key is missing. Please ensure it's properly configured.",
+        variant: "destructive"
       });
+      return;
     }
 
-    // Add viewport change event for bounds updates
-    if (onBoundsChanged) {
-      newMap.addEventListener('mapviewchangeend', () => {
-        const bounds = newMap.getViewModel().getLookAtData().bounds;
-        onBoundsChanged({
-          north: bounds.top,
-          south: bounds.bottom,
-          east: bounds.right,
-          west: bounds.left,
+    // Initialize the map if it doesn't exist yet
+    if (!mapObject && mapRef.current) {
+      // Load the HERE Maps script
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
+      script.async = true;
+      script.onload = () => {
+        // Load additional map modules
+        const scriptsToLoad = [
+          'https://js.api.here.com/v3/3.1/mapsjs-service.js',
+          'https://js.api.here.com/v3/3.1/mapsjs-ui.js',
+          'https://js.api.here.com/v3/3.1/mapsjs-mapevents.js',
+        ];
+        
+        let loadedCount = 0;
+        
+        scriptsToLoad.forEach(url => {
+          const moduleScript = document.createElement('script');
+          moduleScript.type = 'text/javascript';
+          moduleScript.src = url;
+          moduleScript.async = true;
+          moduleScript.onload = () => {
+            loadedCount++;
+            if (loadedCount === scriptsToLoad.length) {
+              // All scripts loaded, initialize map
+              initializeMap();
+            }
+          };
+          document.head.appendChild(moduleScript);
         });
-      });
+
+        // Add CSS for the UI
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = 'https://js.api.here.com/v3/3.1/mapsjs-ui.css';
+        document.head.appendChild(link);
+      };
+
+      document.head.appendChild(script);
     }
 
-    // Make the map responsive with a named handler function 
-    // so we can properly remove it in the cleanup
-    const handleResize = () => {
-      try {
-        newMap.getViewPort().resize();
-      } catch (e) {
-        console.log('Error in resize handler:', e);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-
-    setMap(newMap);
-
-    // Cleanup on unmount
     return () => {
-      try {
-        window.removeEventListener('resize', handleResize);
-        
-        if (newMap) {
-          try {
-            newMap.dispose();
-          } catch (e) {
-            console.log('Error disposing map:', e);
-          }
-        }
-      } catch (e) {
-        console.log('Error in map cleanup:', e);
+      // Clean up the map when component unmounts
+      if (mapObject) {
+        mapObject.dispose();
       }
     };
-  }, [H, isLoaded, centerLat, centerLng, zoom, showControls, ref]);
+  }, []);
 
-  // Add or update markers when they change
-  useEffect(() => {
-    if (!map || !H) return;
+  // Initialize the HERE map
+  const initializeMap = () => {
+    try {
+      // Initialize the platform with the API key
+      const platform = new (window as any).H.service.Platform({
+        apikey: import.meta.env.VITE_HERE_API_KEY
+      });
 
-    // Create marker group
-    const markerGroup = new H.map.Group();
-    const newMapMarkers: any[] = [];
+      // Get the default map types from the platform object
+      const defaultLayers = platform.createDefaultLayers();
 
-    // Add new markers
-    markers.forEach(marker => {
-      // Create HTML element for marker
-      const markerElement = document.createElement('div');
-      let markerClass = 'w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold border-2 border-white';
-      
-      // Apply styling based on marker type
-      switch (marker.type) {
-        case 'current':
-          markerClass = 'w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white shadow-lg';
-          break;
-        case 'selected':
-          markerClass = 'w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white shadow-lg';
-          break;
-        case 'issue':
-          markerClass = 'w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white shadow-lg';
-          break;
-        case 'warning':
-          markerClass = 'w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white shadow-lg';
-          break;
-        default:
-          markerClass = 'w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold border-2 border-white shadow-md';
-      }
-      
-      markerElement.className = markerClass;
-      markerElement.innerHTML = marker.text || '';
-      
-      // Create marker with DOM element
-      const hereMarker = new H.map.DomMarker(
-        { lat: marker.lat, lng: marker.lng },
+      // Instantiate the map
+      const map = new (window as any).H.Map(
+        mapRef.current,
+        defaultLayers.vector.normal.map,
         {
-          element: markerElement,
+          zoom: 8,
+          center: { lat: 18.1096, lng: -77.2975 }, // Center of Jamaica
+          pixelRatio: window.devicePixelRatio || 1
         }
       );
+
+      // Add map UI controls
+      const ui = new (window as any).H.ui.UI.createDefault(map, defaultLayers);
       
-      // Store ID for click events
-      if (marker.id !== undefined) {
-        hereMarker.setData(marker.id);
-      }
-      
-      // Add to marker group
-      markerGroup.addObject(hereMarker);
-      newMapMarkers.push(hereMarker);
-    });
-    
-    // Add click event to marker group
-    if (onMarkerClick) {
-      markerGroup.addEventListener('tap', (event: any) => {
-        const markerId = event.target.getData();
-        if (markerId !== undefined) {
-          onMarkerClick(markerId);
-        }
+      // Enable map events (e.g., panning, zooming)
+      const mapEvents = new (window as any).H.mapevents.MapEvents(map);
+      new (window as any).H.mapevents.Behavior(mapEvents);
+
+      // Set the map object to state
+      setMapObject(map);
+      setMapLoaded(true);
+    } catch (error) {
+      console.error('Error initializing map:', error);
+      toast({
+        title: "Map Initialization Error",
+        description: "There was an error initializing the map. Please try refreshing the page.",
+        variant: "destructive"
       });
     }
-    
-    // Safely remove old markers
-    if (mapMarkers.length > 0) {
-      try {
-        // Safely remove each marker one by one
-        mapMarkers.forEach(marker => {
-          try {
-            if (map.getObjects().includes(marker)) {
-              map.removeObject(marker);
-            }
-          } catch (e) {
-            console.log('Could not remove old marker:', e);
-          }
-        });
-      } catch (e) {
-        console.log('Error cleaning up old markers:', e);
-      }
-    }
-    
-    // Add group to map
-    map.addObject(markerGroup);
-    setMapMarkers(newMapMarkers);
-    
-    // Adjust map view to fit all markers if there are any
-    if (markers.length > 0 && markerGroup.getObjects().length > 0) {
-      try {
-        map.getViewModel().setLookAtData({
-          bounds: markerGroup.getBoundingBox()
-        });
-      } catch (e) {
-        console.log('Error setting map bounds:', e);
-      }
-    }
-    
-    return () => {
-      try {
-        if (map && markerGroup && map.getObjects().includes(markerGroup)) {
-          map.removeObject(markerGroup);
-        }
-      } catch (e) {
-        console.log('Error in marker cleanup:', e);
-      }
-    };
-  }, [map, H, markers, onMarkerClick]);
+  };
 
-  // Add or update routes when they change
+  // Update the map when polling stations or selected parish changes
   useEffect(() => {
-    if (!map || !H) return;
+    if (!mapLoaded || !mapObject) return;
 
-    // Safely remove previous routes
-    if (mapRoutes.length > 0) {
-      try {
-        mapRoutes.forEach(route => {
+    // Clear existing objects from the map
+    mapObject.removeObjects(mapObject.getObjects());
+
+    // Create a group for all map objects
+    const objectGroup = new (window as any).H.map.Group();
+
+    // Draw parish boundaries if data is available
+    if (jamaicaParishBoundaries) {
+      jamaicaParishBoundaries.forEach(parish => {
+        const isSelected = selectedParish === parish.name;
+        
+        // Only draw the selected parish or all parishes if none selected
+        if (selectedParish === null || isSelected) {
           try {
-            if (map.getObjects().includes(route)) {
-              map.removeObject(route);
+            // Create a polygon for the parish boundary
+            const lineString = new (window as any).H.geo.LineString();
+            
+            // Add points to the polygon
+            parish.coordinates.forEach(coord => {
+              lineString.pushLatLngAlt(coord.lat, coord.lng);
+            });
+            
+            // Close the polygon
+            if (parish.coordinates.length > 0) {
+              const firstCoord = parish.coordinates[0];
+              lineString.pushLatLngAlt(firstCoord.lat, firstCoord.lng);
             }
-          } catch (e) {
-            console.log('Could not remove old route:', e);
-          }
-        });
-      } catch (e) {
-        console.log('Error cleaning up old routes:', e);
-      }
-    }
-    
-    const newMapRoutes: any[] = [];
-
-    // Add new routes
-    routes.forEach(route => {
-      // Create line string for the route path
-      const lineString = new H.geo.LineString();
-      
-      // Add points to line string
-      route.points.forEach(point => {
-        lineString.pushPoint({ lat: point.lat, lng: point.lng });
-      });
-      
-      // Create polyline with styling
-      const polyline = new H.map.Polyline(lineString, {
-        style: {
-          lineWidth: route.width || 4,
-          strokeColor: route.color || '#0063FF',
-          lineTailCap: 'arrow-tail',
-          lineHeadCap: 'arrow-head',
-        },
-      });
-      
-      // Add to map
-      map.addObject(polyline);
-      newMapRoutes.push(polyline);
-    });
-    
-    setMapRoutes(newMapRoutes);
-    
-    return () => {
-      try {
-        if (map) {
-          newMapRoutes.forEach(route => {
-            try {
-              if (map.getObjects().includes(route)) {
-                map.removeObject(route);
+            
+            // Create the polygon object
+            const polygon = new (window as any).H.map.Polygon(lineString, {
+              style: {
+                fillColor: isSelected ? 'rgba(65, 105, 225, 0.3)' : 'rgba(0, 0, 0, 0.1)',
+                strokeColor: isSelected ? '#4169E1' : '#707070',
+                lineWidth: isSelected ? 3 : 1
               }
-            } catch (e) {
-              console.log('Error removing route in cleanup:', e);
-            }
-          });
-        }
-      } catch (e) {
-        console.log('Error in routes cleanup:', e);
-      }
-    };
-  }, [map, H, routes]);
-
-  // Update center when centerLat or centerLng changes
-  useEffect(() => {
-    if (map) {
-      map.setCenter({ lat: centerLat, lng: centerLng });
-    }
-  }, [map, centerLat, centerLng]);
-
-  // Update zoom when it changes
-  useEffect(() => {
-    if (map) {
-      map.setZoom(zoom);
-    }
-  }, [map, zoom]);
-  
-  // Add or update polygons when they change
-  useEffect(() => {
-    if (!map || !H) return;
-    
-    // Safely remove previous polygons
-    if (mapPolygons.length > 0) {
-      try {
-        mapPolygons.forEach(polygon => {
-          try {
-            if (map.getObjects().includes(polygon)) {
-              map.removeObject(polygon);
-            }
-          } catch (e) {
-            console.log('Could not remove old polygon:', e);
-          }
-        });
-      } catch (e) {
-        console.log('Error cleaning up old polygons:', e);
-      }
-    }
-    
-    const newMapPolygons: any[] = [];
-    
-    // Add new polygons (regions)
-    polygons.forEach(polygon => {
-      if (polygon.points.length < 3) {
-        console.warn('Polygon needs at least 3 points:', polygon);
-        return; // Skip invalid polygons
-      }
-      
-      try {
-        // Create line string for the polygon boundary
-        const lineString = new H.geo.LineString();
-        
-        // Add points to line string
-        polygon.points.forEach(point => {
-          lineString.pushPoint({ lat: point.lat, lng: point.lng });
-        });
-        
-        // Create polygon with styling (using type assertion since H.map.Polygon might not be in the type definition)
-        const herePolygon = new (H as any).map.Polygon(lineString, {
-          style: {
-            lineWidth: polygon.lineWidth || 2,
-            strokeColor: polygon.color || '#0063FF',
-            fillColor: polygon.color || '#0063FF',
-            lineJoin: 'round',
-            lineCap: 'round',
-            opacity: polygon.fillOpacity || 0.3
-          },
-          data: polygon.id
-        });
-        
-        // Add click event if provided
-        if (polygon.onClick) {
-          herePolygon.addEventListener('tap', () => {
-            polygon.onClick?.(polygon.id);
-          });
-        }
-        
-        // Add to map and track
-        map.addObject(herePolygon);
-        newMapPolygons.push(herePolygon);
-      } catch (error) {
-        console.error('Error creating polygon:', error);
-      }
-    });
-    
-    setMapPolygons(newMapPolygons);
-    
-    return () => {
-      try {
-        if (map) {
-          newMapPolygons.forEach(polygon => {
-            try {
-              if (map.getObjects().includes(polygon)) {
-                map.removeObject(polygon);
+            });
+            
+            // Add parish name as a label
+            const parishCenter = parish.center;
+            const parishLabel = new (window as any).H.map.Marker(
+              { lat: parishCenter.lat, lng: parishCenter.lng },
+              {
+                data: parish.name,
+                volatility: true
               }
-            } catch (e) {
-              console.log('Error removing polygon in cleanup:', e);
+            );
+            
+            objectGroup.addObjects([polygon, parishLabel]);
+            
+            // Auto-zoom to the selected parish
+            if (isSelected) {
+              mapObject.getViewModel().setLookAtData({
+                bounds: polygon.getBoundingBox()
+              }, true);
             }
-          });
+          } catch (error) {
+            console.error(`Error creating polygon for parish ${parish.name}:`, error);
+          }
         }
-      } catch (e) {
-        console.log('Error in polygons cleanup:', e);
+      });
+    }
+
+    // Add polling stations to the map
+    pollingStations.forEach(station => {
+      // Skip stations without coordinates
+      if (!station.latitude || !station.longitude) return;
+
+      // Determine marker color based on status
+      const markerColor = station.status === 'active' ? '#22c55e' : '#ef4444';
+
+      // Create a custom marker for each polling station
+      const marker = new (window as any).H.map.Marker(
+        { lat: station.latitude, lng: station.longitude },
+        {
+          // Custom SVG icon
+          icon: new (window as any).H.map.Icon(`
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="${markerColor}" stroke="white" stroke-width="2"/>
+              <circle cx="12" cy="12" r="4" fill="white"/>
+            </svg>
+          `, { size: { w: 24, h: 24 } })
+        }
+      );
+
+      // Add marker data for the info bubble
+      marker.setData({
+        name: station.name,
+        address: station.address,
+        stationCode: station.stationCode,
+        parish: station.parish,
+        status: station.status
+      });
+
+      // Add click event to show info
+      marker.addEventListener('tap', (evt: any) => {
+        const data = evt.target.getData();
+        const statusText = data.status === 'active' ? 'Active' : 'Issue Reported';
+        
+        // Create info bubble content
+        const bubbleContent = `
+          <div style="padding: 10px; max-width: 200px;">
+            <h3 style="margin: 0 0 5px; font-size: 14px; font-weight: bold;">${data.name}</h3>
+            <p style="margin: 0 0 3px; font-size: 12px;">Code: ${data.stationCode}</p>
+            <p style="margin: 0 0 3px; font-size: 12px;">${data.address}</p>
+            <p style="margin: 0; font-size: 12px;">Parish: ${data.parish}</p>
+            <p style="margin: 6px 0 0; font-size: 12px;">
+              Status: <span style="color: ${markerColor}; font-weight: bold;">${statusText}</span>
+            </p>
+          </div>
+        `;
+        
+        // Create and open the info bubble
+        const bubble = new (window as any).H.ui.InfoBubble(
+          evt.target.getGeometry(),
+          { content: bubbleContent }
+        );
+        
+        // Get the UI object and add the bubble
+        const ui = mapObject.getUI();
+        ui.addBubble(bubble);
+      });
+
+      // Add the marker to the group
+      objectGroup.addObject(marker);
+    });
+
+    // Add all objects to the map
+    mapObject.addObject(objectGroup);
+
+    // If no parish is selected, set the view to include all polling stations
+    if (!selectedParish) {
+      // Create a bounds object that includes all polling stations
+      const bounds = objectGroup.getBoundingBox();
+      if (bounds) {
+        mapObject.getViewModel().setLookAtData({
+          bounds: bounds
+        }, true);
       }
-    };
-  }, [map, H, polygons]);
-
-  if (loadError) {
-    return (
-      <div
-        className={`flex items-center justify-center bg-gray-100 ${className}`}
-        style={{ width, height }}
-      >
-        <div className="text-center p-4">
-          <p className="text-red-500 mb-2">Error loading map</p>
-          <p className="text-sm text-gray-600">{loadError.message}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoaded) {
-    return (
-      <div
-        className={`flex items-center justify-center bg-gray-100 ${className}`}
-        style={{ width, height }}
-      >
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+    }
+  }, [mapLoaded, mapObject, pollingStations, selectedParish]);
 
   return (
-    <div
-      ref={mapRef}
-      className={`relative overflow-hidden ${className}`}
-      style={{ width, height }}
-    />
+    <div className="w-full h-full relative">
+      <div ref={mapRef} className="w-full h-full" />
+      
+      {/* Legend */}
+      <div className="absolute bottom-4 right-4 bg-white p-2 rounded-md shadow-md z-10">
+        <div className="text-sm font-semibold mb-1">Map Legend</div>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-4 h-4 rounded-full bg-[#22c55e]"></div>
+          <span className="text-xs">Active Station</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-[#ef4444]"></div>
+          <span className="text-xs">Issue Reported</span>
+        </div>
+      </div>
+      
+      {/* Status badges */}
+      <div className="absolute top-4 left-4 bg-white p-2 rounded-md shadow-md z-10">
+        <div className="flex flex-col gap-2">
+          {selectedParish ? (
+            <Badge variant="outline" className="bg-blue-50">
+              <span className="font-bold text-blue-700">Parish:</span>
+              <span className="ml-1">{selectedParish}</span>
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-green-50">
+              <span className="font-bold text-green-700">Viewing:</span>
+              <span className="ml-1">All Parishes</span>
+            </Badge>
+          )}
+          <Badge variant="outline" className="bg-purple-50">
+            <span className="font-bold text-purple-700">Stations:</span>
+            <span className="ml-1">{pollingStations.length}</span>
+          </Badge>
+        </div>
+      </div>
+    </div>
   );
-});
-
-// For backward compatibility
-export default InteractiveMap;
+}

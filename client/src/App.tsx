@@ -30,6 +30,7 @@ import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
 import RoutePlanningPage from "@/pages/route-planning-page";
 import ObserverRoutePlanningPage from "@/pages/observer-route-planning";
+import DirectMapAccess from "@/pages/direct-map-access";
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
@@ -57,6 +58,8 @@ function Router() {
       <Route path="/register" component={DynamicRegister} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/faq" component={Faq} />
+      <Route path="/map-view" component={DirectMapAccess} />
+      <Route path="/jamaica-map" component={React.lazy(() => import("@/pages/standalone-map"))} />
       
       {/* Protected Routes (require any authenticated user) */}
       <ProtectedRoute path="/" component={Dashboard} />

@@ -1,225 +1,233 @@
-/**
- * Simplified geographical boundary data for Jamaica's parishes
- * These are approximations for demo purposes - actual implementation would use GeoJSON data
- */
+// Jamaica parish boundary data
+// Each parish includes approximate polygon coordinates and center point
 
+// Parish boundary interface
 export interface ParishBoundary {
   id: number;
   name: string;
-  boundaries: Array<{lat: number; lng: number}>;
-  color: string;
-  center: {lat: number; lng: number};
+  center: {
+    lat: number;
+    lng: number;
+  };
+  coordinates: Array<{
+    lat: number;
+    lng: number;
+  }>;
 }
 
-export const JAMAICA_PARISHES: ParishBoundary[] = [
+// Approximate polygon coordinates for Jamaica's parishes
+// These are simplified polygon coordinates for visualization purposes
+export const jamaicaParishBoundaries: ParishBoundary[] = [
+  // Kingston (small area in the southeast)
   {
     id: 1,
-    name: 'Kingston',
-    color: '#FF5252',
-    center: {lat: 17.9970, lng: -76.7936},
-    boundaries: [
-      {lat: 17.9824, lng: -76.8134},
-      {lat: 18.0134, lng: -76.8034},
-      {lat: 18.0234, lng: -76.7734},
-      {lat: 18.0024, lng: -76.7534},
-      {lat: 17.9724, lng: -76.7734},
-      {lat: 17.9724, lng: -76.8034},
-      {lat: 17.9824, lng: -76.8134}
+    name: "Kingston",
+    center: { lat: 17.9784, lng: -76.7832 },
+    coordinates: [
+      { lat: 17.9850, lng: -76.7950 },
+      { lat: 17.9820, lng: -76.7750 },
+      { lat: 17.9700, lng: -76.7720 },
+      { lat: 17.9670, lng: -76.7930 },
     ]
   },
+  
+  // St. Andrew (surrounds Kingston)
   {
     id: 2,
-    name: 'St. Andrew',
-    color: '#7CB342',
-    center: {lat: 18.0464, lng: -76.7436},
-    boundaries: [
-      {lat: 17.9824, lng: -76.8334},
-      {lat: 18.0534, lng: -76.8334},
-      {lat: 18.1034, lng: -76.7734},
-      {lat: 18.1034, lng: -76.6734},
-      {lat: 18.0334, lng: -76.6334},
-      {lat: 17.9624, lng: -76.7434},
-      {lat: 17.9824, lng: -76.8334}
+    name: "St. Andrew",
+    center: { lat: 18.0280, lng: -76.7494 },
+    coordinates: [
+      { lat: 18.1100, lng: -76.7800 },
+      { lat: 18.1050, lng: -76.7100 },
+      { lat: 17.9950, lng: -76.7000 },
+      { lat: 17.9850, lng: -76.7950 },
+      { lat: 17.9900, lng: -76.8200 },
+      { lat: 18.0300, lng: -76.8300 },
     ]
   },
+  
+  // St. Catherine
   {
     id: 3,
-    name: 'St. Catherine',
-    color: '#42A5F5',
-    center: {lat: 18.0422, lng: -77.0557},
-    boundaries: [
-      {lat: 17.9324, lng: -76.9334},
-      {lat: 18.0534, lng: -76.8734},
-      {lat: 18.1334, lng: -76.9834},
-      {lat: 18.1334, lng: -77.1034},
-      {lat: 18.0334, lng: -77.2534},
-      {lat: 17.9324, lng: -77.0834},
-      {lat: 17.9324, lng: -76.9334}
+    name: "St. Catherine",
+    center: { lat: 18.0426, lng: -77.0257 },
+    coordinates: [
+      { lat: 18.1800, lng: -77.0800 },
+      { lat: 18.2000, lng: -76.9000 },
+      { lat: 18.1050, lng: -76.7100 },
+      { lat: 18.0300, lng: -76.8300 },
+      { lat: 17.9300, lng: -77.0000 },
+      { lat: 17.9000, lng: -77.1500 },
+      { lat: 17.9500, lng: -77.2200 },
     ]
   },
+  
+  // Clarendon
   {
     id: 4,
-    name: 'Clarendon',
-    color: '#FFAB40',
-    center: {lat: 17.9589, lng: -77.2571},
-    boundaries: [
-      {lat: 17.8324, lng: -77.1134},
-      {lat: 18.0234, lng: -77.0334},
-      {lat: 18.1134, lng: -77.1734},
-      {lat: 18.1134, lng: -77.3534},
-      {lat: 17.9534, lng: -77.5034},
-      {lat: 17.8324, lng: -77.3534},
-      {lat: 17.8324, lng: -77.1134}
+    name: "Clarendon",
+    center: { lat: 18.0400, lng: -77.2600 },
+    coordinates: [
+      { lat: 18.1800, lng: -77.0800 },
+      { lat: 17.9500, lng: -77.2200 },
+      { lat: 17.9000, lng: -77.4000 },
+      { lat: 17.9700, lng: -77.5200 },
+      { lat: 18.1500, lng: -77.3800 },
     ]
   },
+  
+  // Manchester
   {
     id: 5,
-    name: 'Manchester',
-    color: '#9C27B0',
-    center: {lat: 18.0418, lng: -77.5045},
-    boundaries: [
-      {lat: 17.9324, lng: -77.3334},
-      {lat: 18.1034, lng: -77.3334},
-      {lat: 18.1734, lng: -77.4834},
-      {lat: 18.1734, lng: -77.6534},
-      {lat: 18.0334, lng: -77.7534},
-      {lat: 17.9324, lng: -77.5834},
-      {lat: 17.9324, lng: -77.3334}
+    name: "Manchester",
+    center: { lat: 18.0400, lng: -77.5000 },
+    coordinates: [
+      { lat: 18.1500, lng: -77.3800 },
+      { lat: 17.9700, lng: -77.5200 },
+      { lat: 17.9300, lng: -77.6500 },
+      { lat: 18.0700, lng: -77.6800 },
+      { lat: 18.1700, lng: -77.5300 },
     ]
   },
+  
+  // St. Elizabeth
   {
     id: 6,
-    name: 'St. Elizabeth',
-    color: '#FFC107',
-    center: {lat: 18.0575, lng: -77.8077},
-    boundaries: [
-      {lat: 17.8324, lng: -77.6334},
-      {lat: 18.0534, lng: -77.6334},
-      {lat: 18.1734, lng: -77.7834},
-      {lat: 18.1734, lng: -77.9534},
-      {lat: 18.0334, lng: -78.0534},
-      {lat: 17.8324, lng: -77.8534},
-      {lat: 17.8324, lng: -77.6334}
+    name: "St. Elizabeth",
+    center: { lat: 18.0680, lng: -77.7600 },
+    coordinates: [
+      { lat: 18.1700, lng: -77.5300 },
+      { lat: 18.0700, lng: -77.6800 },
+      { lat: 17.9300, lng: -77.6500 },
+      { lat: 17.8800, lng: -77.8500 },
+      { lat: 17.9000, lng: -77.9500 },
+      { lat: 18.1400, lng: -77.9800 },
+      { lat: 18.2000, lng: -77.8000 },
     ]
   },
+  
+  // Westmoreland
   {
     id: 7,
-    name: 'Westmoreland',
-    color: '#2196F3',
-    center: {lat: 18.2210, lng: -78.1321},
-    boundaries: [
-      {lat: 18.0324, lng: -77.9334},
-      {lat: 18.2534, lng: -77.9334},
-      {lat: 18.3734, lng: -78.0834},
-      {lat: 18.3734, lng: -78.3534},
-      {lat: 18.1734, lng: -78.3534},
-      {lat: 18.0324, lng: -78.1834},
-      {lat: 18.0324, lng: -77.9334}
+    name: "Westmoreland",
+    center: { lat: 18.2196, lng: -78.1320 },
+    coordinates: [
+      { lat: 18.2000, lng: -77.8000 },
+      { lat: 18.1400, lng: -77.9800 },
+      { lat: 17.9000, lng: -77.9500 },
+      { lat: 17.8900, lng: -78.1700 },
+      { lat: 18.0300, lng: -78.3800 },
+      { lat: 18.3500, lng: -78.1700 },
     ]
   },
+  
+  // Hanover
   {
     id: 8,
-    name: 'Hanover',
-    color: '#8BC34A',
-    center: {lat: 18.4068, lng: -78.1312},
-    boundaries: [
-      {lat: 18.2824, lng: -77.9934},
-      {lat: 18.4534, lng: -77.9934},
-      {lat: 18.5234, lng: -78.1434},
-      {lat: 18.5234, lng: -78.3034},
-      {lat: 18.3734, lng: -78.3534},
-      {lat: 18.2824, lng: -78.1834},
-      {lat: 18.2824, lng: -77.9934}
+    name: "Hanover",
+    center: { lat: 18.4062, lng: -78.1279 },
+    coordinates: [
+      { lat: 18.3500, lng: -78.1700 },
+      { lat: 18.0300, lng: -78.3800 },
+      { lat: 18.4000, lng: -78.3900 },
+      { lat: 18.4600, lng: -78.2000 },
+      { lat: 18.4500, lng: -78.0500 },
     ]
   },
+  
+  // St. James
   {
     id: 9,
-    name: 'St. James',
-    color: '#F44336',
-    center: {lat: 18.4762, lng: -77.9134},
-    boundaries: [
-      {lat: 18.3324, lng: -77.8334},
-      {lat: 18.5034, lng: -77.8334},
-      {lat: 18.5934, lng: -77.9434},
-      {lat: 18.5934, lng: -78.0534},
-      {lat: 18.4534, lng: -78.1334},
-      {lat: 18.3324, lng: -77.9834},
-      {lat: 18.3324, lng: -77.8334}
+    name: "St. James",
+    center: { lat: 18.4762, lng: -77.9161 },
+    coordinates: [
+      { lat: 18.4500, lng: -78.0500 },
+      { lat: 18.4600, lng: -78.2000 },
+      { lat: 18.4000, lng: -78.3900 },
+      { lat: 18.3800, lng: -77.9300 },
+      { lat: 18.3000, lng: -77.7000 },
+      { lat: 18.4300, lng: -77.7200 },
     ]
   },
+  
+  // Trelawny
   {
     id: 10,
-    name: 'Trelawny',
-    color: '#4CAF50',
-    center: {lat: 18.3523, lng: -77.6556},
-    boundaries: [
-      {lat: 18.2324, lng: -77.5334},
-      {lat: 18.4034, lng: -77.4334},
-      {lat: 18.5234, lng: -77.5434},
-      {lat: 18.5934, lng: -77.7434},
-      {lat: 18.4534, lng: -77.9034},
-      {lat: 18.2324, lng: -77.7534},
-      {lat: 18.2324, lng: -77.5334}
+    name: "Trelawny",
+    center: { lat: 18.3521, lng: -77.6556 },
+    coordinates: [
+      { lat: 18.4300, lng: -77.7200 },
+      { lat: 18.3000, lng: -77.7000 },
+      { lat: 18.2000, lng: -77.8000 },
+      { lat: 18.2000, lng: -77.5500 },
+      { lat: 18.2600, lng: -77.5100 },
+      { lat: 18.4900, lng: -77.5700 },
     ]
   },
+  
+  // St. Ann
   {
     id: 11,
-    name: 'St. Ann',
-    color: '#3F51B5',
-    center: {lat: 18.4001, lng: -77.3707},
-    boundaries: [
-      {lat: 18.1824, lng: -77.2334},
-      {lat: 18.4034, lng: -77.1334},
-      {lat: 18.5734, lng: -77.2434},
-      {lat: 18.5934, lng: -77.4434},
-      {lat: 18.4534, lng: -77.6034},
-      {lat: 18.1824, lng: -77.4534},
-      {lat: 18.1824, lng: -77.2334}
+    name: "St. Ann",
+    center: { lat: 18.2437, lng: -77.4019 },
+    coordinates: [
+      { lat: 18.4900, lng: -77.5700 },
+      { lat: 18.2600, lng: -77.5100 },
+      { lat: 18.2000, lng: -77.5500 },
+      { lat: 18.1700, lng: -77.5300 },
+      { lat: 18.1500, lng: -77.3800 },
+      { lat: 18.1800, lng: -77.0800 },
+      { lat: 18.2000, lng: -77.0500 },
+      { lat: 18.4600, lng: -77.2000 },
     ]
   },
+  
+  // St. Mary
   {
     id: 12,
-    name: 'St. Mary',
-    color: '#E91E63',
-    center: {lat: 18.3589, lng: -77.0456},
-    boundaries: [
-      {lat: 18.1824, lng: -76.9334},
-      {lat: 18.3534, lng: -76.8334},
-      {lat: 18.5234, lng: -76.9434},
-      {lat: 18.5734, lng: -77.1434},
-      {lat: 18.4534, lng: -77.2534},
-      {lat: 18.1824, lng: -77.1034},
-      {lat: 18.1824, lng: -76.9334}
+    name: "St. Mary",
+    center: { lat: 18.3613, lng: -76.9161 },
+    coordinates: [
+      { lat: 18.4600, lng: -77.2000 },
+      { lat: 18.2000, lng: -77.0500 },
+      { lat: 18.2000, lng: -76.9000 },
+      { lat: 18.2400, lng: -76.7300 },
+      { lat: 18.3000, lng: -76.7000 },
+      { lat: 18.4000, lng: -76.8500 },
     ]
   },
+  
+  // Portland
   {
     id: 13,
-    name: 'Portland',
-    color: '#FF9800',
-    center: {lat: 18.1410, lng: -76.5291},
-    boundaries: [
-      {lat: 18.0324, lng: -76.5334},
-      {lat: 18.2034, lng: -76.3334},
-      {lat: 18.3734, lng: -76.4434},
-      {lat: 18.3734, lng: -76.6434},
-      {lat: 18.2334, lng: -76.7534},
-      {lat: 18.0324, lng: -76.6834},
-      {lat: 18.0324, lng: -76.5334}
+    name: "Portland",
+    center: { lat: 18.1094, lng: -76.5300 },
+    coordinates: [
+      { lat: 18.3000, lng: -76.7000 },
+      { lat: 18.2400, lng: -76.7300 },
+      { lat: 18.1050, lng: -76.7100 },
+      { lat: 18.0300, lng: -76.5500 },
+      { lat: 18.0800, lng: -76.3200 },
+      { lat: 18.1800, lng: -76.2500 },
+      { lat: 18.2600, lng: -76.6000 },
     ]
   },
+  
+  // St. Thomas
   {
     id: 14,
-    name: 'St. Thomas',
-    color: '#795548',
-    center: {lat: 17.9871, lng: -76.4710},
-    boundaries: [
-      {lat: 17.8824, lng: -76.3334},
-      {lat: 18.0534, lng: -76.2334},
-      {lat: 18.1734, lng: -76.3434},
-      {lat: 18.1734, lng: -76.6434},
-      {lat: 18.0034, lng: -76.7534},
-      {lat: 17.8824, lng: -76.5834},
-      {lat: 17.8824, lng: -76.3334}
+    name: "St. Thomas",
+    center: { lat: 17.9574, lng: -76.4774 },
+    coordinates: [
+      { lat: 18.0300, lng: -76.5500 },
+      { lat: 18.1050, lng: -76.7100 },
+      { lat: 17.9950, lng: -76.7000 },
+      { lat: 17.9670, lng: -76.7930 },
+      { lat: 17.9700, lng: -76.7720 },
+      { lat: 17.9500, lng: -76.6000 },
+      { lat: 17.9000, lng: -76.3500 },
+      { lat: 17.9500, lng: -76.3000 },
+      { lat: 18.0800, lng: -76.3200 },
     ]
   }
 ];
