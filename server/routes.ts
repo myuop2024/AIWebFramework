@@ -93,11 +93,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       logger.info(`User found, verifying password for: ${username}`);
-      // Verify password (assuming bcrypt is used for password hashing)
-      const bcrypt = require('bcrypt');
-      const passwordMatch = await bcrypt.compare(password, user.password);
+      // Verify password using SHA-256 (matching how passwords are stored)
+      const hashedPassword = createHash('sha256').update(password).digest('hex');
       
-      if (!passwordMatch) {
+      if (user.password !== hashedPassword) {
         logger.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
