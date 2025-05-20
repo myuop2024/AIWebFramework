@@ -529,6 +529,7 @@ export const taskHistory = pgTable("task_history", {
 });
 
 // Define insert schemas
+
 export const insertUserSchema = createInsertSchema(users)
   .omit({
     id: true,
