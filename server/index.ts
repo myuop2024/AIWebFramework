@@ -12,6 +12,11 @@ import { requestLogger, errorMonitor } from "./middleware/error-monitoring";
 import logger from "./utils/logger";
 import { attachUser } from "./middleware/auth";
 
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+
 /**
  * Initialize default data in the database
  * This ensures we have essential data like ID card templates
@@ -87,8 +92,8 @@ app.use(session({
   resave: true, // Changed to true to ensure session is saved on each request
   saveUninitialized: false,
   name: 'observer.sid', // Custom name to avoid conflicts
-  cookie: { 
-    secure: false, // Set to false to ensure cookies work in development environment
+  cookie: {
+    secure: isProduction,
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     httpOnly: true,
     sameSite: 'lax',
