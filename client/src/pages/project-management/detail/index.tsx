@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useRoute, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { 
   Card, 

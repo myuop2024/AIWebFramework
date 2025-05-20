@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import VerificationQueue from "@/components/admin/verification-queue";
 import { PendingPhotoApprovals } from "@/components/admin/pending-photo-approvals";
 import AdminLayout from "@/components/layout/admin-layout";

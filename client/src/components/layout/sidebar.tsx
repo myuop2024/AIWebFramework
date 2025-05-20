@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Home, User, MapPin, FileText, BookOpen, 
   HelpCircle, MessageSquare, LogOut, 
