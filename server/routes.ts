@@ -13,7 +13,7 @@ import {
   formTemplateExtendedSchema
 } from "@shared/schema";
 import { ensureAuthenticated, ensureAdmin } from './middleware/auth';
-import { isAuthenticated } from './replitAuth';
+// Using traditional authentication
 import trainingIntegrationRoutes from './routes/training-integration-routes';
 import registrationFormRoutes from './routes/registration-forms';
 import userImportRoutes from './routes/user-imports';

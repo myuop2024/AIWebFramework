@@ -1,7 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { setupAuth, getSession } from "./replitAuth";
+// Using traditional session management
 import { pool, checkDbConnection } from "./db";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
@@ -119,9 +119,11 @@ app.use((req, res, next) => {
   }
   
   try {
-    // Set up Replit Auth (this will configure passport and session)
-    await setupAuth(app);
-    logger.info('Replit Auth integration configured successfully');
+    // Set up traditional authentication
+    app.use(passport.initialize());
+    app.use(passport.session());
+    app.use(attachUser);
+    logger.info('Traditional authentication system configured successfully');
     
     // Add health check endpoint
     app.get('/api/health', async (req, res) => {
