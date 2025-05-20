@@ -179,7 +179,7 @@ process.on('unhandledRejection', (reason: any) => {
       done(null, user.id);
     });
     
-    passport.deserializeUser(async (id: string, done) => {
+    passport.deserializeUser(async (id: number, done) => {
       try {
         const user = await storage.getUser(id);
         done(null, user);
