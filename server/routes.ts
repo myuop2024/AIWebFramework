@@ -2,6 +2,7 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage, IStorage } from "./storage";
+import { randomBytes } from "crypto";
 import { CommunicationService } from "./services/communication-service";
 import { 
   loginUserSchema, 
@@ -63,17 +64,138 @@ import { createHash } from "crypto";
 
 // Communication interfaces removed - will be reimplemented in a new way
 
+// Helper function to generate a unique observer ID
+function generateObserverId(): string {
+  return `OBS-${randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // API endpoint to get authenticated user data
-  app.get('/api/auth/user', async (req, res) => {
+  // Traditional authentication routes
+  app.post('/api/login', async (req, res) => {
     try {
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Not authenticated' });
+      const result = loginUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: 'Invalid login data', errors: result.error.format() });
       }
       
-      const userId = (req.user as any).claims?.sub;
+      const { username, password } = result.data;
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
+      
+      // Verify password (assuming bcrypt is used for password hashing)
+      const bcrypt = require('bcrypt');
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      
+      if (!passwordMatch) {
+        return res.status(401).json({ message: 'Invalid username or password' });
+      }
+      
+      // Store user in session
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error during login' });
+        }
+        
+        // Remove sensitive data before sending user object
+        const safeUser = {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          username: user.username,
+          observerId: user.observerId,
+          role: user.role,
+          profileImageUrl: user.profileImageUrl
+        };
+        
+        return res.status(200).json(safeUser);
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.post('/api/logout', (req, res) => {
+    req.logout(function(err) {
+      if (err) {
+        return res.status(500).json({ message: 'Error during logout' });
+      }
+      res.status(200).json({ message: 'Logout successful' });
+    });
+  });
+  
+  app.post('/api/register', async (req, res) => {
+    try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: 'Invalid registration data', errors: result.error.format() });
+      }
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(result.data.username);
+      if (existingUser) {
+        return res.status(409).json({ message: 'Username already exists' });
+      }
+      
+      // Check if email already exists (if provided)
+      if (result.data.email) {
+        const existingEmail = await storage.getUserByEmail(result.data.email);
+        if (existingEmail) {
+          return res.status(409).json({ message: 'Email already exists' });
+        }
+      }
+      
+      // Hash password
+      const bcrypt = require('bcrypt');
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(result.data.password, saltRounds);
+      
+      // Create new user with hashed password
+      const userData = {
+        ...result.data,
+        password: hashedPassword,
+        role: 'observer', // Default role for new registrations
+        observerId: generateObserverId(), // Generate a unique observer ID
+      };
+      
+      const newUser = await storage.createUser(userData);
+      
+      // Auto-login the new user
+      req.login(newUser, (err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Error during login after registration' });
+        }
+        
+        // Return user data without sensitive fields
+        const safeUser = {
+          id: newUser.id,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          username: newUser.username,
+          observerId: newUser.observerId,
+          role: newUser.role,
+          profileImageUrl: newUser.profileImageUrl
+        };
+        
+        return res.status(201).json(safeUser);
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+  
+  app.get('/api/user', ensureAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ message: 'Invalid user session' });
       }

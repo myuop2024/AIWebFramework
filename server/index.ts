@@ -1,7 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-// Using traditional session management
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 import { pool, checkDbConnection } from "./db";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
@@ -119,10 +120,46 @@ app.use((req, res, next) => {
   }
   
   try {
-    // Set up traditional authentication
+    // Set up traditional authentication with session management
+    const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+    const PgStore = connectPg(session);
+    const sessionStore = new PgStore({
+      pool: pool,
+      createTableIfMissing: true,
+      tableName: 'sessions'
+    });
+    
+    app.use(session({
+      store: sessionStore,
+      secret: process.env.SESSION_SECRET || 'dev-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: sessionTtl
+      }
+    }));
+    
+    // Setup passport for authentication
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(attachUser);
+    
+    // Serialize/deserialize user for session management
+    passport.serializeUser((user: any, done) => {
+      done(null, user.id);
+    });
+    
+    passport.deserializeUser(async (id: string, done) => {
+      try {
+        const user = await storage.getUser(id);
+        done(null, user);
+      } catch (err) {
+        done(err, null);
+      }
+    });
+    
     logger.info('Traditional authentication system configured successfully');
     
     // Add health check endpoint
@@ -133,7 +170,7 @@ app.use((req, res, next) => {
         timestamp: new Date().toISOString(),
         database: dbStatus ? 'connected' : 'disconnected',
         environment: process.env.NODE_ENV || 'development',
-        auth: 'replit'
+        auth: 'traditional'
       });
     });
     
