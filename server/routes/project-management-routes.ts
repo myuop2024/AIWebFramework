@@ -106,7 +106,8 @@ projectManagementRouter.get('/projects', ensureAuthenticated, async (req: Reques
   }
 });
 
-// Special route to handle the "new" endpoint - redirects to the POST /projects endpoint
+// PATCH /projects/new creates a project for clients that send PATCH
+// rather than performing an HTTP redirect.
 projectManagementRouter.patch('/projects/new', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     console.log('Received PATCH to /projects/new, redirecting to POST /projects');
