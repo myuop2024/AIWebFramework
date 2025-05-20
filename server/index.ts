@@ -103,6 +103,16 @@ app.use((req, res, next) => {
   next();
 });
 
+// Global error handlers for all uncaught exceptions and unhandled promise rejections
+process.on('uncaughtException', (err) => {
+  logger.critical('Uncaught Exception', err);
+  process.exit(1); // Optional: restart process
+});
+
+process.on('unhandledRejection', (reason: any) => {
+  logger.critical('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)));
+});
+
 (async () => {
   let dbConnected = false;
   let server: Server;
