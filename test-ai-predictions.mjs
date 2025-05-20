@@ -1,6 +1,7 @@
 // Enhanced test script for AI predictions using ES modules
 import axios from 'axios';
 import { promises as fs } from 'fs';
+import assert from 'node:assert';
 
 // Create an axios instance with cookie support
 const api = axios.create({
@@ -30,10 +31,11 @@ async function testAIPredictions() {
     
     // Step 1: Login as admin
     console.log('Step 1: Logging in as admin...');
-    const loginResponse = await api.post('/api/login', {
-      username: 'admin',
-      password: 'admin123'
-    });
+  const loginResponse = await api.post('/api/login', {
+    username: 'admin',
+    password: 'admin123'
+  });
+  assert.strictEqual(loginResponse.status, 200, 'Login should return status 200');
     
     // Save cookies for subsequent requests
     if (loginResponse.headers['set-cookie']) {
@@ -45,9 +47,11 @@ async function testAIPredictions() {
     
     // Step 2: Get general predictions (without specifying a station)
     console.log('\nStep 2: Fetching general predictions...');
-    const generalPredictionsResponse = await api.get('/api/admin/analytics/predictions', {
-      headers: cookieJar.getCookieHeader()
-    });
+  const generalPredictionsResponse = await api.get('/api/admin/analytics/predictions', {
+    headers: cookieJar.getCookieHeader()
+  });
+  assert.strictEqual(generalPredictionsResponse.status, 200, 'Prediction request should return status 200');
+  assert(Array.isArray(generalPredictionsResponse.data), 'Prediction data should be an array');
     
     console.log('General predictions received:');
     console.log(JSON.stringify(generalPredictionsResponse.data, null, 2));
@@ -139,6 +143,7 @@ async function testAIPredictions() {
     } else if (error.request) {
       console.error('No response received', error.request);
     }
+    process.exitCode = 1;
   }
 }
 
