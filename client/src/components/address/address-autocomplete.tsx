@@ -247,14 +247,14 @@ export default function AddressAutocomplete({
       const geocodingService = platform.getSearchService();
       
       // Create a promise to get detailed address information
-      const geocodePromise = new Promise<any>((resolve, reject) => {
+      const geocodePromise = new Promise<HereApiResultItem>((resolve, reject) => {
         geocodingService.geocode(
           {
             q: suggestion.title,
             // Add more details to extract street numbers and parish info
             details: 1
           },
-          (result: any) => {
+          (result: { items: HereApiResultItem[] }) => {
             if (result && result.items && result.items.length > 0) {
               resolve(result.items[0]);
             } else {
@@ -262,11 +262,12 @@ export default function AddressAutocomplete({
               resolve({
                 title: suggestion.title,
                 position: suggestion.position,
-                address: suggestion.address
+                address: suggestion.address,
+                id: suggestion.id
               });
             }
           },
-          (error: any) => {
+          (error: unknown) => {
             console.error("Error in geocode:", error);
             reject(error);
           }

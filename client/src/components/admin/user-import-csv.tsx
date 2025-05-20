@@ -32,7 +32,7 @@ interface EnhancementStats {
 
 interface ErrorRow {
   rowIndex: number;
-  data: any;
+  data: Partial<ProcessedUserData>;
   error: string;
   explanation?: string;
 }
@@ -110,7 +110,7 @@ export default function UserImportCSV() {
     onError: (error) => {
       toast({
         title: 'Error uploading file',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     },
@@ -159,7 +159,7 @@ export default function UserImportCSV() {
     onError: (error) => {
       toast({
         title: 'Error importing users',
-        description: error instanceof Error ? error.message : 'An unknown error occurred',
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
     },

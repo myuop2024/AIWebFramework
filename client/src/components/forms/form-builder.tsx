@@ -66,7 +66,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
       section.fields.forEach((field: SchemaFormField) => {
         const { name, type, required, label } = field;
         
-        let fieldSchema: z.ZodTypeAny = z.any();
+        let fieldSchema: z.ZodTypeAny = z.unknown();
         
         // Create field schema based on type
         switch (type) {
@@ -95,7 +95,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
             fieldSchema = z.string();
             break;
           default:
-            fieldSchema = z.any();
+            fieldSchema = z.unknown();
         }
         
         // Add required validation

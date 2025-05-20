@@ -49,7 +49,7 @@ interface TrainingManagerProps {
 export function TrainingManager({ userId }: TrainingManagerProps) {
   const [activeTab, setActiveTab] = useState("modules");
   const [isAddModuleOpen, setIsAddModuleOpen] = useState(false);
-  const [editingModule, setEditingModule] = useState<any | null>(null);
+  const [editingModule, setEditingModule] = useState<(TrainingModuleForm & { id: number }) | null>(null);
   const { toast } = useToast();
 
   // Fetch training modules
@@ -177,7 +177,7 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
   };
 
   // Handle edit module
-  const handleEditModule = (module: any) => {
+  const handleEditModule = (module: TrainingModuleForm & { id: number }) => {
     setEditingModule(module);
     
     // Populate form with module data

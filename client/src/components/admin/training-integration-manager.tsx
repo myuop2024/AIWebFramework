@@ -70,7 +70,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   const [selectedIntegration, setSelectedIntegration] = useState<TrainingIntegration | null>(null);
   const [systemType, setSystemType] = useState<'moodle' | 'zoom'>('moodle');
   const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string; data?: unknown; error?: unknown } | null>(null);
+  const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string; data?: object; error?: string } | null>(null);
   
   const { toast } = useToast();
   
@@ -86,7 +86,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   
   // Mutations
   const createIntegrationMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/training/integrations', {
+    mutationFn: (data: IntegrationType) => apiRequest('/api/training/integrations', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {
@@ -111,7 +111,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   });
   
   const updateIntegrationMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: any }) => apiRequest(`/api/training/integrations/${id}`, {
+    mutationFn: ({ id, data }: { id: number, data: IntegrationType }) => apiRequest(`/api/training/integrations/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
       headers: {
@@ -158,7 +158,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   });
   
   const testConnectionMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/training/test-connection', {
+    mutationFn: (data: object) => apiRequest('/api/training/test-connection', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: {
@@ -256,7 +256,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   };
   
   // Test a connection to a system
-  const testConnection = (system: any) => {
+  const testConnection = (system: { type: string; baseUrl: string; authToken?: string; clientId?: string; clientSecret?: string }) => {
     setTestingConnection(true);
     setConnectionResult(null);
     
