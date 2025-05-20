@@ -546,7 +546,7 @@ export function UpcomingDeadlinesWidget() {
       case 'low':
         return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Low</Badge>;
       default:
-        return <Badge variant="outline">Unknown</Badge>;
+        return <Badge variant="outline">Unspecified</Badge>;
     }
   };
 

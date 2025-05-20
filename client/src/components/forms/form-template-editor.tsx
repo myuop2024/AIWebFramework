@@ -197,7 +197,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
     
     const newField: SchemaFormField = {
       id: uuidv4(),
-      type: fieldType as any,
+      type: fieldType as SchemaFormField['type'],
       label: `New ${fieldType} field`,
       name: `field_${uuidv4().split('-')[0]}`,
       required: false,

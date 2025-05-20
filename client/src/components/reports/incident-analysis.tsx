@@ -246,7 +246,7 @@ export default function IncidentAnalysis() {
   };
   
   // Convert data to CSV format
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = <T extends Record<string, unknown>>(data: T[]) => {
     if (!data.length) return '';
     
     const headers = Object.keys(data[0]).join(',');

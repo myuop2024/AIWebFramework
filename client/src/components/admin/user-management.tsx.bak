@@ -32,7 +32,16 @@ interface User {
 }
 
 interface UserFormData {
-  // Define the structure of UserFormData
+  firstName: string;
+  lastName: string;
+  email: string;
+  username: string;
+  observerId: string;
+  role: string;
+  verificationStatus?: string;
+  isActive?: boolean;
+  profilePicture?: string;
+  phoneNumber?: string;
 }
 
 export function UserManagement() {

@@ -56,7 +56,7 @@ export interface FormField {
 
 interface DynamicFormProps {
   fields: FormField[];
-  onSubmit: (data: Record<string, unknown>) => void;
+  onSubmit: (data: Record<string, unknown> | FormData) => void;
   isLoading?: boolean;
   defaultValues?: Record<string, unknown>;
 }
@@ -172,6 +172,7 @@ export const DynamicForm = ({
           fieldSchema = z.string();
           break;
         case "file":
+          // Handle file type differently - validate as File or undefined
           fieldSchema = z.instanceof(File)
             .refine(
               (file) => file instanceof File || !field.required,
@@ -187,7 +188,7 @@ export const DynamicForm = ({
                 return true;
               },
               { message: "File size should be less than 5MB" }
-            );
+            ).optional();
           break;
         default: // text and other inputs
           fieldSchema = z.string();

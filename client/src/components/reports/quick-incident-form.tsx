@@ -64,13 +64,34 @@ interface PollingStation {
   address: string;
 }
 
+interface QuickReportTemplateField {
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  minLength?: number;
+  options?: { id?: string; value?: string; name?: string; label?: string }[];
+}
+
+interface QuickReportTemplate {
+  id: string;
+  isActive: boolean;
+  fields: QuickReportTemplateField[];
+}
+
+interface Assignment {
+  stationId: number;
+  isPrimary?: boolean;
+}
+
 export default function QuickIncidentForm({
   open,
   onOpenChange,
   onReportSubmitted,
 }: QuickIncidentFormProps) {
   // Fetch the template for quick incident reporting
-  const { data: templates = [] } = useQuery<any[]>({
+  const { data: templates = [] } = useQuery<QuickReportTemplate[]>({
     queryKey: ['/api/quick-reports/templates'],
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: open, // Only fetch when the form is open
@@ -107,7 +128,7 @@ export default function QuickIncidentForm({
   });
   
   // Get user assignments - to set default station
-  const { data: assignments = [] } = useQuery<any[]>({
+  const { data: assignments = [] } = useQuery<Assignment[]>({
     queryKey: ['/api/users/assignments'],
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -391,13 +412,13 @@ export default function QuickIncidentForm({
               {formTemplate?.fields ? (
                 // Render dynamic fields from template
                 formTemplate.fields
-                  .filter((field: any) => {
+                  .filter((field: QuickReportTemplateField) => {
                     // Skip location and image fields as they're handled separately
                     return !['location', 'image'].includes(field.type) && 
                            field.name !== 'location' && 
                            field.name !== 'image';
                   })
-                  .map((field: any) => {
+                  .map((field: QuickReportTemplateField) => {
                     
                     // Always use the incidentType field from the API for consistency
                     if (field.name === 'incidentType') {
@@ -484,7 +505,7 @@ export default function QuickIncidentForm({
                                 <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
                               </SelectTrigger>
                               <SelectContent>
-                                {field.options?.map((option: any) => (
+                                {field.options?.map((option) => (
                                   <SelectItem key={option.id || option.value} value={option.id || option.value}>
                                     {option.name || option.label}
                                   </SelectItem>

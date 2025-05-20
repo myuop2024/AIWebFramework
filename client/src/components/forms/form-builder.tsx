@@ -54,7 +54,7 @@ export interface FieldOption {
 }
 
 export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilderProps) {
-  const [formData, setFormData] = useState<Record<string, unknown>>({});
+  const [formData, setFormData] = useState<Record<string, string | number | boolean | string[] | null>>({});
   
   // Generate a dynamic schema based on the form fields
   const generateSchema = () => {
@@ -72,7 +72,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
       section.fields.forEach((field: SchemaFormField) => {
         const { name, type, required, label } = field;
         
-        let fieldSchema: z.ZodTypeAny = z.unknown();
+        let fieldSchema: z.ZodTypeAny = z.string();
         
         // Create field schema based on type
         switch (type) {
@@ -101,7 +101,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
             fieldSchema = z.string();
             break;
           default:
-            fieldSchema = z.unknown();
+            fieldSchema = z.string();
         }
         
         // Add required validation
