@@ -154,7 +154,7 @@ process.on('unhandledRejection', (reason: any) => {
     const sessionStore = new PgStore({
       pool: pool,
       createTableIfMissing: true,
-      tableName: 'sessions'
+      tableName: 'session' // Using the existing session table in the database
     });
     
     app.use(session({

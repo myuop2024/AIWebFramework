@@ -785,6 +785,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Note: Using standardized middleware from auth.ts
 
+  // Current user endpoint for the auth system
+  app.get('/api/user', async (req, res) => {
+    try {
+      // Check if user is authenticated via session
+      if (!req.session.userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      
+      const userId = req.session.userId as number;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      res.status(200).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // User profile routes
   app.get('/api/users/profile', ensureAuthenticated, async (req, res) => {
     try {
