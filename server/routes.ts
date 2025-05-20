@@ -76,30 +76,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Traditional authentication routes
   app.post('/api/login', async (req, res) => {
     try {
+      logger.info(`Login attempt for user`, { ip: req.ip });
       const result = loginUserSchema.safeParse(req.body);
       if (!result.success) {
+        logger.warn('Invalid login data', { errors: result.error.format() });
         return res.status(400).json({ message: 'Invalid login data', errors: result.error.format() });
       }
       
       const { username, password } = result.data;
+      logger.info(`Looking up user by username: ${username}`);
       const user = await storage.getUserByUsername(username);
       
       if (!user) {
+        logger.warn(`Login failed: User not found - ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
       
+      logger.info(`User found, verifying password for: ${username}`);
       // Verify password (assuming bcrypt is used for password hashing)
       const bcrypt = require('bcrypt');
       const passwordMatch = await bcrypt.compare(password, user.password);
       
       if (!passwordMatch) {
+        logger.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
+      
+      logger.info(`Password verified for user: ${username}`);
+      // Log user object for debugging (excluding password)
+      const userForDebug = {...user};
+      delete userForDebug.password;
+      logger.debug('User object for login:', userForDebug);
       
       // Store user in session
       req.login(user, (err) => {
         if (err) {
-          return res.status(500).json({ message: 'Error during login' });
+          logger.error('Error during login/session creation', { error: err.message, stack: err.stack });
+          return res.status(500).json({ message: 'Error during login', details: err.message });
         }
         
         // Remove sensitive data before sending user object
@@ -114,11 +127,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           profileImageUrl: user.profileImageUrl
         };
         
+        logger.info(`Login successful for user: ${username}`);
         return res.status(200).json(safeUser);
       });
     } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'Internal server error' });
+      logger.error('Login error:', { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : 'No stack trace' });
+      res.status(500).json({ message: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
   

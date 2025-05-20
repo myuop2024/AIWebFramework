@@ -179,13 +179,26 @@ process.on('unhandledRejection', (reason: any) => {
       done(null, user.id);
     });
     
-    passport.deserializeUser(async (id, done) => {
+    passport.deserializeUser(async (id: any, done) => {
       try {
         // Convert id to number if it's a string
         const userId = typeof id === 'string' ? parseInt(id, 10) : id;
+        if (isNaN(userId)) {
+          // If we can't get a valid number, report the error
+          logger.error(`Invalid user ID during deserialize: ${id} (type: ${typeof id})`);
+          return done(new Error('Invalid user ID'), null);
+        }
+        
         const user = await storage.getUser(userId);
+        if (!user) {
+          logger.warn(`User not found during deserialize: ${userId}`);
+          return done(null, null);
+        }
+        
+        logger.debug(`Deserialized user ${userId} successfully`);
         done(null, user);
       } catch (err) {
+        logger.error(`Error during user deserialization: ${err instanceof Error ? err.message : String(err)}`);
         done(err, null);
       }
     });
