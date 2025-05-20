@@ -36,6 +36,7 @@ import {
   type InsertPhotoApproval,
   type Role,
   type InsertRole,
+  type IdCardTemplate,
 } from "@shared/schema";
 
 // Interface for storage operations
