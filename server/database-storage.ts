@@ -120,8 +120,8 @@ export class DatabaseStorage implements IStorage {
     return updatedSetting;
   }
 
-  // User methods for Replit Auth integration
-  async getUser(id: string): Promise<User | undefined> {
+  // User methods for traditional auth integration
+  async getUser(id: number): Promise<User | undefined> {
     try {
       logger.info(`Getting user by ID: ${id}`);
       const [user] = await db
@@ -211,48 +211,54 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
-      logger.info(`Upserting user with ID: ${userData.id}`);
-      
-      // Check if the user exists first
-      const existingUser = await this.getUser(userData.id);
-      
-      if (existingUser) {
-        // Update existing user
-        const [updatedUser] = await db
-          .update(usersTable)
-          .set({
-            ...userData,
-            updatedAt: new Date()
-          })
-          .where(eq(usersTable.id, userData.id))
-          .returning();
+      // For inserts, we don't need to provide an ID as it will be auto-generated
+      if (userData.id) {
+        logger.info(`Upserting user with ID: ${userData.id}`);
         
-        logger.info(`Updated existing user: ${userData.id}`);
-        return updatedUser;
-      } else {
-        // Create new user with generated observer ID
-        const observerId = userData.observerId || generateObserverId();
+        // Check if the user exists first
+        const existingUser = await this.getUser(userData.id);
         
-        const [newUser] = await db
-          .insert(usersTable)
-          .values({
-            ...userData,
-            observerId,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          })
-          .returning();
-        
-        logger.info(`Created new user: ${userData.id} with observerId: ${observerId}`);
-        return newUser;
+        if (existingUser) {
+          // Update existing user
+          const [updatedUser] = await db
+            .update(usersTable)
+            .set({
+              ...userData,
+              updatedAt: new Date()
+            })
+            .where(eq(usersTable.id, userData.id))
+            .returning();
+          
+          logger.info(`Updated existing user: ${userData.id}`);
+          return updatedUser;
+        }
       }
+      
+      // Create new user with generated observer ID
+      const observerId = userData.observerId || generateObserverId();
+      
+      // Remove the id field for insert to let the database auto-generate it
+      const { id, ...userDataWithoutId } = userData;
+      
+      const [newUser] = await db
+        .insert(usersTable)
+        .values({
+          ...userDataWithoutId,
+          observerId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      logger.info(`Created new user with ID: ${newUser.id} and observerId: ${observerId}`);
+      return newUser;
     } catch (error) {
-      logger.error(`Error upserting user with ID: ${userData.id}`, error);
+      logger.error(`Error upserting user`, error);
       throw error;
     }
   }
 
-  async updateUser(id: string, data: Partial<User>): Promise<User | undefined> {
+  async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
     try {
       const [updatedUser] = await db
         .update(usersTable)
@@ -285,7 +291,7 @@ export class DatabaseStorage implements IStorage {
   // Add stubs for required methods to satisfy the interface
   // These can be expanded later as needed
   
-  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+  async getUserProfile(userId: number): Promise<UserProfile | undefined> {
     try {
       const [profile] = await db
         .select()
@@ -313,7 +319,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile | undefined> {
+  async updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<UserProfile | undefined> {
     try {
       const [updatedProfile] = await db
         .update(userProfiles)
@@ -336,7 +342,7 @@ export class DatabaseStorage implements IStorage {
     throw new Error("Method not implemented");
   }
   
-  async getDocumentsByUserId(userId: string): Promise<Document[]> {
+  async getDocumentsByUserId(userId: number): Promise<Document[]> {
     // Implementation
     throw new Error("Method not implemented");
   }

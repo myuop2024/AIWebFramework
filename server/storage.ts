@@ -36,6 +36,8 @@ import {
   type InsertPhotoApproval,
   type Role,
   type InsertRole,
+  type IdCardTemplate,
+  type InsertIdCardTemplate
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -50,19 +52,19 @@ export interface IStorage {
   getAllIdCardTemplates(): Promise<IdCardTemplate[]>;
   
   // User operations
-  getUser(id: string): Promise<User | undefined>;
+  getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByObserverId(observerId: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: string, data: Partial<User>): Promise<User | undefined>;
+  updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
   upsertUser(userData: UpsertUser): Promise<User>;
   
   // User profile operations
-  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  getUserProfile(userId: number): Promise<UserProfile | undefined>;
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
-  updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile | undefined>;
+  updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<UserProfile | undefined>;
   
   // Document operations
   getDocument(id: number): Promise<Document | undefined>;
@@ -78,10 +80,10 @@ export interface IStorage {
   deletePollingStation(id: number): Promise<boolean>;
   
   // Assignment operations
-  getAssignmentsByUserId(userId: string): Promise<Assignment[]>;
+  getAssignmentsByUserId(userId: number): Promise<Assignment[]>;
   getAssignmentsByStationId(stationId: number): Promise<Assignment[]>;
   getAssignment(id: number): Promise<Assignment | undefined>;
-  getActiveAssignments(userId: string): Promise<Assignment[]>;
+  getActiveAssignments(userId: number): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined>;
 }
