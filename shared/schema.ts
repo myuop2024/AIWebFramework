@@ -198,6 +198,12 @@ export const reports = pgTable("reports", {
   locationLat: real("location_lat"),
   locationLng: real("location_lng"),
   encryptedData: boolean("encrypted_data").default(false),
+  // --- Added columns for analytics and reporting ---
+  createdAt: timestamp("created_at").defaultNow(),
+  severity: text("severity"),
+  category: text("category"),
+  pollingStationId: integer("polling_station_id").references(() => pollingStations.id),
+  description: text("description"),
 });
 
 // Report attachments with OCR support
