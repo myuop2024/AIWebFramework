@@ -1,0 +1,4 @@
+{
+  "setup": "./.codex/setup.sh",
+  "check": "npm run check"
+}
