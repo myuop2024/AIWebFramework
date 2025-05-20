@@ -68,7 +68,7 @@ export interface IStorage {
   
   // Document operations
   getDocument(id: number): Promise<Document | undefined>;
-  getDocumentsByUserId(userId: string): Promise<Document[]>;
+  getDocumentsByUserId(userId: number): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
   updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined>;
   

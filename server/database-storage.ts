@@ -382,7 +382,7 @@ export class DatabaseStorage implements IStorage {
     throw new Error("Method not implemented");
   }
   
-  async getAssignmentsByUserId(userId: string): Promise<Assignment[]> {
+  async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {
     // Implementation
     throw new Error("Method not implemented");
   }
@@ -397,7 +397,7 @@ export class DatabaseStorage implements IStorage {
     throw new Error("Method not implemented");
   }
   
-  async getActiveAssignments(userId: string): Promise<Assignment[]> {
+  async getActiveAssignments(userId: number): Promise<Assignment[]> {
     // Implementation
     throw new Error("Method not implemented");
   }
