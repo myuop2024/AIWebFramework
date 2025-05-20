@@ -6,23 +6,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Navigation, Check, Clock } from "lucide-react";
 import InteractiveMap from "@/components/mapping/interactive-map";
+import { type PollingStation } from '@shared/schema';
 
 // We'd use a real map implementation like Google Maps or Leaflet in production
 // This is a simplified version for the demo
-
-interface PollingStation {
-  id: number;
-  name: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  coordinates?: string;
-  latitude?: number;
-  longitude?: number;
-  status: 'active' | 'closed' | 'issue';
-  capacity?: number;
-}
 
 interface Assignment {
   id: number;

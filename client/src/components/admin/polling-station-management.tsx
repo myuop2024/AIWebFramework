@@ -10,22 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { MapPin, Plus, FileUp, FileDown, Edit, Eye, Trash2, Search, RefreshCw } from "lucide-react";
 import { PollingStationForm } from "./polling-station-form";
 import { PollingStationMap } from "./polling-station-map";
-
-// Types
-interface PollingStation {
-  id: number;
-  name: string;
-  code?: string;
-  address?: string;
-  city?: string;
-  region?: string;
-  capacity?: number;
-  latitude?: number;
-  longitude?: number;
-  isActive?: boolean;
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
-}
+import { type PollingStation } from '@shared/schema';
 
 export function PollingStationManagement() {
   const queryClient = useQueryClient();
@@ -134,7 +119,7 @@ export function PollingStationManagement() {
   });
 
   // Handle form submission
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: PollingStation) => {
     if (selectedStation) {
       // Update existing station
       updateStation.mutate({ id: selectedStation.id, data });

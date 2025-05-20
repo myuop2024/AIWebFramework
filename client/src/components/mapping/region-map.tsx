@@ -7,6 +7,7 @@ import { Loader2, MapPin, Info } from "lucide-react";
 import InteractiveMap from "./interactive-map";
 import { useToast } from "@/hooks/use-toast";
 import { JAMAICA_PARISHES } from "@/data/jamaica-parishes";
+import { type PollingStation } from '@shared/schema';
 
 interface Region {
   id: number;
@@ -14,17 +15,6 @@ interface Region {
   boundaries: Array<{lat: number; lng: number}>;
   color?: string;
   stationCount?: number;
-}
-
-interface PollingStation {
-  id: number;
-  name: string;
-  address: string;
-  city: string;
-  state: string; // Parish in Jamaica
-  latitude: number;
-  longitude: number;
-  status: 'active' | 'closed' | 'issue';
 }
 
 interface RegionMapProps {
@@ -58,9 +48,8 @@ export default function RegionMap({
   });
   
   // Fetch user's assigned station if userId is provided
-  const { data: userAssignments = [], isLoading: isAssignmentsLoading } = useQuery<any[]>({
-    queryKey: ['/api/users/assignments', userId],
-    enabled: !!userId,
+  const { data: userAssignments = [], isLoading: isAssignmentsLoading } = useQuery<PollingStation[]>({
+    queryKey: ['/api/user/assignments'],
   });
 
   // Get user's current location
@@ -262,7 +251,7 @@ export default function RegionMap({
               if (onStationClick) {
                 onStationClick(Number(markerId));
               } else {
-                const station = stations.find((s: any) => s.id === Number(markerId));
+                const station = stations.find((s: PollingStation) => s.id === Number(markerId));
                 if (station) {
                   toast({
                     title: station.name || 'Polling Station',

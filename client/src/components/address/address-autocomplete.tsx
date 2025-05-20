@@ -49,8 +49,15 @@ const findJamaicanParish = (locationText: string): string | null => {
   return null;
 };
 
+interface HereApiResultItem {
+  title: string;
+  address: AddressSuggestion['address'];
+  position: { lat: number; lng: number };
+  id: string;
+}
+
 interface AddressAutocompleteProps {
-  onAddressSelect: (address: any) => void;
+  onAddressSelect: (address: AddressSuggestion) => void;
   initialValue?: string;
   className?: string;
   placeholder?: string;
@@ -164,11 +171,21 @@ export default function AddressAutocomplete({
             in: 'countryCode:JAM', // Filter to Jamaica specifically
             limit: 5
           },
-          (result: any) => {
+          (result: { items: HereApiResultItem[] }) => {
             if (result && result.items) {
-              const suggestions = result.items.map((item: any) => ({
+              const suggestions = result.items.map((item) => ({
                 title: item.title,
-                address: item.address || {},
+                address: item.address || {
+                  label: '',
+                  countryCode: '',
+                  countryName: '',
+                  state: '',
+                  county: '',
+                  city: '',
+                  district: '',
+                  street: '',
+                  postalCode: '',
+                },
                 position: item.position || { lat: 0, lng: 0 },
                 id: item.id || Math.random().toString(36).substring(2)
               }));
@@ -177,7 +194,7 @@ export default function AddressAutocomplete({
               resolve([]);
             }
           },
-          (error: any) => {
+          (error: Error) => {
             console.error("Error fetching suggestions:", error);
             reject(error);
           }

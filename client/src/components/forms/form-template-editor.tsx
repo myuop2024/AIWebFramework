@@ -145,18 +145,17 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
     if (!initialData || !initialData.fields || typeof initialData.fields !== 'object') {
       return [];
     }
-    
     try {
       // Try to parse the sections from the fields JSON
-      const fieldsData = initialData.fields as any;
+      const fieldsData = initialData.fields as { sections: SchemaFormSection[] };
       if (fieldsData.sections && Array.isArray(fieldsData.sections)) {
-        return fieldsData.sections.map((section: any) => ({
+        return fieldsData.sections.map((section: SchemaFormSection) => ({
           id: section.id || uuidv4(),
           title: section.title,
           description: section.description || '',
           order: section.order || 0,
           fields: Array.isArray(section.fields) 
-            ? section.fields.map((field: any) => ({
+            ? section.fields.map((field: SchemaFormField) => ({
                 ...field,
                 id: field.id || uuidv4()
               }))
@@ -166,7 +165,6 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
     } catch (error) {
       console.error('Error parsing form template fields:', error);
     }
-    
     return [];
   }
   

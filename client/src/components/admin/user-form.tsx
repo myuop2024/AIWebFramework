@@ -33,6 +33,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { type User } from '@shared/schema';
 
 // Form validation schema
 const userSchema = z.object({
@@ -50,23 +51,10 @@ const userSchema = z.object({
 
 type UserFormValues = z.infer<typeof userSchema>;
 
-interface User {
-  id?: number;
-  username: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
-  observerId?: string;
-  notes?: string;
-  isActive?: boolean;
-  verificationStatus?: string;
-}
-
 interface UserFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: User) => void;
   user?: User;
   title: string;
 }
@@ -107,7 +95,7 @@ export function UserForm({
       delete values.password;
     }
 
-    onSubmit(values);
+    onSubmit(values as User);
   };
 
   return (

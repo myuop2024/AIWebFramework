@@ -16,7 +16,7 @@ import {
 import { Plus, Search, MapPin, Users, ClipboardList, Loader2, Edit, Trash, MoreHorizontal } from "lucide-react";
 import InteractiveMap from "@/components/mapping/interactive-map";
 import { Separator } from "@/components/ui/separator";
-import { PollingStation } from "@shared/schema";
+import { type PollingStation } from '@shared/schema';
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import PollingStationForm from "./polling-station-form";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +50,7 @@ export default function PollingStationsList() {
 
   // Create a new polling station
   const createMutation = useMutation({
-    mutationFn: async (newStation: any) => {
+    mutationFn: async (newStation: PollingStation) => {
       const res = await apiRequest("POST", "/api/polling-stations", newStation);
       return await res.json();
     },
@@ -73,7 +73,7 @@ export default function PollingStationsList() {
 
   // Update a polling station
   const updateMutation = useMutation({
-    mutationFn: async (updatedStation: any) => {
+    mutationFn: async (updatedStation: PollingStation) => {
       const res = await apiRequest(
         "PATCH", 
         `/api/polling-stations/${updatedStation.id}`, 
@@ -122,14 +122,14 @@ export default function PollingStationsList() {
   });
 
   // Handle form submission for creating a new polling station
-  const handleCreateSubmit = (data: any) => {
+  const handleCreateSubmit = (data: PollingStation) => {
     createMutation.mutate(data);
   };
 
   // Handle form submission for updating a polling station
-  const handleUpdateSubmit = (data: any) => {
+  const handleUpdateSubmit = (data: PollingStation) => {
     if (selectedStation) {
-      updateMutation.mutate({ ...data, id: selectedStation.id });
+      updateMutation.mutate(data);
     }
   };
 

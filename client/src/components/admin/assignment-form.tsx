@@ -96,7 +96,7 @@ interface Assignment {
 interface AssignmentFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: AssignmentFormValues) => void;
   assignment?: Assignment;
   title: string;
 }

@@ -39,34 +39,34 @@ import {
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type FormTemplate } from '@shared/schema';
+import { type FormTemplate, type FormField as SchemaFormField, type FormSection as SchemaFormSection } from '@shared/schema';
 
 interface FormBuilderProps {
   template: FormTemplate;
-  onSubmit?: (data: any) => void;
+  onSubmit?: (data: Record<string, unknown>) => void;
   readOnly?: boolean;
 }
 
 export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilderProps) {
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   
   // Generate a dynamic schema based on the form fields
   const generateSchema = () => {
-    const schemaFields: Record<string, any> = {};
+    const schemaFields: Record<string, z.ZodTypeAny> = {};
     
     // Get sections from template fields
     const sections = 
       template?.fields && 
       typeof template.fields === 'object' && 
       'sections' in template.fields ? 
-        (template.fields as any).sections : [];
+        (template.fields as { sections: SchemaFormSection[] }).sections : [];
       
     // Process each field and add to schema
-    sections.forEach((section: any) => {
-      section.fields.forEach((field: any) => {
-        const { name, type, required } = field;
+    sections.forEach((section: SchemaFormSection) => {
+      section.fields.forEach((field: SchemaFormField) => {
+        const { name, type, required, label } = field;
         
-        let fieldSchema: any = z.any();
+        let fieldSchema: z.ZodTypeAny = z.any();
         
         // Create field schema based on type
         switch (type) {
@@ -102,10 +102,10 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
         if (required) {
           if (type === 'checkbox') {
             fieldSchema = z.boolean().refine((val) => val === true, {
-              message: `${field.label} is required`,
+              message: `${label} is required`,
             });
           } else {
-            fieldSchema = fieldSchema.min(1, `${field.label} is required`);
+            fieldSchema = fieldSchema.min(1, `${label} is required`);
           }
         } else {
           // Make optional if not required
@@ -127,7 +127,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
   });
   
   // Handle form submission
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: Record<string, unknown>) => {
     if (onSubmit) {
       onSubmit(data);
     }
@@ -139,7 +139,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
     template?.fields && 
     typeof template.fields === 'object' && 
     'sections' in template.fields ? 
-      (template.fields as any).sections : [];
+      (template.fields as { sections: SchemaFormSection[] }).sections : [];
   
   if (!sections || sections.length === 0) {
     return (
@@ -150,7 +150,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
   }
   
   // Render a field based on its type
-  const renderField = (field: any, fieldName: string) => {
+  const renderField = (field: SchemaFormField, fieldName: string) => {
     const { type, label, placeholder, required, helpText, options } = field;
     
     switch (type) {

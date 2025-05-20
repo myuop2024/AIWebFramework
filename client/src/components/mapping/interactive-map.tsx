@@ -30,8 +30,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapInstance, setMapInstance] = useState<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
+  const markersRef = useRef<H.map.Marker[]>([]);
 
   useEffect(() => {
     // Load map when component mounts
@@ -64,7 +64,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
           // Add event listener for map clicks
           if (onMapClick) {
-            map.addEventListener('tap', (evt: any) => {
+            map.addEventListener('tap', (evt: H.mapevents.Event) => {
               const position = map.screenToGeo(
                 evt.currentPointer.viewportX,
                 evt.currentPointer.viewportY

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, AlertCircle, Check, Upload, X, Info, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { type User } from '@shared/schema';
 
 interface ProcessedUserData {
   firstName: string;

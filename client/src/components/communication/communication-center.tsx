@@ -819,7 +819,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   getUserById(incomingCall.callerId)?.username || incomingCall.callerId
                 }`} />
                 <AvatarFallback>
-                  {getUserById(incomingCall.callerId)?.username?.substring(0, 2).toUpperCase() || '??'}
+                  {getUserById(incomingCall.callerId)?.username || 'Unknown User'}
                 </AvatarFallback>
               </Avatar>
 

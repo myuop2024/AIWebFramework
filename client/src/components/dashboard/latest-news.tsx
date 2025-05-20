@@ -4,9 +4,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
+import { type News } from '@shared/schema';
 
 export default function LatestNews() {
-  const { data: news, isLoading, error } = useQuery<any[]>({
+  const { data: news, isLoading, error } = useQuery<News[]>({
     queryKey: ['/api/news/latest'],
   });
 
@@ -93,7 +94,7 @@ export default function LatestNews() {
       </CardHeader>
       <CardContent className="p-0 divide-y divide-gray-200">
         {Array.isArray(news) && news.length > 0 ? (
-          news.map((item) => (
+          news.map((item: News) => (
             <div key={item.id} className="p-6">
               {item.category && getCategoryBadge(item.category)}
               <h4 className="font-medium text-gray-900 mt-2">{item.title || "Untitled"}</h4>

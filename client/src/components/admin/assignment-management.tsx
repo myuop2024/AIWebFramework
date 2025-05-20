@@ -14,30 +14,9 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { AssignmentForm } from "./assignment-form";
+import { type Assignment } from '@shared/schema';
 
 // Types
-interface Assignment {
-  id: number;
-  userId: number;
-  stationId: number;
-  startDate: string;
-  endDate: string;
-  status?: string;
-  isActive?: boolean;
-  checkedIn?: boolean;
-  checkedOut?: boolean;
-  checkinTime?: string;
-  checkoutTime?: string;
-  notes?: string;
-  
-  // Joined fields from related entities
-  stationName?: string;
-  stationCode?: string;
-  userFullName?: string;
-  userEmail?: string;
-  observerId?: string;
-}
-
 interface PollingStation {
   id: number;
   name: string;
@@ -245,7 +224,7 @@ export function AssignmentManagement() {
   });
 
   // Handle form submission
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: Assignment) => {
     if (selectedAssignment) {
       // Update existing assignment
       updateAssignment.mutate({ id: selectedAssignment.id, data });

@@ -14,22 +14,7 @@ import {
 } from "lucide-react";
 import { UserForm } from "./user-form";
 import { UserDetailModal } from "./user-detail-modal";
-
-// Types
-interface User {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  observerId: string;
-  role: string;
-  verificationStatus?: string;
-  isActive?: boolean;
-  profilePicture?: string;
-  phoneNumber?: string;
-  createdAt: string | Date;
-}
+import { type User } from '@shared/schema';
 
 export function UserManagement() {
   const queryClient = useQueryClient();
@@ -201,7 +186,7 @@ export function UserManagement() {
   };
 
   // Handle form submission
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: User) => {
     if (selectedUser) {
       // Update existing user
       updateUser.mutate({ id: selectedUser.id, data });

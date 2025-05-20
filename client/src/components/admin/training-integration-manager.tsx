@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { PlusCircle, Trash2, RotateCw, ServerCrash, Check, X } from 'lucide-react';
+import { type TrainingIntegration } from '@shared/schema';
 
 // Form schemas
 const moodleConfigSchema = z.object({
@@ -66,10 +67,10 @@ type IntegrationType = z.infer<typeof integrationFormSchema>;
 // Component for managing training integrations
 export const TrainingIntegrationManager: React.FC = () => {
   const [activeTab, setActiveTab] = useState('list');
-  const [selectedIntegration, setSelectedIntegration] = useState<any>(null);
+  const [selectedIntegration, setSelectedIntegration] = useState<TrainingIntegration | null>(null);
   const [systemType, setSystemType] = useState<'moodle' | 'zoom'>('moodle');
   const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionResult, setConnectionResult] = useState<any>(null);
+  const [connectionResult, setConnectionResult] = useState<{ success: boolean; message: string; data?: unknown; error?: unknown } | null>(null);
   
   const { toast } = useToast();
   
@@ -78,7 +79,7 @@ export const TrainingIntegrationManager: React.FC = () => {
     data: integrations,
     isLoading,
     isError,
-  } = useQuery({
+  } = useQuery<TrainingIntegration[]>({
     queryKey: ['/api/training/integrations'],
     queryFn: () => apiRequest('/api/training/integrations'),
   });
@@ -195,7 +196,7 @@ export const TrainingIntegrationManager: React.FC = () => {
   });
   
   // Initialize editing form
-  const initializeEditForm = (integration: any) => {
+  const initializeEditForm = (integration: TrainingIntegration) => {
     setSelectedIntegration(integration);
     
     form.reset({

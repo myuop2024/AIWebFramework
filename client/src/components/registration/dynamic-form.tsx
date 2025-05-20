@@ -56,9 +56,9 @@ export interface FormField {
 
 interface DynamicFormProps {
   fields: FormField[];
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Record<string, unknown>) => void;
   isLoading?: boolean;
-  defaultValues?: Record<string, any>;
+  defaultValues?: Record<string, unknown>;
 }
 
 // Password strength calculation
@@ -107,7 +107,7 @@ export const DynamicForm = ({
   const [passwordStrength, setPasswordStrength] = useState(0);
   
   // This function handles form submission, processing files as needed
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (formData: Record<string, unknown>) => {
     const fileFields = fields.filter(field => field.type === 'file');
     
     // If there are no file fields, just pass the data to onSubmit
@@ -138,10 +138,10 @@ export const DynamicForm = ({
   };
   // Build schema dynamically based on fields configuration
   const buildSchema = () => {
-    const schemaMap: Record<string, any> = {};
+    const schemaMap: Record<string, z.ZodTypeAny> = {};
 
     fields.forEach((field) => {
-      let fieldSchema: any;
+      let fieldSchema: z.ZodTypeAny;
 
       // Base on field type, create the appropriate schema
       switch (field.type) {
@@ -175,11 +175,11 @@ export const DynamicForm = ({
           // Handle file type differently - we'll validate it as any since the value will be a File object
           fieldSchema = z.any()
             .refine(
-              (file: any) => file instanceof File || !field.required,
+              (file: unknown) => file instanceof File || !field.required,
               { message: "Please upload a file" }
             )
             .refine(
-              (file: any) => {
+              (file: unknown) => {
                 if (file instanceof File) {
                   // Validate file size - default max 5MB
                   const maxSize = 5 * 1024 * 1024; // 5MB

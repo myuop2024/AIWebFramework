@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search } from "lucide-react";
+import { type Faq } from '@shared/schema';
 
 // Group FAQs by category
-const groupByCategory = (faqs: any[]) => {
+const groupByCategory = (faqs: Faq[]) => {
   const grouped = faqs.reduce((acc, faq) => {
     const category = faq.category;
     if (!acc[category]) {
@@ -39,7 +40,7 @@ export default function FaqList() {
   // Filter FAQs based on search query
   const filteredFaqs = searchQuery.trim() === "" 
     ? faqs 
-    : faqs?.filter((faq: any) => {
+    : faqs?.filter((faq: Faq) => {
         const query = searchQuery.toLowerCase();
         return (
           faq.question.toLowerCase().includes(query) ||
@@ -120,7 +121,7 @@ export default function FaqList() {
             <div key={category} className="mb-8">
               <h3 className="text-lg font-medium mb-4">{category}</h3>
               <Accordion type="single" collapsible className="space-y-4">
-                {items.map((faq: any) => (
+                {items.map((faq: Faq) => (
                   <AccordionItem key={faq.id} value={faq.id.toString()} className="border rounded-md">
                     <AccordionTrigger className="px-4 py-3 hover:no-underline">
                       <span className="text-left font-medium">{faq.question}</span>

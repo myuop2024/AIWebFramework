@@ -10,7 +10,7 @@ interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onReset?: () => void;
-  captureContext?: Record<string, any>;
+  captureContext?: Record<string, unknown>;
 }
 
 interface ErrorBoundaryState {

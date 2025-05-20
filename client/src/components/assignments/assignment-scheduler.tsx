@@ -54,7 +54,7 @@ export function AssignmentScheduler({ userId, stationId, onSuccess }: Assignment
 
   // Create assignment mutation
   const createAssignment = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Assignment) => {
       const res = await apiRequest('POST', '/api/assignments', data);
       return await res.json();
     },

@@ -33,6 +33,20 @@ const pollingStationFormSchema = z.object({
 
 export type PollingStationFormData = z.infer<typeof pollingStationFormSchema>;
 
+interface Address {
+  fullAddress: string;
+  street: string;
+  houseNumber: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  position: {
+    lat: number;
+    lng: number;
+  };
+}
+
 interface PollingStationFormProps {
   initialData?: Partial<PollingStationFormData>;
   onSubmit: (data: PollingStationFormData) => void;
@@ -77,7 +91,7 @@ export default function PollingStationForm({
   }, [form.watch("latitude"), form.watch("longitude")]);
   
   // Handle address selection from autocomplete
-  const handleAddressSelect = (address: any) => {
+  const handleAddressSelect = (address: Address) => {
     form.setValue("address", address.street || address.fullAddress);
     form.setValue("city", address.city);
     form.setValue("state", address.state);

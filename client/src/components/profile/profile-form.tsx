@@ -30,6 +30,7 @@ import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, Shield, MapPin } from "luc
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import AddressAutocomplete from "@/components/address/address-autocomplete";
+import { type UserProfile } from '@shared/schema';
 
 // Jamaican banks and credit unions list
 const JAMAICAN_BANKS = [
@@ -191,7 +192,7 @@ export default function ProfileForm() {
       firstName: string;
       lastName: string;
       role: string;
-      [key: string]: any;
+      [key: string]: unknown;
     };
     profile: {
       id: number;
@@ -210,9 +211,9 @@ export default function ProfileForm() {
       accountCurrency: string | null;
       idType: string | null;
       idNumber: string | null;
-      [key: string]: any;
+      [key: string]: unknown;
     } | null;
-    documents: any[];
+    documents: unknown[];
   }
 
   // Fetch the user's profile data

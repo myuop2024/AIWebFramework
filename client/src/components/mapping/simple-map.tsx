@@ -57,7 +57,7 @@ const sampleStations = [
 
 export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapObject, setMapObject] = useState<any>(null);
+  const [mapObject, setMapObject] = useState<H.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
 
@@ -144,7 +144,7 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   const initializeMap = () => {
     try {
       // Initialize the platform with API key
-      const H = (window as any).H;
+      const H = (window as typeof window & { H: typeof import('@here/maps-api-for-javascript') }).H;
       const platform = new H.service.Platform({
         apikey: import.meta.env.VITE_HERE_API_KEY
       });
@@ -188,7 +188,7 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
       mapObject.removeObjects(mapObject.getObjects());
       
       // Create a group for all objects
-      const H = (window as any).H;
+      const H = (window as typeof window & { H: typeof import('@here/maps-api-for-javascript') }).H;
       const group = new H.map.Group();
       
       // Add parish boundaries
@@ -272,7 +272,7 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
         });
         
         // Add click event
-        marker.addEventListener('tap', (evt: any) => {
+        marker.addEventListener('tap', (evt: H.mapevents.Event) => {
           const data = evt.target.getData();
           const statusText = data.status === 'active' ? 'Active' : 'Issue Reported';
           
