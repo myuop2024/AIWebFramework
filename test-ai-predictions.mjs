@@ -1,6 +1,7 @@
 // Enhanced test script for AI predictions using ES modules
 import axios from 'axios';
 import { promises as fs } from 'fs';
+import assert from 'assert';
 
 // Create an axios instance with cookie support
 const api = axios.create({
@@ -34,6 +35,7 @@ async function testAIPredictions() {
       username: 'admin',
       password: 'admin123'
     });
+    assert.strictEqual(loginResponse.status, 200, 'Login request failed');
     
     // Save cookies for subsequent requests
     if (loginResponse.headers['set-cookie']) {
@@ -48,6 +50,8 @@ async function testAIPredictions() {
     const generalPredictionsResponse = await api.get('/api/admin/analytics/predictions', {
       headers: cookieJar.getCookieHeader()
     });
+    assert.strictEqual(generalPredictionsResponse.status, 200, 'Predictions request failed');
+    assert.ok(Array.isArray(generalPredictionsResponse.data), 'Prediction data should be an array');
     
     console.log('General predictions received:');
     console.log(JSON.stringify(generalPredictionsResponse.data, null, 2));
@@ -139,6 +143,7 @@ async function testAIPredictions() {
     } else if (error.request) {
       console.error('No response received', error.request);
     }
+    process.exitCode = 1;
   }
 }
 
