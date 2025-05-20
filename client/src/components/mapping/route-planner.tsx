@@ -21,13 +21,26 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+// Define types for route and address details
+interface AddressDetails {
+  position: { lat: number; lng: number };
+  address: { label: string };
+}
+interface RouteData {
+  routes: Array<{
+    sections: Array<{
+      summary: { length: number; duration: number };
+    }>;
+  }>;
+}
+
 interface RoutePlannerProps {
   className?: string;
   originLat?: number;
   originLng?: number;
   destinationLat?: number;
   destinationLng?: number;
-  onRouteCalculated?: (route: any) => void;
+  onRouteCalculated?: (route: RouteData) => void;
 }
 
 export default function RoutePlanner({
@@ -45,7 +58,7 @@ export default function RoutePlanner({
     destinationLat && destinationLng ? { lat: destinationLat, lng: destinationLng, address: "" } : null
   );
   const [transportMode, setTransportMode] = useState<"car" | "pedestrian" | "bicycle">("car");
-  const [route, setRoute] = useState<any>(null);
+  const [route, setRoute] = useState<RouteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -103,7 +116,7 @@ export default function RoutePlanner({
   };
 
   // Handle origin address selection
-  const handleOriginSelect = async (address: string, details?: any) => {
+  const handleOriginSelect = async (address: string, details?: AddressDetails) => {
     if (details) {
       setOrigin({
         lat: details.position.lat,
@@ -128,7 +141,7 @@ export default function RoutePlanner({
   };
 
   // Handle destination address selection
-  const handleDestinationSelect = async (address: string, details?: any) => {
+  const handleDestinationSelect = async (address: string, details?: AddressDetails) => {
     if (details) {
       setDestination({
         lat: details.position.lat,
@@ -316,7 +329,7 @@ export default function RoutePlanner({
               </label>
               <Select
                 value={transportMode}
-                onValueChange={(value) => setTransportMode(value as any)}
+                onValueChange={(value) => setTransportMode(value as "car" | "pedestrian" | "bicycle")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select transportation mode" />

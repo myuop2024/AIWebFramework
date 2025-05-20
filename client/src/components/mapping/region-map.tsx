@@ -17,6 +17,14 @@ interface Region {
   stationCount?: number;
 }
 
+interface RegionPolygon {
+  id: number;
+  points: Array<{ lat: number; lng: number }>;
+  color: string;
+  fillOpacity: number;
+  onClick: () => void;
+}
+
 interface RegionMapProps {
   userId?: number;
   height?: string;
@@ -35,7 +43,7 @@ export default function RegionMap({
   const { toast } = useToast();
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number; lng: number} | null>(null);
-  const [regionPolygons, setRegionPolygons] = useState<any[]>([]);
+  const [regionPolygons, setRegionPolygons] = useState<RegionPolygon[]>([]);
   
   // Fetch all parishes (regions)
   const { data: regions = [], isLoading: isRegionsLoading } = useQuery<Region[]>({

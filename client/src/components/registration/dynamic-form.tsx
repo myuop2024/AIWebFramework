@@ -172,14 +172,13 @@ export const DynamicForm = ({
           fieldSchema = z.string();
           break;
         case "file":
-          // Handle file type differently - we'll validate it as any since the value will be a File object
-          fieldSchema = z.any()
+          fieldSchema = z.instanceof(File)
             .refine(
-              (file: unknown) => file instanceof File || !field.required,
+              (file) => file instanceof File || !field.required,
               { message: "Please upload a file" }
             )
             .refine(
-              (file: unknown) => {
+              (file) => {
                 if (file instanceof File) {
                   // Validate file size - default max 5MB
                   const maxSize = 5 * 1024 * 1024; // 5MB
