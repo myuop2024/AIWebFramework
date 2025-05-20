@@ -101,10 +101,12 @@ export const TrainingIntegrationManager: React.FC = () => {
       });
       setActiveTab('list');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let message = 'Please try again.';
+      if (error instanceof Error) message = error.message;
       toast({
         title: 'Failed to create integration',
-        description: error.message || 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -127,10 +129,12 @@ export const TrainingIntegrationManager: React.FC = () => {
       setActiveTab('list');
       setSelectedIntegration(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let message = 'Please try again.';
+      if (error instanceof Error) message = error.message;
       toast({
         title: 'Failed to update integration',
-        description: error.message || 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -148,10 +152,12 @@ export const TrainingIntegrationManager: React.FC = () => {
       });
       setSelectedIntegration(null);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
+      let message = 'Please try again.';
+      if (error instanceof Error) message = error.message;
       toast({
         title: 'Failed to delete integration',
-        description: error.message || 'Please try again.',
+        description: message,
         variant: 'destructive',
       });
     },
@@ -172,11 +178,11 @@ export const TrainingIntegrationManager: React.FC = () => {
         data: data
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       setConnectionResult({
         success: false,
-        message: error.message || 'Connection failed',
-        error: error
+        message: error instanceof Error ? error.message : 'Connection failed',
+        error: error instanceof Error ? error : undefined
       });
     },
     onSettled: () => {
@@ -475,7 +481,7 @@ export const TrainingIntegrationManager: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <Select
                   value={systemType}
-                  onValueChange={(value) => setSystemType(value as any)}
+                  onValueChange={(value) => setSystemType(value as 'moodle' | 'zoom')}
                 >
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="System Type" />

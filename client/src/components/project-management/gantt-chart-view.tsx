@@ -52,6 +52,11 @@ interface TimelineGroup {
   title: string;
 }
 
+// Define GanttChartData interface if not already present
+interface GanttChartData {
+  // Add any necessary properties for the GanttChartData interface
+}
+
 // Get color for task priority
 const getPriorityColor = (priority: string): string => {
   switch(priority) {
@@ -144,7 +149,7 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
   // Fetch project data including tasks
   const { data: project, isLoading, error } = useQuery({
     queryKey: ['/api/project-management/projects', projectId],
-    select: (data: any) => ({
+    select: (data: GanttChartData) => ({
       ...data,
       tasks: data.tasks || []
     })
