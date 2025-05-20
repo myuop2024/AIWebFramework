@@ -72,6 +72,24 @@ app.use((req, res, next) => {
   next();
 });
 
+// --- Enhanced request logging middleware ---
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info('HTTP Request', {
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      duration,
+      ip: req.ip,
+      userId: req.session?.userId || 'unauthenticated',
+      userAgent: req.headers['user-agent']
+    });
+  });
+  next();
+});
+
 // Original request logging middleware - will keep for now for backward compatibility
 app.use((req, res, next) => {
   const start = Date.now();
