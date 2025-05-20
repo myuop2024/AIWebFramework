@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { createCanvas } from 'canvas';
 import { imageProcessingService } from '../services/image-processing-service';
 import { storage as globalStorage } from '../storage';
 

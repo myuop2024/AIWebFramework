@@ -430,7 +430,7 @@ router.post('/test-connection', isAdmin, async (req, res) => {
       }
       
       // Create a temporary Moodle service to test
-      const { createMoodleService } = require('../services/moodle-service');
+      const { createMoodleService } = await import('../services/moodle-service');
       const moodleService = createMoodleService(connectionData.baseUrl, connectionData.authToken);
       
       // Try to get site info
@@ -448,7 +448,7 @@ router.post('/test-connection', isAdmin, async (req, res) => {
       }
       
       // Create a temporary Zoom service to test
-      const { createZoomService } = require('../services/zoom-service');
+      const { createZoomService } = await import('../services/zoom-service');
       const zoomService = createZoomService(connectionData.clientId, connectionData.clientSecret);
       
       // Try to get access token
