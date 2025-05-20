@@ -406,5 +406,63 @@ export class DatabaseStorage implements IStorage {
     throw new Error("Method not implemented");
   }
   
+  // --- User Import Log Methods ---
+  async getUserImportLog(importId: number): Promise<UserImportLog | undefined> {
+    const [log] = await db
+      .select()
+      .from(userImportLogs)
+      .where(eq(userImportLogs.id, importId));
+    return log;
+  }
+
+  async updateUserImportLog(importId: number, data: Partial<UserImportLog>): Promise<void> {
+    await db
+      .update(userImportLogs)
+      .set({ ...data })
+      .where(eq(userImportLogs.id, importId));
+  }
+
+  // --- Bulk Create Users ---
+  async bulkCreateUsers(users: InsertUser[], options: { defaultRole?: string; verificationStatus?: string; passwordHash?: (pwd: string) => string }): Promise<{ success: User[]; failures: { data: InsertUser; error: string }[] }> {
+    const success: User[] = [];
+    const failures: { data: InsertUser; error: string }[] = [];
+    for (const user of users) {
+      try {
+        const userData = { ...user };
+        if (user.password && options.passwordHash) {
+          userData.password = options.passwordHash(user.password);
+        }
+        if (options.defaultRole) {
+          (userData as any).role = options.defaultRole;
+        }
+        if (options.verificationStatus) {
+          (userData as any).verificationStatus = options.verificationStatus;
+        }
+        const created = await this.createUser(userData as InsertUser);
+        success.push(created);
+      } catch (error: any) {
+        failures.push({ data: user, error: error.message || 'Unknown error' });
+      }
+    }
+    return { success, failures };
+  }
+
+  // --- ID Card Template Methods ---
+  async getActiveIdCardTemplate(): Promise<IdCardTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(idCardTemplates)
+      .where(eq(idCardTemplates.isActive, true));
+    return template;
+  }
+
+  async createIdCardTemplate(template: InsertIdCardTemplate): Promise<IdCardTemplate> {
+    const [newTemplate] = await db
+      .insert(idCardTemplates)
+      .values(template)
+      .returning();
+    return newTemplate;
+  }
+
   // Add more methods as needed to fulfill the interface
 }
