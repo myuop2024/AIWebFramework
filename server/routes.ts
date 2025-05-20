@@ -59,8 +59,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
-import { createHash } from "crypto";
+import { hashPassword, comparePasswords } from './utils/password-utils';
 
 // Communication interfaces removed - will be reimplemented in a new way
 
@@ -359,8 +358,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Email already exists' });
       }
 
-      // Hash password
-      const hashedPassword = createHash('sha256').update(userData.password).digest('hex');
+      // Hash password using secure utility
+      const hashedPassword = await hashPassword(userData.password);
 
       // Create user with hashed password and device ID (if provided)
       const user = await storage.createUser({
@@ -435,9 +434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid username or password' });
       }
 
-      // Verify password
-      const hashedPassword = createHash('sha256').update(password).digest('hex');
-      if (user.password !== hashedPassword) {
+      // Verify password using secure utility
+      const isValid = await comparePasswords(password, user.password);
+      if (!isValid) {
         console.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
