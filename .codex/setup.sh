@@ -1,2 +1,6 @@
 #!/bin/bash
-npm install            # or other commands to install dependencies
+# Fail on any error
+set -e
+
+# Install all project dependencies so subsequent npm scripts run correctly
+npm install
