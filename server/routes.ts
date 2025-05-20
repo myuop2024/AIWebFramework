@@ -37,6 +37,9 @@ import projectManagementRoutes from './routes/project-management-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // Import the DatabaseStorage class if it exists
 let DatabaseStorage: any;
