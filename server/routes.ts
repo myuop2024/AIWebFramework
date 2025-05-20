@@ -435,10 +435,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid username or password' });
       }
 
-      // Verify password - using bcrypt like the /api/login endpoint
-      const bcrypt = require('bcrypt');
-      const passwordMatch = await bcrypt.compare(password, user.password);
-      if (!passwordMatch) {
+      // Verify password using SHA-256 (matching how passwords are stored)
+      const hashedPassword = createHash('sha256').update(password).digest('hex');
+      if (user.password !== hashedPassword) {
         console.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }

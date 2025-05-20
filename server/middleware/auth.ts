@@ -41,11 +41,11 @@ export const attachUser = async (req: Request, res: Response, next: NextFunction
 
 /**
  * Middleware to ensure user is authenticated
- * This is a utility middleware that can be used in addition to 
- * the Replit Auth isAuthenticated middleware
+ * This middleware checks for a valid session with userId
  */
 export const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  // Check if user has a session with userId
+  if (!req.session || !req.session.userId) {
     logger.warn('Unauthorized access attempt', {
       path: req.path, 
       ip: req.ip
@@ -65,7 +65,7 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
  */
 export const ensureAdmin = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+  if (!req.session || !req.session.userId) {
     logger.warn('Admin check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -74,8 +74,8 @@ export const ensureAdmin = async (req: Request, res: Response, next: NextFunctio
   }
   
   try {
-    // Get user ID from Replit Auth session
-    const userId = (req.user as any).claims?.sub;
+    // Get user ID from session
+    const userId = req.session.userId as number;
     
     if (!userId) {
       logger.warn('Admin check failed: No user ID in session');
