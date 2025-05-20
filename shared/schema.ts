@@ -67,7 +67,7 @@ export const idCardTemplateSchema = createInsertSchema(idCardTemplates)
 
 // Users table
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(),
+  id: serial("id").primaryKey().notNull(),
   username: text("username").unique(),
   password: text("password"),
   email: text("email").unique(),
@@ -93,7 +93,7 @@ export const users = pgTable("users", {
 // User profile table for KYC
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   // Contact Information
   address: text("address"),
   city: text("city"),
