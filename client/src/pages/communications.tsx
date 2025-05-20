@@ -1,7 +1,7 @@
 import React from 'react';
 import PageHeader from '@/components/layout/page-header';
 import { CommunicationCenter } from '@/components/communication/communication-center-fixed';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 export default function CommunicationsPage() {
