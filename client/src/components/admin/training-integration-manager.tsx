@@ -320,7 +320,7 @@ export const TrainingIntegrationManager: React.FC = () => {
     
     return (
       <div className="space-y-4">
-        {integrations.map((integration: any) => (
+        {integrations.map((integration: TrainingIntegration) => (
           <Card key={integration.id} className="overflow-hidden">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
@@ -339,7 +339,7 @@ export const TrainingIntegrationManager: React.FC = () => {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Connected Systems:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {integration.systems && integration.systems.map((system: any, idx: number) => (
+                  {integration.systems && integration.systems.map((system: IntegrationType['systems'][number], idx: number) => (
                     <Badge
                       key={idx}
                       variant="outline"

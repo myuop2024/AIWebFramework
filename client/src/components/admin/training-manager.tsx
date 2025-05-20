@@ -46,6 +46,18 @@ interface TrainingManagerProps {
   userId?: number;
 }
 
+// Define a type for user progress
+interface UserProgress {
+  userId: number;
+  userName: string;
+  email: string;
+  completedModules: number;
+  totalModules: number;
+  progressPercentage: number;
+  certificationStatus: string;
+  lastActivityDate: string;
+}
+
 export function TrainingManager({ userId }: TrainingManagerProps) {
   const [activeTab, setActiveTab] = useState("modules");
   const [isAddModuleOpen, setIsAddModuleOpen] = useState(false);
@@ -295,8 +307,9 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
     },
   ];
 
-  // Use mock data if API data is not available
-  const displayModules = modules || mockModules;
+  // Use correct types in displayModules and displayUserProgress
+  const displayModules: (TrainingModuleForm & { id: number })[] = modules || mockModules;
+  const displayUserProgress: UserProgress[] = userProgress || mockUserProgress;
 
   // Mock user progress data
   const mockUserProgress = [
@@ -331,9 +344,6 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
       lastActivityDate: "2023-05-08T09:30:00Z"
     },
   ];
-
-  // Use mock data if API data is not available
-  const displayUserProgress = userProgress || mockUserProgress;
 
   return (
     <Card>
@@ -375,7 +385,7 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayModules.map((module: any) => (
+                  {displayModules.map((module) => (
                     <TableRow key={module.id}>
                       <TableCell className="font-medium">{module.title}</TableCell>
                       <TableCell>
@@ -463,7 +473,7 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayUserProgress.map((user: any) => (
+                      {displayUserProgress.map((user) => (
                         <TableRow key={user.userId}>
                           <TableCell className="font-medium">{user.userName}</TableCell>
                           <TableCell>{user.email}</TableCell>

@@ -47,6 +47,12 @@ interface FormBuilderProps {
   readOnly?: boolean;
 }
 
+// Define a type for options
+export interface FieldOption {
+  value: string;
+  label: string;
+}
+
 export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilderProps) {
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   
@@ -353,7 +359,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
                     className="flex flex-col space-y-1"
                     disabled={readOnly}
                   >
-                    {options?.map((option: any) => (
+                    {(options as FieldOption[] | undefined)?.map((option) => (
                       <FormItem key={option.value} className="flex items-center space-x-3 space-y-0">
                         <FormControl>
                           <RadioGroupItem value={option.value} />
@@ -391,7 +397,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {options?.map((option: any) => (
+                    {(options as FieldOption[] | undefined)?.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
