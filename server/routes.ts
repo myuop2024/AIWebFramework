@@ -414,62 +414,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unified login endpoint with device binding and bcrypt password check
   app.post('/api/auth/login', async (req, res) => {
     try {
-      console.log('Login attempt received');
-
-      // Parse login data including deviceId from client
-      const { username, password, deviceId } = req.body; 
-
-      if (!username || !password) {
-        console.warn('Login attempt with missing credentials');
-        return res.status(400).json({ message: 'Username and password are required' });
+      logger.info('Login attempt received', { ip: req.ip });
+      // Validate login data
+      const result = loginUserSchema.safeParse(req.body);
+      if (!result.success) {
+        logger.warn('Invalid login data', { errors: result.error.format() });
+        return res.status(400).json({ message: 'Invalid login data', errors: result.error.format() });
       }
-
-      console.log(`Login attempt for username: ${username}`);
-
-      // Find user
+      const { username, password, deviceId } = result.data;
+      logger.info(`Looking up user by username: ${username}`);
       const user = await storage.getUserByUsername(username);
       if (!user) {
-        console.warn(`Login failed: User not found: ${username}`);
+        logger.warn(`Login failed: User not found: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
-
-      // Verify password using SHA-256 (matching how passwords are stored)
-      const hashedPassword = createHash('sha256').update(password).digest('hex');
-      if (user.password !== hashedPassword) {
-        console.warn(`Login failed: Invalid password for user: ${username}`);
+      // Use bcrypt for password comparison
+      const bcrypt = require('bcrypt');
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        logger.warn(`Login failed: Invalid password for user: ${username}`);
         return res.status(401).json({ message: 'Invalid username or password' });
       }
-
-      console.log(`User authenticated successfully: ${username} (ID: ${user.id})`);
-
       // Device binding security check
-      // If the user has a registered device, verify it matches
       if (user.deviceId && deviceId && user.deviceId !== deviceId) {
-        console.warn(`Device mismatch for user ${username}: 
-          Expected: ${user.deviceId}, Received: ${deviceId}`);
-
-        // For security reasons, don't be specific about the reason for failure
+        logger.warn(`Device mismatch for user ${username}: Expected: ${user.deviceId}, Received: ${deviceId}`);
         return res.status(401).json({ 
           message: 'Authentication failed. This account may be locked to another device.',
           errorCode: 'DEVICE_MISMATCH'
         });
       }
-
-      // If user doesn't have a device ID yet but provided one, update the user
       if (!user.deviceId && deviceId) {
         await storage.updateUser(user.id, { deviceId });
-        // Update the local user object with the new deviceId
         user.deviceId = deviceId;
-        console.log(`Device ID set for user ${username}: ${deviceId}`);
+        logger.info(`Device ID set for user ${username}: ${deviceId}`);
       }
-
-      // Set session data with explicit type safety
       req.session.userId = user.id;
       req.session.observerId = user.observerId;
       req.session.role = user.role;
-
       logger.info('Login attempt successful, setting session data', {
         userId: user.id,
         observerId: user.observerId,
@@ -477,8 +461,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionID: req.sessionID,
         path: req.path
       });
-
-      // Save session explicitly to ensure it's persisted, with enhanced error handling
       req.session.save((err) => {
         if (err) {
           logger.error('Failed to save session during login', err, {
@@ -490,26 +472,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: 'Failed to save authentication state' 
           });
         }
-
-        logger.info(`Login successful, session saved for user ${username}`, {
-          userId: user.id,
-          sessionID: req.sessionID
-        });
-
-        // Remove password from response
         const { password: _, ...userWithoutPassword } = user;
-
         res.status(200).json(userWithoutPassword);
       });
     } catch (error) {
-      if (error instanceof ZodError) {
-        console.error('Validation error during login:', error);
-        return res.status(400).json({ 
-          message: fromZodError(error).message,
-          details: 'Invalid login data format'
-        });
-      }
-      console.error('Login error:', error);
+      logger.error('Login error:', error instanceof Error ? error : new Error('Unknown error'), {
+        sessionID: req.sessionID
+      });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
