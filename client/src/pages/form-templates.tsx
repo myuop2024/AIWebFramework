@@ -628,10 +628,15 @@ export default function FormTemplatesPage() {
                   Create and manage form templates for various types of reports and observations
                 </PageHeaderDescription>
               </div>
-              <Button onClick={() => setIsCreating(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Template
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => navigate('/polling-stations/report-template')} variant="outline">
+                  Edit Polling Station Report Template
+                </Button>
+                <Button onClick={() => setIsCreating(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Template
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 flex flex-wrap gap-2">
