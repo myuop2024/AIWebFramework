@@ -2,7 +2,7 @@ import { spawn, ChildProcess } from 'child_process';
 import fetch from 'node-fetch';
 import path from 'path';
 import { storage } from '../storage';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 /**
  * Configuration interface for Didit service
