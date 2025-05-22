@@ -272,15 +272,17 @@ export default function DiditSettingsPanel() {
                           <Globe className="mr-2 h-4 w-4" /> Base URL
                         </FormLabel>
                         <FormControl>
-                          <Input 
-                            id="baseUrl" 
-                            placeholder={process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"}
-                            {...field} 
-                          />
+                          <div className="relative">
+                            <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Input
+                              className="pl-10"
+                              placeholder={process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"} 
+                              {...field}
+                            />
+                          </div>
                         </FormControl>
                         <FormDescription>
-                          The base URL for the Didit.me API. 
-                          (Default: {process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"})
+                          The base URL for the Didit.me API (e.g., {process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"})
                         </FormDescription>
                       </FormItem>
                     )}

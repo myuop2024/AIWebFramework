@@ -383,8 +383,15 @@ class DiditConnector {
     // For now, return a mock URL similar to the original route
     // Ensure this matches the mock verification route in didit-verification.ts
     // The actual base URL of *this* server needs to be constructed correctly.
-    // Assuming the main app runs on a port defined by process.env.PORT or defaults (e.g. 8080)
-    const appBaseUrl = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || '8080'}`;
+    let appBaseUrl = process.env.APP_BASE_URL;
+    if (!appBaseUrl) {
+      if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+        appBaseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.replit.dev`;
+      } else {
+        const port = process.env.PORT || '8080'; // Default to 8080 if PORT is not set
+        appBaseUrl = `http://localhost:${port}`;
+      }
+    }
     const mockRedirectUrl = `${appBaseUrl}/api/verification/mockverify?email=${encodeURIComponent(email)}`;
     
     // Optionally, we could still try to use the spawned didit-integration server if it handles initiation

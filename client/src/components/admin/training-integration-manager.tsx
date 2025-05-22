@@ -235,7 +235,7 @@ export const TrainingIntegrationManager: React.FC = () => {
     if (systemType === 'moodle') {
       currentSystems.push({
         type: 'moodle',
-        baseUrl: '',
+        baseUrl: process.env.NEXT_PUBLIC_MOODLE_BASE_URL || '',
         requiresAuth: true,
         authToken: '',
         verifySSL: true,
@@ -623,7 +623,12 @@ export const TrainingIntegrationManager: React.FC = () => {
                                 <FormLabel>Redirect URI (for Zoom OAuth)</FormLabel>
                                 <FormControl>
                                   <Input 
-                                    placeholder={process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI || "https://example.com/auth/zoom/callback"} 
+                                    placeholder={
+                                      process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI || 
+                                      (process.env.NEXT_PUBLIC_APP_URL 
+                                        ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/zoom/callback` 
+                                        : "https://your-app-url.com/auth/zoom/callback")
+                                    } 
                                     {...field} 
                                     value={field.value || ''}
                                   />
