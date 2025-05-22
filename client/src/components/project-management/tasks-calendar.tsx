@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar } from '@/components/ui/calendar';
 import { Task } from '@shared/schema';
+import { useLocation } from 'wouter';
 
 // Define an interface for tasks with project info
 interface TaskWithProject extends Task {
@@ -23,6 +24,7 @@ interface TaskWithProject extends Task {
 
 const TasksCalendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [location, setLocation] = useLocation();
   
   // Load tasks from API with the current month
   const { data: tasks = [], isLoading } = useQuery<TaskWithProject[]>({
@@ -77,6 +79,11 @@ const TasksCalendar: React.FC = () => {
     start: startOfMonth(currentDate),
     end: endOfMonth(currentDate)
   });
+
+  // Add handler for clicking a task
+  const handleTaskClick = (taskId: number) => {
+    setLocation(`/project-management/tasks/${taskId}`);
+  };
 
   return (
     <Card className="w-full">
@@ -139,6 +146,7 @@ const TasksCalendar: React.FC = () => {
                           key={task.id}
                           className="text-xs p-1 rounded bg-primary/10 truncate cursor-pointer hover:bg-primary/20"
                           style={{ borderLeft: `3px solid ${task.project.color || '#888'}` }}
+                          onClick={() => handleTaskClick(task.id)}
                         >
                           {task.title}
                         </div>
@@ -171,8 +179,9 @@ const TasksCalendar: React.FC = () => {
                 {tasksByDate[format(currentDate, 'yyyy-MM-dd')]?.map(task => (
                   <div 
                     key={task.id}
-                    className="p-2 border rounded-md flex justify-between items-center"
+                    className="p-2 border rounded-md flex justify-between items-center cursor-pointer"
                     style={{ borderLeft: `4px solid ${task.project.color || '#888'}` }}
+                    onClick={() => handleTaskClick(task.id)}
                   >
                     <div>
                       <div className="font-medium">{task.title}</div>

@@ -6,6 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { parse } from 'csv-parse';
+import { ensureAuthenticated } from "../middleware/auth";
 
 const router = express.Router();
 
@@ -306,6 +307,145 @@ router.get("/export", hasRole(["admin", "supervisor"]), async (req, res) => {
   } catch (error) {
     console.error("Error exporting polling stations:", error);
     res.status(500).json({ error: "Failed to export polling stations" });
+  }
+});
+
+// Assign an observer to a polling station
+router.post('/:stationId/assign', ensureAuthenticated, async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId);
+    const { userId } = req.body;
+    if (isNaN(stationId) || !userId) {
+      return res.status(400).json({ message: 'Invalid station or user ID' });
+    }
+    const assignment = await storage.assignObserverToStation(userId, stationId);
+    res.status(201).json(assignment);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to assign observer' });
+  }
+});
+
+// Unassign an observer from a polling station
+router.delete('/:stationId/unassign/:userId', ensureAuthenticated, async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId);
+    const userId = parseInt(req.params.userId);
+    if (isNaN(stationId) || isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid station or user ID' });
+    }
+    await storage.unassignObserverFromStation(userId, stationId);
+    res.status(204).end();
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to unassign observer' });
+  }
+});
+
+// Get all assignments for a polling station
+router.get('/:stationId/assignments', ensureAuthenticated, async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId);
+    if (isNaN(stationId)) {
+      return res.status(400).json({ message: 'Invalid station ID' });
+    }
+    const assignments = await storage.getAssignmentsByStationId(stationId);
+    res.status(200).json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch assignments' });
+  }
+});
+
+// Get all assignments for a user
+router.get('/user/:userId/assignments', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+    const assignments = await storage.getAssignmentsByUserId(userId);
+    res.status(200).json(assignments);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch assignments' });
+  }
+});
+
+// Get the current report form template for polling stations
+router.get('/report-template', ensureAuthenticated, async (req, res) => {
+  try {
+    // Fetch the template key from system settings
+    const setting = await storage.getSystemSetting('polling_station_report_template_id');
+    let templateId = setting?.settingValue;
+    if (!templateId) {
+      // Fallback: get the first active template in 'polling_station_report' category
+      const templates = await storage.getFormTemplatesByCategory('polling_station_report');
+      templateId = templates?.[0]?.id;
+    }
+    if (!templateId) return res.status(404).json({ message: 'No report template configured' });
+    const template = await storage.getFormTemplate(templateId);
+    if (!template) return res.status(404).json({ message: 'Report template not found' });
+    res.json(template);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch report template' });
+  }
+});
+
+// Admin: Set the active report form template for polling stations
+router.post('/admin/report-template', hasRole(['admin']), async (req, res) => {
+  try {
+    const { templateId } = req.body;
+    if (!templateId) return res.status(400).json({ message: 'templateId required' });
+    await storage.updateSystemSetting('polling_station_report_template_id', templateId, req.session.userId);
+    res.status(200).json({ message: 'Report template updated', templateId });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update report template' });
+  }
+});
+
+// Submit a report for a polling station
+router.post('/:stationId/report', ensureAuthenticated, async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId);
+    const userId = req.session.userId;
+    if (isNaN(stationId) || !userId) return res.status(400).json({ message: 'Invalid station or user' });
+    // Fetch the current template
+    const setting = await storage.getSystemSetting('polling_station_report_template_id');
+    let templateId = setting?.settingValue;
+    if (!templateId) {
+      const templates = await storage.getFormTemplatesByCategory('polling_station_report');
+      templateId = templates?.[0]?.id;
+    }
+    if (!templateId) return res.status(400).json({ message: 'No report template configured' });
+    const template = await storage.getFormTemplate(templateId);
+    if (!template) return res.status(400).json({ message: 'Report template not found' });
+    // Validate the report data against the template fields (basic presence check)
+    const requiredFields = template.fields?.sections?.flatMap((s: any) => s.fields?.filter((f: any) => f.required).map((f: any) => f.id)) || [];
+    for (const fieldId of requiredFields) {
+      if (!(fieldId in req.body)) {
+        return res.status(400).json({ message: `Missing required field: ${fieldId}` });
+      }
+    }
+    // Save the report
+    const report = await storage.createPollingStationReport({
+      stationId,
+      userId,
+      templateId,
+      data: req.body,
+      submittedAt: new Date()
+    });
+    res.status(201).json(report);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to submit report' });
+  }
+});
+
+// Get all reports for a polling station
+router.get('/:stationId/reports', ensureAuthenticated, async (req, res) => {
+  try {
+    const stationId = parseInt(req.params.stationId);
+    if (isNaN(stationId)) return res.status(400).json({ message: 'Invalid station ID' });
+    const reports = await storage.getPollingStationReports(stationId);
+    res.status(200).json(reports);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch reports' });
   }
 });
 

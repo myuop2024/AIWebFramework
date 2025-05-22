@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { 
   Card, 
@@ -29,6 +29,8 @@ const projectStatusColumns = [
 
 const ProjectsKanban: React.FC = () => {
   const [location, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Fetch projects data
   const { data: projects, isLoading, error } = useQuery({
@@ -48,6 +50,26 @@ const ProjectsKanban: React.FC = () => {
 
   const handleNewProject = () => {
     setLocation('/project-management/new');
+  };
+
+  const handleEditProject = (projectId: number) => {
+    setLocation(`/project-management/edit/${projectId}`);
+  };
+
+  const handleDeleteProject = async (projectId: number) => {
+    if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) return;
+    setDeletingId(projectId);
+    try {
+      const response = await fetch(`/api/project-management/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete project');
+      await queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects'] });
+    } catch (err) {
+      alert('Error deleting project.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Group projects by status
@@ -120,18 +142,19 @@ const ProjectsKanban: React.FC = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => {
                               e.stopPropagation();
-                              // Placeholder for edit functionality
+                              handleEditProject(project.id);
                             }}>
                               Edit Project
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-600"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation();
-                                // Placeholder for delete functionality
+                                await handleDeleteProject(project.id);
                               }}
+                              disabled={deletingId === project.id}
                             >
-                              Delete Project
+                              {deletingId === project.id ? 'Deleting...' : 'Delete Project'}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

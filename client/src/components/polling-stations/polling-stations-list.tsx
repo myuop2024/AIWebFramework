@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,12 @@ export default function PollingStationsList() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [view, setView] = useState<"map" | "list">("list");
+  const [showAssignmentsDialog, setShowAssignmentsDialog] = useState(false);
+  const [assignmentsStation, setAssignmentsStation] = useState<PollingStation | null>(null);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [allObservers, setAllObservers] = useState<any[]>([]);
+  const [selectedObserverId, setSelectedObserverId] = useState<number | null>(null);
+  const [assignLoading, setAssignLoading] = useState(false);
 
   // Fetch polling stations
   const { data: pollingStations, isLoading } = useQuery({
@@ -47,6 +53,24 @@ export default function PollingStationsList() {
       return res.json();
     },
   });
+
+  // Fetch all observers for assignment dropdown (admin/supervisor only)
+  useEffect(() => {
+    if (showAssignmentsDialog) {
+      fetch('/api/admin/users')
+        .then(res => res.json())
+        .then(users => setAllObservers(users.filter((u: any) => u.role === 'observer')));
+    }
+  }, [showAssignmentsDialog]);
+
+  // Fetch assignments for the selected station
+  useEffect(() => {
+    if (assignmentsStation) {
+      fetch(`/api/polling-stations/${assignmentsStation.id}/assignments`)
+        .then(res => res.json())
+        .then(setAssignments);
+    }
+  }, [assignmentsStation, showAssignmentsDialog]);
 
   // Create a new polling station
   const createMutation = useMutation({
@@ -163,6 +187,33 @@ export default function PollingStationsList() {
         lng: filteredStations.reduce((sum: number, s: PollingStation) => sum + (s.longitude || 0), 0) / filteredStations.length,
       }
     : { lat: 0, lng: 0 };
+
+  // Assign observer to station
+  const handleAssign = async () => {
+    if (!assignmentsStation || !selectedObserverId) return;
+    setAssignLoading(true);
+    await fetch(`/api/polling-stations/${assignmentsStation.id}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: selectedObserverId })
+    });
+    setAssignLoading(false);
+    setSelectedObserverId(null);
+    // Refresh assignments
+    fetch(`/api/polling-stations/${assignmentsStation.id}/assignments`)
+      .then(res => res.json())
+      .then(setAssignments);
+  };
+
+  // Unassign observer
+  const handleUnassign = async (userId: number) => {
+    if (!assignmentsStation) return;
+    await fetch(`/api/polling-stations/${assignmentsStation.id}/unassign/${userId}`, { method: 'DELETE' });
+    // Refresh assignments
+    fetch(`/api/polling-stations/${assignmentsStation.id}/assignments`)
+      .then(res => res.json())
+      .then(setAssignments);
+  };
 
   return (
     <div className="space-y-6">
@@ -351,6 +402,41 @@ export default function PollingStationsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      {showAssignmentsDialog && assignmentsStation && (
+        <Dialog open={showAssignmentsDialog} onOpenChange={setShowAssignmentsDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assignments for {assignmentsStation.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium mb-2">Assigned Observers</h3>
+                <ul className="space-y-1">
+                  {assignments.length ? assignments.map(a => (
+                    <li key={a.userId} className="flex items-center justify-between">
+                      <span>{a.user?.firstName} {a.user?.lastName} ({a.user?.username})</span>
+                      <Button size="sm" variant="destructive" onClick={() => handleUnassign(a.userId)}>Unassign</Button>
+                    </li>
+                  )) : <span className="text-muted-foreground">No observers assigned.</span>}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">Assign New Observer</h3>
+                <select value={selectedObserverId ?? ''} onChange={e => setSelectedObserverId(Number(e.target.value))} className="border rounded px-2 py-1 w-full">
+                  <option value="">Select observer...</option>
+                  {allObservers.map(o => (
+                    <option key={o.id} value={o.id}>{o.firstName} {o.lastName} ({o.username})</option>
+                  ))}
+                </select>
+                <Button className="mt-2" onClick={handleAssign} disabled={!selectedObserverId || assignLoading}>
+                  {assignLoading ? 'Assigning...' : 'Assign'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

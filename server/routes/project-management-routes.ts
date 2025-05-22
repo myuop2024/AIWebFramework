@@ -610,11 +610,55 @@ projectManagementRouter.patch('/tasks/:id', ensureAuthenticated, async (req: Req
 projectManagementRouter.get('/tasks', ensureAuthenticated, async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
-    const { view = 'assigned', status, priority, page = '1', search } = req.query;
+    const { view = 'assigned', status, priority, page = '1', search, month } = req.query;
     const pageSize = 10;
     const pageNumber = parseInt(page as string) || 1;
     const offset = (pageNumber - 1) * pageSize;
     
+    // If month is provided, return all tasks for that month (not paginated)
+    if (month && typeof month === 'string' && /^\d{4}-\d{2}$/.test(month)) {
+      const [year, monthNum] = month.split('-').map(Number);
+      const startDate = new Date(year, monthNum - 1, 1);
+      const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999); // End of month
+      let query = db.select({
+        id: tasks.id,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        priority: tasks.priority,
+        projectId: tasks.projectId,
+        assigneeId: tasks.assigneeId,
+        reporterId: tasks.reporterId,
+        milestoneId: tasks.milestoneId,
+        startDate: tasks.startDate,
+        dueDate: tasks.dueDate,
+        createdAt: tasks.createdAt,
+        completedAt: tasks.completedAt,
+        project: {
+          id: projects.id,
+          name: projects.name,
+          color: projects.color
+        },
+        assignee: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          username: users.username
+        }
+      })
+      .from(tasks)
+      .leftJoin(projects, eq(tasks.projectId, projects.id))
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .where(and(
+        eq(projects.deleted, false),
+        eq(tasks.assigneeId, userId),
+        sql`${tasks.dueDate} >= ${startDate} AND ${tasks.dueDate} <= ${endDate}`
+      ))
+      .orderBy(desc(tasks.dueDate));
+      const tasksResult = await query;
+      return res.json(tasksResult);
+    }
+
     // Build base query
     let query = db.select({
       id: tasks.id,
