@@ -17,7 +17,6 @@ import Training from "@/pages/training";
 import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
-import Communications from "@/pages/communications";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -85,6 +84,11 @@ function Router() {
       {/* Project Management Routes - specific routes must come before dynamic routes */}
       <ProtectedRoute path="/project-management/dashboard" component={ProjectDashboard} />
       <ProtectedRoute path="/project-management/new" component={ProjectNew} />
+      <ProtectedRoute path="/project-management/kanban" component={React.lazy(() => import("@/pages/project-management/kanban"))} />
+      <ProtectedRoute path="/project-management/calendar" component={React.lazy(() => import("@/pages/project-management/calendar"))} />
+      <ProtectedRoute path="/project-management/analytics" component={React.lazy(() => import("@/pages/project-management/analytics"))} />
+      <ProtectedRoute path="/project-management/tasks" component={React.lazy(() => import("@/pages/project-management/tasks"))} />
+      <ProtectedRoute path="/project-management/milestones" component={React.lazy(() => import("@/pages/project-management/milestones"))} />
       <ProtectedRoute path="/project-management/:id/edit" component={ProjectEdit} />
       <ProtectedRoute path="/project-management/:id" component={ProjectDetail} />
       <ProtectedRoute path="/project-management" component={ProjectManagement} />
