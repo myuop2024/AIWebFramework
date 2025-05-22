@@ -2293,5 +2293,33 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
     });
   });
 
+  // Get a single report by ID
+  app.get('/api/reports/:id', ensureAuthenticated, async (req, res) => {
+    try {
+      const reportId = parseInt(req.params.id);
+      if (isNaN(reportId)) {
+        return res.status(400).json({ message: 'Invalid report ID' });
+      }
+      // Fetch the report
+      const report = await storage.getReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+      // Optionally fetch related station and user info
+      let station = null;
+      let user = null;
+      if (report.stationId) {
+        station = await storage.getPollingStation(report.stationId);
+      }
+      if (report.userId) {
+        user = await storage.getUser(typeof report.userId === 'string' ? parseInt(report.userId) : report.userId);
+      }
+      res.status(200).json({ ...report, station, user });
+    } catch (error) {
+      console.error('Error fetching report by ID:', error);
+      res.status(500).json({ message: 'Failed to fetch report' });
+    }
+  });
+
   return httpServer;
 }

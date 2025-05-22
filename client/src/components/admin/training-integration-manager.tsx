@@ -629,7 +629,7 @@ export const TrainingIntegrationManager: React.FC = () => {
                                         ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/zoom/callback` 
                                         : "https://your-app-url.com/auth/zoom/callback")
                                     } 
-                                    {...field} 
+                                    {...field}
                                     value={field.value || ''}
                                   />
                                 </FormControl>

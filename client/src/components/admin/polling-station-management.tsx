@@ -187,164 +187,164 @@ export function PollingStationManagement() {
         </AlertDescription>
       </Alert>
 
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Polling Station Management</CardTitle>
-              <CardDescription>
-                Manage and organize polling stations
-              </CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Polling Station Management</CardTitle>
+            <CardDescription>
+              Manage and organize polling stations
+            </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-grow">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Search stations..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleAddStation}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Station
-                </Button>
-                <Button variant="outline">
-                  <FileUp className="h-4 w-4 mr-2" />
-                  Import
-                </Button>
-                <Button variant="outline">
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Search stations..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
+            <div className="flex gap-2">
+              <Button onClick={handleAddStation}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Station
+              </Button>
+              <Button variant="outline">
+                <FileUp className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+              <Button variant="outline">
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
 
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-10">
-                <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
-                <p className="text-gray-500">Loading polling stations...</p>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
+              <p className="text-gray-500">Loading polling stations...</p>
+            </div>
+          ) : filteredStations.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                <MapPin className="h-6 w-6 text-gray-500" />
               </div>
-            ) : filteredStations.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                  <MapPin className="h-6 w-6 text-gray-500" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">No stations found</h3>
-                <p className="text-gray-500">
-                  {searchQuery ? "Try adjusting your search term" : "No polling stations have been added yet"}
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Capacity</TableHead>
-                      <TableHead>Actions</TableHead>
+              <h3 className="text-lg font-medium mb-1">No stations found</h3>
+              <p className="text-gray-500">
+                {searchQuery ? "Try adjusting your search term" : "No polling stations have been added yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStations.map((station) => (
+                    <TableRow key={station.id}>
+                      <TableCell className="font-medium">{station.name}</TableCell>
+                      <TableCell className="font-mono text-xs">{station.code || `-`}</TableCell>
+                      <TableCell>
+                        {station.city ? (
+                          <span className="text-sm">{station.city}{station.region ? `, ${station.region}` : ''}</span>
+                        ) : (
+                          <span className="text-gray-400 text-sm">No location data</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {station.capacity ? (
+                          <Badge variant="outline">{station.capacity}</Badge>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditStation(station.id)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => handleViewMap(station.id)}
+                          >
+                            <MapPin className="h-4 w-4 mr-1" />
+                            Map
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-red-600 text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteStation(station.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStations.map((station) => (
-                      <TableRow key={station.id}>
-                        <TableCell className="font-medium">{station.name}</TableCell>
-                        <TableCell className="font-mono text-xs">{station.code || `-`}</TableCell>
-                        <TableCell>
-                          {station.city ? (
-                            <span className="text-sm">{station.city}{station.region ? `, ${station.region}` : ''}</span>
-                          ) : (
-                            <span className="text-gray-400 text-sm">No location data</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {station.capacity ? (
-                            <Badge variant="outline">{station.capacity}</Badge>
-                          ) : (
-                            <span className="text-gray-400 text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleEditStation(station.id)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="border-green-600 text-green-600 hover:bg-green-50"
-                              onClick={() => handleViewMap(station.id)}
-                            >
-                              <MapPin className="h-4 w-4 mr-1" />
-                              Map
-                            </Button>
-                            
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="border-red-600 text-red-600 hover:bg-red-50"
-                              onClick={() => handleDeleteStation(station.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="text-sm text-gray-500">
-            {filteredStations.length} station{filteredStations.length !== 1 ? 's' : ''}
-          </div>
-          {filteredStations.length > 10 && (
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <span className="text-sm">Page 1 of 1</span>
-              <Button variant="outline" size="sm" disabled>Next</Button>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </CardFooter>
-        {/* Polling Station Form Modal */}
-        <PollingStationForm
-          isOpen={formOpen}
-          onClose={() => setFormOpen(false)}
-          onSubmit={handleFormSubmit}
-          station={selectedStation || undefined}
-          title={selectedStation ? "Edit Polling Station" : "Add New Polling Station"}
-        />
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <div className="text-sm text-gray-500">
+          {filteredStations.length} station{filteredStations.length !== 1 ? 's' : ''}
+        </div>
+        {filteredStations.length > 10 && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" disabled>Previous</Button>
+            <span className="text-sm">Page 1 of 1</span>
+            <Button variant="outline" size="sm" disabled>Next</Button>
+          </div>
+        )}
+      </CardFooter>
+      {/* Polling Station Form Modal */}
+      <PollingStationForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        station={selectedStation || undefined}
+        title={selectedStation ? "Edit Polling Station" : "Add New Polling Station"}
+      />
 
-        {/* Polling Station Map Modal */}
-        <PollingStationMap
-          isOpen={mapOpen}
-          onClose={() => setMapOpen(false)}
-          station={selectedStation}
-        />
-      </Card>
+      {/* Polling Station Map Modal */}
+      <PollingStationMap
+        isOpen={mapOpen}
+        onClose={() => setMapOpen(false)}
+        station={selectedStation}
+      />
+    </Card>
     </div>
   );
 }

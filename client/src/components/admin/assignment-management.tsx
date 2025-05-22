@@ -321,205 +321,205 @@ export function AssignmentManagement() {
         </AlertDescription>
       </Alert>
 
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Assignment Management</CardTitle>
-              <CardDescription>
-                Manage observer assignments to polling stations
-              </CardDescription>
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Assignment Management</CardTitle>
+            <CardDescription>
+              Manage observer assignments to polling stations
+            </CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetchAssignments()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                type="text"
+                placeholder="Search assignments..."
+                className="pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <Button variant="outline" size="sm" onClick={() => refetchAssignments()}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+            <Button onClick={handleAddAssignment}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Assignment
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-grow">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                <Input
-                  type="text"
-                  placeholder="Search assignments..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Button onClick={handleAddAssignment}>
-                <Plus className="h-4 w-4 mr-2" />
-                New Assignment
-              </Button>
-            </div>
 
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="w-full md:w-1/2">
-                <Select 
-                  value={statusFilter} 
-                  onValueChange={setStatusFilter}
-                >
-                  <SelectTrigger>
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-full md:w-1/2">
-                <Select 
-                  value={stationFilter} 
-                  onValueChange={setStationFilter}
-                >
-                  <SelectTrigger>
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by station" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Stations</SelectItem>
-                    {stations.map(station => (
-                      <SelectItem key={station.id} value={station.id.toString()}>
-                        {station.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-1/2">
+              <Select 
+                value={statusFilter} 
+                onValueChange={setStatusFilter}
+              >
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <div className="w-full md:w-1/2">
+              <Select 
+                value={stationFilter} 
+                onValueChange={setStationFilter}
+              >
+                <SelectTrigger>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter by station" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stations</SelectItem>
+                  {stations.map(station => (
+                    <SelectItem key={station.id} value={station.id.toString()}>
+                      {station.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            {assignmentsLoading ? (
-              <div className="flex flex-col items-center justify-center py-10">
-                <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
-                <p className="text-gray-500">Loading assignments...</p>
+          {assignmentsLoading ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-3" />
+              <p className="text-gray-500">Loading assignments...</p>
+            </div>
+          ) : filteredAssignments.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                <CalendarClock className="h-6 w-6 text-gray-500" />
               </div>
-            ) : filteredAssignments.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-3">
-                  <CalendarClock className="h-6 w-6 text-gray-500" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">No assignments found</h3>
-                <p className="text-gray-500">
-                  {searchQuery || statusFilter !== "all" || stationFilter !== "all" 
-                    ? "Try adjusting your filters" 
-                    : "No assignments have been created yet"}
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Station</TableHead>
-                      <TableHead>Observer</TableHead>
-                      <TableHead>Schedule</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAssignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell>
-                          <div className="font-medium">{assignment.stationName}</div>
-                          {assignment.stationCode && (
-                            <div className="text-gray-500 text-xs font-mono">{assignment.stationCode}</div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{assignment.userFullName}</div>
-                          <div className="text-gray-500 text-xs">{assignment.observerId}</div>
-                        </TableCell>
-                        <TableCell>
-                          {formatDateRange(assignment.startDate, assignment.endDate)}
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(assignment)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
+              <h3 className="text-lg font-medium mb-1">No assignments found</h3>
+              <p className="text-gray-500">
+                {searchQuery || statusFilter !== "all" || stationFilter !== "all" 
+                  ? "Try adjusting your filters" 
+                  : "No assignments have been created yet"}
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Station</TableHead>
+                    <TableHead>Observer</TableHead>
+                    <TableHead>Schedule</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAssignments.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell>
+                        <div className="font-medium">{assignment.stationName}</div>
+                        {assignment.stationCode && (
+                          <div className="text-gray-500 text-xs font-mono">{assignment.stationCode}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{assignment.userFullName}</div>
+                        <div className="text-gray-500 text-xs">{assignment.observerId}</div>
+                      </TableCell>
+                      <TableCell>
+                        {formatDateRange(assignment.startDate, assignment.endDate)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(assignment)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEditAssignment(assignment.id)}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit</span>
+                          </Button>
+                          
+                          {!assignment.checkedIn && !assignment.checkedOut && (
                             <Button 
                               variant="outline" 
                               size="sm"
-                              onClick={() => handleEditAssignment(assignment.id)}
+                              className="border-red-600 text-red-600 hover:bg-red-50"
+                              onClick={() => handleCancelAssignment(assignment.id)}
                             >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
+                              <X className="h-4 w-4" />
+                              <span className="sr-only">Cancel</span>
                             </Button>
-                            
-                            {!assignment.checkedIn && !assignment.checkedOut && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="border-red-600 text-red-600 hover:bg-red-50"
-                                onClick={() => handleCancelAssignment(assignment.id)}
-                              >
-                                <X className="h-4 w-4" />
-                                <span className="sr-only">Cancel</span>
-                              </Button>
-                            )}
-                            
-                            {assignment.status === "active" && !assignment.checkedIn && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                                onClick={() => handleCheckIn(assignment.id)}
-                              >
-                                <CheckCircle2 className="h-4 w-4" />
-                                <span className="sr-only">Check In</span>
-                              </Button>
-                            )}
-                            
-                            {assignment.checkedIn && !assignment.checkedOut && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
-                                onClick={() => handleCheckOut(assignment.id)}
-                              >
-                                <CheckSquare className="h-4 w-4" />
-                                <span className="sr-only">Check Out</span>
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <div className="text-sm text-gray-500">
-            {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''}
-          </div>
-          {filteredAssignments.length > 10 && (
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>Previous</Button>
-              <span className="text-sm">Page 1 of 1</span>
-              <Button variant="outline" size="sm" disabled>Next</Button>
+                          )}
+                          
+                          {assignment.status === "active" && !assignment.checkedIn && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                              onClick={() => handleCheckIn(assignment.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              <span className="sr-only">Check In</span>
+                            </Button>
+                          )}
+                          
+                          {assignment.checkedIn && !assignment.checkedOut && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="border-green-600 text-green-600 hover:bg-green-50"
+                              onClick={() => handleCheckOut(assignment.id)}
+                            >
+                              <CheckSquare className="h-4 w-4" />
+                              <span className="sr-only">Check Out</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </CardFooter>
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <div className="text-sm text-gray-500">
+          {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''}
+        </div>
+        {filteredAssignments.length > 10 && (
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" disabled>Previous</Button>
+            <span className="text-sm">Page 1 of 1</span>
+            <Button variant="outline" size="sm" disabled>Next</Button>
+          </div>
+        )}
+      </CardFooter>
 
-        {/* Assignment Form Modal */}
-        <AssignmentForm
-          isOpen={formOpen}
-          onClose={() => setFormOpen(false)}
-          onSubmit={handleFormSubmit}
-          assignment={selectedAssignment || undefined}
-          title={selectedAssignment ? "Edit Assignment" : "Create New Assignment"}
-        />
-      </Card>
+      {/* Assignment Form Modal */}
+      <AssignmentForm
+        isOpen={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleFormSubmit}
+        assignment={selectedAssignment || undefined}
+        title={selectedAssignment ? "Edit Assignment" : "Create New Assignment"}
+      />
+    </Card>
     </div>
   );
 }
