@@ -198,10 +198,36 @@ class DiditConnector {
       await new Promise<void>((resolve, reject) => {
         // In a real implementation, we'd check if the server is responding
         // For now, we'll just wait a short time
-        setTimeout(() => {
-          this.serverRunning = true;
-          resolve();
-        }, 1000);
+        // setTimeout(() => {
+        //   this.serverRunning = true;
+        //   resolve();
+        // }, 1000);
+        const startTime = Date.now();
+        const timeout = 30000; // 30 seconds timeout for server to start
+        const interval = 2000; // Poll every 2 seconds
+
+        const pollServer = async () => {
+          try {
+            const diditServerUrl = `http://localhost:${process.env.DIDIT_INTEGRATION_PORT || '5000'}`;
+            const response = await fetch(diditServerUrl);
+            if (response.ok) {
+              console.log('Didit integration server is responsive.');
+              this.serverRunning = true;
+              resolve();
+            } else {
+              throw new Error(`Server responded with ${response.status}`);
+            }
+          } catch (error) {
+            if (Date.now() - startTime > timeout) {
+              console.error('Didit integration server start timed out.');
+              this.serverProcess?.kill(); 
+              reject(new Error('Didit server start timed out'));
+            } else {
+              setTimeout(pollServer, interval);
+            }
+          }
+        };
+        pollServer();
       });
       
       console.log('Didit integration server started');
@@ -319,6 +345,53 @@ class DiditConnector {
       console.error('Error getting verification details:', error);
       throw error;
     }
+  }
+
+  /**
+   * Initiates the verification process with Didit.me
+   * @param email The email of the user to verify
+   * @param callbackUrl The URL Didit should redirect to after verification
+   * @returns The redirect URL for the user to start verification
+   */
+  async startVerification(email: string, callbackUrl: string): Promise<string> {
+    if (!this.config.enabled) {
+      throw new Error('Didit integration is not enabled.');
+    }
+    if (!this.config.apiKey || !this.config.apiSecret) {
+      throw new Error('Didit API key or secret is not configured.');
+    }
+    if (!email) {
+      throw new Error('Email is required to start verification.');
+    }
+    if (!callbackUrl) {
+      throw new Error('Callback URL is required.');
+    }
+
+    console.warn(
+      'DiditConnector.startVerification is using a MOCK implementation. ' +
+      'This will not perform real identity verification. ' +
+      'TODO: Implement actual API call to Didit.me service.'
+    );
+
+    // In a real implementation, this would involve:
+    // 1. Making an API call to this.config.baseUrl (e.g., /verifications/initiate)
+    //    with the email, callbackUrl, and API credentials.
+    // 2. Receiving a response containing a unique verification ID and a redirect URL for the user.
+    // 3. Storing the verification ID and associating it with the user (e.g., in userProfile).
+    // 4. Returning the redirect URL.
+
+    // For now, return a mock URL similar to the original route
+    // Ensure this matches the mock verification route in didit-verification.ts
+    // The actual base URL of *this* server needs to be constructed correctly.
+    // Assuming the main app runs on a port defined by process.env.PORT or defaults (e.g. 8080)
+    const appBaseUrl = process.env.APP_BASE_URL || `http://localhost:${process.env.PORT || '8080'}`;
+    const mockRedirectUrl = `${appBaseUrl}/api/verification/mockverify?email=${encodeURIComponent(email)}`;
+    
+    // Optionally, we could still try to use the spawned didit-integration server if it handles initiation
+    // const diditIntegrationServerUrl = `http://localhost:${process.env.DIDIT_INTEGRATION_PORT || '5000'}`;
+    // const mockRedirectUrl = `${diditIntegrationServerUrl}/initiate?email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+
+    return mockRedirectUrl;
   }
 }
 

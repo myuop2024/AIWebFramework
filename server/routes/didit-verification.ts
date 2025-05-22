@@ -50,8 +50,14 @@ router.get('/initiate', ensureAuthenticated, async (req: Request, res: Response)
     // Generate a verification URL
     // For now, just use a mock URL that will display success to fix the crash
     // In production, this would actually call the Didit service API
-    const redirectUrl = `${req.protocol}://${req.get('host')}/api/verification/mockverify?email=${encodeURIComponent(user.email)}`;
+    // const redirectUrl = `${req.protocol}://${req.get('host')}/api/verification/mockverify?email=${encodeURIComponent(user.email)}`;
     
+    // Define the callback URL for Didit to redirect to after verification
+    const callbackUrl = `${req.protocol}://${req.get('host')}/api/verification/result`;
+
+    // Call the connector to start the verification process
+    const redirectUrl = await diditConnector.startVerification(user.email, callbackUrl);
+
     return res.json({ redirectUrl });
   } catch (error) {
     console.error('Error starting verification process:', error);
