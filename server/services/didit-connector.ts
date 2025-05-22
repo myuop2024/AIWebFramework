@@ -20,7 +20,7 @@ class DiditConnector {
   private config: DiditConfig = {
     apiKey: '',
     apiSecret: '',
-    baseUrl: 'https://api.didit.me/v1',
+    baseUrl: process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
     enabled: false
   };
   
@@ -47,7 +47,7 @@ class DiditConnector {
       this.config = {
         apiKey: apiKeySetting?.settingValue,
         apiSecret: apiSecretSetting?.settingValue,
-        baseUrl: baseUrlSetting?.settingValue || 'https://api.didit.me/v1',
+        baseUrl: baseUrlSetting?.settingValue || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
         enabled: enabledSetting?.settingValue || false
       };
       
@@ -172,7 +172,7 @@ class DiditConnector {
           ...process.env,
           DIDIT_API_KEY: this.config.apiKey || '',
           DIDIT_API_SECRET: this.config.apiSecret || '',
-          DIDIT_BASE_URL: this.config.baseUrl || 'https://api.didit.me/v1',
+          DIDIT_BASE_URL: this.config.baseUrl || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
           PORT: '5000',
           HOST: '0.0.0.0'
         },

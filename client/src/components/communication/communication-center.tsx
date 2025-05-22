@@ -375,7 +375,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${conversation.username}`} />
+                            <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${conversation.username}`} />
                             <AvatarFallback>{conversation?.username ? conversation.username.substring(0, 2).toUpperCase() : 'UN'}</AvatarFallback>
                           </Avatar>
                           {isUserOnline(conversation.userId) && (
@@ -473,7 +473,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${user.username}`} />
                             <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
@@ -518,7 +518,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${user.username}`} />
                             <AvatarFallback>{user.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
@@ -551,7 +551,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
+                          <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
                           <AvatarFallback>{activeChatUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
@@ -628,7 +628,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                             >
                               {!isCurrentUser && showAvatar && (
                                 <Avatar className="h-8 w-8 mr-2">
-                                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
+                                  <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${activeChatUser.username}`} />
                                   <AvatarFallback>{activeChatUser.username.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                               )}
@@ -655,7 +655,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
                               {isCurrentUser && showAvatar && (
                                 <Avatar className="h-8 w-8 ml-2">
-                                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`} />
+                                  <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${userId}`} />
                                   <AvatarFallback>ME</AvatarFallback>
                                 </Avatar>
                               )}
@@ -815,7 +815,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
             <div className="flex flex-col items-center py-4">
               <Avatar className="h-20 w-20 mb-4">
-                <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${
+                <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${
                   getUserById(incomingCall.callerId)?.username || incomingCall.callerId
                 }`} />
                 <AvatarFallback>
@@ -888,7 +888,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                     <div className="flex items-center gap-3">
                       <div className="relative">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                          <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${user.username}`} />
                           <AvatarFallback>{user?.username ? user.username.substring(0, 2).toUpperCase() : 'UK'}</AvatarFallback>
                         </Avatar>
                         <span className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${

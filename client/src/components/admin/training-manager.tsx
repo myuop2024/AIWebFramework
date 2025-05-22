@@ -270,7 +270,7 @@ export function TrainingManager({ userId }: TrainingManagerProps) {
       title: "Election Day Procedures",
       description: "Detailed walkthrough of election day protocols and procedures",
       moduleType: "video",
-      videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      videoUrl: process.env.NEXT_PUBLIC_PLACEHOLDER_VIDEO_URL || "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       category: "Core Training",
       estimatedDuration: 25,
       isActive: true,

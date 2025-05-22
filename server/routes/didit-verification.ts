@@ -216,7 +216,7 @@ router.get('/admin/settings', ensureAdmin, async (req: Request, res: Response) =
     return res.json({
       apiKey: apiKeySetting?.settingValue || '',
       apiSecret: apiSecretSetting ? '********' : '',
-      baseUrl: baseUrlSetting?.settingValue || 'https://api.didit.me/v1',
+      baseUrl: baseUrlSetting?.settingValue || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
       enabled: enabledSetting?.settingValue || false,
     });
   } catch (error) {

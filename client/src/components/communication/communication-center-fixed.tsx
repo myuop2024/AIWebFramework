@@ -614,7 +614,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <div className="relative">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} />
+                            <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${user.username}`} />
                             <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
                           </Avatar>
                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500 border-2 border-white" />
@@ -925,7 +925,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6">
             <Avatar className="h-20 w-20 mb-4">
-              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId || 'default'
+              <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId || 'default'
                 }`} />
               <AvatarFallback>
                 {getInitials(getUserById(incomingCall?.callerId || 0)?.username)}
@@ -987,7 +987,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
                   <Avatar className="h-24 w-24"> {/* Larger avatar */}
                     <AvatarImage
-                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
+                      src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
                         }`}
                     />
                     <AvatarFallback className="text-3xl">

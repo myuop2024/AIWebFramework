@@ -84,7 +84,7 @@ export async function fetchJamaicanPoliticalNews(days: number = 7): Promise<Proc
     const allArticles: NewsArticle[] = [];
     
     // First general search for Jamaica + politics
-    const response = await axios.get('https://newsapi.org/v2/everything', {
+    const response = await axios.get(process.env.NEWS_API_URL || 'https://newsapi.org/v2/everything', {
       params: {
         q: '(Jamaica) AND (politics OR election OR voting OR "electoral commission" OR ballot)',
         from: fromDateStr,
@@ -99,7 +99,7 @@ export async function fetchJamaicanPoliticalNews(days: number = 7): Promise<Proc
     }
     
     // Search for specific electoral bodies
-    const electoralResponse = await axios.get('https://newsapi.org/v2/everything', {
+    const electoralResponse = await axios.get(process.env.NEWS_API_URL || 'https://newsapi.org/v2/everything', {
       params: {
         q: '(Jamaica) AND (EOJ OR "Electoral Office of Jamaica" OR ECJ OR "Electoral Commission of Jamaica" OR CAFFE OR "Citizens Action For Free and Fair Elections")',
         from: fromDateStr,

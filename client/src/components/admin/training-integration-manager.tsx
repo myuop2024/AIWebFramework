@@ -43,7 +43,7 @@ const moodleConfigSchema = z.object({
 
 const zoomConfigSchema = z.object({
   type: z.literal('zoom'),
-  baseUrl: z.string().url({ message: 'Please enter a valid URL' }).default('https://api.zoom.us'),
+  baseUrl: z.string().url({ message: 'Please enter a valid URL' }).default(process.env.NEXT_PUBLIC_ZOOM_API_URL || 'https://api.zoom.us'),
   requiresAuth: z.boolean().default(true),
   clientId: z.string().min(1, { message: 'Client ID is required' }),
   clientSecret: z.string().min(1, { message: 'Client Secret is required' }),
@@ -243,7 +243,7 @@ export const TrainingIntegrationManager: React.FC = () => {
     } else {
       currentSystems.push({
         type: 'zoom',
-        baseUrl: 'https://api.zoom.us',
+        baseUrl: process.env.NEXT_PUBLIC_ZOOM_API_URL || 'https://api.zoom.us',
         requiresAuth: true,
         clientId: '',
         clientSecret: '',
@@ -527,7 +527,7 @@ export const TrainingIntegrationManager: React.FC = () => {
                               <FormLabel>Base URL</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder={system.type === 'moodle' ? "https://moodle.example.com" : "https://api.zoom.us"} 
+                                  placeholder={system.type === 'moodle' ? (process.env.NEXT_PUBLIC_MOODLE_BASE_URL || "https://moodle.example.com") : (process.env.NEXT_PUBLIC_ZOOM_API_URL || "https://api.zoom.us")}
                                   {...field} 
                                 />
                               </FormControl>
@@ -620,11 +620,11 @@ export const TrainingIntegrationManager: React.FC = () => {
                             name={`systems.${index}.redirectUri`}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Redirect URI (Optional)</FormLabel>
+                                <FormLabel>Redirect URI (for Zoom OAuth)</FormLabel>
                                 <FormControl>
                                   <Input 
-                                    placeholder="https://example.com/auth/zoom/callback" 
-                                    {...field}
+                                    placeholder={process.env.NEXT_PUBLIC_ZOOM_REDIRECT_URI || "https://example.com/auth/zoom/callback"} 
+                                    {...field} 
                                     value={field.value || ''}
                                   />
                                 </FormControl>

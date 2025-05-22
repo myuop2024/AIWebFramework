@@ -60,13 +60,13 @@ export default function DiditSettingsPanel() {
     defaultValues: {
       apiKey: '',
       apiSecret: '',
-      baseUrl: 'https://api.didit.me/v1',
+      baseUrl: process.env.NEXT_PUBLIC_DIDIT_API_URL || 'https://api.didit.me/v1',
       enabled: false,
     },
     values: settings ? {
       apiKey: settings.apiKey || '',
       apiSecret: settings.apiSecret || '',
-      baseUrl: settings.baseUrl || 'https://api.didit.me/v1',
+      baseUrl: settings.baseUrl || process.env.NEXT_PUBLIC_DIDIT_API_URL || 'https://api.didit.me/v1',
       enabled: settings.enabled || false,
     } : undefined,
   });
@@ -268,19 +268,19 @@ export default function DiditSettingsPanel() {
                     name="baseUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>API Base URL</FormLabel>
+                        <FormLabel htmlFor="baseUrl" className="flex items-center">
+                          <Globe className="mr-2 h-4 w-4" /> Base URL
+                        </FormLabel>
                         <FormControl>
-                          <div className="relative">
-                            <Globe className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <Input
-                              className="pl-10"
-                              placeholder="https://api.didit.me/v1" 
-                              {...field}
-                            />
-                          </div>
+                          <Input 
+                            id="baseUrl" 
+                            placeholder={process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"}
+                            {...field} 
+                          />
                         </FormControl>
                         <FormDescription>
-                          The base URL for the Didit.me API (usually no need to change)
+                          The base URL for the Didit.me API. 
+                          (Default: {process.env.NEXT_PUBLIC_DIDIT_API_URL || "https://api.didit.me/v1"})
                         </FormDescription>
                       </FormItem>
                     )}

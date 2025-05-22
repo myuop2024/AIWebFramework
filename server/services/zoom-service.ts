@@ -22,7 +22,7 @@ export class ZoomService {
   private accessToken: string | null = null;
   private tokenExpiry: Date | null = null;
   private refreshToken: string | null = null;
-  private baseUrl = 'https://api.zoom.us/v2';
+  private baseUrl = process.env.ZOOM_API_BASE_URL || 'https://api.zoom.us/v2';
   
   constructor(credentials: ZoomCredentials) {
     this.clientId = credentials.clientId;
@@ -41,7 +41,7 @@ export class ZoomService {
    */
   private async getAccessToken(): Promise<ZoomAuthToken> {
     try {
-      const tokenUrl = 'https://zoom.us/oauth/token';
+      const tokenUrl = process.env.ZOOM_OAUTH_TOKEN_URL || 'https://zoom.us/oauth/token';
       const credentials = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
       
       const response = await axios.post<ZoomAuthToken>(
