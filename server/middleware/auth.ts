@@ -9,6 +9,8 @@ declare global {
       locals?: {
         user?: any;
       };
+      user?: any;
+      isAuthenticated?: () => boolean;
     }
   }
 }
@@ -41,11 +43,11 @@ export const attachUser = async (req: Request, res: Response, next: NextFunction
 
 /**
  * Middleware to ensure user is authenticated
- * This middleware checks for a valid session with userId
+ * This is a utility middleware that can be used in addition to 
+ * the Replit Auth isAuthenticated middleware
  */
 export const ensureAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // Check if user has a session with userId
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Unauthorized access attempt', {
       path: req.path, 
       ip: req.ip
@@ -65,7 +67,7 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
  */
 export const ensureAdmin = async (req: Request, res: Response, next: NextFunction) => {
   // First ensure the user is authenticated
-  if (!req.session || !req.session.userId) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     logger.warn('Admin check failed: No authenticated user');
     return res.status(401).json({ 
       message: 'Unauthorized', 
@@ -74,8 +76,8 @@ export const ensureAdmin = async (req: Request, res: Response, next: NextFunctio
   }
   
   try {
-    // Get user ID from session
-    const userId = req.session.userId as number;
+    // Get user ID from Replit Auth session
+    const userId = (req.user as any).claims?.sub;
     
     if (!userId) {
       logger.warn('Admin check failed: No user ID in session');
