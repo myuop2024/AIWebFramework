@@ -114,11 +114,19 @@ export default function DocumentUpload({
         fileInputRef.current.value = '';
       }
     },
-    onError: (err) => {
-      setError(err instanceof Error ? err.message : "Failed to upload document");
+    onError: (err: Error) => {
+      const isStubError = err.message && err.message.includes('STUB:');
+      const userFriendlyMessage = isStubError 
+        ? "Document upload feature is not yet fully implemented. Our team has been notified."
+        : "Failed to upload document. Please check the file and try again.";
+      
+      setError(userFriendlyMessage);
+      
       toast({
-        title: "Upload Failed",
-        description: "There was a problem uploading your document. Please try again.",
+        title: isStubError ? "Feature Incomplete" : "Upload Failed",
+        description: isStubError 
+          ? "This functionality is still under development."
+          : "There was a problem uploading your document. Please try again.",
         variant: "destructive",
       });
     },
