@@ -125,7 +125,22 @@ export class DatabaseStorage implements IStorage {
     try {
       logger.info(`Getting user by ID: ${id}`);
       const [user] = await db
-        .select()
+        .select({
+          id: usersTable.id,
+          username: usersTable.username,
+          email: usersTable.email,
+          password: usersTable.password,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          observerId: usersTable.observerId,
+          role: usersTable.role,
+          verificationStatus: usersTable.verificationStatus,
+          deviceId: usersTable.deviceId,
+          createdAt: usersTable.createdAt,
+          updatedAt: usersTable.updatedAt,
+          trainingStatus: usersTable.trainingStatus,
+          phoneNumber: usersTable.phoneNumber
+        })
         .from(usersTable)
         .where(eq(usersTable.id, id));
       
@@ -139,7 +154,23 @@ export class DatabaseStorage implements IStorage {
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
       const [user] = await db
-        .select()
+        .select({
+          id: usersTable.id,
+          username: usersTable.username,
+          email: usersTable.email,
+          password: usersTable.password,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          observerId: usersTable.observerId,
+          role: usersTable.role,
+          verificationStatus: usersTable.verificationStatus,
+          deviceId: usersTable.deviceId,
+          createdAt: usersTable.createdAt,
+          updatedAt: usersTable.updatedAt,
+          trainingStatus: usersTable.trainingStatus,
+          phoneNumber: usersTable.phoneNumber
+          // Explicitly selecting fields instead of selecting all to avoid non-existent columns
+        })
         .from(usersTable)
         .where(eq(usersTable.username, username));
       
@@ -153,7 +184,22 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       const [user] = await db
-        .select()
+        .select({
+          id: usersTable.id,
+          username: usersTable.username,
+          email: usersTable.email,
+          password: usersTable.password,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          observerId: usersTable.observerId,
+          role: usersTable.role,
+          verificationStatus: usersTable.verificationStatus,
+          deviceId: usersTable.deviceId,
+          createdAt: usersTable.createdAt,
+          updatedAt: usersTable.updatedAt,
+          trainingStatus: usersTable.trainingStatus,
+          phoneNumber: usersTable.phoneNumber
+        })
         .from(usersTable)
         .where(eq(usersTable.email, email));
       
