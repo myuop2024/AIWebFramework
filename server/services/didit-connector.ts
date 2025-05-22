@@ -2,6 +2,7 @@ import { spawn, ChildProcess } from 'child_process';
 import fetch from 'node-fetch';
 import path from 'path';
 import { storage } from '../storage';
+import { logger } from '../utils/logger';
 
 /**
  * Configuration interface for Didit service
@@ -367,22 +368,26 @@ class DiditConnector {
       throw new Error('Callback URL is required.');
     }
 
-    console.warn(
-      'DiditConnector.startVerification is using a MOCK implementation. ' +
-      'This will not perform real identity verification. ' +
-      'TODO: Implement actual API call to Didit.me service.'
+    logger.warn(
+      '*****************************************************************************\n' +
+      '** WARNING: DiditConnector.startVerification is using a MOCK implementation. **\n' +
+      '** This will NOT perform real identity verification.                         **\n' +
+      '** TODO: Implement actual API call to Didit.me service.                      **\n' +
+      '*****************************************************************************'
     );
 
     // In a real implementation, this would involve:
     // 1. Making an API call to this.config.baseUrl (e.g., /verifications/initiate)
-    //    with the email, callbackUrl, and API credentials.
-    // 2. Receiving a response containing a unique verification ID and a redirect URL for the user.
-    // 3. Storing the verification ID and associating it with the user (e.g., in userProfile).
-    // 4. Returning the redirect URL.
+    //    with the email, callbackUrl, and API credentials (this.config.apiKey, this.config.apiSecret).
+    //    The request body might include: { email, callback_url: callbackUrl, client_reference_id: userId_or_some_local_id }
+    // 2. Receiving a response from Didit.me containing a unique verification ID and a redirect URL for the user.
+    //    Example response: { verification_id: "didit_verification_XYZ", redirect_uri: "https://verify.didit.me/start/XYZ" }
+    // 3. Storing the verification_id and associating it with the user (e.g., in userProfile or a dedicated table)
+    //    to later query the status using this ID or receive webhook updates.
+    // 4. Returning the redirect_uri provided by Didit.me for the user to start the verification flow.
 
-    // For now, return a mock URL similar to the original route
-    // Ensure this matches the mock verification route in didit-verification.ts
-    // The actual base URL of *this* server needs to be constructed correctly.
+    // For now, returning a MOCK redirect URL that points to a local mock verification page.
+    // Ensure this matches the mock verification route in server/routes/didit-verification.ts
     let appBaseUrl = process.env.APP_BASE_URL;
     if (!appBaseUrl) {
       if (process.env.REPL_SLUG && process.env.REPL_OWNER) {

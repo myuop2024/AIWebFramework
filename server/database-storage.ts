@@ -384,78 +384,80 @@ export class DatabaseStorage implements IStorage {
   // These should be expanded as needed for the application
   
   async getDocument(id: number): Promise<Document | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getDocument called, but it is not fully implemented.');
+    return Promise.resolve(undefined);
   }
   
   async getDocumentsByUserId(userId: number): Promise<Document[]> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getDocumentsByUserId called, but it is not fully implemented.');
+    return Promise.resolve([]);
   }
   
   async createDocument(document: InsertDocument): Promise<Document> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: createDocument called, but it is not fully implemented.');
+    // To prevent downstream issues from a fake success, reject promise clearly.
+    return Promise.reject(new Error('STUB: createDocument - This method is a stub and requires full implementation.'));
   }
   
   async updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: updateDocument called, but it is not fully implemented.');
+    // To prevent downstream issues from a fake success, reject promise clearly.
+    return Promise.reject(new Error('STUB: updateDocument - This method is a stub and requires full implementation.'));
   }
   
   async getPollingStation(id: number): Promise<PollingStation | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getPollingStation called, but it is not fully implemented.');
+    return Promise.resolve(undefined);
   }
   
   async getAllPollingStations(): Promise<PollingStation[]> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getAllPollingStations called, but it is not fully implemented.');
+    return Promise.resolve([]);
   }
   
   async createPollingStation(station: InsertPollingStation): Promise<PollingStation> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: createPollingStation called, but it is not fully implemented.');
+    return Promise.reject(new Error('STUB: createPollingStation - This method is a stub and requires full implementation.'));
   }
   
   async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: updatePollingStation called, but it is not fully implemented.');
+    return Promise.reject(new Error('STUB: updatePollingStation - This method is a stub and requires full implementation.'));
   }
   
   async deletePollingStation(id: number): Promise<boolean> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: deletePollingStation called, but it is not fully implemented.');
+    return Promise.resolve(false); // Indicates no deletion occurred
   }
   
   async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getAssignmentsByUserId called, but it is not fully implemented.');
+    return Promise.resolve([]);
   }
   
   async getAssignmentsByStationId(stationId: number): Promise<Assignment[]> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getAssignmentsByStationId called, but it is not fully implemented.');
+    return Promise.resolve([]);
   }
   
   async getAssignment(id: number): Promise<Assignment | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getAssignment called, but it is not fully implemented.');
+    return Promise.resolve(undefined);
   }
   
   async getActiveAssignments(userId: number): Promise<Assignment[]> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: getActiveAssignments called, but it is not fully implemented.');
+    return Promise.resolve([]);
   }
   
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: createAssignment called, but it is not fully implemented.');
+    return Promise.reject(new Error('STUB: createAssignment - This method is a stub and requires full implementation.'));
   }
   
   async updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined> {
-    // Implementation
-    throw new Error("Method not implemented");
+    logger.warn('STUB: updateAssignment called, but it is not fully implemented.');
+    return Promise.reject(new Error('STUB: updateAssignment - This method is a stub and requires full implementation.'));
   }
   
   // --- User Import Log Methods ---
