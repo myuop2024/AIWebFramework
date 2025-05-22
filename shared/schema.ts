@@ -116,6 +116,10 @@ export const userProfiles = pgTable("user_profiles", {
   verificationStatus: text("verification_status"),
   verificationId: text("verification_id"),
   verifiedAt: timestamp("verified_at"),
+  // New fields for preferences
+  notifications: jsonb("notifications"),
+  language: text("language"),
+  region: text("region"),
   // Encryption fields
   encryptionIv: text("encryption_iv"), // Initialization vector for encrypted fields
   isEncrypted: boolean("is_encrypted").default(false),

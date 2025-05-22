@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
 
 interface UserProfile {
   profile: {
@@ -24,7 +25,135 @@ interface UserProfile {
     state?: string;
     zipCode?: string;
     address?: string;
+    notifications?: {
+      email: boolean;
+      sms: boolean;
+      inApp: boolean;
+    };
+    language?: string;
+    region?: string;
   };
+}
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+  { value: "fr", label: "French" },
+  { value: "pt", label: "Portuguese" },
+  { value: "zh", label: "Chinese" },
+];
+const REGIONS = [
+  { value: "americas", label: "Americas" },
+  { value: "europe", label: "Europe" },
+  { value: "asia", label: "Asia" },
+  { value: "africa", label: "Africa" },
+  { value: "oceania", label: "Oceania" },
+];
+
+function SettingsForm({ user }: { user: any }) {
+  const { data: profileData, refetch } = useQuery<UserProfile>({
+    queryKey: ['/api/users/profile'],
+  });
+  const queryClient = useQueryClient();
+  const { mutateAsync, isLoading: isSaving } = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("POST", "/api/users/profile", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/users/profile'] });
+      refetch();
+    },
+  });
+  const { register, handleSubmit, setValue, formState: { isDirty } } = useForm({
+    defaultValues: {
+      notifications: {
+        email: true,
+        sms: false,
+        inApp: true,
+      },
+      language: "en",
+      region: "americas",
+    },
+  });
+
+  useEffect(() => {
+    if (profileData?.profile) {
+      setValue("notifications.email", profileData.profile.notifications?.email ?? true);
+      setValue("notifications.sms", profileData.profile.notifications?.sms ?? false);
+      setValue("notifications.inApp", profileData.profile.notifications?.inApp ?? true);
+      setValue("language", profileData.profile.language ?? "en");
+      setValue("region", profileData.profile.region ?? "americas");
+    }
+  }, [profileData, setValue]);
+
+  const onSubmit = async (data: any) => {
+    try {
+      await mutateAsync({
+        ...profileData?.profile,
+        ...data,
+        notifications: data.notifications,
+        language: data.language,
+        region: data.region,
+      });
+      toast({
+        title: "Settings updated!",
+        description: "Your preferences have been saved.",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <div>
+        <h3 className="text-lg font-medium mb-2">Notification Preferences</h3>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" {...register("notifications.email")} /> Email Notifications
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" {...register("notifications.sms")} /> SMS Notifications
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" {...register("notifications.inApp")} /> In-App Notifications
+          </label>
+        </div>
+      </div>
+      <Separator />
+      <div>
+        <h3 className="text-lg font-medium mb-2">Language & Region</h3>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Language</label>
+            <select {...register("language")} className="w-full border rounded px-2 py-1">
+              {LANGUAGES.map(lang => (
+                <option key={lang.value} value={lang.value}>{lang.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Region</label>
+            <select {...register("region")} className="w-full border rounded px-2 py-1">
+              {REGIONS.map(region => (
+                <option key={region.value} value={region.value}>{region.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div>
+        <Button type="submit" disabled={!isDirty || isSaving}>
+          {isSaving ? "Saving..." : "Save Settings"}
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 export default function Profile() {
@@ -363,23 +492,7 @@ export default function Profile() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Notification Preferences</h3>
-                  <p className="text-gray-500 mb-4">
-                    Notification settings will be implemented in a future update.
-                  </p>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Language & Region</h3>
-                  <p className="text-gray-500 mb-4">
-                    Language and region settings will be available in a future update.
-                  </p>
-                </div>
-              </div>
+              <SettingsForm user={user} />
             </CardContent>
           </Card>
         </TabsContent>
