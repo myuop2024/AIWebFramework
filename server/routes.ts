@@ -806,6 +806,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.getUserProfile(userId);
       console.log('[DEBUG] Profile object:', profile);
 
+      // Determine user role from the session (if available)
+      const userRole = req.session.role as string;
+
       // Get documents
       const documents = await storage.getDocumentsByUserId(userId);
       console.log('[DEBUG] Documents array:', documents);
