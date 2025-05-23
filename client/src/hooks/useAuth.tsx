@@ -46,13 +46,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await fetch('/api/user');
         if (res.status === 401) return null;
-        return res.json();
+        if (!res.ok) {
+          throw new Error(`Failed to fetch user: ${res.status}`);
+        }
+        const data = await res.json();
+        return data;
       } catch (err) {
         console.error('Error fetching user data:', err);
+        // Return null instead of throwing to prevent unhandled promise rejections
         return null;
       }
     },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   const loginMutation = useMutation<User, Error, LoginData>({

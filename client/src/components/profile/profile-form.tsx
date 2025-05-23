@@ -217,8 +217,26 @@ export default function ProfileForm() {
   }
 
   // Fetch the user's profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery<ProfileResponse>({
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useQuery<ProfileResponse>({
     queryKey: ['/api/users/profile'],
+    enabled: !!user, // Only fetch when user is available
+    retry: false,
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/users/profile');
+        if (response.status === 401) {
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profile: ${response.status}`);
+        }
+        return await response.json();
+      } catch (err) {
+        console.error('Profile form fetch error:', err);
+        // Return null to prevent unhandled promise rejections
+        return null;
+      }
+    },
   });
 
   // Set up the form with zodResolver

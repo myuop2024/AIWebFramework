@@ -56,7 +56,7 @@ function SettingsForm({ user }: { user: any }) {
     enabled: !!user, // Only fetch when user is available
   });
   const queryClient = useQueryClient();
-  const { mutateAsync, isLoading: isSaving } = useMutation({
+  const { mutateAsync, isPending: isSaving } = useMutation({
     mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/users/profile", data);
     },
@@ -221,12 +221,37 @@ export default function Profile() {
   }, [user, isLoading, navigate]);
 
   // Fetch user profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery<UserProfile>({
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useQuery<UserProfile>({
     queryKey: ['/api/users/profile'],
     enabled: !!user, // Only fetch when user is available
     staleTime: 60000, // Cache valid data for 1 minute
     gcTime: 300000, // Keep data in cache for 5 minutes
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    retry: (failureCount, error) => {
+      // Don't retry on 401/403 errors
+      if (error && 'status' in error && (error.status === 401 || error.status === 403)) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/users/profile');
+        if (response.status === 401) {
+          // User not authenticated, redirect to login
+          navigate("/login");
+          return null;
+        }
+        if (!response.ok) {
+          throw new Error(`Failed to fetch profile: ${response.status}`);
+        }
+        return await response.json();
+      } catch (err) {
+        console.error('Profile fetch error:', err);
+        // Return null to prevent unhandled promise rejections
+        return null;
+      }
+    },
   });
 
   if (isLoading || isProfileLoading) {
