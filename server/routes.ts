@@ -777,13 +777,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User profile routes
-  app.get('/api/users/profile', ensureAuthenticated, async (req, res) => {
+  app.get('/api/users/profile', async (req, res) => {
     try {
-      const userId = req.session.userId as number;
-      const userRole = req.session.role as string;
+      // Check authentication first
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Unauthorized - Not authenticated' });
+      }
+
+      // Get user ID from Replit Auth
+      const userId = (req.user as any)?.claims?.sub;
       
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
+        return res.status(401).json({ message: 'Unauthorized - No user ID found' });
       }
 
       console.log(`Fetching profile for user ID: ${userId}`);
