@@ -788,12 +788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any)?.claims?.sub;
       
       if (!userId) {
-<<<<<<< HEAD
         console.log('No user ID in session for /api/users/profile');
         return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
-=======
-        return res.status(401).json({ message: 'Unauthorized - No user ID found' });
->>>>>>> 06982903230ff00281b987e82d8e6df6079eb1ec
       }
 
       console.log(`[DEBUG] /api/users/profile hit for user ID: ${userId}`);
