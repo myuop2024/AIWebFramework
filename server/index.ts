@@ -12,6 +12,7 @@ import logger from "./utils/logger";
 import { attachUser } from "./middleware/auth";
 import { Server } from "http";
 import passport from "passport";
+import fs from 'fs';
 
 /**
  * Initialize default data in the database
@@ -129,6 +130,48 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason: any) => {
   logger.critical('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)));
+});
+
+const PAGE_LOG_PATH = path.join(process.cwd(), 'logs', 'page-logs.json');
+
+function savePageLog(entry: any) {
+  let logs: any[] = [];
+  try {
+    if (fs.existsSync(PAGE_LOG_PATH)) {
+      logs = JSON.parse(fs.readFileSync(PAGE_LOG_PATH, 'utf-8'));
+    }
+  } catch {}
+  logs.push(entry);
+  // Prune logs older than 1 day
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  logs = logs.filter(l => new Date(l.timestamp).getTime() > oneDayAgo);
+  fs.mkdirSync(path.dirname(PAGE_LOG_PATH), { recursive: true });
+  fs.writeFileSync(PAGE_LOG_PATH, JSON.stringify(logs, null, 2));
+}
+
+app.post('/api/log', (req, res) => {
+  const entry = {
+    ...req.body,
+    userId: req.session?.userId || req.user?.id || 'unauthenticated',
+    timestamp: req.body.timestamp || new Date().toISOString(),
+  };
+  savePageLog(entry);
+  res.status(204).end();
+});
+
+app.get('/api/logs', (req, res) => {
+  // Only allow admin users
+  if (!req.session?.userId && !req.user?.id) return res.status(401).json({ message: 'Not authenticated' });
+  // Optionally, check user role here if you want stricter security
+  let logs: any[] = [];
+  try {
+    if (fs.existsSync(PAGE_LOG_PATH)) {
+      logs = JSON.parse(fs.readFileSync(PAGE_LOG_PATH, 'utf-8'));
+    }
+  } catch {}
+  // Sort by timestamp descending
+  logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  res.json(logs);
 });
 
 (async () => {
@@ -315,3 +358,42 @@ process.on('unhandledRejection', (reason: any) => {
     process.exit(1);
   }
 })();
+
+app.use((req, res, next) => {
+  const userId = req.session?.userId || req.user?.id || 'unauthenticated';
+  const start = Date.now();
+  let errorMsg = null;
+
+  // Capture errors
+  res.on('error', (err) => {
+    errorMsg = err?.message || String(err);
+  });
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const entry: any = {
+      type: 'api_call',
+      method: req.method,
+      path: req.originalUrl,
+      userId,
+      query: req.query,
+      userAgent: req.headers['user-agent'],
+      referrer: req.headers['referer'] || req.headers['referrer'],
+      status: res.statusCode,
+      duration,
+      timestamp: new Date().toISOString(),
+    };
+    // Log request body for POST/PUT/PATCH, but exclude password fields
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+      const safeBody = { ...req.body };
+      if (safeBody.password) safeBody.password = '[REDACTED]';
+      if (safeBody.newPassword) safeBody.newPassword = '[REDACTED]';
+      if (safeBody.currentPassword) safeBody.currentPassword = '[REDACTED]';
+      entry.body = safeBody;
+    }
+    if (errorMsg) entry.error = errorMsg;
+    savePageLog(entry);
+    console.log(`[API CALL] ${req.method} ${req.originalUrl} - User: ${userId} - Status: ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});

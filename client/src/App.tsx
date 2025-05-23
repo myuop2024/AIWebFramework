@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import React, { useEffect, Suspense } from "react";
 import NotFound from "@/pages/not-found";
@@ -154,6 +154,38 @@ function App() {
     initGlobalErrorHandlers();
     console.log('Global error handlers initialized');
   }, []);
+
+  const [location] = useLocation();
+  useEffect(() => {
+    const now = new Date();
+    const logEntry = {
+      type: 'page_load',
+      path: location,
+      timestamp: now.toISOString(),
+      userAgent: navigator.userAgent,
+      referrer: document.referrer,
+    };
+    // Get logs from localStorage
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem('pageLogs') || '[]');
+    } catch {}
+    // Add new log
+    logs.push(logEntry);
+    // Remove logs older than 1 day
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    logs = logs.filter(l => new Date(l.timestamp) > oneDayAgo);
+    // Save back
+    localStorage.setItem('pageLogs', JSON.stringify(logs));
+    // Log to console
+    console.log(`[PAGE LOAD] ${logEntry.path} at ${logEntry.timestamp}`);
+    // Send to backend
+    fetch('/api/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logEntry),
+    }).catch(() => {});
+  }, [location]);
 
   return (
     <ErrorBoundary captureContext={{ location: window.location.href }}>
