@@ -71,6 +71,7 @@ function Router() {
       <ProtectedRoute path="/polling-stations/map" component={React.lazy(() => import("@/pages/polling-stations/map"))} />
       <ProtectedRoute path="/polling-stations/regions" component={React.lazy(() => import("@/pages/polling-stations/regions"))} />
       <ProtectedRoute path="/polling-stations/export" component={React.lazy(() => import("@/pages/polling-stations/export"))} />
+      <RoleProtectedRoute path="/polling-stations/report-template" component={React.lazy(() => import("@/pages/polling-stations/report-template"))} allowedRoles={["admin", "director"]} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />
