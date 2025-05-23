@@ -70,9 +70,28 @@ router.get('/mockverify', async (req: Request, res: Response) => {
   try {
     const email = req.query.email as string;
     if (!email) {
-      return res.status(400).render('error', { 
-        message: 'Email parameter is required' 
+      return res.status(400).render('error', {
+        message: 'Email parameter is required'
       });
+    }
+
+    // Attempt to update the user's verification status since this is a mock
+    try {
+      const user = await storage.getUserByEmail(email);
+      if (user) {
+        const mockVerificationId = `mock-${Date.now()}`;
+
+        await storage.updateUserProfile(user.id, {
+          verificationId: mockVerificationId,
+          verifiedAt: new Date()
+        });
+
+        await storage.updateUser(user.id, {
+          verificationStatus: 'verified'
+        });
+      }
+    } catch (updateError) {
+      console.error('Error updating mock verification status:', updateError);
     }
 
     // Render a success verification result page
@@ -82,8 +101,8 @@ router.get('/mockverify', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error with mock verification:', error);
-    return res.status(500).render('error', { 
-      message: 'Failed during mock verification process' 
+    return res.status(500).render('error', {
+      message: 'Failed during mock verification process'
     });
   }
 });
