@@ -5102,5 +5102,3809 @@
     "status": 401,
     "duration": 132,
     "timestamp": "2025-05-23T00:51:35.418Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 2362,
+    "timestamp": "2025-05-23T00:52:24.691Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/user",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 304,
+    "duration": 2369,
+    "timestamp": "2025-05-23T00:52:24.700Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 128,
+    "timestamp": "2025-05-23T00:52:24.905Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "status": 200,
+    "duration": 1764,
+    "timestamp": "2025-05-23T21:13:53.449Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "5q_yQ4HGD3O7T9ACCbqDU"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 870,
+    "timestamp": "2025-05-23T21:13:54.345Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@react-refresh",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 4019,
+    "timestamp": "2025-05-23T21:13:57.498Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@vite/client",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 5597,
+    "timestamp": "2025-05-23T21:13:59.073Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/node-polyfills.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 2977,
+    "timestamp": "2025-05-23T21:13:59.271Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 2982,
+    "timestamp": "2025-05-23T21:13:59.275Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/index.css?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "5q_yQ4HGD3O7T9ACCbqDU"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 1417,
+    "timestamp": "2025-05-23T21:14:00.096Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 843,
+    "timestamp": "2025-05-23T21:14:00.282Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "5q_yQ4HGD3O7T9ACCbqDU"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 2821,
+    "timestamp": "2025-05-23T21:14:00.285Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 677,
+    "timestamp": "2025-05-23T21:14:00.294Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react-dom_client.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 3917,
+    "timestamp": "2025-05-23T21:14:00.344Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toaster.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 732,
+    "timestamp": "2025-05-23T21:14:00.349Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 205,
+    "timestamp": "2025-05-23T21:14:00.486Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/queryClient.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/main.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:00.528Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@vite/client",
+    "status": 200,
+    "duration": 140,
+    "timestamp": "2025-05-23T21:14:00.574Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJA5E53X.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=d405f2c7",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:00.588Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SNAQBZPT.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=d405f2c7",
+    "status": 200,
+    "duration": 155,
+    "timestamp": "2025-05-23T21:14:00.598Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/react-dom_client.js?v=d405f2c7",
+    "status": 200,
+    "duration": 209,
+    "timestamp": "2025-05-23T21:14:00.657Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/use-toast.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toaster.tsx",
+    "status": 200,
+    "duration": 128,
+    "timestamp": "2025-05-23T21:14:00.695Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toast.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toaster.tsx",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:00.759Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:00.806Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QRIEPQWS.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d405f2c7",
+    "status": 200,
+    "duration": 147,
+    "timestamp": "2025-05-23T21:14:00.811Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tooltip.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:00.914Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/not-found.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 160,
+    "timestamp": "2025-05-23T21:14:00.987Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/login.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:01.012Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/forgot-password.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:14:01.083Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dynamic-register.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:01.087Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 161,
+    "timestamp": "2025-05-23T21:14:01.156Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/profile.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 146,
+    "timestamp": "2025-05-23T21:14:01.223Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/documents.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:01.238Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/polling-stations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:14:01.262Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/new.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:01.316Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 154,
+    "timestamp": "2025-05-23T21:14:01.333Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/[id].tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 226,
+    "timestamp": "2025-05-23T21:14:01.467Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/assignments.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 196,
+    "timestamp": "2025-05-23T21:14:01.515Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/faq.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:01.558Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/chat.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:01.562Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/form-templates.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 131,
+    "timestamp": "2025-05-23T21:14:01.584Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/integrated-training.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 417,
+    "timestamp": "2025-05-23T21:14:01.839Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:01.972Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin-dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:01.983Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/verification.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 143,
+    "timestamp": "2025-05-23T21:14:01.987Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/registration-forms.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 161,
+    "timestamp": "2025-05-23T21:14:02.005Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/training-integrations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 172,
+    "timestamp": "2025-05-23T21:14:02.015Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/id-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 154,
+    "timestamp": "2025-05-23T21:14:02.093Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/user-imports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 122,
+    "timestamp": "2025-05-23T21:14:02.205Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/settings.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:02.244Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/analytics.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 160,
+    "timestamp": "2025-05-23T21:14:02.247Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/observer-route-planning.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 131,
+    "timestamp": "2025-05-23T21:14:02.338Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/route-planning-page.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:02.347Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/permission-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 200,
+    "timestamp": "2025-05-23T21:14:02.499Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/assignments/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 207,
+    "timestamp": "2025-05-23T21:14:02.540Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/team-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 225,
+    "timestamp": "2025-05-23T21:14:02.543Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/direct-map-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 260,
+    "timestamp": "2025-05-23T21:14:02.559Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/reports-approval/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:02.598Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/schedule-meeting.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 162,
+    "timestamp": "2025-05-23T21:14:02.615Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/error-logs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:02.901Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/station-schedule.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:02.909Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/dashboard/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:02.912Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/area-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 157,
+    "timestamp": "2025-05-23T21:14:02.922Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 175,
+    "timestamp": "2025-05-23T21:14:02.941Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/detail/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 192,
+    "timestamp": "2025-05-23T21:14:02.959Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/edit/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 125,
+    "timestamp": "2025-05-23T21:14:03.152Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/new/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:03.156Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/useAuth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:03.165Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/error/error-boundary.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 172,
+    "timestamp": "2025-05-23T21:14:03.247Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/protected-route.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 205,
+    "timestamp": "2025-05-23T21:14:03.250Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/error-logger.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/App.tsx?v=5q_yQ4HGD3O7T9ACCbqDU",
+    "status": 200,
+    "duration": 125,
+    "timestamp": "2025-05-23T21:14:03.280Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toast.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:03.371Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toast.tsx",
+    "status": 200,
+    "duration": 146,
+    "timestamp": "2025-05-23T21:14:03.403Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/lucide-react.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toast.tsx",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:03.407Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/utils.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/toast.tsx",
+    "status": 200,
+    "duration": 122,
+    "timestamp": "2025-05-23T21:14:03.454Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/tooltip.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:03.475Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/card.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/not-found.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:03.509Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/login-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/login.tsx",
+    "status": 200,
+    "duration": 157,
+    "timestamp": "2025-05-23T21:14:03.622Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/forgot-password-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/forgot-password.tsx",
+    "status": 200,
+    "duration": 163,
+    "timestamp": "2025-05-23T21:14:03.658Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/registration/dynamic-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dynamic-register.tsx",
+    "status": 200,
+    "duration": 162,
+    "timestamp": "2025-05-23T21:14:03.702Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/alert.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dynamic-register.tsx",
+    "status": 200,
+    "duration": 180,
+    "timestamp": "2025-05-23T21:14:03.751Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/alert-banner.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 262,
+    "timestamp": "2025-05-23T21:14:03.868Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/status-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 198,
+    "timestamp": "2025-05-23T21:14:03.948Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/upcoming-events.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:03.951Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/recent-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 140,
+    "timestamp": "2025-05-23T21:14:03.958Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/quick-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:14:03.968Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/qr-code.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 206,
+    "timestamp": "2025-05-23T21:14:04.173Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tabs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:04.187Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/document-upload.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:04.192Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/latest-news.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/dashboard.tsx",
+    "status": 200,
+    "duration": 227,
+    "timestamp": "2025-05-23T21:14:04.282Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/table.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 230,
+    "timestamp": "2025-05-23T21:14:04.292Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/badge.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 230,
+    "timestamp": "2025-05-23T21:14:04.338Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/button.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:04.433Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/polling-stations/polling-stations-list.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/polling-stations.tsx",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:04.442Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/skeleton.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/documents.tsx",
+    "status": 200,
+    "duration": 151,
+    "timestamp": "2025-05-23T21:14:04.448Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/dropdown-menu.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/polling-stations.tsx",
+    "status": 200,
+    "duration": 129,
+    "timestamp": "2025-05-23T21:14:04.492Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/profile-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:14:04.524Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/separator.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:04.561Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/profile-photo-upload.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:14:04.654Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/avatar.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:04.667Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/verification-tab.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 150,
+    "timestamp": "2025-05-23T21:14:04.684Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/password-change-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:04.706Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/two-factor-auth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 150,
+    "timestamp": "2025-05-23T21:14:04.785Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/profile.tsx",
+    "status": 200,
+    "duration": 159,
+    "timestamp": "2025-05-23T21:14:04.864Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/auth.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/reports/new.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:04.877Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/polling/report-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/reports/new.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:04.895Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/input.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/reports.tsx",
+    "status": 200,
+    "duration": 123,
+    "timestamp": "2025-05-23T21:14:04.899Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/select.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/reports.tsx",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:04.925Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/date-fns.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/assignments.tsx",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:05.011Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/assignments/assignment-scheduler.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/assignments.tsx",
+    "status": 200,
+    "duration": 128,
+    "timestamp": "2025-05-23T21:14:05.106Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/auth-guard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/assignments.tsx",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:05.115Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/faq/faq-list.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/faq.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:05.130Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/page-header.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/chat.tsx",
+    "status": 200,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:05.147Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/communication/communication-center-fixed.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/chat.tsx",
+    "status": 200,
+    "duration": 159,
+    "timestamp": "2025-05-23T21:14:05.220Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/forms/form-template-editor.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:05.230Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/forms/form-builder.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 122,
+    "timestamp": "2025-05-23T21:14:05.311Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/page-header.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:05.343Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/label.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:14:05.367Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/dialog.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 156,
+    "timestamp": "2025-05-23T21:14:05.379Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/textarea.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:05.448Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/checkbox.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 149,
+    "timestamp": "2025-05-23T21:14:05.551Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/scroll-area.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 154,
+    "timestamp": "2025-05-23T21:14:05.556Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/alert-dialog.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/form-templates.tsx",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:05.583Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/verification-queue.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/verification.tsx",
+    "status": 200,
+    "duration": 125,
+    "timestamp": "2025-05-23T21:14:05.598Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/training/integrated-training-list.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/integrated-training.tsx",
+    "status": 200,
+    "duration": 149,
+    "timestamp": "2025-05-23T21:14:05.601Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/pending-photo-approvals.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/verification.tsx",
+    "status": 200,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:14:05.662Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/spinner.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/registration-forms.tsx",
+    "status": 200,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:14:05.765Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/user-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:05.807Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/admin-layout.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/verification.tsx",
+    "status": 200,
+    "duration": 168,
+    "timestamp": "2025-05-23T21:14:05.810Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/role-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:05.815Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/three/BackgroundAnimation.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:05.824Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/three/ThreeBarChart.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 163,
+    "timestamp": "2025-05-23T21:14:05.898Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/three/ElectoralMapViewer.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:05.998Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/performance-toggle.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin-dashboard.tsx",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:06.039Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@hookform_resolvers_zod.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/id-cards.tsx",
+    "status": 200,
+    "duration": 140,
+    "timestamp": "2025-05-23T21:14:06.042Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/id-cards.tsx",
+    "status": 200,
+    "duration": 165,
+    "timestamp": "2025-05-23T21:14:06.082Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/zod.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/id-cards.tsx",
+    "status": 200,
+    "duration": 187,
+    "timestamp": "2025-05-23T21:14:06.088Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/switch.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/id-cards.tsx",
+    "status": 200,
+    "duration": 168,
+    "timestamp": "2025-05-23T21:14:06.139Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/color-picker.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/id-cards.tsx",
+    "status": 200,
+    "duration": 155,
+    "timestamp": "2025-05-23T21:14:06.249Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/user-import.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/user-imports.tsx",
+    "status": 200,
+    "duration": 120,
+    "timestamp": "2025-05-23T21:14:06.255Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/admin-modal.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin.tsx",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:06.258Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/user-import-csv.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/user-imports.tsx",
+    "status": 200,
+    "duration": 143,
+    "timestamp": "2025-05-23T21:14:06.311Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/didit-settings-panel.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/settings.tsx",
+    "status": 200,
+    "duration": 171,
+    "timestamp": "2025-05-23T21:14:06.347Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/verification-settings.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/settings.tsx",
+    "status": 200,
+    "duration": 143,
+    "timestamp": "2025-05-23T21:14:06.358Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/analytics/analytics-dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/analytics.tsx",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:06.480Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/geolocation-service.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/observer-route-planning.tsx",
+    "status": 200,
+    "duration": 147,
+    "timestamp": "2025-05-23T21:14:06.491Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/services/route-planning-service.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/observer-route-planning.tsx",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:06.518Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/mapping/interactive-map.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/observer-route-planning.tsx",
+    "status": 200,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:06.542Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/route-planning/route-planner.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/route-planning-page.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:06.571Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/calendar.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/supervisor/assignments/index.tsx",
+    "status": 200,
+    "duration": 159,
+    "timestamp": "2025-05-23T21:14:06.600Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/popover.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/supervisor/assignments/index.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:06.714Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/mapping/simple-map.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/direct-map-access.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:06.718Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/projects-list.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/index.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:06.934Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/projects-kanban.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/index.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:06.945Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/tasks-calendar.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/index.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:07.155Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/project-analytics.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/index.tsx",
+    "status": 200,
+    "duration": 149,
+    "timestamp": "2025-05-23T21:14:07.191Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/dashboard-widgets-simplified.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/dashboard/index.tsx",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:07.408Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/gantt-chart-view.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/detail/index.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:07.431Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/project-management/permissions-manager.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/project-management/detail/index.tsx",
+    "status": 200,
+    "duration": 127,
+    "timestamp": "2025-05-23T21:14:07.621Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/accordion.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/error-logs.tsx",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:07.682Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/pagination.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/error-logs.tsx",
+    "status": 200,
+    "duration": 120,
+    "timestamp": "2025-05-23T21:14:07.826Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/error/test-error-logger.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/pages/admin/error-logs.tsx",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:07.911Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/main-layout.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/lib/protected-route.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:08.047Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SUFAS5SE.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 124,
+    "timestamp": "2025-05-23T21:14:08.130Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-YENB44SV.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 126,
+    "timestamp": "2025-05-23T21:14:08.261Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J73UDME7.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:08.482Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MCVKFIO6.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 280,
+    "timestamp": "2025-05-23T21:14:08.506Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RGQFZIF.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:08.703Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5Q5YC75F.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:08.738Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-IGJJEA4C.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:08.923Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:08.968Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PNFFIFR5.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:09.144Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-T5ONMTIY.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=d405f2c7",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:09.196Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-U7P2NEEE.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=d405f2c7",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:09.362Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/tailwind-merge.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/lib/utils.ts",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:09.580Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/clsx.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/lib/utils.ts",
+    "status": 200,
+    "duration": 331,
+    "timestamp": "2025-05-23T21:14:09.632Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=d405f2c7",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:09.819Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7QS3QMAE.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=d405f2c7",
+    "status": 200,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:14:09.867Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XSDGB6UR.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=d405f2c7",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:10.040Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/device-binding-alert.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/auth/login-form.tsx",
+    "status": 200,
+    "duration": 157,
+    "timestamp": "2025-05-23T21:14:10.119Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/progress.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/registration/dynamic-form.tsx",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:10.275Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/address/address-autocomplete.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/registration/dynamic-form.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:10.360Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/reports/quick-incident-button.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/dashboard/quick-access.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:10.496Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/tabs.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:10.641Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slot.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/button.tsx",
+    "status": 200,
+    "duration": 182,
+    "timestamp": "2025-05-23T21:14:10.762Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/polling-stations/polling-station-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/polling-stations/polling-stations-list.tsx",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:10.875Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dropdown-menu.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/dropdown-menu.tsx",
+    "status": 200,
+    "duration": 156,
+    "timestamp": "2025-05-23T21:14:11.011Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-separator.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/separator.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:11.103Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-avatar.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/avatar.tsx",
+    "status": 200,
+    "duration": 159,
+    "timestamp": "2025-05-23T21:14:11.256Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/use-two-factor-auth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/profile/two-factor-auth.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:11.331Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AO6B2ZZ6.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=d405f2c7",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:11.510Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/device.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/lib/auth.ts",
+    "status": 200,
+    "duration": 170,
+    "timestamp": "2025-05-23T21:14:11.596Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/select.tsx",
+    "status": 200,
+    "duration": 153,
+    "timestamp": "2025-05-23T21:14:11.752Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/tesseract__js.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/polling/report-form.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:11.835Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/radio-group.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/polling/report-form.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:11.973Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XB7COY3D.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/date-fns.js?v=d405f2c7",
+    "status": 200,
+    "duration": 149,
+    "timestamp": "2025-05-23T21:14:12.079Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/uuid.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/forms/form-template-editor.tsx",
+    "status": 200,
+    "duration": 148,
+    "timestamp": "2025-05-23T21:14:12.237Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/shared/schema.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/forms/form-template-editor.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:12.365Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/use-communication.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/communication/communication-center-fixed.tsx",
+    "status": 200,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:14:12.468Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-label.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/label.tsx",
+    "status": 200,
+    "duration": 152,
+    "timestamp": "2025-05-23T21:14:12.663Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/dialog.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:12.704Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-scroll-area.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/scroll-area.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:12.893Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/checkbox.tsx",
+    "status": 200,
+    "duration": 162,
+    "timestamp": "2025-05-23T21:14:12.954Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/alert-dialog.tsx",
+    "status": 200,
+    "duration": 159,
+    "timestamp": "2025-05-23T21:14:13.157Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/document-viewer-modal.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/admin/verification-queue.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:13.174Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/user-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/admin/user-management.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:13.385Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/admin/user-detail-modal.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/admin/user-management.tsx",
+    "status": 200,
+    "duration": 147,
+    "timestamp": "2025-05-23T21:14:13.413Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/three.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/three/BackgroundAnimation.tsx",
+    "status": 200,
+    "duration": 143,
+    "timestamp": "2025-05-23T21:14:13.625Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/three_examples_jsm_controls_OrbitControls__js.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/three/ThreeBarChart.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:13.634Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/three_examples_jsm_controls_OrbitControls.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/three/ElectoralMapViewer.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:13.857Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-WGQNECLP.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/zod.js?v=d405f2c7",
+    "status": 200,
+    "duration": 147,
+    "timestamp": "2025-05-23T21:14:13.871Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/axios.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/services/route-planning-service.ts",
+    "status": 200,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:14:14.356Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-switch.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/switch.tsx",
+    "status": 200,
+    "duration": 143,
+    "timestamp": "2025-05-23T21:14:14.363Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react-day-picker.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/calendar.tsx",
+    "status": 200,
+    "duration": 157,
+    "timestamp": "2025-05-23T21:14:14.613Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/popover.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:14.638Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/recharts.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/project-management/project-analytics.tsx",
+    "status": 200,
+    "duration": 140,
+    "timestamp": "2025-05-23T21:14:14.896Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/moment.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/project-management/gantt-chart-view.tsx",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:15.076Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-accordion.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/accordion.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:15.311Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/top-navigation.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/layout/main-layout.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:15.586Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/sidebar.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/layout/main-layout.tsx",
+    "status": 200,
+    "duration": 133,
+    "timestamp": "2025-05-23T21:14:15.829Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/layout/footer.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/layout/main-layout.tsx",
+    "status": 200,
+    "duration": 132,
+    "timestamp": "2025-05-23T21:14:16.119Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-progress.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/progress.tsx",
+    "status": 200,
+    "duration": 151,
+    "timestamp": "2025-05-23T21:14:16.186Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/here-maps.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/address/address-autocomplete.tsx",
+    "status": 200,
+    "duration": 154,
+    "timestamp": "2025-05-23T21:14:16.365Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/reports/quick-incident-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/reports/quick-incident-button.tsx",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:16.525Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-COGTI2BU.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=d405f2c7",
+    "status": 200,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:14:16.586Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DLJ7WOAI.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dropdown-menu.js?v=d405f2c7",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:16.821Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ENYZ4MRF.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=d405f2c7",
+    "status": 200,
+    "duration": 282,
+    "timestamp": "2025-05-23T21:14:16.957Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ST7PQ2HY.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=d405f2c7",
+    "status": 200,
+    "duration": 157,
+    "timestamp": "2025-05-23T21:14:17.076Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6ZMM2PAV.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=d405f2c7",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:17.179Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-radio-group.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/src/components/ui/radio-group.tsx",
+    "status": 200,
+    "duration": 150,
+    "timestamp": "2025-05-23T21:14:17.321Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/drizzle-orm_pg-core.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/shared/schema.ts",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:17.406Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/drizzle-zod.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/shared/schema.ts",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:17.554Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/drizzle-orm.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/shared/schema.ts",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:17.640Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-LUWAOYC7.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/three_examples_jsm_controls_OrbitControls__js.js?v=d405f2c7",
+    "status": 200,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:14:17.999Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J2CYC7MK.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=d405f2c7",
+    "status": 200,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:14:18.002Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5NETS6H4.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/three_examples_jsm_controls_OrbitControls__js.js?v=d405f2c7",
+    "status": 200,
+    "duration": 145,
+    "timestamp": "2025-05-23T21:14:18.230Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MSCE55FR.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/drizzle-orm_pg-core.js?v=d405f2c7",
+    "status": 200,
+    "duration": 142,
+    "timestamp": "2025-05-23T21:14:18.239Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-H6UZOYNM.js?v=d405f2c7",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d405f2c7"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/@fs/home/runner/workspace/node_modules/.vite/deps/drizzle-zod.js?v=d405f2c7",
+    "status": 200,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:14:18.542Z"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-23T21:14:18.956Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-23T21:14:18.961Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/user",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 243,
+    "timestamp": "2025-05-23T21:14:19.243Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 148,
+    "timestamp": "2025-05-23T21:14:19.563Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/reports",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 183,
+    "timestamp": "2025-05-23T21:14:19.642Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/polling-stations",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 191,
+    "timestamp": "2025-05-23T21:14:19.664Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/assignments",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 278,
+    "timestamp": "2025-05-23T21:14:19.743Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/quick-reports/incident-types",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 304,
+    "timestamp": "2025-05-23T21:14:19.773Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/events/upcoming",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 500,
+    "duration": 320,
+    "timestamp": "2025-05-23T21:14:19.784Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/qrcode",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:14:19.787Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/news/latest",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 500,
+    "duration": 151,
+    "timestamp": "2025-05-23T21:14:19.888Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/reports",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 345,
+    "timestamp": "2025-05-23T21:15:13.870Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/qrcode",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 347,
+    "timestamp": "2025-05-23T21:15:13.876Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/user",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 304,
+    "duration": 404,
+    "timestamp": "2025-05-23T21:15:13.922Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 482,
+    "timestamp": "2025-05-23T21:15:14.004Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/assignments",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 304,
+    "duration": 484,
+    "timestamp": "2025-05-23T21:15:14.008Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/polling-stations",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 401,
+    "duration": 488,
+    "timestamp": "2025-05-23T21:15:14.015Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/news/latest",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 500,
+    "duration": 122,
+    "timestamp": "2025-05-23T21:15:14.079Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/events/upcoming",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 500,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:15:14.093Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/quick-reports/incident-types",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/",
+    "status": 200,
+    "duration": 170,
+    "timestamp": "2025-05-23T21:15:14.199Z"
+  },
+  {
+    "type": "page_load",
+    "path": "/reports/new",
+    "timestamp": "2025-05-23T21:15:27.257Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/polling-stations",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/reports/new",
+    "status": 401,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:15:27.464Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/reports/new",
+    "status": 401,
+    "duration": 171,
+    "timestamp": "2025-05-23T21:15:27.483Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/reports/new",
+    "status": 401,
+    "duration": 146,
+    "timestamp": "2025-05-23T21:15:27.721Z"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-23T21:15:27.781Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/reports/new",
+    "status": 401,
+    "duration": 156,
+    "timestamp": "2025-05-23T21:15:27.970Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/events/upcoming",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 500,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:15:28.006Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/reports",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 149,
+    "timestamp": "2025-05-23T21:15:28.022Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/qrcode",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 163,
+    "timestamp": "2025-05-23T21:15:28.033Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/quick-reports/incident-types",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 200,
+    "duration": 158,
+    "timestamp": "2025-05-23T21:15:28.040Z"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-23T21:15:27.829Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/news/latest",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 500,
+    "duration": 151,
+    "timestamp": "2025-05-23T21:15:28.093Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/reports/new",
+    "status": 401,
+    "duration": 122,
+    "timestamp": "2025-05-23T21:15:28.221Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 128,
+    "timestamp": "2025-05-23T21:15:28.443Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/polling-stations",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 126,
+    "timestamp": "2025-05-23T21:15:28.678Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/reports",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 121,
+    "timestamp": "2025-05-23T21:15:29.231Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/events/upcoming",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 500,
+    "duration": 165,
+    "timestamp": "2025-05-23T21:15:29.275Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/qrcode",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 161,
+    "timestamp": "2025-05-23T21:15:29.287Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/quick-reports/incident-types",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 200,
+    "duration": 167,
+    "timestamp": "2025-05-23T21:15:29.337Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/news/latest",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 500,
+    "duration": 192,
+    "timestamp": "2025-05-23T21:15:29.381Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/dashboard",
+    "status": 401,
+    "duration": 147,
+    "timestamp": "2025-05-23T21:15:29.689Z"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-23T21:16:32.285Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar10h%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 281,
+    "timestamp": "2025-05-23T21:16:32.625Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:33.863Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:16:34.106Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 138,
+    "timestamp": "2025-05-23T21:16:35.338Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:35.581Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:16:36.824Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 144,
+    "timestamp": "2025-05-23T21:16:37.067Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:38.312Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:38.550Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:39.794Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:16:40.029Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:41.260Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:41.495Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:42.747Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:16:42.985Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 134,
+    "timestamp": "2025-05-23T21:16:44.214Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:16:44.454Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:45.697Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:16:45.932Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 139,
+    "timestamp": "2025-05-23T21:16:47.171Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:16:47.407Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 137,
+    "timestamp": "2025-05-23T21:16:48.647Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 141,
+    "timestamp": "2025-05-23T21:16:48.887Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:16:50.127Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 136,
+    "timestamp": "2025-05-23T21:16:50.361Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/users/profile",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/profile",
+    "status": 401,
+    "duration": 135,
+    "timestamp": "2025-05-23T21:16:51.594Z"
   }
 ]
