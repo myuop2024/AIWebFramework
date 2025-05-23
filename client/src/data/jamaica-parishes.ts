@@ -17,7 +17,7 @@ export interface ParishBoundary {
 
 // Approximate polygon coordinates for Jamaica's parishes
 // These are simplified polygon coordinates for visualization purposes
-export const jamaicaParishBoundaries: ParishBoundary[] = [
+export const JAMAICA_PARISHES: ParishBoundary[] = [
   // Kingston (small area in the southeast)
   {
     id: 1,

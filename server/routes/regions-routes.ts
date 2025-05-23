@@ -1,6 +1,6 @@
 import express from 'express';
 import { storage } from '../storage';
-import { jamaicaParishBoundaries } from '../../client/src/data/jamaica-parishes';
+import { JAMAICA_PARISHES } from '../../client/src/data/jamaica-parishes';
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.get('/parishes', async (req, res) => {
     // Return the parish boundary data
     res.json({
       success: true,
-      parishes: jamaicaParishBoundaries
+      parishes: JAMAICA_PARISHES
     });
   } catch (error) {
     console.error('Error fetching parish data:', error);
