@@ -788,25 +788,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any)?.claims?.sub;
       
       if (!userId) {
+<<<<<<< HEAD
+        console.log('No user ID in session for /api/users/profile');
+        return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
+=======
         return res.status(401).json({ message: 'Unauthorized - No user ID found' });
+>>>>>>> 06982903230ff00281b987e82d8e6df6079eb1ec
       }
 
-      console.log(`Fetching profile for user ID: ${userId}`);
+      console.log(`[DEBUG] /api/users/profile hit for user ID: ${userId}`);
 
       // Get user
       const user = await storage.getUser(userId);
+      console.log('[DEBUG] User object:', user);
       if (!user) {
-        console.error(`User not found with ID: ${userId}`);
+        console.error(`[DEBUG] User not found with ID: ${userId}`);
         return res.status(404).json({ message: 'User not found' });
       }
 
       // Get profile
       const profile = await storage.getUserProfile(userId);
-      console.log(`Profile retrieved: ${profile ? 'Yes' : 'No'}`);
+      console.log('[DEBUG] Profile object:', profile);
 
       // Get documents
       const documents = await storage.getDocumentsByUserId(userId);
-      console.log(`Documents retrieved: ${documents.length}`);
+      console.log('[DEBUG] Documents array:', documents);
 
       // Remove sensitive data
       const { password, ...userWithoutPassword } = user;
