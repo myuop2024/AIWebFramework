@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
+    "@anthropic-ai/sdk": "^0.52.0",
     "@devexpress/dx-react-chart": "^4.0.11",
     "@devexpress/dx-react-core": "^4.0.11",
     "@google-cloud/bigquery": "^8.0.0",
