@@ -521,7 +521,7 @@ export default function ProfileForm() {
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your country" {...field} defaultValue="Jamaica" />
+                      <Input placeholder="Enter your country" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
