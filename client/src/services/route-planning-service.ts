@@ -176,9 +176,9 @@ export async function calculateOptimizedRoute(
       throw new Error("HERE Maps API not loaded");
     }
 
-    const apiKey = import.meta.env.VITE_HERE_API_KEY as string;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key not found");
+    const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY as string;
+    if (!apiKey || apiKey === 'your_here_maps_api_key') {
+      throw new Error("HERE Maps API key not found or not configured properly");
     }
 
     // Create platform instance
@@ -585,9 +585,9 @@ export async function getEstimatedTimeToArrival(
       throw new Error("HERE Maps API not loaded");
     }
 
-    const apiKey = import.meta.env.VITE_HERE_API_KEY as string;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key not found");
+    const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY as string;
+    if (!apiKey || apiKey === 'your_here_maps_api_key') {
+      throw new Error("HERE Maps API key not found or not configured properly");
     }
 
     // Create platform instance

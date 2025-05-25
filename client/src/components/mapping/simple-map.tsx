@@ -64,10 +64,11 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   // Initialize the map
   useEffect(() => {
     // Check for HERE Maps API key
-    if (!import.meta.env.VITE_HERE_API_KEY) {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY;
+    if (!apiKey || apiKey === 'your_here_maps_api_key') {
       toast({
         title: "Map API Key Missing",
-        description: "The HERE Maps API key is missing. Please ensure it's properly configured."
+        description: "The HERE Maps API key is missing or not configured properly. Please check your environment variables."
       });
       return;
     }
@@ -145,8 +146,9 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
     try {
       // Initialize the platform with API key
       const H = (window as typeof window & { H: typeof import('@here/maps-api-for-javascript') }).H;
+      const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY;
       const platform = new H.service.Platform({
-        apikey: import.meta.env.VITE_HERE_API_KEY
+        apikey: apiKey
       });
 
       // Get default map types

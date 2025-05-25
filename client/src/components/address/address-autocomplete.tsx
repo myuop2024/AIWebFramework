@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { useHereMaps } from "@/lib/here-maps";
+import { getHereApiKey } from "@/lib/here-maps-config";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -147,9 +148,11 @@ export default function AddressAutocomplete({
     }
     
     try {
-      const apiKey = import.meta.env.VITE_HERE_API_KEY;
-      if (!apiKey) {
-        console.error("HERE Maps API key is missing");
+      let apiKey: string;
+      try {
+        apiKey = getHereApiKey();
+      } catch (error) {
+        console.error("HERE Maps API key error:", error);
         setIsSearching(false);
         return;
       }
@@ -232,9 +235,11 @@ export default function AddressAutocomplete({
     }
     
     try {
-      const apiKey = import.meta.env.VITE_HERE_API_KEY;
-      if (!apiKey) {
-        console.error("HERE Maps API key is missing");
+      let apiKey: string;
+      try {
+        apiKey = getHereApiKey();
+      } catch (error) {
+        console.error("HERE Maps API key error:", error);
         return;
       }
       

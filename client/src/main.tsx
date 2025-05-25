@@ -10,6 +10,15 @@ import { Toaster } from "@/components/ui/toaster";
 import React from "react";
 import { queryClient } from "@/lib/queryClient";
 
+// Import HERE Maps diagnostics for debugging
+import { logHereDiagnostics } from "./lib/here-maps-diagnostics";
+
+// Make diagnostics available in browser console
+if (typeof window !== 'undefined') {
+  (window as any).testHereMaps = logHereDiagnostics;
+  console.log('💡 HERE Maps diagnostics available: Run window.testHereMaps() in console to test');
+}
+
 // Use the optimized and configured query client from lib/queryClient.ts
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

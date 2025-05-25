@@ -41,8 +41,15 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
         // Check if H (HERE Maps) is available
         if (window.H) {
+          const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY;
+          if (!apiKey || apiKey === 'your_here_maps_api_key') {
+            console.error('HERE Maps API key is missing or not configured properly');
+            setIsLoading(false);
+            return;
+          }
+
           const platform = new window.H.service.Platform({
-            apikey: import.meta.env.VITE_HERE_API_KEY || 'default-key-for-development'
+            apikey: apiKey
           });
 
           const defaultLayers = platform.createDefaultLayers();

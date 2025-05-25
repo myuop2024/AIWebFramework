@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getHereApiKey, isHereMapsConfigured } from "./here-maps-config";
 
 // Type definitions for HERE Maps API
 interface HereMapsApi {
@@ -68,11 +69,12 @@ function loadHereMapsScript(): Promise<void> {
     }
 
     try {
-      const apiKey = import.meta.env.VITE_HERE_API_KEY as string;
-      
-      if (!apiKey) {
-        const error = new Error("HERE Maps API key is missing");
-        hereMapsLoadError = error;
+      // Check for API key using centralized configuration
+      let apiKey: string;
+      try {
+        apiKey = getHereApiKey();
+      } catch (error) {
+        hereMapsLoadError = error as Error;
         reject(error);
         return;
       }
@@ -231,12 +233,14 @@ export function formatDistance(distance: number): string {
 
 // HERE Maps Service Implementation
 export const hereMapsService = {
+  // Get API key using centralized configuration
+  getApiKey(): string {
+    return getHereApiKey();
+  },
+
   // Reverse geocode coordinates to get address
   async reverseGeocode(lat: number, lng: number) {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key is missing");
-    }
+    const apiKey = this.getApiKey();
 
     try {
       const response = await fetch(
@@ -265,10 +269,7 @@ export const hereMapsService = {
 
   // Geocode address to get coordinates
   async geocodeAddress(address: string) {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key is missing");
-    }
+    const apiKey = this.getApiKey();
 
     try {
       const response = await fetch(
@@ -307,10 +308,7 @@ export const hereMapsService = {
     destLng: number,
     transportMode: "car" | "pedestrian" | "bicycle" = "car"
   ) {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key is missing");
-    }
+    const apiKey = this.getApiKey();
 
     try {
       const response = await fetch(
@@ -331,10 +329,7 @@ export const hereMapsService = {
 
   // Search for places/addresses
   async searchPlaces(query: string, lat?: number, lng?: number) {
-    const apiKey = import.meta.env.VITE_HERE_API_KEY;
-    if (!apiKey) {
-      throw new Error("HERE Maps API key is missing");
-    }
+    const apiKey = this.getApiKey();
 
     try {
       let url = `https://discover.search.hereapi.com/v1/discover?q=${encodeURIComponent(query)}&apiKey=${apiKey}`;
