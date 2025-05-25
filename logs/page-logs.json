@@ -3182,5 +3182,2273 @@
     "status": 500,
     "duration": 145,
     "timestamp": "2025-05-25T07:06:34.818Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2en%3A",
+    "status": 200,
+    "duration": 53,
+    "timestamp": "2025-05-25T07:13:25.204Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/main.tsx?v=ZJKvspteD5uRLocjZOxC_",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "ZJKvspteD5uRLocjZOxC_"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 4,
+    "timestamp": "2025-05-25T07:13:25.700Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@react-refresh",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 3,
+    "timestamp": "2025-05-25T07:13:26.216Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/App.tsx?v=ZJKvspteD5uRLocjZOxC_",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "ZJKvspteD5uRLocjZOxC_"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:27.388Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@vite/client",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1674,
+    "timestamp": "2025-05-25T07:13:27.408Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/index.css?v=ZJKvspteD5uRLocjZOxC_",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "ZJKvspteD5uRLocjZOxC_"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1148,
+    "timestamp": "2025-05-25T07:13:28.533Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/node-polyfills.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:30.041Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toaster.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:30.553Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/queryClient.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:30.821Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=3d9ccd28",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "3d9ccd28"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 3629,
+    "timestamp": "2025-05-25T07:13:31.141Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react-dom_client.js?v=fef697d9",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "fef697d9"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 4902,
+    "timestamp": "2025-05-25T07:13:31.144Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=61fe688b",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "61fe688b"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2543,
+    "timestamp": "2025-05-25T07:13:31.153Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react.js?v=3d9ccd28",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "3d9ccd28"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2485,
+    "timestamp": "2025-05-25T07:13:31.157Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=5bbfbe78",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "5bbfbe78"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2495,
+    "timestamp": "2025-05-25T07:13:31.166Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=514c6e10",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "514c6e10"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 175,
+    "timestamp": "2025-05-25T07:13:31.169Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/advanced-features.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.303Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tooltip.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.308Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/not-found.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.344Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/login.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.387Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dynamic-register.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.394Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/forgot-password.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.398Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.440Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/profile.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.474Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/documents.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.484Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/polling-stations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.491Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.523Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/new.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.526Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/[id].tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.594Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/assignments.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.616Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/integrated-training.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.619Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/faq.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.624Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/chat.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.670Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/form-templates.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.718Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.728Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin-dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.748Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/verification.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:31.759Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/training-integrations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 3,
+    "timestamp": "2025-05-25T07:13:31.796Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/registration-forms.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.799Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/id-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.872Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/user-imports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:31.933Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/analytics.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:31.998Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/settings.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.030Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/route-planning-page.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.039Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/observer-route-planning.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.043Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/direct-map-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.083Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/permission-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.114Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/team-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.126Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/assignments/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.143Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/reports-approval/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.150Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/schedule-meeting.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.171Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/station-schedule.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.210Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/area-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.251Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/error-logs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.269Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.305Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/dashboard/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.343Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/detail/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:32.347Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/edit/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.361Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/new/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.387Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/useAuth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.400Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/protected-route.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.430Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/error/error-boundary.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.440Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/error-logger.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.454Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.502Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/use-toast.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:32.506Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toast.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.527Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XQLYTHWV.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 4,
+    "timestamp": "2025-05-25T07:13:32.541Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-VJA5E53X.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:32.551Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SNAQBZPT.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.554Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=a3403cd2",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "a3403cd2"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.603Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/utils.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:32.607Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/lucide-react.js?v=39d12e76",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "39d12e76"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.614Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/login-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.681Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/card.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.684Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/forgot-password-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.733Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/alert.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.762Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/registration/dynamic-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.765Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-QRIEPQWS.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.774Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/advanced/ai-assistant.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.837Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/advanced/real-time-collaboration.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.856Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/advanced/smart-analytics.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.892Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/advanced/progressive-web-app.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:32.968Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tabs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.981Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/responsive-container.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:32.992Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/badge.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.015Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/button.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.070Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/polling-stations/polling-stations-list.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.092Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/dropdown-menu.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:33.101Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/input.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:33.142Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/table.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.146Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/select.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.153Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/skeleton.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.188Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/alert-banner.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.206Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/status-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.238Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/upcoming-events.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.243Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/recent-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.258Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/quick-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.272Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/qr-code.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:13:33.296Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/latest-news.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.329Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/auth.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:13:33.352Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/polling/report-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:13:33.359Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2en%3A",
+    "status": 200,
+    "duration": 7,
+    "timestamp": "2025-05-25T07:30:06.198Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@vite/client",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.619Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/main.tsx?v=0wEA6H60rjBHXCn32pgIt",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "0wEA6H60rjBHXCn32pgIt"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.631Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/vite/dist/client/env.mjs",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.916Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@react-refresh",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.924Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/App.tsx?v=0wEA6H60rjBHXCn32pgIt",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "0wEA6H60rjBHXCn32pgIt"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.941Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toaster.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:06.985Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/index.css?v=0wEA6H60rjBHXCn32pgIt",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "0wEA6H60rjBHXCn32pgIt"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:07.009Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/queryClient.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:07.017Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/node-polyfills.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 3,
+    "timestamp": "2025-05-25T07:30:07.037Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/use-toast.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.060Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/toast.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.110Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tooltip.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.184Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/not-found.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.189Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/login.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.201Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dynamic-register.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 3,
+    "timestamp": "2025-05-25T07:30:07.209Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/forgot-password.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.214Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.258Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/profile.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.261Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/documents.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.298Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/polling-stations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.302Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.312Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/new.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.332Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/reports/[id].tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.335Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/assignments.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.380Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/integrated-training.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.391Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/faq.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.395Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/chat.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.404Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/form-templates.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.407Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.412Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin-dashboard.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.473Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/registration-forms.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.482Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/verification.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.485Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/id-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.496Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/training-integrations.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.510Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/user-imports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.515Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/analytics.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.553Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/settings.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:07.570Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/route-planning-page.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.579Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/observer-route-planning.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.585Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/direct-map-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.593Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/permission-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.608Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/team-management.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.624Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/assignments/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.660Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/reports-approval/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.669Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/supervisor/schedule-meeting.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.673Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/station-schedule.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.685Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/admin/error-logs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.696Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/roving/area-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.710Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.737Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/dashboard/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.764Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/detail/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.770Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/new/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.774Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/project-management/edit/index.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.785Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/hooks/useAuth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.803Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/protected-route.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:07.811Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/error/error-boundary.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:07.849Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/error-logger.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.862Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/pages/advanced-features.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.868Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-toast.js?v=125d6bfe",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "125d6bfe"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.876Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/class-variance-authority.js?v=131ed57e",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "131ed57e"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.885Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/lib/utils.ts",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.895Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-7QS3QMAE.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.920Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-SUFAS5SE.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.956Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.961Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MCVKFIO6.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.965Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-XSDGB6UR.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.987Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-J73UDME7.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:07.991Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-3RGQFZIF.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.044Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-5Q5YC75F.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:08.050Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-IGJJEA4C.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.062Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.066Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PNFFIFR5.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.080Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-T5ONMTIY.js?v=d0c39f48",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d0c39f48"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.118Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/card.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.144Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/login-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.147Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/registration/dynamic-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.158Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/alert.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.176Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/auth/forgot-password-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.194Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/alert-banner.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.217Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/status-cards.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:08.242Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/upcoming-events.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.246Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/recent-reports.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.253Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/qr-code.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.270Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/quick-access.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:08.273Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/dashboard/latest-news.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.286Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/responsive-container.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 0,
+    "timestamp": "2025-05-25T07:30:08.335Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/skeleton.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.343Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/profile-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 4,
+    "timestamp": "2025-05-25T07:30:08.349Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/tabs.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.352Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/separator.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.358Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/avatar.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.369Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/profile-photo-upload.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.428Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/document-upload.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 3,
+    "timestamp": "2025-05-25T07:30:08.435Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/password-change-form.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.438Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/verification-tab.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:08.444Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/profile/two-factor-auth.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.464Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/button.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.512Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/@fs/home/runner/workspace/node_modules/.vite/deps/react-hook-form.js?v=d470b917",
+    "userId": "unauthenticated",
+    "query": {
+      "v": "d470b917"
+    },
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 200,
+    "duration": 2,
+    "timestamp": "2025-05-25T07:30:08.567Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/src/components/ui/table.tsx",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 1,
+    "timestamp": "2025-05-25T07:30:08.612Z"
   }
 ]
