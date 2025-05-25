@@ -48,15 +48,20 @@ async function initializeDefaultData() {
 
 const app = express();
 
+// Trust proxy for proper IP handling in cloud environments
+app.set('trust proxy', true);
+
 // Security middleware - apply early
 app.use(securityHeaders);
 app.use(corsConfig);
 app.use(securityLogger);
 
-// Rate limiting
-app.use('/api/auth', authRateLimit);
-app.use('/api', apiRateLimit);
-app.use(generalRateLimit);
+// Rate limiting - disabled in development to avoid proxy conflicts
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api/auth', authRateLimit);
+  app.use('/api', apiRateLimit);
+  app.use(generalRateLimit);
+}
 
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
