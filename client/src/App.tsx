@@ -48,6 +48,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
 import { initGlobalErrorHandlers } from "@/lib/error-logger";
+import AdvancedFeatures from "@/pages/advanced-features";
 
 function Router() {
   return (
@@ -141,6 +142,9 @@ function Router() {
         component={AreaReportsPage} 
         allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
       />
+      
+      {/* Advanced Features */}
+      <Route path="/advanced-features" component={AdvancedFeatures} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />

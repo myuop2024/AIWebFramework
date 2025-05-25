@@ -1,28 +1,41 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-interface ResponsiveContainerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ResponsiveContainerProps {
   children: React.ReactNode;
   className?: string;
-  fullHeight?: boolean;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
 export function ResponsiveContainer({
   children,
   className,
-  fullHeight = false,
-  ...props
+  size = 'xl',
+  padding = 'md'
 }: ResponsiveContainerProps) {
+  const sizeClasses = {
+    sm: 'max-w-2xl',
+    md: 'max-w-4xl',
+    lg: 'max-w-6xl',
+    xl: 'max-w-7xl',
+    full: 'max-w-full'
+  };
+
+  const paddingClasses = {
+    none: '',
+    sm: 'px-4 sm:px-6',
+    md: 'px-4 sm:px-6 lg:px-8',
+    lg: 'px-6 sm:px-8 lg:px-12'
+  };
+
   return (
-    <div
-      className={cn(
-        "w-full px-4 sm:px-6 md:px-8 mx-auto",
-        "max-w-full sm:max-w-[540px] md:max-w-[720px] lg:max-w-[960px] xl:max-w-[1140px] 2xl:max-w-[1320px]",
-        fullHeight && "min-h-[calc(100vh-4rem)]",
-        className
-      )}
-      {...props}
-    >
+    <div className={cn(
+      'w-full mx-auto',
+      sizeClasses[size],
+      paddingClasses[padding],
+      className
+    )}>
       {children}
     </div>
   );

@@ -13,6 +13,16 @@ import { attachUser } from "./middleware/auth";
 import { Server } from "http";
 import passport from "passport";
 import fs from 'fs';
+// Security middleware imports
+import { 
+  securityHeaders, 
+  corsConfig, 
+  generalRateLimit, 
+  authRateLimit, 
+  apiRateLimit,
+  securityLogger,
+  sessionSecurity
+} from "./middleware/security";
 
 /**
  * Initialize default data in the database
@@ -37,6 +47,17 @@ async function initializeDefaultData() {
 }
 
 const app = express();
+
+// Security middleware - apply early
+app.use(securityHeaders);
+app.use(corsConfig);
+app.use(securityLogger);
+
+// Rate limiting
+app.use('/api/auth', authRateLimit);
+app.use('/api', apiRateLimit);
+app.use(generalRateLimit);
+
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 app.use(express.urlencoded({ extended: false }));
@@ -202,15 +223,20 @@ app.get('/api/logs', (req, res) => {
     
     app.use(session({
       store: sessionStore,
-      secret: process.env.SESSION_SECRET || 'dev-secret-key',
+      secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production-' + Math.random().toString(36),
       resave: false,
       saveUninitialized: false,
+      name: 'sessionId', // Change default session name
       cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: sessionTtl
+        maxAge: sessionTtl,
+        sameSite: 'strict' // CSRF protection
       }
     }));
+    
+    // Session security middleware
+    app.use(sessionSecurity);
     
     // Setup passport for authentication
     app.use(passport.initialize());

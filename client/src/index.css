@@ -30,8 +30,17 @@
   --info-foreground: 210 40% 98%;
   --ring: 215 20% 65%;
   --radius: 0.5rem;
-  }
-  .dark {
+  
+  /* Sidebar variables for responsive design */
+  --sidebar-width: 16rem;
+  --sidebar-width-mobile: 20rem;
+  
+  /* Animation variables */
+  --animation-duration: 0.2s;
+  --animation-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
   /* Modern dark theme with elevated surfaces and improved contrast */
   --background: 222 47% 6%;
   --foreground: 210 40% 98%;
@@ -59,26 +68,39 @@
   --info-foreground: 210 40% 98%;
   --ring: 216 34% 40%;
   --radius: 0.5rem;
-  }
+}
 
 @layer base {
   * {
     @apply border-border;
   }
 
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
   }
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-medium tracking-tight;
+  }
+  
+  /* Improve text readability on mobile */
+  @media (max-width: 768px) {
+    body {
+      font-size: 16px; /* Prevent zoom on iOS */
+    }
   }
 }
 
 @layer components {
   /* Modern card styles with subtle shadows */
   .card-modern {
-    @apply bg-card rounded-lg border shadow-sm transition-all hover:shadow-md;
+    @apply bg-card rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md;
   }
   
   /* Glass effect for elevated content */
@@ -91,9 +113,9 @@
     @apply bg-gradient-to-r from-primary to-accent text-primary-foreground;
   }
   
-  /* Improved dashboard tiles */
+  /* Improved dashboard tiles with better mobile spacing */
   .dashboard-tile {
-    @apply p-4 rounded-xl border border-border bg-card hover:shadow-md transition-all;
+    @apply p-4 sm:p-6 rounded-xl border border-border bg-card hover:shadow-md transition-all duration-200;
   }
   
   /* Status badges with consistent styling */
@@ -119,6 +141,88 @@
   
   /* Modern button animations */
   .btn-animate {
-    @apply transition-transform active:scale-95;
+    @apply transition-all duration-200 active:scale-95;
+  }
+  
+  /* Mobile-first responsive containers */
+  .container-responsive {
+    @apply w-full px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+  }
+  
+  /* Mobile-optimized grid layouts */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+  
+  .grid-responsive-2col {
+    @apply grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6;
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-nav-overlay {
+    @apply fixed inset-0 bg-black/50 z-40 lg:hidden;
+    backdrop-filter: blur(4px);
+  }
+  
+  .mobile-nav-panel {
+    @apply fixed inset-y-0 left-0 z-50 w-80 bg-background border-r shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden;
+  }
+  
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+  
+  /* Improved form elements for mobile */
+  .form-input-mobile {
+    @apply text-base; /* Prevent zoom on iOS */
+  }
+  
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  .transition-smooth {
+    transition: all var(--animation-duration) var(--animation-easing);
+  }
+  
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+  
+  /* Mobile-specific utilities */
+  @media (max-width: 768px) {
+    .mobile-full-width {
+      @apply w-full;
+    }
+    
+    .mobile-text-center {
+      @apply text-center;
+    }
+    
+    .mobile-hidden {
+      @apply hidden;
+    }
+    
+    .mobile-block {
+      @apply block;
+    }
+  }
+  
+  /* Tablet-specific utilities */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .tablet-grid-2 {
+      @apply grid-cols-2;
+    }
+  }
+  
+  /* Desktop enhancements */
+  @media (min-width: 1024px) {
+    .desktop-hover-lift {
+      @apply hover:-translate-y-1 hover:shadow-lg;
+    }
   }
 }

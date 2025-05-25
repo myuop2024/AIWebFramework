@@ -9,6 +9,8 @@ import RecentReports from "@/components/dashboard/recent-reports";
 import QuickAccess from "@/components/dashboard/quick-access";
 import QRCode from "@/components/dashboard/qr-code";
 import LatestNews from "@/components/dashboard/latest-news";
+import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -22,61 +24,83 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-6">
+      <ResponsiveContainer className="py-6">
         <div className="animate-pulse space-y-6">
-          <div className="h-16 bg-gray-200 rounded-md"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Alert Banner Skeleton */}
+          <Skeleton className="h-16 w-full rounded-lg" />
+          
+          {/* Status Cards Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-40 bg-gray-200 rounded-md"></div>
+              <Skeleton key={i} className="h-32 rounded-lg" />
             ))}
           </div>
+          
+          {/* Main Content Skeleton */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="h-80 bg-gray-200 rounded-md"></div>
-              <div className="h-80 bg-gray-200 rounded-md"></div>
+              <Skeleton className="h-80 rounded-lg" />
+              <Skeleton className="h-80 rounded-lg" />
             </div>
+            
+            {/* Right Column */}
             <div className="space-y-6">
-              <div className="h-60 bg-gray-200 rounded-md"></div>
-              <div className="h-60 bg-gray-200 rounded-md"></div>
-              <div className="h-60 bg-gray-200 rounded-md"></div>
+              <Skeleton className="h-60 rounded-lg" />
+              <Skeleton className="h-60 rounded-lg" />
+              <Skeleton className="h-60 rounded-lg" />
             </div>
           </div>
         </div>
-      </div>
+      </ResponsiveContainer>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <ResponsiveContainer className="py-4 sm:py-6">
       {/* Alert Banner */}
-      <AlertBanner />
+      <div className="mb-6">
+        <AlertBanner />
+      </div>
 
       {/* Status Cards */}
-      <StatusCards />
+      <div className="mb-6">
+        <StatusCards />
+      </div>
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-        {/* Left Column */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Upcoming Events */}
-          <UpcomingEvents />
+          <div className="card-modern">
+            <UpcomingEvents />
+          </div>
 
           {/* Recent Reports */}
-          <RecentReports />
+          <div className="card-modern">
+            <RecentReports />
+          </div>
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Sidebar Content */}
         <div className="space-y-6">
           {/* Quick Access */}
-          <QuickAccess />
+          <div className="card-modern">
+            <QuickAccess />
+          </div>
 
           {/* QR Code */}
-          <QRCode />
+          <div className="card-modern">
+            <QRCode />
+          </div>
 
           {/* Latest News */}
-          <LatestNews />
+          <div className="card-modern">
+            <LatestNews />
+          </div>
         </div>
       </div>
-    </div>
+    </ResponsiveContainer>
   );
 }

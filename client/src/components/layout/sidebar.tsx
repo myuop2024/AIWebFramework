@@ -8,7 +8,7 @@ import {
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
-  Kanban, Trello
+  Kanban, Trello, X, Sparkles
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       const sidebar = document.getElementById('sidebar');
       const menuToggle = document.getElementById('menu-toggle');
       
-      if (window.innerWidth < 768 && isOpen) {
+      if (window.innerWidth < 1024 && isOpen) {
         if (sidebar && !sidebar.contains(event.target as Node) && 
             menuToggle && !menuToggle.contains(event.target as Node)) {
           toggleSidebar();
@@ -48,17 +49,25 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     };
   }, [isOpen, toggleSidebar]);
 
+  // Close sidebar on route change for mobile
+  useEffect(() => {
+    if (window.innerWidth < 1024 && isOpen) {
+      toggleSidebar();
+    }
+  }, [location]);
+
   // Navigation links
   const navLinks = [
-    { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5 mr-3" /> },
-    { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5 mr-3" /> },
-    { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5 mr-3" /> },
-    { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5 mr-3" /> },
-    { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5 mr-3" /> },
-    { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
-    { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5 mr-3" /> },
-    { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5 mr-3" /> },
-    { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5 mr-3" /> },
+    { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> },
+    { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> },
+    { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5" /> },
+    { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5" /> },
+    { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5" /> },
+    { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5" /> },
+    { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> },
+    { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> },
+    { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" /> },
+    { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" /> },
   ];
   
   // Define role-based permissions
@@ -68,30 +77,30 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   
   // Admin links (only shown to users with admin or director role)
   const adminLinks = isAdmin ? [
-    { path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5 mr-3" /> },
-    { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5 mr-3" /> },
-    { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
-    { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5 mr-3" /> },
-    { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5 mr-3" /> },
-    { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5 mr-3" /> },
+    { path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" /> },
+    { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5" /> },
+    { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5" /> },
+    { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" /> },
+    { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" /> },
+    { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" /> },
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
   const supervisorLinks = isSupervisor ? [
-    { path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5 mr-3" /> },
-    { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5 mr-3" /> },
-    { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5 mr-3" /> },
-    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <CalendarRange className="h-5 w-5 mr-3" /> },
+    { path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5" /> },
+    { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5" /> },
+    { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5" /> },
+    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <CalendarRange className="h-5 w-5" /> },
   ] : [];
   
   // Roving observer links
   const rovingObserverLinks = isRovingObserver ? [
-    { path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5 mr-3" /> },
-    { path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5 mr-3" /> },
+    { path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5" /> },
+    { path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5" /> },
   ] : [];
 
   const supportLinks = [
-    { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5 mr-3" /> },
+    { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5" /> },
   ];
 
   const handleLogout = async () => {
@@ -103,242 +112,197 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     }
   };
 
-  return (
-    <aside 
-      id="sidebar" 
-      className={`w-64 md:shadow transform fixed md:relative inset-y-0 left-0 z-40 md:translate-x-0 bg-white border-r border-gray-200 overflow-y-auto transition-transform ${
-        isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      }`}
+  const renderNavLink = (link: any, isActive: boolean) => (
+    <Link 
+      key={link.path}
+      href={link.path}
+      className={cn(
+        "flex items-center py-3 px-4 mb-1 rounded-lg transition-all duration-200 touch-target",
+        isActive
+          ? 'bg-primary/10 text-primary border-r-2 border-primary' 
+          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+      )}
     >
-      <div className="p-6">
-        <div className="flex items-center mb-8">
-          <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
-            C
-          </div>
-          <h1 className="ml-3 text-2xl font-heading font-bold text-gray-800">CAFFE</h1>
-        </div>
-        
-        {/* User Profile Summary */}
-        {user && (
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                <User className="h-6 w-6 text-gray-600" />
-              </div>
-              <div className="ml-3">
-                <p className="font-medium text-gray-800">{user.username || "User"}</p>
-                <p className="text-sm text-gray-500">Observer Role: <span className="font-medium">{user.role || "observer"}</span></p>
-              </div>
-            </div>
-          </div>
+      <span className="mr-3">{link.icon}</span>
+      <span className="font-medium">{link.label}</span>
+    </Link>
+  );
+
+  const renderDropdownNavLink = (link: any, isActive: boolean, dropdownItems: any[]) => (
+    <div key={link.path}>
+      <div 
+        className={cn(
+          "flex items-center justify-between py-3 px-4 mb-1 rounded-lg transition-all duration-200",
+          isActive
+            ? 'bg-primary/10 text-primary' 
+            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
         )}
-        
-        {/* Navigation Links */}
-        <nav>
-          <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Main</p>
-          
-          {navLinks.map((link) => {
-            // Special case for Polling Stations - show dropdown
-            if (link.path === "/polling-stations") {
-              const isActive = location.startsWith("/polling-stations");
-              return (
-                <div key={link.path}>
-                  <div 
-                    className={`flex items-center justify-between py-2 px-3 mb-1 rounded-lg ${
-                      isActive
-                        ? 'bg-primary-light/10 text-primary' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Link 
-                      href={link.path}
-                      className="flex items-center flex-1"
-                    >
-                      {link.icon}
-                      {link.label}
-                    </Link>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="focus:outline-none">
-                        <ChevronDown className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href="/polling-stations/create">Create New Station</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/polling-stations/import">Import Stations</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/polling-stations/map">Station Map</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/polling-stations/export">Export Stations</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              );
-            }
-            
-            // Special case for Project Management - show dropdown
-            if (link.path === "/project-management") {
-              const isActive = location.startsWith("/project-management");
-              return (
-                <div key={link.path}>
-                  <div 
-                    className={`flex items-center justify-between py-2 px-3 mb-1 rounded-lg ${
-                      isActive
-                        ? 'bg-primary-light/10 text-primary' 
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <Link 
-                      href={link.path}
-                      className="flex items-center flex-1"
-                    >
-                      {link.icon}
-                      {link.label}
-                    </Link>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="focus:outline-none">
-                        <ChevronDown className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/new">Create New Project</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/kanban">Kanban Board</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/calendar">Calendar View</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/analytics">Analytics</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/tasks">My Tasks</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/project-management/milestones">Milestones</Link>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              );
-            }
-            
-            // Regular links
-            return (
-              <Link 
-                key={link.path} 
-                href={link.path}
-                className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                  location === link.path 
-                    ? 'bg-primary-light/10 text-primary' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {link.icon}
-                {link.label}
-              </Link>
-            );
-          })}
-          
-          {/* Supervisor section */}
-          {supervisorLinks.length > 0 && (
-            <>
-              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Supervisor</p>
-              {supervisorLinks.map((link) => (
-                <Link 
-                  key={link.path} 
-                  href={link.path}
-                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                    location === link.path 
-                      ? 'bg-primary-light/10 text-primary' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {link.icon}
-                  {link.label}
+      >
+        <Link 
+          href={link.path}
+          className="flex items-center flex-1 touch-target"
+        >
+          <span className="mr-3">{link.icon}</span>
+          <span className="font-medium">{link.label}</span>
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="focus:outline-none p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
+            <ChevronDown className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {dropdownItems.map((item, index) => (
+              <DropdownMenuItem key={index} asChild>
+                <Link href={item.path} className="w-full">
+                  {item.icon && <span className="mr-2">{item.icon}</span>}
+                  {item.label}
                 </Link>
-              ))}
-            </>
-          )}
-          
-          {/* Roving Observer section */}
-          {rovingObserverLinks.length > 0 && (
-            <>
-              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Roving Observer</p>
-              {rovingObserverLinks.map((link) => (
-                <Link 
-                  key={link.path} 
-                  href={link.path}
-                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                    location === link.path 
-                      ? 'bg-primary-light/10 text-primary' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-            </>
-          )}
-          
-          {/* Admin section - only visible to admin users */}
-          {adminLinks.length > 0 && (
-            <>
-              <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Admin</p>
-              {adminLinks.map((link) => (
-                <Link 
-                  key={link.path} 
-                  href={link.path}
-                  className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                    location === link.path 
-                      ? 'bg-primary-light/10 text-primary' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-            </>
-          )}
-          
-          <p className="text-xs uppercase tracking-wider text-gray-500 mt-6 mb-2">Support</p>
-          
-          {supportLinks.map((link) => (
-            <Link 
-              key={link.path} 
-              href={link.path}
-              className={`flex items-center py-2 px-3 mb-1 rounded-lg ${
-                location === link.path 
-                  ? 'bg-primary-light/10 text-primary' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="mobile-nav-overlay"
+          onClick={toggleSidebar}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside 
+        id="sidebar" 
+        className={cn(
+          "w-80 lg:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out",
+          "fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto shadow-xl lg:shadow-none",
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        )}
+      >
+        <div className="p-6">
+          {/* Header with close button for mobile */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center">
+              <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
+                C
+              </div>
+              <h1 className="ml-3 text-2xl font-bold text-gray-800 dark:text-white">CAFFE</h1>
+            </div>
+            <button
+              onClick={toggleSidebar}
+              className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 touch-target"
             >
-              {link.icon}
-              {link.label}
-            </Link>
-          ))}
-          
-          <div className="mt-10 pt-6 border-t border-gray-200">
-            <button 
-              onClick={handleLogout}
-              className="flex items-center py-2 px-3 rounded-lg text-gray-700 hover:bg-gray-100 w-full text-left"
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
+              <X className="h-5 w-5" />
             </button>
           </div>
-        </nav>
-      </div>
-    </aside>
+          
+          {/* User Profile Summary */}
+          {user && (
+            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center">
+                <div className="h-12 w-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                  <User className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="font-medium text-gray-800 dark:text-white">{user.username || "User"}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Role: <span className="font-medium capitalize">{user.role || "observer"}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Navigation Links */}
+          <nav className="space-y-1">
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-4">Main</p>
+            
+            {navLinks.map((link) => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              
+              // Special case for Polling Stations - show dropdown
+              if (link.path === "/polling-stations") {
+                const dropdownItems = [
+                  { path: "/polling-stations/create", label: "Create New Station" },
+                  { path: "/polling-stations/import", label: "Import Stations" },
+                  { path: "/polling-stations/map", label: "Station Map" },
+                  { path: "/polling-stations/export", label: "Export Stations" },
+                ];
+                return renderDropdownNavLink(link, isActive, dropdownItems);
+              }
+              
+              // Special case for Project Management - show dropdown
+              if (link.path === "/project-management") {
+                const dropdownItems = [
+                  { path: "/project-management/dashboard", label: "Dashboard" },
+                  { path: "/project-management/new", label: "New Project" },
+                  { path: "/project-management/kanban", label: "Kanban Board" },
+                  { path: "/project-management/calendar", label: "Calendar" },
+                  { path: "/project-management/analytics", label: "Analytics" },
+                  { path: "/project-management/tasks", label: "Tasks" },
+                  { path: "/project-management/milestones", label: "Milestones" },
+                ];
+                return renderDropdownNavLink(link, isActive, dropdownItems);
+              }
+              
+              return renderNavLink(link, isActive);
+            })}
+            
+            {/* Admin Section */}
+            {adminLinks.length > 0 && (
+              <>
+                <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Administration</p>
+                {adminLinks.map((link) => {
+                  const isActive = location === link.path || location.startsWith(link.path + '/');
+                  return renderNavLink(link, isActive);
+                })}
+              </>
+            )}
+            
+            {/* Supervisor Section */}
+            {supervisorLinks.length > 0 && (
+              <>
+                <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Supervision</p>
+                {supervisorLinks.map((link) => {
+                  const isActive = location === link.path || location.startsWith(link.path + '/');
+                  return renderNavLink(link, isActive);
+                })}
+              </>
+            )}
+            
+            {/* Roving Observer Section */}
+            {rovingObserverLinks.length > 0 && (
+              <>
+                <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Roving Observer</p>
+                {rovingObserverLinks.map((link) => {
+                  const isActive = location === link.path || location.startsWith(link.path + '/');
+                  return renderNavLink(link, isActive);
+                })}
+              </>
+            )}
+            
+            {/* Support Section */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Support</p>
+            {supportLinks.map((link) => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+            
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full py-3 px-4 mt-4 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-200 touch-target"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 }
