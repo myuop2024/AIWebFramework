@@ -103,6 +103,7 @@ export default function AddressAutocomplete({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionListRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Setup autocomplete service
   useEffect(() => {
@@ -474,22 +475,57 @@ export default function AddressAutocomplete({
       )}
 
       {loadError && (
-        <div className="mt-1 text-sm text-red-500 flex items-center bg-red-50 p-2 rounded border border-red-200">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-4 w-4 mr-1 flex-shrink-0" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
+        <div className="mt-1 text-sm text-red-500 flex flex-col items-start bg-red-50 p-2 rounded border border-red-200">
+          <div className="flex items-center">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4 mr-1 flex-shrink-0" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Map service unavailable: {loadError.message}</span>
+          </div>
+          <button
+            type="button"
+            className="mt-2 text-xs text-blue-700 underline hover:text-blue-900 focus:outline-none"
+            onClick={() => setShowHelp(prev => !prev)}
           >
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          Map service unavailable: {loadError.message}
+            Need help?
+          </button>
+          {showHelp && (
+            <div className="mt-2 text-xs text-gray-700 bg-blue-50 border border-blue-100 rounded p-2 w-full">
+              <div className="mb-1 font-semibold text-blue-800">Troubleshooting HERE Maps</div>
+              <ol className="list-decimal ml-4 mb-2">
+                <li>Check your internet connection.</li>
+                <li>Ensure your browser allows third-party scripts.</li>
+                <li>Contact support if the problem persists.</li>
+              </ol>
+              <div className="mb-1">For advanced diagnostics, open your browser console and run:</div>
+              <pre className="bg-gray-100 rounded p-1 text-xs mb-2">window.testHereMaps()</pre>
+              <button
+                type="button"
+                className="mt-1 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && typeof window.testHereMaps === 'function') {
+                    window.testHereMaps();
+                    alert('Diagnostics started. Check your browser console for results.');
+                  } else {
+                    alert('Diagnostics tool not available. Please open the browser console and try again.');
+                  }
+                }}
+              >
+                Run Diagnostics
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

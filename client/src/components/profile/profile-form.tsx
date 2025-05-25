@@ -374,13 +374,10 @@ export default function ProfileForm() {
                         onAddressSelect={(addressData) => {
                           // Update the address field with full address (including house number)
                           field.onChange(addressData.fullAddress);
-                          
                           // Log the full address data for debugging
                           console.log('Address selected:', addressData);
-                          
                           // Process the parish field first
                           let detectedParish = null;
-                          
                           // Check if the city field is actually a parish (common in Jamaica)
                           if (addressData.city) {
                             const cityContainsParish = JAMAICAN_PARISHES.find(parish => 
@@ -388,17 +385,12 @@ export default function ProfileForm() {
                               addressData.city.includes(parish) ||
                               (parish.startsWith("St.") && addressData.city.includes(parish.substring(4)))
                             );
-                            
                             if (cityContainsParish) {
-                              // Use the standardized parish name
                               detectedParish = cityContainsParish;
-                              // Don't set city if it's actually a parish
                             } else {
-                              // Only set city if it's not a parish
                               form.setValue("city", addressData.city);
                             }
                           }
-                          
                           // Try to get parish from state field if not found in city
                           if (!detectedParish && addressData.state) {
                             const stateContainsParish = JAMAICAN_PARISHES.find(parish => 
@@ -448,6 +440,12 @@ export default function ProfileForm() {
                   <FormDescription>
                     Start typing your address to see suggestions from HERE Maps
                   </FormDescription>
+                  {/* Show a warning if HERE Maps is unavailable */}
+                  {typeof window !== 'undefined' && window.H === undefined && (
+                    <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                      <strong>Address lookup is currently unavailable.</strong> Please enter your address manually or contact support. For advanced help, open your browser console and run <code>window.testHereMaps()</code>.
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
