@@ -31,6 +31,12 @@ import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
 import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
+// New comprehensive CRUD routes
+import newsRoutes from './routes/news-routes';
+import eventsRoutes from './routes/events-routes';
+import reportsRoutes from './routes/reports-routes';
+import assignmentsRoutes from './routes/assignments-routes';
+import usersRoutes from './routes/users-routes';
 import { encryptSensitiveFields, decryptProfileFields } from './services/encryption-service';
 import permissionRoutes from './routes/permission-routes';
 import supervisorRoutes from './routes/supervisor-routes';
@@ -2287,6 +2293,13 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Register admin error logs routes
   app.use('/api/admin', adminErrorLogRoutes);
+  
+  // New comprehensive CRUD routes for data management
+  app.use('/api/news', newsRoutes);
+  app.use('/api/events', eventsRoutes);
+  app.use('/api/reports', reportsRoutes);
+  app.use('/api/assignments', assignmentsRoutes);
+  app.use('/api/users', usersRoutes);
   
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());
