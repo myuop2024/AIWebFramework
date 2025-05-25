@@ -229,6 +229,148 @@ export function formatDistance(distance: number): string {
   }
 }
 
+// HERE Maps Service Implementation
+export const hereMapsService = {
+  // Reverse geocode coordinates to get address
+  async reverseGeocode(lat: number, lng: number) {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      throw new Error("HERE Maps API key is missing");
+    }
+
+    try {
+      const response = await fetch(
+        `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&apiKey=${apiKey}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        return {
+          position: { lat, lng },
+          address: { label: data.items[0].address.label }
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+      throw error;
+    }
+  },
+
+  // Geocode address to get coordinates
+  async geocodeAddress(address: string) {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      throw new Error("HERE Maps API key is missing");
+    }
+
+    try {
+      const response = await fetch(
+        `https://geocode.search.hereapi.com/v1/geocode?q=${encodeURIComponent(address)}&apiKey=${apiKey}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const item = data.items[0];
+        return {
+          position: {
+            lat: item.position.lat,
+            lng: item.position.lng
+          },
+          address: { label: item.address.label }
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      throw error;
+    }
+  },
+
+  // Calculate route between two points
+  async calculateRoute(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+    transportMode: "car" | "pedestrian" | "bicycle" = "car"
+  ) {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      throw new Error("HERE Maps API key is missing");
+    }
+
+    try {
+      const response = await fetch(
+        `https://router.hereapi.com/v8/routes?transportMode=${transportMode}&origin=${originLat},${originLng}&destination=${destLat},${destLng}&return=summary,polyline&apiKey=${apiKey}`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Route calculation error:", error);
+      throw error;
+    }
+  },
+
+  // Search for places/addresses
+  async searchPlaces(query: string, lat?: number, lng?: number) {
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      throw new Error("HERE Maps API key is missing");
+    }
+
+    try {
+      let url = `https://discover.search.hereapi.com/v1/discover?q=${encodeURIComponent(query)}&apiKey=${apiKey}`;
+      
+      if (lat && lng) {
+        url += `&at=${lat},${lng}`;
+      }
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Place search error:", error);
+      throw error;
+    }
+  }
+};
+
+// Format duration in a human-readable format
+export function formatDuration(seconds: number): string {
+  if (seconds < 60) {
+    return `${Math.round(seconds)} sec`;
+  } else if (seconds < 3600) {
+    return `${Math.round(seconds / 60)} min`;
+  } else {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.round((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  }
+}
+
 // Augment window interface to include HERE Maps
 declare global {
   interface Window {
