@@ -9,7 +9,8 @@ import RecentReports from "@/components/dashboard/recent-reports";
 import QuickAccess from "@/components/dashboard/quick-access";
 import QRCode from "@/components/dashboard/qr-code";
 import LatestNews from "@/components/dashboard/latest-news";
-import { ResponsiveContainer } from "@/components/ui/responsive-container";
+import { PageWrapper } from "@/components/ui/page-wrapper";
+import { ModernCard } from "@/components/ui/modern-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -24,83 +25,82 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <ResponsiveContainer className="py-6">
-        <div className="animate-pulse space-y-6">
+      <PageWrapper>
+        <div className="animate-pulse space-y-8">
           {/* Alert Banner Skeleton */}
-          <Skeleton className="h-16 w-full rounded-lg" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
           
           {/* Status Cards Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-lg" />
+              <Skeleton key={i} className="h-40 rounded-2xl" />
             ))}
           </div>
           
           {/* Main Content Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column */}
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-80 rounded-lg" />
-              <Skeleton className="h-80 rounded-lg" />
+            <div className="lg:col-span-2 space-y-8">
+              <Skeleton className="h-96 rounded-2xl" />
+              <Skeleton className="h-96 rounded-2xl" />
             </div>
             
             {/* Right Column */}
-            <div className="space-y-6">
-              <Skeleton className="h-60 rounded-lg" />
-              <Skeleton className="h-60 rounded-lg" />
-              <Skeleton className="h-60 rounded-lg" />
+            <div className="space-y-8">
+              <Skeleton className="h-72 rounded-2xl" />
+              <Skeleton className="h-72 rounded-2xl" />
+              <Skeleton className="h-72 rounded-2xl" />
             </div>
           </div>
         </div>
-      </ResponsiveContainer>
+      </PageWrapper>
     );
   }
 
   return (
-    <ResponsiveContainer className="py-4 sm:py-6">
+    <PageWrapper 
+      title="Dashboard"
+      subtitle="Welcome back! Here's what's happening with your election monitoring activities."
+    >
       {/* Alert Banner */}
-      <div className="mb-6">
-        <AlertBanner />
-      </div>
+      <AlertBanner />
 
       {/* Status Cards */}
-      <div className="mb-6">
-        <StatusCards />
-      </div>
+      <StatusCards />
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Upcoming Events */}
-          <div className="card-modern">
+          <ModernCard variant="elevated">
             <UpcomingEvents />
-          </div>
+          </ModernCard>
 
           {/* Recent Reports */}
-          <div className="card-modern">
+          <ModernCard variant="glass">
             <RecentReports />
-          </div>
+          </ModernCard>
         </div>
 
         {/* Right Column - Sidebar Content */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Quick Access */}
-          <div className="card-modern">
+          <ModernCard variant="gradient">
             <QuickAccess />
-          </div>
+          </ModernCard>
 
           {/* QR Code */}
-          <div className="card-modern">
+          <ModernCard variant="default">
             <QRCode />
-          </div>
+          </ModernCard>
 
           {/* Latest News */}
-          <div className="card-modern">
+          <ModernCard variant="elevated">
             <LatestNews />
-          </div>
+          </ModernCard>
         </div>
       </div>
-    </ResponsiveContainer>
+    </PageWrapper>
   );
 }

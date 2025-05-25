@@ -51,7 +51,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex">
       {/* Sidebar */}
       <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
       
@@ -65,11 +65,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
           className={cn(
             "flex-1 overflow-auto",
             "transition-all duration-300 ease-in-out",
-            "bg-gray-50 dark:bg-gray-900"
+            "bg-gradient-to-br from-background/50 via-background/80 to-muted/20",
+            "backdrop-blur-sm"
           )}
         >
-          <div className="min-h-full">
-            {children}
+          <div className="min-h-full relative">
+            {/* Subtle background pattern */}
+            <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] pointer-events-none" />
+            <div className="relative z-10">
+              {children}
+            </div>
           </div>
         </main>
         

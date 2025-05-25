@@ -3,12 +3,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageWrapper } from '@/components/ui/page-wrapper';
+import { ModernCard } from '@/components/ui/modern-card';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { Sparkles, Brain, Users, Smartphone, BarChart, Zap, Globe, Shield } from 'lucide-react';
 import { AIAssistant } from '@/components/advanced/ai-assistant';
 import { RealTimeCollaboration } from '@/components/advanced/real-time-collaboration';
 import { SmartAnalytics } from '@/components/advanced/smart-analytics';
 import { ProgressiveWebApp } from '@/components/advanced/progressive-web-app';
-import { ResponsiveContainer } from '@/components/ui/responsive-container';
 
 export default function AdvancedFeatures() {
   const [activeTab, setActiveTab] = useState('ai-assistant');
@@ -92,35 +94,42 @@ export default function AdvancedFeatures() {
   ];
 
   return (
-    <ResponsiveContainer className="py-6 space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <div className="p-3 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white">
-            <Sparkles className="h-8 w-8" />
-          </div>
-        </div>
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-          World-Class Features
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-          Experience cutting-edge technology with AI-powered assistance, real-time collaboration, 
-          predictive analytics, and progressive web app capabilities.
-        </p>
-        <div className="flex flex-wrap justify-center gap-2 mt-6">
-          <Badge variant="secondary" className="px-3 py-1">
+    <PageWrapper
+      title="World-Class Features"
+      subtitle="Experience cutting-edge technology with AI-powered assistance, real-time collaboration, predictive analytics, and progressive web app capabilities."
+      breadcrumbs={
+        <Breadcrumb
+          items={[
+            { label: "Advanced Features", current: true }
+          ]}
+        />
+      }
+      actions={
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary" className="status-badge-primary">
             <Zap className="h-3 w-3 mr-1" />
             High Performance
           </Badge>
-          <Badge variant="secondary" className="px-3 py-1">
+          <Badge variant="secondary" className="status-badge-info">
             <Brain className="h-3 w-3 mr-1" />
             AI Powered
           </Badge>
-          <Badge variant="secondary" className="px-3 py-1">
+        </div>
+      }
+    >
+      {/* Header Icon */}
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg shadow-purple-500/25">
+            <Sparkles className="h-10 w-10" />
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Badge variant="secondary" className="status-badge-success">
             <Users className="h-3 w-3 mr-1" />
             Collaborative
           </Badge>
-          <Badge variant="secondary" className="px-3 py-1">
+          <Badge variant="secondary" className="status-badge-warning">
             <Shield className="h-3 w-3 mr-1" />
             Enterprise Security
           </Badge>
@@ -280,6 +289,6 @@ export default function AdvancedFeatures() {
           </div>
         </CardContent>
       </Card>
-    </ResponsiveContainer>
+    </PageWrapper>
   );
 } 

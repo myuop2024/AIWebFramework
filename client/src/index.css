@@ -3,33 +3,33 @@
 @tailwind utilities;
 
 :root {
-  /* Modern UI color scheme with vibrant primary color */
+  /* Ultra-modern UI color scheme with sophisticated gradients */
   --background: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215 16% 47%;
+  --foreground: 222 84% 4.9%;
+  --muted: 210 40% 98%;
+  --muted-foreground: 215.4 16.3% 46.9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
+  --popover-foreground: 222 84% 4.9%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --border: 214 32% 91%;
-  --input: 214 32% 91%;
-  --primary: 222 100% 54%;
+  --card-foreground: 222 84% 4.9%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 262.1 83.3% 57.8%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222 47% 11%;
-  --accent: 216 34% 62%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 84% 60%;
+  --secondary: 220 14.3% 95.9%;
+  --secondary-foreground: 220.9 39.3% 11%;
+  --accent: 220 14.3% 95.9%;
+  --accent-foreground: 220.9 39.3% 11%;
+  --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --success: 142 71% 45%;
-  --success-foreground: 210 40% 98%;
-  --warning: 38 92% 50%;
+  --success: 142.1 76.2% 36.3%;
+  --success-foreground: 355.7 100% 97.3%;
+  --warning: 32.1 94.6% 43.7%;
   --warning-foreground: 210 40% 98%;
-  --info: 206 100% 50%;
+  --info: 221.2 83.2% 53.3%;
   --info-foreground: 210 40% 98%;
-  --ring: 215 20% 65%;
-  --radius: 0.5rem;
+  --ring: 262.1 83.3% 57.8%;
+  --radius: 0.75rem;
   
   /* Sidebar variables for responsive design */
   --sidebar-width: 16rem;
@@ -41,33 +41,33 @@
 }
 
 .dark {
-  /* Modern dark theme with elevated surfaces and improved contrast */
-  --background: 222 47% 6%;
+  /* Ultra-modern dark theme with sophisticated depth and contrast */
+  --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
-  --muted: 217 33% 17%;
-  --muted-foreground: 215 20% 65%;
-  --popover: 222 45% 7%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --popover: 222.2 84% 4.9%;
   --popover-foreground: 210 40% 98%;
-  --card: 222 47% 8%;
+  --card: 222.2 84% 4.9%;
   --card-foreground: 210 40% 98%;
-  --border: 217 33% 20%;
-  --input: 217 33% 20%;
-  --primary: 224 76% 54%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --primary: 263.4 70% 50.4%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 217 33% 17%;
+  --secondary: 217.2 32.6% 17.5%;
   --secondary-foreground: 210 40% 98%;
-  --accent: 215 27% 42%;
+  --accent: 217.2 32.6% 17.5%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 40.6%;
+  --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --success: 142 70% 45%;
-  --success-foreground: 210 40% 98%;
-  --warning: 38 92% 50%;
+  --success: 142.1 70.6% 45.3%;
+  --success-foreground: 144.9 80.4% 10%;
+  --warning: 35.5 91.7% 32.9%;
   --warning-foreground: 210 40% 98%;
-  --info: 206 100% 50%;
-  --info-foreground: 210 40% 98%;
-  --ring: 216 34% 40%;
-  --radius: 0.5rem;
+  --info: 217.2 91.2% 59.8%;
+  --info-foreground: 222.2 84% 4.9%;
+  --ring: 263.4 70% 50.4%;
+  --radius: 0.75rem;
 }
 
 @layer base {
@@ -98,55 +98,95 @@
 }
 
 @layer components {
-  /* Modern card styles with subtle shadows */
+  /* Ultra-modern card styles with sophisticated shadows and animations */
   .card-modern {
-    @apply bg-card rounded-lg border shadow-sm transition-all duration-200 hover:shadow-md;
+    @apply bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 hover:-translate-y-1;
   }
   
-  /* Glass effect for elevated content */
+  /* Enhanced glass effect with better depth */
   .glass-panel {
-    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-xl border border-slate-200/50 dark:border-slate-800/50 shadow-xl;
+    @apply bg-background/95 dark:bg-background/95 backdrop-blur-xl rounded-2xl border border-border/30 shadow-2xl ring-1 ring-white/10;
   }
   
-  /* Gradient backgrounds for feature sections */
+  /* Modern gradient backgrounds with depth */
   .gradient-primary {
-    @apply bg-gradient-to-r from-primary to-accent text-primary-foreground;
+    @apply bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground shadow-lg shadow-primary/25;
   }
   
-  /* Improved dashboard tiles with better mobile spacing */
+  .gradient-secondary {
+    @apply bg-gradient-to-br from-secondary via-secondary/90 to-secondary/70 text-secondary-foreground;
+  }
+  
+  .gradient-accent {
+    @apply bg-gradient-to-br from-accent via-accent/90 to-accent/70 text-accent-foreground;
+  }
+  
+  /* Enhanced dashboard tiles with modern aesthetics */
   .dashboard-tile {
-    @apply p-4 sm:p-6 rounded-xl border border-border bg-card hover:shadow-md transition-all duration-200;
+    @apply p-6 sm:p-8 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/20;
   }
   
-  /* Status badges with consistent styling */
+  /* Modern status badges with enhanced styling */
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase transition-all duration-200 hover:scale-105;
   }
   
   .status-badge-success {
-    @apply status-badge bg-success/20 text-success-foreground;
+    @apply status-badge bg-success/15 text-success border border-success/20 shadow-sm shadow-success/10;
   }
   
   .status-badge-warning {
-    @apply status-badge bg-warning/20 text-warning-foreground;
+    @apply status-badge bg-warning/15 text-warning border border-warning/20 shadow-sm shadow-warning/10;
   }
   
   .status-badge-danger {
-    @apply status-badge bg-destructive/20 text-destructive-foreground;
+    @apply status-badge bg-destructive/15 text-destructive border border-destructive/20 shadow-sm shadow-destructive/10;
   }
   
   .status-badge-info {
-    @apply status-badge bg-info/20 text-info-foreground;
+    @apply status-badge bg-info/15 text-info border border-info/20 shadow-sm shadow-info/10;
   }
   
-  /* Modern button animations */
+  .status-badge-primary {
+    @apply status-badge bg-primary/15 text-primary border border-primary/20 shadow-sm shadow-primary/10;
+  }
+  
+  /* Enhanced button animations and styles */
   .btn-animate {
-    @apply transition-all duration-200 active:scale-95;
+    @apply transition-all duration-300 active:scale-95 hover:shadow-lg hover:-translate-y-0.5;
   }
   
-  /* Mobile-first responsive containers */
+  .btn-modern {
+    @apply btn-animate rounded-xl font-semibold tracking-wide shadow-md hover:shadow-xl;
+  }
+  
+  .btn-gradient {
+    @apply btn-modern bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70;
+  }
+  
+  .btn-glass {
+    @apply btn-modern bg-background/80 backdrop-blur-sm border border-border/50 hover:bg-background/90 hover:border-primary/30;
+  }
+  
+  /* Enhanced responsive containers with modern spacing */
   .container-responsive {
-    @apply w-full px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+    @apply w-full px-4 sm:px-6 lg:px-8 xl:px-12 mx-auto max-w-7xl;
+  }
+  
+  .container-modern {
+    @apply container-responsive py-6 sm:py-8 lg:py-12;
+  }
+  
+  .page-header-modern {
+    @apply mb-8 sm:mb-12 space-y-4;
+  }
+  
+  .page-title-modern {
+    @apply text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent;
+  }
+  
+  .page-subtitle-modern {
+    @apply text-lg sm:text-xl text-muted-foreground max-w-3xl;
   }
   
   /* Mobile-optimized grid layouts */

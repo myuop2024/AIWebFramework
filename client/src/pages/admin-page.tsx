@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { PageWrapper } from "@/components/ui/page-wrapper";
+import { ModernCard } from "@/components/ui/modern-card";
 import AdminDashboard from "@/components/admin/admin-dashboard";
 import { 
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
@@ -65,15 +67,23 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Control Panel</h1>
-      
+    <PageWrapper 
+      title="Admin Control Panel"
+      subtitle="Manage users, polling stations, system settings, and monitor platform activity."
+      actions={
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="status-badge-primary">
+            System Online
+          </Badge>
+        </div>
+      }
+    >
       <div className="w-full">
-        <div className="flex overflow-x-auto mb-6 space-x-1 pb-1">
+        <div className="flex overflow-x-auto mb-8 space-x-2 pb-2">
           <Button 
             variant={activeTab === "dashboard" ? "default" : "outline"}
             onClick={() => setActiveTab("dashboard")}
-            className="flex items-center"
+            className="btn-modern flex items-center whitespace-nowrap"
           >
             <BarChart className="mr-2 h-4 w-4" />
             Dashboard
@@ -81,7 +91,7 @@ export default function AdminPage() {
           <Button 
             variant={activeTab === "users" ? "default" : "outline"}
             onClick={() => setActiveTab("users")}
-            className="flex items-center"
+            className="btn-modern flex items-center whitespace-nowrap"
           >
             <Users className="mr-2 h-4 w-4" />
             User Management
@@ -89,7 +99,7 @@ export default function AdminPage() {
           <Button 
             variant={activeTab === "stations" ? "default" : "outline"}
             onClick={() => setActiveTab("stations")}
-            className="flex items-center"
+            className="btn-modern flex items-center whitespace-nowrap"
           >
             <MapPin className="mr-2 h-4 w-4" />
             Polling Stations
@@ -97,7 +107,7 @@ export default function AdminPage() {
           <Button 
             variant={activeTab === "forms" ? "default" : "outline"}
             onClick={() => setActiveTab("forms")}
-            className="flex items-center"
+            className="btn-modern flex items-center whitespace-nowrap"
           >
             <FileText className="mr-2 h-4 w-4" />
             Form Templates
@@ -105,7 +115,7 @@ export default function AdminPage() {
           <Button 
             variant={activeTab === "settings" ? "default" : "outline"}
             onClick={() => setActiveTab("settings")}
-            className="flex items-center"
+            className="btn-modern flex items-center whitespace-nowrap"
           >
             <Settings className="mr-2 h-4 w-4" />
             System Settings
@@ -119,23 +129,33 @@ export default function AdminPage() {
         )}
         
         {activeTab === "users" && (
-          <div className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>Manage all registered users in the system</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <p>Total Users: <Badge>{systemStats?.users?.total || "-"}</Badge></p>
-                  <p>New This Week: <Badge variant="secondary">18</Badge></p>
-                </CardContent>
-                <CardFooter>
-                  <Button onClick={() => handleAction('manage-users')} disabled={isActionLoading}>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <ModernCard variant="elevated" padding="lg">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-2">User Management</h3>
+                    <p className="text-muted-foreground">Manage all registered users in the system</p>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span>Total Users:</span>
+                      <Badge className="status-badge-primary">{systemStats?.users?.total || "-"}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span>New This Week:</span>
+                      <Badge className="status-badge-info">18</Badge>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => handleAction('manage-users')} 
+                    disabled={isActionLoading}
+                    className="btn-gradient w-full"
+                  >
                     {isActionLoading ? "Loading..." : "Manage Users"}
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </ModernCard>
               
               <Card>
                 <CardHeader>
@@ -451,6 +471,6 @@ export default function AdminPage() {
           </DialogHeader>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }
