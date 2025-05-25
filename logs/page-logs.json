@@ -13960,5 +13960,29 @@
     "status": 304,
     "duration": 339,
     "timestamp": "2025-05-25T17:41:48.369Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar51d%3A",
+    "status": 200,
+    "duration": 383,
+    "timestamp": "2025-05-25T17:42:34.003Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev:3003/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar52n%3A",
+    "status": 200,
+    "duration": 388,
+    "timestamp": "2025-05-25T17:42:44.420Z"
   }
 ]
