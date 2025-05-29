@@ -99,6 +99,9 @@ router.get('/online-users', ensureAuthenticated, async (req, res, next) => {
       parish: user.parish || null,
     }));
 
+    console.log(`[API] /online-users requested by userId: ${req.userId}`);
+    console.log(`[API] /online-users response:`, usersWithStatus);
+
     res.json(usersWithStatus);
   } catch (error) {
     console.error('Error getting online users:', error);
@@ -140,6 +143,8 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
     };
 
     const createdMessage = await storage.createMessage(messageData);
+
+    console.log(`[API] Message sent from ${req.userId} to ${receiverId}:`, content);
 
     // Actively notify receiver via WebSocket if communicationService is available
     if (communicationService) {

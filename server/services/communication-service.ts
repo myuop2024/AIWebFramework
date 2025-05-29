@@ -79,7 +79,7 @@ export class CommunicationService {
 
   private initializeWebSocketServer() {
     this.wss.on('connection', (ws: WebSocketClient) => {
-      console.log('WebSocket connection established');
+      console.log('[WS] Connection established');
       ws.isAlive = true;
 
       // Set up ping response
@@ -94,13 +94,15 @@ export class CommunicationService {
       ws.on('message', async (message: string) => {
         try {
           const data = JSON.parse(message);
-          console.log('WebSocket message received:', data);
+          console.log('[WS] Message received:', data);
 
           switch (data.type) {
             case 'register':
+              console.log(`[WS] Register message for userId: ${data.userId}`);
               await this.handleRegister(ws, data);
               break;
             case 'message':
+              console.log(`[WS] Chat message from ${data.message?.senderId} to ${data.message?.receiverId}:`, data.message?.content);
               await this.handleMessage(data);
               break;
             case 'call-offer':
@@ -122,10 +124,10 @@ export class CommunicationService {
               }
               break;
             default:
-              console.warn('Unknown message type:', data.type);
+              console.warn('[WS] Unknown message type:', data.type);
           }
         } catch (error) {
-          console.error('Error handling WebSocket message:', error);
+          console.error('[WS] Error handling message:', error);
         }
       });
 
@@ -134,11 +136,10 @@ export class CommunicationService {
         // Find and remove the disconnected client
         Array.from(this.clients.entries()).forEach(([userId, client]) => {
           if (client === ws) {
-            console.log(`User ${userId} disconnected`);
+            console.log(`[WS] User ${userId} disconnected`);
             this.clients.delete(userId);
           }
         });
-
         this.broadcastUserList();
       });
     });
