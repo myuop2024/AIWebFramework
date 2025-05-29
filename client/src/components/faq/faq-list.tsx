@@ -79,13 +79,14 @@ export default function FaqList() {
   }
 
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Frequently Asked Questions</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">Error loading FAQs. Please try again later.</p>
+          <p className="text-red-500">Error loading FAQs: {errorMsg}</p>
         </CardContent>
       </Card>
     );

@@ -194,7 +194,10 @@ export default function RoutePlanner({
       }
     } catch (error) {
       console.error("Error calculating route:", error);
-      setError("Failed to calculate route. Please try again later.");
+      if (error) {
+        const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+        setError(`Failed to calculate route: ${errorMsg}`);
+      }
     } finally {
       setLoading(false);
     }

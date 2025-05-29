@@ -76,9 +76,10 @@ export default function AreaReportsPage() {
   }
   
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     toast({
       title: "Error fetching reports",
-      description: "Please try again later or contact support",
+      description: errorMsg,
       variant: "destructive"
     });
   }

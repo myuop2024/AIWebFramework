@@ -204,10 +204,10 @@ export default function Profile() {
         className: "bg-green-600 text-white",
       });
     } catch (error) {
-      console.error('Error downloading ID card:', error);
+      const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
       toast({
         title: "Download Failed",
-        description: "There was a problem downloading your ID card. Please try again later.",
+        description: errorMsg,
         variant: "destructive",
       });
     }

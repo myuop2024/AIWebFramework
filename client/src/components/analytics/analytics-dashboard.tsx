@@ -275,11 +275,14 @@ export function AnalyticsDashboard() {
   };
 
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
-      <Alert variant="destructive" className="mb-4">
+      <Alert variant="destructive" className="my-4">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to load analytics data. Please try again later.</AlertDescription>
+        <AlertDescription>
+          Failed to load analytics data: {errorMsg}
+        </AlertDescription>
       </Alert>
     );
   }

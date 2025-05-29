@@ -299,6 +299,7 @@ export default function IncidentAnalysis() {
   }
 
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
@@ -308,7 +309,7 @@ export default function IncidentAnalysis() {
         <CardContent>
           <div className="p-4 border border-red-200 rounded-md bg-red-50 text-red-600">
             <AlertTriangle className="inline-block mr-2 h-5 w-5" />
-            <span>Failed to load incident reports. Please try again later.</span>
+            <span>{errorMsg}</span>
           </div>
         </CardContent>
       </Card>

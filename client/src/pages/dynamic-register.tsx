@@ -120,13 +120,14 @@ const DynamicRegister = () => {
   }
 
   if (formError) {
+    const errorMsg = formError?.response?.data?.error || formError?.data?.error || formError?.message || "Please try again later.";
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Unable to load registration form. Please try again later.
+            Unable to load registration form: {errorMsg}
           </AlertDescription>
         </Alert>
       </div>

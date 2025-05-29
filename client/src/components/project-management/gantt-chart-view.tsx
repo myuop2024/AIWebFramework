@@ -193,12 +193,13 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
   }
   
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Alert variant="destructive" className="my-4">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          Failed to load project timeline data. Please try again later.
+          Failed to load project timeline data: {errorMsg}
         </AlertDescription>
       </Alert>
     );

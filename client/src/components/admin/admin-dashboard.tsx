@@ -80,12 +80,14 @@ export default function AdminDashboard() {
   }
   
   if (error) {
+    // Try to extract a backend error message
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Alert variant="destructive" className="my-4">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error</AlertTitle>
         <AlertDescription>
-          Failed to load dashboard data. Please try again later.
+          Failed to load dashboard data: {errorMsg}
         </AlertDescription>
       </Alert>
     );

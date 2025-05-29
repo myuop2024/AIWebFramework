@@ -61,13 +61,14 @@ export default function LatestNews() {
   }
 
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">Latest News</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">Error loading news. Please try again later.</p>
+          <p className="text-red-500">Error loading news: {errorMsg}</p>
         </CardContent>
       </Card>
     );

@@ -60,6 +60,7 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   const [mapObject, setMapObject] = useState<H.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   // Initialize the map
   useEffect(() => {
@@ -173,7 +174,10 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
       setMapObject(map);
       setMapLoaded(true);
     } catch (error) {
-      console.error('Error initializing map:', error);
+      if (error) {
+        const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+        setError(`There was a problem initializing the map: ${errorMsg}`);
+      }
       toast({
         title: "Map Error",
         description: "There was a problem initializing the map. Please try again later."

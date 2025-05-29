@@ -180,13 +180,14 @@ export default function QRCode() {
   }
 
   if (error) {
+    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-medium">Your Observer ID</CardTitle>
         </CardHeader>
         <CardContent className="p-6 text-center">
-          <p className="text-red-500 mb-4">Error loading QR code. Please try again later.</p>
+          <p className="text-red-500 mb-4">Error loading QR code: {errorMsg}</p>
           <p className="text-3xl font-bold tracking-wide text-gray-800">
             {user?.observerId || 'Unknown'}
           </p>
