@@ -47,10 +47,10 @@ export interface IStorage {
   getAllSystemSettings(): Promise<SystemSetting[]>;
   createSystemSetting(setting: InsertSystemSetting): Promise<SystemSetting>;
   updateSystemSetting(key: string, value: any, updatedBy?: string): Promise<SystemSetting | undefined>;
-  
+
   // ID Card operations
   getAllIdCardTemplates(): Promise<IdCardTemplate[]>;
-  
+
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -60,25 +60,25 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, data: Partial<User>): Promise<User | undefined>;
   upsertUser(userData: UpsertUser): Promise<User>;
-  
+
   // User profile operations
   getUserProfile(userId: number): Promise<UserProfile | undefined>;
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
   updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<UserProfile | undefined>;
-  
+
   // Document operations
   getDocument(id: number): Promise<Document | undefined>;
   getDocumentsByUserId(userId: number): Promise<Document[]>;
   createDocument(document: InsertDocument): Promise<Document>;
   updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined>;
-  
+
   // Polling station operations
   getPollingStation(id: number): Promise<PollingStation | undefined>;
   getAllPollingStations(): Promise<PollingStation[]>;
   createPollingStation(station: InsertPollingStation): Promise<PollingStation>;
   updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined>;
   deletePollingStation(id: number): Promise<boolean>;
-  
+
   // Assignment operations
   getAssignmentsByUserId(userId: number): Promise<Assignment[]>;
   getAssignmentsByStationId(stationId: number): Promise<Assignment[]>;
@@ -86,6 +86,12 @@ export interface IStorage {
   getActiveAssignments(userId: number): Promise<Assignment[]>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined>;
+
+  // Form template operations
+  getAllFormTemplates(): Promise<FormTemplate[]>;
+  
+  // Registration form operations
+  getAllRegistrationForms(): Promise<RegistrationForm[]>;
 }
 
 // Import database storage

@@ -333,8 +333,8 @@ app.get('/api/logs', (req, res) => {
     }
 
     // Start the server with port fallback mechanism
-    // Using alternative port since 5000 seems to be in use
-    const startPort = parseInt(process.env.PORT || "3100");
+    // Use port 5000 as recommended for Replit web applications
+    const startPort = parseInt(process.env.PORT || "5000");
     const maxPortAttempts = 15;
     let port = startPort;
     let serverStarted = false;

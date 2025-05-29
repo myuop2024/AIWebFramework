@@ -47,6 +47,9 @@ export async function logClientError(error: ClientErrorLog): Promise<void> {
 export function initGlobalErrorHandlers(): void {
   // Handle unhandled promise rejections
   window.addEventListener('unhandledrejection', (event) => {
+    // Prevent default browser behavior
+    event.preventDefault();
+    
     logClientError({
       message: `Unhandled Promise Rejection: ${event.reason?.message || 'Unknown error'}`,
       source: 'unhandled-rejection',
@@ -56,10 +59,12 @@ export function initGlobalErrorHandlers(): void {
     
     // Show a user-friendly toast for unhandled rejections
     if (import.meta.env.PROD) {
-      toast({
-        title: 'An error occurred',
-        description: 'Something went wrong. Our team has been notified.',
-        variant: 'destructive',
+      import('../hooks/use-toast').then(({ toast }) => {
+        toast({
+          title: 'An error occurred',
+          description: 'Something went wrong. Our team has been notified.',
+          variant: 'destructive',
+        });
       });
     }
   });
