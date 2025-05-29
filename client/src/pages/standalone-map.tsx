@@ -177,18 +177,30 @@ export default function StandaloneMap() {
         
         const position = positionMap[parish.name] || { top: "50%", left: "50%" };
         
+        // Escape HTML to prevent XSS
+        const escapeHtml = (str: string) => str.replace(/[&<>"']/g, (match) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;'
+        }[match] || match));
+        
+        const escapedName = escapeHtml(parish.name);
+        const escapedId = escapeHtml(String(parish.id));
+        
         return `
           <div style="position: absolute; top: ${position.top}; left: ${position.left}; transform: translate(-50%, -50%);">
             <div style="width: 20px; height: 20px; border-radius: 50%; background-color: ${isSelected ? '#4169E1' : '#777'}; 
                       display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; 
                       cursor: pointer; border: 2px solid ${isSelected ? 'white' : 'transparent'};
                       box-shadow: ${isSelected ? '0 0 5px rgba(65, 105, 225, 0.8)' : 'none'}" 
-                 onclick="window.selectParish('${parish.name}')">
-              ${parish.id}
+                 data-parish="${escapedName}" onclick="window.selectParish(this.dataset.parish)">
+              ${escapedId}
             </div>
             <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); 
                       white-space: nowrap; font-size: 10px; margin-top: 2px; font-weight: ${isSelected ? 'bold' : 'normal'};">
-              ${parish.name}
+              ${escapedName}
             </div>
           </div>
         `;
