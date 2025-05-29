@@ -76,6 +76,10 @@ function generateObserverId(): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // TEMPORARY TEST LOG
+  logger.error("TESTING ERROR LOG FROM registerRoutes", new Error("TestError"));
+  // END TEMPORARY TEST LOG
+
   const httpServer = createServer(app);
   
   // API endpoint to get authenticated user data
