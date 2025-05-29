@@ -10502,5 +10502,60 @@
     "status": 500,
     "duration": 124,
     "timestamp": "2025-05-29T06:51:33.478Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/registration-forms",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 500,
+    "duration": 126,
+    "timestamp": "2025-05-29T06:52:01.424Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/form-templates",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 500,
+    "duration": 134,
+    "timestamp": "2025-05-29T06:52:01.433Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/user",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 304,
+    "duration": 170,
+    "timestamp": "2025-05-29T06:52:01.471Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/form-templates",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 500,
+    "duration": 123,
+    "timestamp": "2025-05-29T06:52:02.669Z"
+  },
+  {
+    "type": "api_call",
+    "method": "GET",
+    "path": "/api/registration-forms",
+    "userId": "unauthenticated",
+    "query": {},
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "status": 500,
+    "duration": 124,
+    "timestamp": "2025-05-29T06:52:02.676Z"
   }
 ]
