@@ -103,10 +103,18 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
     // Hash passwords if they exist in plain text
     const passwordHash = (pwd: string) => crypto.createHash('sha256').update(pwd).digest('hex');
     
+    // Get user ID from session or passport user
+    let importedBy = 0;
+    if (req.session && req.session.userId) {
+      importedBy = parseInt(req.session.userId.toString());
+    } else if (req.user && (req.user as any).id) {
+      importedBy = parseInt((req.user as any).id.toString());
+    }
+
     // Create the import log
     const importLog = await storage.createUserImportLog({
       sourceType: 'manual', // Corrected from 'source' to 'sourceType'
-      importedBy: req.session?.userId || 0,
+      importedBy: importedBy,
       totalRecords: users.length,
       successCount: 0,
       failureCount: 0,
@@ -187,10 +195,18 @@ router.post('/csv', ensureAuthenticated, ensureAdmin, upload.single('file'), asy
       // Fallback: use existing Google AI logic (processCSVFile)
       aiResult = await processCSVFile(req.file.path, records);
     }
+    // Get user ID from session or passport user
+    let importedBy = 0;
+    if (req.session && req.session.userId) {
+      importedBy = parseInt(req.session.userId.toString());
+    } else if (req.user && (req.user as any).id) {
+      importedBy = parseInt((req.user as any).id.toString());
+    }
+
     // Create an import log
     const importLog = await storage.createUserImportLog({
       sourceType: ext === '.csv' ? 'csv' : 'excel',
-      importedBy: req.session?.userId || 0,
+      importedBy: importedBy,
       totalRecords: aiResult.data.length + aiResult.errorRows.length,
       successCount: 0,
       failureCount: 0,

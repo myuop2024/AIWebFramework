@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["libuuid", "cairo", "pango", "libjpeg", "giflib", "librsvg", "lsof", "jq"]
+packages = ["libuuid", "cairo", "pango", "libjpeg", "giflib", "librsvg", "lsof", "jq", "imagemagick_light"]
 
 [deployment]
 deploymentTarget = "autoscale"
