@@ -758,50 +758,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Note: Using standardized middleware from auth.ts
 
-  // User profile routes
+  // User profile route (supports both session-based auth and Replit Auth)
   app.get('/api/users/profile', async (req, res) => {
     try {
-      // Check authentication first
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Unauthorized - Not authenticated' });
-      }
+      // Determine authentication method
+      const userId = req.session?.userId || (req.user as any)?.claims?.sub;
+      const userRole = req.session?.role || (req.user as any)?.claims?.role;
 
-      // Get user ID from Replit Auth
-      const userId = (req.user as any)?.claims?.sub;
-      
       if (!userId) {
-        console.log('No user ID in session for /api/users/profile');
+        console.log('[AUTH] /api/users/profile: No authenticated user');
         return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
       }
 
       console.log(`[DEBUG] /api/users/profile hit for user ID: ${userId}`);
 
-      // Get user
+      // Fetch user
       const user = await storage.getUser(userId);
-      console.log('[DEBUG] User object:', user);
       if (!user) {
         console.error(`[DEBUG] User not found with ID: ${userId}`);
         return res.status(404).json({ message: 'User not found' });
       }
 
-      // Get profile
-      const profile = await storage.getUserProfile(userId);
-      console.log('[DEBUG] Profile object:', profile);
-
-      // Get documents
-      const documents = await storage.getDocumentsByUserId(userId);
-      console.log('[DEBUG] Documents array:', documents);
+      // Fetch related data
+      const [profile, documents] = await Promise.all([
+        storage.getUserProfile(userId),
+        storage.getDocumentsByUserId(userId),
+      ]);
 
       // Remove sensitive data
       const { password, ...userWithoutPassword } = user;
 
-      // Decrypt profile data if the user has permission (admin/director roles)
+      // Decrypt profile fields for privileged roles
       const decryptedProfile = decryptProfileFields(profile, userRole);
 
       res.status(200).json({
         user: userWithoutPassword,
-        profile: decryptedProfile, // Ensure null instead of undefined if no profile
-        documents: documents || []
+        profile: decryptedProfile || null,
+        documents: documents || [],
       });
     } catch (error) {
       console.error('Error in /api/users/profile:', error);

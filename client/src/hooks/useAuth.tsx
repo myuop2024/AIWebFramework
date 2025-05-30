@@ -44,7 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ['/api/user'],
     queryFn: async () => {
       try {
-        const res = await fetch('/api/user');
+        const res = await fetch('/api/user', {
+          credentials: 'include',
+        });
         if (res.status === 401) return null;
         if (!res.ok) {
           throw new Error(`Failed to fetch user: ${res.status}`);
@@ -72,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(credentials),
+          credentials: 'include',
         });
         
         if (!res.ok) {
@@ -89,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(credentials),
+          credentials: 'include',
         });
         
         if (!res.ok) {
@@ -125,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(userData),
+          credentials: 'include',
         });
         
         if (!res.ok) {
@@ -142,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(userData),
+          credentials: 'include',
         });
         
         if (!res.ok) {
@@ -174,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Try the standard auth endpoint first
         const res = await fetch('/api/auth/logout', {
           method: 'POST',
+          credentials: 'include',
         });
         
         if (!res.ok) {
@@ -184,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Trying alternative logout endpoint');
         const res = await fetch('/api/logout', {
           method: 'POST',
+          credentials: 'include',
         });
         
         if (!res.ok) {
