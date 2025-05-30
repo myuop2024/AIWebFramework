@@ -52,6 +52,15 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
     return next();
   }
 
+  // Check for traditional login session via passport
+  if (req.user && (req.user as any).id) {
+    // Set session data from passport user for compatibility
+    if (req.session) {
+      req.session.userId = (req.user as any).id.toString();
+    }
+    return next();
+  }
+
   // Check for Replit Auth session
   if (req.isAuthenticated && req.isAuthenticated() && req.user) {
     const user = req.user as any;
@@ -80,24 +89,38 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
  * Middleware to ensure user has admin role
  */
 export const ensureAdmin = async (req: Request, res: Response, next: NextFunction) => {
-  // First ensure the user is authenticated
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    logger.warn('Admin check failed: No authenticated user');
-    return res.status(401).json({ 
-      message: 'Unauthorized', 
-      details: 'You must be logged in to access this resource' 
-    });
-  }
-
   try {
-    // Get user ID from Replit Auth session
-    const userId = (req.user as any).claims?.sub;
+    let userId: string | number | null = null;
+
+    // Check for session userId first
+    if (req.session && req.session.userId) {
+      userId = req.session.userId;
+    }
+    // Check for traditional login via passport
+    else if (req.user && (req.user as any).id) {
+      userId = (req.user as any).id;
+      // Set session for consistency
+      if (req.session) {
+        req.session.userId = userId.toString();
+      }
+    }
+    // Check for Replit Auth session
+    else if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      const user = req.user as any;
+      if (user.claims?.sub) {
+        userId = user.claims.sub;
+        // Set session for consistency
+        if (req.session) {
+          req.session.userId = userId.toString();
+        }
+      }
+    }
 
     if (!userId) {
-      logger.warn('Admin check failed: No user ID in session');
+      logger.warn('Admin check failed: No user ID found');
       return res.status(401).json({ 
         message: 'Unauthorized', 
-        details: 'Invalid session, please login again' 
+        details: 'You must be logged in to access this resource' 
       });
     }
 

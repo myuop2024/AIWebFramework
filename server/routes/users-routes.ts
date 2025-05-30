@@ -9,9 +9,17 @@ const router = Router();
 // GET /api/users/profile - Get current user profile (for dashboard)
 router.get('/profile', async (req, res) => {
   try {
-    // In a real app, you'd get the user ID from the session/JWT
-    // For now, we'll return a mock profile or use a query parameter
-    const userId = req.query.userId as string || '1';
+    // Get user ID from session or passport user
+    let userId: string | null = null;
+
+    if (req.session && req.session.userId) {
+      userId = req.session.userId.toString();
+    } else if (req.user && (req.user as any).id) {
+      userId = (req.user as any).id.toString();
+    } else {
+      logger.warn('No user ID in session for /api/users/profile');
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
     
     const userProfile = await db
       .select({
@@ -505,4 +513,4 @@ router.get('/search', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;
