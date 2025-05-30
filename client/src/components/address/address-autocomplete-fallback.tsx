@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { getHereApiKey } from "@/lib/here-maps-config";
-import { Loader2, MapPin, AlertCircle } from "lucide-react";
+import { Loader2, MapPin, AlertCircle, Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // List of Jamaican parishes for matching
@@ -89,6 +90,7 @@ export default function AddressAutocompleteFallback({
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionListRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -243,6 +245,107 @@ export default function AddressAutocompleteFallback({
     onAddressSelect(suggestion);
   };
 
+  // Get user's current location and reverse geocode it
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    setIsGettingLocation(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          console.log('Current location:', latitude, longitude);
+
+          // Reverse geocode the coordinates
+          const apiKey = getHereApiKey();
+          const response = await fetch(
+            `https://revgeocode.search.hereapi.com/v1/revgeocode?` +
+            `at=${latitude},${longitude}&` +
+            `apiKey=${apiKey}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          if (data.items && data.items.length > 0) {
+            const item = data.items[0];
+            
+            // Find parish for Jamaica
+            const parish = findJamaicanParish(
+              item.address?.city || 
+              item.address?.district || 
+              item.address?.county || 
+              item.address?.state || 
+              ''
+            );
+
+            const locationSuggestion: AddressSuggestion = {
+              title: item.title || item.address?.label || 'Current Location',
+              address: {
+                label: item.address?.label || 'Current Location',
+                countryCode: item.address?.countryCode || 'JAM',
+                countryName: item.address?.countryName || 'Jamaica',
+                state: parish || item.address?.state || '',
+                county: item.address?.county || '',
+                city: item.address?.city || '',
+                district: item.address?.district || '',
+                street: item.address?.street || '',
+                postalCode: item.address?.postalCode || '',
+                houseNumber: item.address?.houseNumber || '',
+              },
+              position: {
+                lat: latitude,
+                lng: longitude,
+              },
+              id: 'current-location'
+            };
+
+            setInputValue(locationSuggestion.title);
+            onAddressSelect(locationSuggestion);
+          } else {
+            setError("Could not find address for your current location.");
+          }
+        } catch (error) {
+          console.error("Error reverse geocoding location:", error);
+          setError("Failed to get address for your location. Please try again.");
+        } finally {
+          setIsGettingLocation(false);
+        }
+      },
+      (error) => {
+        setIsGettingLocation(false);
+        let errorMessage = "Unable to get your location.";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        
+        setError(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000
+      }
+    );
+  };
+
   // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -273,8 +376,8 @@ export default function AddressAutocompleteFallback({
 
   return (
     <div className="relative w-full">
-      <div className="relative">
-        <div className="relative">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
           <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
             ref={inputRef}
@@ -296,6 +399,23 @@ export default function AddressAutocompleteFallback({
             </div>
           )}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="px-3 py-2 h-auto whitespace-nowrap"
+          onClick={handleGetCurrentLocation}
+          disabled={disabled || isGettingLocation}
+        >
+          {isGettingLocation ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <Navigation className="h-4 w-4 mr-1" />
+              Current Location
+            </>
+          )}
+        </Button>
       </div>
 
       {error && (
