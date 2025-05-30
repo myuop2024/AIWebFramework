@@ -334,18 +334,6 @@ export const checkUserRole = (user: any, roles: string | string[]): boolean => {
   return user.role === roles;
 };
 
-export default {
-  ensureAuthenticated,
-  ensureAdmin,
-  ensureSupervisor,
-  ensureRovingObserver,
-  ensureDirector,
-  attachUser,
-  checkUserRole,
-  hasRole: hasRoleMiddleware,
-  hasPermission, // Added hasPermission to exports
-};
-
 // New hasPermission middleware factory
 export const hasPermission = (requiredPermission: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -423,4 +411,16 @@ export const hasPermission = (requiredPermission: string) => {
       });
     }
   };
+};
+
+export default {
+  ensureAuthenticated,
+  ensureAdmin,
+  ensureSupervisor,
+  ensureRovingObserver,
+  ensureDirector,
+  attachUser,
+  checkUserRole,
+  hasRole: hasRoleMiddleware,
+  hasPermission,
 };
