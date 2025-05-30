@@ -334,12 +334,70 @@ app.get('/api/logs', (req, res) => {
     });
     
     // Setup uploads directory and log
-    const uploadsDir = path.join(process.cwd(), 'uploads');
-    app.use('/uploads', express.static(uploadsDir));
-    console.log(`Serving static files from: ${uploadsDir}`);
+    // Modified to serve from 'public/uploads' to align with communication file uploads
+    const publicUploadsDir = path.join(process.cwd(), 'public/uploads');
+    app.use('/uploads', express.static(publicUploadsDir));
+    console.log(`Serving static files from /uploads mapped to ${publicUploadsDir}`);
     
     // Setup routes
-    server = await registerRoutes(app);
+    server = await registerRoutes(app); // This initializes communicationService
+
+    // --- WebSocket Upgrade Handling with Session Authentication ---
+    // Retrieve the session middleware. It's configured above with app.use(session(...))
+    // For clarity and direct use, we define it here again with the same config.
+    // NOTE: Ensure this configuration is identical to the one used by app.use(session(...))
+    const sessionMiddleware = session({
+      store: new (connectPg(session))({ // Re-create store for this usage if not easily accessible
+        pool: pool,
+        createTableIfMissing: true,
+        tableName: 'session'
+      }),
+      secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production-' + Math.random().toString(36),
+      resave: false,
+      saveUninitialized: false,
+      name: 'sessionId',
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // Must match main session config
+        sameSite: 'strict'
+      }
+    });
+
+    const communicationServiceInstance = app.locals.communicationService; // Assuming it's stored in app.locals by registerRoutes
+
+    if (communicationServiceInstance) {
+      server.on('upgrade', (request, socket, head) => {
+        // Only handle upgrades to the specific WebSocket path
+        if (request.url === '/api/ws') {
+          logger.debug(`[WS Upgrade] Attempting upgrade for path: ${request.url}`);
+          sessionMiddleware(request as any, {} as any, () => { // Apply session middleware
+            const reqWithSession = request as any; // Cast to access session property
+            if (!reqWithSession.session || !reqWithSession.session.passport || !reqWithSession.session.passport.user) {
+              logger.warn('[WS Upgrade] Unauthorized: No session or user found. Destroying socket.');
+              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+              socket.destroy();
+              return;
+            }
+
+            const userId = reqWithSession.session.passport.user;
+            logger.debug(`[WS Upgrade] Authorized for userId: ${userId}. Proceeding with WSS handleUpgrade.`);
+
+            communicationServiceInstance.getWss().handleUpgrade(request, socket, head, (ws: any) => {
+              ws.authenticatedUserId = userId; // Attach authenticated user ID
+              communicationServiceInstance.getWss().emit('connection', ws, request);
+            });
+          });
+        } else {
+          // For other paths, you might want to destroy the socket or let other handlers (if any) take over
+          logger.debug(`[WS Upgrade] Path ${request.url} not handled by this upgrade handler. Destroying socket.`);
+          socket.destroy();
+        }
+      });
+      logger.info('WebSocket upgrade handler configured with session authentication for /api/ws');
+    } else {
+      logger.error('CommunicationService instance not found. WebSocket upgrade handling will not work.');
+    }
 
     // --- Error Handling Pipeline (MUST be registered after all routes) ---
     

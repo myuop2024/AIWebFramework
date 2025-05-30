@@ -12,12 +12,13 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   MessageSquare, Phone, Video, Send, Paperclip, Image, Mic,
   User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search,
-  Download, Clock
+  Download, Clock, ArrowLeft // Added ArrowLeft
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCommunication, type Message, type User as CommunicationUser } from '@/hooks/use-communication';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/spinner';
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 
 interface CommunicationCenterProps {
   userId: number;
@@ -28,6 +29,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   // Keep track of current user ID for status management
   const currentUserId = userId;
   const [activeChatUserId, setActiveChatUserId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("chats"); // To manage active tab state
+  const isMobile = useIsMobile(); // Instantiate useIsMobile
   const [messageInput, setMessageInput] = useState('');
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -105,8 +108,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const [isMediaViewerOpen, setIsMediaViewerOpen] = useState(false);
   const [viewedMedia, setViewedMedia] = useState<{
     type: 'image' | 'file';
-    content: string;
-    fileData?: { name: string; size: number; type: string };
+    content: string; // For images, this is the URL. For files, this is the original JSON string.
+    fileData?: { name: string; size: number; type: string; url?: string }; // Added optional url for files
   } | null>(null);
 
   // Open media viewer
@@ -114,20 +117,20 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     if (message.type === 'image') {
       setViewedMedia({
         type: 'image',
-        content: message.content
+        content: message.content // content is already the URL for images after backend changes
       });
       setIsMediaViewerOpen(true);
     } else if (message.type === 'file') {
       try {
-        const fileData = JSON.parse(message.content);
+        const fileData = JSON.parse(message.content); // fileData should now include 'url'
         setViewedMedia({
           type: 'file',
-          content: message.content,
-          fileData
+          content: message.content, // Store original JSON string if needed
+          fileData // This includes name, size, type, and url
         });
         setIsMediaViewerOpen(true);
       } catch (e) {
-        console.error('Failed to parse file data', e);
+        console.error('Failed to parse file data for viewer:', e, message.content);
       }
     }
   };
@@ -252,32 +255,48 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   const handleFileUpload = async (file: File) => {
     if (!activeChatUserId) return;
 
+    const formData = new FormData();
+    formData.append('file', file);
+
     try {
-      // Handle different file types
+      const response = await fetch('/api/communications/upload-file', {
+        method: 'POST',
+        body: formData,
+        // Headers are not explicitly needed for FormData with fetch; browser sets Content-Type to multipart/form-data
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: `File upload failed with status: ${response.status}` }));
+        throw new Error(errorData.message || 'File upload failed');
+      }
+
+      const responseData = await response.json();
+
+      if (!responseData.success || !responseData.filePath) {
+        throw new Error(responseData.message || 'File upload processing failed on server.');
+      }
+
+      // Use responseData.fileType or file.type to determine if it's an image
+      // It's better to rely on the file.type from the client initially for broad categorization,
+      // and then the server-validated responseData.fileType for accuracy.
       if (file.type.startsWith('image/')) {
-        // For images, create a data URL and send as an image message
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          if (e.target?.result && typeof e.target.result === 'string') {
-            sendMessage(activeChatUserId, e.target.result, 'image');
-          }
-        };
-        reader.readAsDataURL(file);
+        sendMessage(activeChatUserId, responseData.filePath, 'image'); // Send the URL/path as content
       } else {
-        // For other files, upload to server first (we'll simulate this for now)
-        // In production, you would upload the file to your server and get a URL
         sendMessage(
           activeChatUserId,
           JSON.stringify({
-            name: file.name,
-            size: file.size,
-            type: file.type
+            name: responseData.fileName, // Original filename from server response
+            size: responseData.fileSize,
+            type: responseData.fileType,
+            url: responseData.filePath  // URL/path to the file from server response
           }),
           'file'
         );
       }
-    } catch (error) {
+    } catch (error: any) { // Explicitly type error
       console.error('Error uploading file:', error);
+      // Consider adding a user-facing toast notification here using useToast hook if available
+      // Example: toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
     }
   };
 
@@ -340,17 +359,40 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   };
 
   // Safely get user initials or provide default
-  const getInitials = (username?: string): string => {
-    if (!username || typeof username !== 'string') return 'UN'; // Check type for safety
-    return username.substring(0, 2).toUpperCase();
+  // Standardized initials function
+  const getInitials = (userOrName?: CommunicationUser | string): string => {
+    let displayName = '';
+    if (typeof userOrName === 'string') {
+      displayName = userOrName;
+    } else if (userOrName) {
+      if (userOrName.firstName && userOrName.lastName) {
+        displayName = `${userOrName.firstName} ${userOrName.lastName}`;
+      } else if (userOrName.username) {
+        displayName = userOrName.username;
+      }
+    }
+
+    if (!displayName) return 'UN';
+
+    const parts = displayName.trim().split(' ').filter(part => part.length > 0); // Filter out empty strings
+    if (parts.length > 1 && parts[0] && parts[parts.length -1]) {
+      return (parts[0][0] + (parts[parts.length - 1][0] || '')).toUpperCase();
+    } else if (parts.length === 1 && parts[0] && parts[0].length >=2) { // Single word, take first two chars
+      return parts[0].substring(0, 2).toUpperCase();
+    } else if (parts.length === 1 && parts[0]) { // Single word, one char (or more, but take first)
+      return parts[0][0].toUpperCase();
+    }
+    // Fallback for any other case, e.g. if somehow displayName ended up empty after trim/split
+    return displayName.substring(0, 2).toUpperCase() || 'UN';
   };
 
-    const getInitialsFullName = (firstName?: string, lastName?: string): string => {
-        if (!firstName || !lastName) {
-            return "UN";
-        }
-        return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    };
+  // getInitialsFullName is now removed and replaced by the enhanced getInitials
+  // const getInitialsFullName = (firstName?: string, lastName?: string): string => {
+  //     if (!firstName || !lastName) {
+  //         return "UN";
+  //     }
+  //     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  // };
 
   // Format message time
   const formatMessageTime = (date: Date | string) => { // Allow string for flexibility if API returns string dates
@@ -431,8 +473,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   return (
     <Card className="h-full border-none shadow-none">
       <CardContent className="p-0 h-full">
-        <Tabs defaultValue="chats" className="h-full flex flex-col">
-          {!hideHeader && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          {/* TabsList (Header) - Hidden on mobile if a chat is active */}
+          {!hideHeader && (!isMobile || !activeChatUserId) && (
             <div className="border-b px-4">
               <TabsList className="justify-start bg-transparent border-b-0 px-0 py-1">
                 <TabsTrigger value="chats" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
@@ -448,11 +491,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           )}
 
           <div className="flex h-full overflow-hidden"> {/* Main flex container for sidebars and chat area */}
-            {/* Chats Tab Content (Left Sidebar) */}
-            <TabsContent value="chats" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
-              <div className="p-3">
-                <div className="relative">
-                  <Input
+            {/* Sidebar Container - visible if not mobile OR if mobile and no active chat */}
+            <div className={`
+              ${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col'}
+              w-full md:w-72 h-full md:border-r {/* Border only on md+ to avoid double border on mobile when chat is hidden */}
+            `}>
+              {/* Chats Tab Content (Left Sidebar) */}
+              <TabsContent value="chats" className="mt-0 flex-grow flex flex-col data-[state=inactive]:hidden"> {/* Removed w-full, h-full, border-r from here */}
+                <div className="p-3">
+                  <div className="relative">
+                    <Input
                     placeholder="Search conversations..."
                     className="border-0 bg-secondary text-sm pl-9"
                     value={searchQuery}
@@ -479,12 +527,11 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       >
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
-                          <AvatarFallback>{getInitials(conversation.firstName && conversation.lastName ? 
-                            `${conversation.firstName} ${conversation.lastName}` : conversation.username)}</AvatarFallback>
+                          <AvatarFallback>{getInitials(conversation)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 overflow-hidden">
                           <div className="flex justify-between items-start">
-                            <p className="font-medium truncate">{conversation.firstName && conversation.lastName ? 
+                            <p className="font-medium truncate">{conversation.firstName && conversation.lastName ?
                               `${conversation.firstName} ${conversation.lastName}` : conversation.username}</p>
                             <p className="text-xs text-muted-foreground">
                               {formatDistanceToNow(new Date(conversation.lastMessageAt), {
@@ -534,13 +581,13 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   New Conversation
                 </Button>
               </div>
-            </TabsContent>
+              </TabsContent>
 
-            {/* Contacts Tab Content (Left Sidebar) */}
-            <TabsContent value="contacts" className="mt-0 w-full md:w-72 h-full border-r flex flex-col data-[state=inactive]:hidden">
-              <div className="p-3">
-                <div className="relative">
-                  <Input
+              {/* Contacts Tab Content (Left Sidebar) */}
+              <TabsContent value="contacts" className="mt-0 flex-grow flex flex-col data-[state=inactive]:hidden"> {/* Removed w-full, h-full, border-r from here */}
+                <div className="p-3">
+                  <div className="relative">
+                    <Input
                     placeholder="Search contacts..."
                     className="border-0 bg-secondary text-sm pl-9"
                     value={contactsSearchQuery}
@@ -569,9 +616,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
-                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
+                             <AvatarFallback>{getInitials(user)}</AvatarFallback>
                           </Avatar>
-                          <span 
+                          <span
                             className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
                               user.status === 'online' ? 'bg-green-500 animate-pulse' : 
                               user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
@@ -615,7 +662,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${user.username}`} />
-                            <AvatarFallback>{getInitials(user.username)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(user)}</AvatarFallback>
                           </Avatar>
                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-gray-500 border-2 border-white" />
                         </div>
@@ -634,36 +681,44 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   </div>
                 )}
               </ScrollArea>
-            </TabsContent>
+              </TabsContent>
+            </div> {/* End Sidebar Container */}
 
-            {/* Chat Area (Main Content) */}
-            <div className="flex-grow flex flex-col h-full">
+            {/* Chat Area (Main Content) - visible if not mobile OR if mobile and an active chat */}
+            <div className={`
+              flex-grow flex flex-col h-full
+              ${isMobile && !activeChatUserId ? 'hidden' : 'flex'}
+            `}>
               {activeChatUserId && activeChatUser ? (
                 <>
                   <div className="p-3 border-b flex items-center justify-between">
                     <div className="flex items-center gap-2">
+                      {isMobile && (
+                        <Button variant="ghost" size="icon" className="mr-1 md:hidden" onClick={() => setActiveChatUserId(null)}>
+                          <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                      )}
                       <div className="relative">
                         <Avatar className="h-9 w-9">
                           <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
-                          <AvatarFallback>{getInitials(activeChatUser.firstName && activeChatUser.lastName ? 
-                            `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username)}</AvatarFallback>
+                          <AvatarFallback>{getInitials(activeChatUser)}</AvatarFallback>
                         </Avatar>
-                        <span 
+                        <span
                             className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                              activeChatUser.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              activeChatUser.status === 'online' ? 'bg-green-500 animate-pulse' :
                               activeChatUser.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
                             }`}
                             title={
-                              activeChatUser.status === 'online' ? 'Online' : 
+                              activeChatUser.status === 'online' ? 'Online' :
                               activeChatUser.status === 'away' ? 'Away (inactive)' : 'Offline'
                             }
                           />
                       </div>
                       <div>
-                        <p className="font-medium">{activeChatUser.firstName && activeChatUser.lastName ? 
+                        <p className="font-medium">{activeChatUser.firstName && activeChatUser.lastName ?
                               `${activeChatUser.firstName} ${activeChatUser.lastName}` : activeChatUser.username}</p>
                         <p className="text-xs text-muted-foreground">
-                          {activeChatUser.status === 'online' ? 'Online' : 'Offline'}
+                          {activeChatUser.status} {/* Display full status string */}
                         </p>
                       </div>
                     </div>
@@ -730,7 +785,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                                 {!isCurrentUser && showAvatar && activeChatUser && ( // Added activeChatUser check
                                   <Avatar className="h-8 w-8 mr-0 self-end mb-1"> {/* Adjusted margin for alignment */}
                                     <AvatarImage src={activeChatUser.profileImage || `/api/users/${activeChatUser.id}/profile-image`} />
-                                    <AvatarFallback>{getInitials(activeChatUser.username)}</AvatarFallback>
+                                    <AvatarFallback>{getInitials(activeChatUser)}</AvatarFallback>
                                   </Avatar>
                                 )}
                                  {isCurrentUser && showAvatar && (
@@ -790,7 +845,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         className="hidden"
                         onChange={handleFileInputChange}
                         multiple={false} // Explicitly single file
-                        accept="image/*,application/pdf,.doc,.docx,.txt,.zip" // Example file types
+                        accept="image/jpeg,image/png,image/gif,application/pdf" // Align with backend filter
                       />
                       <Input
                         placeholder={`Message ${activeChatUser?.username || 'selected user'}...`}
@@ -872,12 +927,29 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 />
                 <Button
                   onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = viewedMedia.content;
-                    link.download = 'image-' + Date.now() + '.jpg';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    if (viewedMedia?.type === 'image' && viewedMedia.content) {
+                      const link = document.createElement('a');
+                      link.href = viewedMedia.content; // Image URL
+                      try {
+                        // Attempt to derive a more meaningful name from URL, handling potential errors if content is not a valid URL
+                        let filename = `image-${Date.now()}.jpg`; // Default filename
+                        if (viewedMedia.content.startsWith('http') || viewedMedia.content.startsWith('/')) {
+                            const urlPath = new URL(viewedMedia.content, window.location.origin).pathname;
+                            const filenameFromUrl = urlPath.substring(urlPath.lastIndexOf('/') + 1);
+                            if (filenameFromUrl) { // Ensure filenameFromUrl is not empty
+                                // Basic sanitization for filename
+                                filename = filenameFromUrl.replace(/[^a-zA-Z0-9_.-]/g, '_').substring(0, 50);
+                            }
+                        }
+                        link.download = filename;
+                      } catch (e) {
+                        console.error("Error deriving filename from image URL:", e);
+                        // link.download is already defaulted
+                      }
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }
                   }}
                   variant="outline"
                 >
@@ -885,7 +957,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   Download Image
                 </Button>
               </div>
-            ) : viewedMedia?.fileData ? (
+            ) : viewedMedia?.fileData && viewedMedia.fileData.url ? ( // Ensure URL exists for file download
               <div className="flex flex-col items-center gap-4 w-full">
                 <div className="bg-secondary p-8 rounded-lg flex flex-col items-center">
                   <Paperclip className="h-16 w-16 mb-4 text-primary" />
@@ -901,9 +973,15 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                 <Button
                   variant="outline"
                   onClick={() => {
-                    // In a real implementation, you would have a download URL
-                    // For now, we'll just demonstrate the UI
-                    alert('Download functionality would be implemented here');
+                    if (viewedMedia?.type === 'file' && viewedMedia.fileData?.url) {
+                        const link = document.createElement('a');
+                        link.href = viewedMedia.fileData.url;
+                        link.download = viewedMedia.fileData.name || 'downloaded-file';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        setIsMediaViewerOpen(false); // Optionally close modal
+                    }
                   }}
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -925,15 +1003,19 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6">
             <Avatar className="h-20 w-20 mb-4">
-              <AvatarImage src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${getUserById(incomingCall?.callerId || 0)?.username || incomingCall?.callerId || 'default'
-                }`} />
-              <AvatarFallback>
-                {getInitials(getUserById(incomingCall?.callerId || 0)?.username)}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-xl font-semibold mb-1">
-              {getUserById(incomingCall?.callerId || 0)?.username || `User ${incomingCall?.callerId || 'Unknown'}`}
-            </p>
+              {(() => {
+                const caller = incomingCall?.callerId ? getUserById(incomingCall.callerId) : null;
+                const callerName = caller ? (caller.firstName && caller.lastName ? `${caller.firstName} ${caller.lastName}` : caller.username) : `User ${incomingCall?.callerId || 'Unknown'}`;
+                return (
+                  <>
+                    <Avatar className="h-20 w-20 mb-4">
+                      <AvatarImage src={caller?.profileImage || `${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${caller?.username || incomingCall?.callerId || 'default'}`} />
+                      <AvatarFallback>{getInitials(caller)}</AvatarFallback>
+                    </Avatar>
+                    <p className="text-xl font-semibold mb-1">{callerName}</p>
+                  </>
+                );
+              })()}
             <p className="text-sm text-muted-foreground mb-8">
               {incomingCall?.type === 'video' ? 'Video call' : 'Audio call'}
             </p>
@@ -969,7 +1051,11 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         <DialogContent className="sm:max-w-lg"> {/* Made dialog slightly wider for video */}
           <DialogHeader>
             <DialogTitle>
-              {activeCall?.type === 'video' ? 'Video Call' : 'Audio Call'} with {getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || 'User'}
+              {(() => {
+                const otherUser = activeCall ? getUserById(activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId) : null;
+                const otherUserName = otherUser ? (otherUser.firstName && otherUser.lastName ? `${otherUser.firstName} ${otherUser.lastName}` : otherUser.username) : 'User';
+                return `${activeCall?.type === 'video' ? 'Video Call' : 'Audio Call'} with ${otherUserName}`;
+              })()}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -985,15 +1071,15 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               {/* Placeholder when video/remote stream is not available */}
               {(!remoteStream || activeCall?.type !== 'video') && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-                  <Avatar className="h-24 w-24"> {/* Larger avatar */}
-                    <AvatarImage
-                      src={`${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username || ''
-                        }`}
-                    />
-                    <AvatarFallback className="text-3xl">
-                      {getInitials(getUserById(activeCall?.receiverId || activeCall?.callerId || 0)?.username)}
-                    </AvatarFallback>
-                  </Avatar>
+                  {(() => {
+                    const otherUser = activeCall ? getUserById(activeCall.callerId === userId ? activeCall.receiverId : activeCall.callerId) : null;
+                    return (
+                      <Avatar className="h-24 w-24"> {/* Larger avatar */}
+                        <AvatarImage src={otherUser?.profileImage || `${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${otherUser?.username || ''}`} />
+                        <AvatarFallback className="text-3xl">{getInitials(otherUser)}</AvatarFallback>
+                      </Avatar>
+                    );
+                  })()}
                 </div>
               )}
               {activeCall?.type === 'video' && localStream && (
@@ -1082,15 +1168,15 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="relative">
                           <Avatar className="h-10 w-10">
                             <AvatarImage src={user.profileImage || `/api/users/${user.id}/profile-image`} />
-                             <AvatarFallback>{getInitialsFullName(user.firstName, user.lastName)}</AvatarFallback>
+                             <AvatarFallback>{getInitials(user)}</AvatarFallback>
                           </Avatar>
-                          <span 
+                          <span
                             className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                              user.status === 'online' ? 'bg-green-500 animate-pulse' : 
+                              user.status === 'online' ? 'bg-green-500 animate-pulse' :
                               user.status === 'away' ? 'bg-yellow-500' : 'bg-gray-500'
                             }`}
                             title={
-                              user.status === 'online' ? 'Online' : 
+                              user.status === 'online' ? 'Online' :
                               user.status === 'away' ? 'Away (inactive)' : 'Offline'
                             }
                           />
@@ -1098,7 +1184,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                         <div className="text-left">
                           <p className="font-medium">{user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}</p>
                           <p className="text-xs text-muted-foreground">
-                            {user.status === 'online' ? 'Online' : 'Offline'}
+                            {user.status} {/* Display full status string */}
                           </p>
                         </div>
                       </div>

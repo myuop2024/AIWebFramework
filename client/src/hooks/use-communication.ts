@@ -6,11 +6,14 @@ import { useToast } from '@/hooks/use-toast'; // Assuming this path is correct
 const WS_MSG_TYPES = {
   REGISTER: 'register',
   USERS_LIST: 'users',
-  NEW_MESSAGE: 'message',
+  NEW_MESSAGE: 'message', // Sent by server when a new message arrives for this user
+  MESSAGE_READ: 'message-read', // Sent by server when a message this user sent is read by recipient
+  ALL_MESSAGES_READ: 'all-messages-read', // Sent by server when all messages this user sent to someone are read by recipient
   CALL_OFFER: 'call-offer',
   CALL_ANSWER: 'call-answer',
   CALL_CANDIDATE: 'call-candidate',
   CALL_END: 'call-end',
+  HEARTBEAT: 'heartbeat', // Client-sent heartbeat
 } as const;
 
 // --- Type Definitions ---
@@ -64,6 +67,21 @@ interface WebSocketNewMessage extends WebSocketMessageBase {
   message: Message;
 }
 
+interface WebSocketMessageRead extends WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.MESSAGE_READ;
+  messageId: number;
+  readBy: number; // User ID of the person who read the message
+  // We also need to know who the original sender was to update their view correctly.
+  // The backend currently sends messageId and readBy. The client (sender)
+  // needs to find this message in its cache and mark it read.
+}
+
+interface WebSocketAllMessagesRead extends WebSocketMessageBase {
+  type: typeof WS_MSG_TYPES.ALL_MESSAGES_READ;
+  by: number; // User ID of the person who read the messages (receiver of original messages)
+  from: number; // User ID of the person whose messages were read (sender of original messages)
+}
+
 interface WebSocketCallOfferMessage extends CallData, WebSocketMessageBase {
   type: typeof WS_MSG_TYPES.CALL_OFFER;
 }
@@ -82,6 +100,8 @@ interface WebSocketCallEndMessage extends WebSocketMessageBase {
 type ParsedWebSocketMessage =
   | WebSocketUsersMessage
   | WebSocketNewMessage
+  | WebSocketMessageRead
+  | WebSocketAllMessagesRead
   | WebSocketCallOfferMessage
   | WebSocketCallAnswerMessage
   | WebSocketCallCandidateMessage
@@ -164,7 +184,8 @@ export function useCommunication(userId: number) {
 
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
+        // Corrected WebSocket URL to match backend service path
+        const wsUrl = `${protocol}//${window.location.host}/api/ws`;
         console.log(`Connecting to WebSocket at ${wsUrl}... (User ID: ${userId})`);
         wsInstance = new WebSocket(wsUrl);
         setSocket(wsInstance); // Set socket state early for other parts of the hook
@@ -172,8 +193,12 @@ export function useCommunication(userId: number) {
         wsInstance.onopen = () => {
           console.log('WebSocket connected successfully');
           if (wsInstance?.readyState === WebSocket.OPEN) {
-            wsInstance.send(JSON.stringify({ type: WS_MSG_TYPES.REGISTER, userId }));
-            // Start heartbeat to keep connection alive
+            try {
+              wsInstance.send(JSON.stringify({ type: WS_MSG_TYPES.REGISTER, userId }));
+            } catch (e) {
+              console.error("Failed to send register message on WebSocket open:", e);
+              // Optionally, handle this error, e.g., by attempting to close and reconnect.
+            }
             startHeartbeat(wsInstance);
           }
         };
@@ -220,13 +245,12 @@ export function useCommunication(userId: number) {
                 break;
               case WS_MSG_TYPES.NEW_MESSAGE:
                 // Invalidate queries to refresh message list
-                // Ensure query keys match those used in useGetMessages
-                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.senderId}`] });
-                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages/${data.message.receiverId}`] }); // Also invalidate for receiver if current user is receiver
-                queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations'] });
+                // Ensure query keys match those used in useGetMessages and conversation queries
+                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, data.message.senderId] });
+                queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, data.message.receiverId] });
+                queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] }); // User-specific conversation list
 
                 if (data.message.senderId !== userId) {
-                  // Find sender from the most recent onlineUsers list or fetch if necessary
                   const currentOnlineUsers = queryClient.getQueryData<User[]>(['/api/communications/online-users']) || onlineUsers;
                   const sender = currentOnlineUsers.find(user => user.id === data.message.senderId);
                   toast({
@@ -250,6 +274,44 @@ export function useCommunication(userId: number) {
               case WS_MSG_TYPES.CALL_END:
                 handleCallEnd(data.receiverId === userId || data.callerId === userId); // Pass if current user was part of the call
                 break;
+              case WS_MSG_TYPES.MESSAGE_READ: {
+                const { messageId, readBy } = data as WebSocketMessageRead;
+                console.log(`Received message-read event: messageId ${messageId} read by ${readBy}`);
+                // This event means a message *sent by the current user (userId)* to `readBy` was read.
+                // Update the cache for messages between `userId` and `readBy`.
+                queryClient.setQueryData<Message[]>(
+                  [`/api/communications/messages`, readBy], // Query key for messages with the user who read it
+                  (oldMessages) =>
+                    oldMessages?.map(msg =>
+                      msg.id === messageId && msg.senderId === userId && msg.receiverId === readBy
+                        ? { ...msg, read: true }
+                        : msg
+                    ) || []
+                );
+                // Also invalidate conversations to update unread counts for the current user (though this specific event doesn't change unread for current user)
+                // More importantly, it might affect the "last message read status" display in conversation list if that's a feature.
+                queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+                break;
+              }
+              case WS_MSG_TYPES.ALL_MESSAGES_READ: {
+                const { by, from } = data as WebSocketAllMessagesRead;
+                console.log(`Received all-messages-read event: messages from ${from} read by ${by}`);
+                // This event means all messages sent by `from` (current user if from === userId) to `by` were read.
+                if (from === userId) {
+                  // Messages sent by me to user `by` were all read.
+                  queryClient.setQueryData<Message[]>(
+                    [`/api/communications/messages`, by], // Query key for messages with user `by`
+                    (oldMessages) =>
+                      oldMessages?.map(msg =>
+                        msg.senderId === userId && msg.receiverId === by
+                          ? { ...msg, read: true }
+                          : msg
+                      ) || []
+                  );
+                  queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+                }
+                break;
+              }
               default:
                 console.warn('Received unknown WebSocket message type:', data.type);
             }
@@ -300,15 +362,15 @@ export function useCommunication(userId: number) {
     // IMPORTANT: Dependencies for WebSocket useEffect.
     // queryClient and toast are generally stable. userId should trigger re-connect if it changes.
     // onlineUsers was removed as it caused too many reconnections.
-  }, [userId, queryClient, toast]); // Removed onlineUsers
+  }, [userId, queryClient, toast]);
 
   // --- React Query Hooks for Data Fetching & Mutations ---
 
   // Get recent conversations
   const { data: conversations, isLoading: conversationsLoading } = useQuery<Conversation[], Error>({
-    queryKey: ['/api/communications/conversations', userId], // Added userId to make it user-specific
+    queryKey: ['/api/communications/conversations', userId],
     queryFn: async () => {
-      const response = await fetch(`/api/communications/conversations`); // Assuming API takes userId from session or token
+      const response = await fetch(`/api/communications/conversations`);
       if (!response.ok) throw new Error(`Failed to fetch conversations: ${response.statusText}`);
       return response.json();
     },
@@ -339,7 +401,7 @@ export function useCommunication(userId: number) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          senderId: userId,
+          // senderId: userId, // Backend determines senderId from authenticated user
           receiverId: data.receiverId,
           content: data.content,
           type: data.type || 'text',
@@ -352,23 +414,33 @@ export function useCommunication(userId: number) {
       return response.json();
     },
     onSuccess: (newMessage, variables) => {
-      // Optimistically update or invalidate
+      // Invalidate relevant queries.
+      // The backend POST handler should send a WS message to the recipient.
+      // The sender's UI updates via these invalidations.
       queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, variables.receiverId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, userId] }); // Also invalidate sender's message list with receiver for consistency
       queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
     },
     // onError handled by the caller (sendMessage function)
   });
 
   // Mark a message as read (individual)
-  const markAsReadMutation = useMutation<void, Error, number>({
-    mutationFn: async (messageId) => {
-      const response = await fetch(`/api/communications/messages/${messageId}/read`, { method: 'PUT' });
+  // Backend has PATCH /api/communications/messages/read with body { messageIds: [messageId] }
+  const markAsReadMutation = useMutation<void, Error, { messageId: number }>({
+    mutationFn: async ({ messageId }) => {
+      const response = await fetch(`/api/communications/messages/read`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageIds: [messageId] }),
+      });
       if (!response.ok) throw new Error('Failed to mark message as read');
-      // No need to return response.json() if the body is empty or not used
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api/communications/conversations', userId] });
-      // Potentially invalidate specific message list if needed, though conversation list update might cover it
+    onSuccess: (_, variables) => {
+      // Need to know the other user involved to correctly invalidate message cache.
+      // This part is tricky without more context on how `markAsRead` is used.
+      // For now, just invalidating conversations.
+      queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+      // Potentially: queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, otherUserId] });
     },
   });
 
@@ -395,27 +467,9 @@ export function useCommunication(userId: number) {
       {
         onSuccess: (data) => {
           console.log('Message persisted successfully via HTTP:', data);
-          // WebSocket send for real-time, if HTTP was successful
-          if (socket?.readyState === WebSocket.OPEN) {
-            try {
-              socket.send(JSON.stringify({
-                type: WS_MSG_TYPES.NEW_MESSAGE,
-                message: { // Construct a message object similar to what's received
-                  id: data.id, // Use ID from HTTP response if available
-                  senderId: userId,
-                  receiverId,
-                  content,
-                  type,
-                  sentAt: new Date(), // Or use server timestamp from data
-                  read: false,
-                },
-              }));
-            } catch (wsError) {
-              console.error('Error sending message via WebSocket after HTTP success:', wsError);
-            }
-          } else {
-            console.warn('WebSocket not connected. Message persisted via HTTP.');
-          }
+          // Client-side WebSocket send after HTTP POST is removed.
+          // Backend's POST handler is responsible for notifying the recipient.
+          // Sender's UI updates via query invalidation specified in sendMessageMutation.onSuccess.
         },
         onError: (error) => {
           console.error('Error sending message via HTTP:', error);
@@ -427,7 +481,7 @@ export function useCommunication(userId: number) {
         },
       }
     );
-  }, [socket, userId, sendMessageMutation, toast]); // queryClient removed as mutation handles invalidation
+  }, [sendMessageMutation, toast]); // Removed socket, userId, queryClient as direct dependencies
 
 
   // --- WebRTC Call Handling ---
@@ -472,10 +526,10 @@ export function useCommunication(userId: number) {
       } catch (error) {
         console.error('Error setting remote description after answer:', error);
         toast({ title: "Call Connection Error", description: "Failed to establish call.", variant: "destructive" });
-        handleCallEnd(true);
+        handleCallEnd(true); // handleCallEnd is called here
       }
     }
-  }, [toast]);
+  }, [toast, handleCallEnd]); // Added handleCallEnd to dependency array
 
 
   const handleIceCandidate = useCallback((data: CallData) => {
