@@ -49,6 +49,7 @@ interface ProcessedResult {
   enhancementStats: EnhancementStats;
   duplicateWarnings: DuplicateWarning[];
   status: string;
+  usedAI?: string;
 }
 
 export default function UserImportCSV() {
@@ -59,6 +60,7 @@ export default function UserImportCSV() {
   const [selectedDataTab, setSelectedDataTab] = useState<string>('valid');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [aiMode, setAiMode] = useState<string>('tabpfn');
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -83,6 +85,7 @@ export default function UserImportCSV() {
       formData.append('file', file);
       formData.append('defaultRole', defaultRole);
       formData.append('verificationStatus', verificationStatus);
+      formData.append('mode', aiMode);
 
       const response = await apiRequest(
         'POST',
@@ -176,6 +179,38 @@ export default function UserImportCSV() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="ai-mode">AI Mode</Label>
+              <Select
+                defaultValue={aiMode}
+                onValueChange={setAiMode}
+                disabled={uploadMutation.isPending}
+              >
+                <SelectTrigger id="ai-mode">
+                  <SelectValue placeholder="Select AI Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tabpfn">
+                    TabPFN (Fast, Local)
+                    <span className="ml-2 text-xs text-muted-foreground">Imputation, type inference</span>
+                  </SelectItem>
+                  <SelectItem value="huggingface">
+                    Hugging Face LLM
+                    <span className="ml-2 text-xs text-muted-foreground">Fuzzy, semantic enrichment</span>
+                  </SelectItem>
+                  <SelectItem value="basic">
+                    Basic Cleaning
+                    <span className="ml-2 text-xs text-muted-foreground">Whitespace, missing values</span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                <Info className="h-3 w-3 mr-1" />
+                <span>
+                  TabPFN: Fast, local imputation. Hugging Face: Uses your API key for advanced LLM cleaning. Basic: Only trims and fills blanks.
+                </span>
+              </div>
+            </div>
             <div>
               <Label htmlFor="file-upload">CSV or Excel File</Label>
               <div className="mt-1 flex items-center space-x-2">
@@ -265,7 +300,8 @@ export default function UserImportCSV() {
           <CardHeader>
             <CardTitle>Processed Data</CardTitle>
             <CardDescription>
-              Review the data processed by our AI. We've enhanced and validated the information.
+              Review the data processed by our AI. We've enhanced and validated the information.<br />
+              <span className="font-medium">AI Used:</span> {processedData.usedAI || 'Unknown'}
             </CardDescription>
           </CardHeader>
           <CardContent>
