@@ -49,6 +49,22 @@ let isHereMapsLoaded = false;
 let hereMapsLoadError: Error | null = null;
 let hereMapsLoadPromise: Promise<void> | null = null;
 
+// Function to reset HERE Maps loading state
+export function resetHereMapsState(): void {
+  isHereMapsLoaded = false;
+  hereMapsLoadError = null;
+  hereMapsLoadPromise = null;
+  
+  // Remove existing scripts
+  const existingScripts = document.querySelectorAll('script[src*="here.com"]');
+  existingScripts.forEach(script => script.remove());
+  
+  const existingLinks = document.querySelectorAll('link[href*="here.com"]');
+  existingLinks.forEach(link => link.remove());
+  
+  console.log('HERE Maps state reset - ready for retry');
+}
+
 // Function to load HERE Maps script
 function loadHereMapsScript(): Promise<void> {
   if (hereMapsLoadPromise) {
@@ -88,30 +104,22 @@ function loadHereMapsScript(): Promise<void> {
       }
 
       // Remove existing scripts if they exist but window.H is not available
-      if (existingScript) {
-        existingScript.remove();
-      }
-
-      // Track loading state
-      let scriptsLoaded = 0;
-      const totalScripts = 5;
+      const existingScripts = document.querySelectorAll('script[src*="here.com"]');
+      existingScripts.forEach(script => script.remove());
       
-      const onScriptLoad = () => {
-        scriptsLoaded++;
-        if (scriptsLoaded === totalScripts) {
-          // Wait a bit for window.H to be available
-          setTimeout(() => {
-            if (window.H) {
-              isHereMapsLoaded = true;
-              resolve();
-            } else {
-              const error = new Error("HERE Maps API loaded but window.H not available");
-              hereMapsLoadError = error;
-              reject(error);
-            }
-          }, 100);
-        }
-      };
+      const existingLinks = document.querySelectorAll('link[href*="here.com"]');
+      existingLinks.forEach(link => link.remove());
+
+      // Load scripts using a more reliable approach
+      const scriptsToLoad = [
+        "https://js.api.here.com/v3/3.1/mapsjs-core.js",
+        "https://js.api.here.com/v3/3.1/mapsjs-service.js",
+        "https://js.api.here.com/v3/3.1/mapsjs-ui.js",
+        "https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"
+      ];
+      
+      let loadedCount = 0;
+      const totalScripts = scriptsToLoad.length;
       
       const onScriptError = (e: Event) => {
         const target = e.target as HTMLScriptElement;
@@ -122,54 +130,49 @@ function loadHereMapsScript(): Promise<void> {
         reject(error);
       };
 
-      // Create script element for core
-      const script = document.createElement("script");
-      script.id = "here-maps-script";
-      script.type = "text/javascript";
-      script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
-      
-      script.addEventListener("load", () => {
-        // Load additional scripts after the core is loaded
-        const scripts = [
-          "mapsjs-service.js",
-          "mapsjs-mapevents.js",
-          "mapsjs-ui.js",
-          "mapsjs-clustering.js"
-        ];
-        
-        // Create a link for CSS
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.type = "text/css";
-        link.href = "https://js.api.here.com/v3/3.1/mapsjs-ui.css";
-        document.head.appendChild(link);
-        
-        // Load each script sequentially
-        let loadedScripts = 0;
-        const loadNextScript = () => {
-          if (loadedScripts < scripts.length) {
-            const additionalScript = document.createElement("script");
-            additionalScript.type = "text/javascript";
-            additionalScript.src = `https://js.api.here.com/v3/3.1/${scripts[loadedScripts]}`;
-            additionalScript.addEventListener("load", () => {
-              loadedScripts++;
-              onScriptLoad();
-              loadNextScript();
-            });
-            additionalScript.addEventListener("error", onScriptError);
-            document.head.appendChild(additionalScript);
-          }
-        };
+      const onScriptLoad = () => {
+        loadedCount++;
+        if (loadedCount === totalScripts) {
+          // Wait for window.H to be available
+          let attempts = 0;
+          const maxAttempts = 50; // 5 seconds
+          
+          const checkForH = () => {
+            attempts++;
+            if (window.H) {
+              // Load CSS after scripts are loaded
+              const link = document.createElement("link");
+              link.rel = "stylesheet";
+              link.type = "text/css";
+              link.href = "https://js.api.here.com/v3/3.1/mapsjs-ui.css";
+              document.head.appendChild(link);
+              
+              isHereMapsLoaded = true;
+              resolve();
+            } else if (attempts < maxAttempts) {
+              setTimeout(checkForH, 100);
+            } else {
+              const error = new Error("HERE Maps API loaded but window.H not available after timeout");
+              hereMapsLoadError = error;
+              reject(error);
+            }
+          };
+          
+          checkForH();
+        }
+      };
 
-        // Count the core script as loaded and start loading additional scripts
-        onScriptLoad();
-        loadNextScript();
+      // Load all scripts
+      scriptsToLoad.forEach((src, index) => {
+        const script = document.createElement("script");
+        if (index === 0) script.id = "here-maps-script";
+        script.type = "text/javascript";
+        script.src = src;
+        script.addEventListener("load", onScriptLoad);
+        script.addEventListener("error", onScriptError);
+        document.head.appendChild(script);
       });
       
-      script.addEventListener("error", onScriptError);
-      
-      // Append script to document
-      document.head.appendChild(script);
     } catch (error) {
       hereMapsLoadError = error as Error;
       reject(error);
@@ -412,7 +415,7 @@ export function formatDuration(seconds: number): string {
   }
 }
 
-// Global diagnostics function
+// Global diagnostics and utility functions
 if (typeof window !== 'undefined') {
   (window as any).testHereMaps = async () => {
     console.log('🔍 Running HERE Maps diagnostics...');
@@ -428,13 +431,20 @@ if (typeof window !== 'undefined') {
         console.log('⚠️ HERE Maps has some issues but partially working');
       } else {
         console.log('❌ HERE Maps is not working');
+        console.log('💡 Try running window.resetHereMaps() to reset and reload');
       }
       
       return result;
     } catch (error) {
       console.error('❌ Failed to run diagnostics:', error);
+      console.log('💡 Try running window.resetHereMaps() to reset and reload');
       return null;
     }
+  };
+
+  (window as any).resetHereMaps = () => {
+    resetHereMapsState();
+    console.log('HERE Maps reset complete. Refresh the page to reload.');
   };
 
   console.log('💡 HERE Maps diagnostics available: Run window.testHereMaps() in console to test');
