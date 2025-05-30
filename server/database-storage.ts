@@ -66,20 +66,34 @@ import {
 import { eq, and, isNull, or, not, desc, asc, lt, gt, gte, lte, like, ilike, inArray } from "drizzle-orm";
 import logger from "./utils/logger";
 
+// Simple in-memory cache for user data
+const userCache = new Map<string, { user: User; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Clean up expired cache entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of userCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      userCache.delete(key);
+    }
+  }
+}, 10 * 60 * 1000);
+
 // Generate a unique observer ID, to be used for QR code generation
 function generateObserverId(): string {
   // Format: OBS-XXXXXX-YY where X is alphanumeric and Y is checksum
   const randomPart = crypto.randomBytes(6).toString('hex').toUpperCase().substring(0, 6);
   const baseId = `OBS-${randomPart}`;
-  
+
   // Generate simple checksum (sum of character codes modulo 100)
   const checksum = baseId
     .split('')
     .reduce((sum, char) => sum + char.charCodeAt(0), 0) % 100;
-  
+
   // Format checksum to be two digits
   const checksumStr = checksum.toString().padStart(2, '0');
-  
+
   return `${baseId}-${checksumStr}`;
 }
 
@@ -89,7 +103,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(systemSettings)
       .where(eq(systemSettings.settingKey, key));
-    
+
     return setting;
   }
 
@@ -102,7 +116,7 @@ export class DatabaseStorage implements IStorage {
       .insert(systemSettings)
       .values(setting)
       .returning();
-    
+
     return newSetting;
   }
 
@@ -116,13 +130,20 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(systemSettings.settingKey, key))
       .returning();
-    
+
     return updatedSetting;
   }
 
   // User methods for traditional auth integration
   async getUser(id: number): Promise<User | undefined> {
     try {
+      // Check cache first
+      const cached = userCache.get(String(id));
+      if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+        logger.info(`Getting user from cache by ID: ${id}`);
+        return cached.user;
+      }
+
       logger.info(`Getting user by ID: ${id}`);
       const [user] = await db
         .select({
@@ -143,7 +164,12 @@ export class DatabaseStorage implements IStorage {
         })
         .from(usersTable)
         .where(eq(usersTable.id, id));
-      
+
+      if (user) {
+        // Cache the user data
+        userCache.set(String(id), { user, timestamp: Date.now() });
+      }
+
       return user;
     } catch (error) {
       logger.error(`Error getting user by ID: ${id}`, error);
@@ -173,7 +199,7 @@ export class DatabaseStorage implements IStorage {
         })
         .from(usersTable)
         .where(eq(usersTable.username, username));
-      
+
       return user;
     } catch (error) {
       logger.error(`Error getting user by username: ${username}`, error);
@@ -202,7 +228,7 @@ export class DatabaseStorage implements IStorage {
         })
         .from(usersTable)
         .where(eq(usersTable.email, email));
-      
+
       return user;
     } catch (error) {
       logger.error(`Error getting user by email: ${email}`, error);
@@ -216,7 +242,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(usersTable)
         .where(eq(usersTable.observerId, observerId));
-      
+
       return user;
     } catch (error) {
       logger.error(`Error getting user by observerId: ${observerId}`, error);
@@ -237,7 +263,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Generate observer ID if not provided
       const observerId = generateObserverId();
-      
+
       const [newUser] = await db
         .insert(usersTable)
         .values({
@@ -247,7 +273,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
-      
+
       return newUser;
     } catch (error) {
       logger.error("Error creating user", error);
@@ -260,10 +286,10 @@ export class DatabaseStorage implements IStorage {
       // For inserts, we don't need to provide an ID as it will be auto-generated
       if (userData.id) {
         logger.info(`Upserting user with ID: ${userData.id}`);
-        
+
         // Check if the user exists first
         const existingUser = await this.getUser(userData.id);
-        
+
         if (existingUser) {
           // Update existing user
           const [updatedUser] = await db
@@ -274,18 +300,18 @@ export class DatabaseStorage implements IStorage {
             })
             .where(eq(usersTable.id, userData.id))
             .returning();
-          
+
           logger.info(`Updated existing user: ${userData.id}`);
           return updatedUser;
         }
       }
-      
+
       // Create new user with generated observer ID
       const observerId = userData.observerId || generateObserverId();
-      
+
       // Remove the id field for insert to let the database auto-generate it
       const { id, ...userDataWithoutId } = userData;
-      
+
       const [newUser] = await db
         .insert(usersTable)
         .values({
@@ -295,7 +321,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .returning();
-      
+
       logger.info(`Created new user with ID: ${newUser.id} and observerId: ${observerId}`);
       return newUser;
     } catch (error) {
@@ -314,7 +340,7 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(usersTable.id, id))
         .returning();
-      
+
       return updatedUser;
     } catch (error) {
       logger.error(`Error updating user: ${id}`, error);
@@ -323,7 +349,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Implement other storage methods as needed
-  
+
   // ID Card Template Methods
   async getAllIdCardTemplates(): Promise<IdCardTemplate[]> {
     try {
@@ -333,38 +359,38 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Add stubs for required methods to satisfy the interface
   // These can be expanded later as needed
-  
+
   async getUserProfile(userId: number): Promise<UserProfile | undefined> {
     try {
       const [profile] = await db
         .select()
         .from(userProfiles)
         .where(eq(userProfiles.userId, userId));
-      
+
       return profile;
     } catch (error) {
       logger.error(`Error getting user profile for user: ${userId}`, error);
       throw error;
     }
   }
-  
+
   async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
     try {
       const [newProfile] = await db
         .insert(userProfiles)
         .values(profile)
         .returning();
-      
+
       return newProfile;
     } catch (error) {
       logger.error(`Error creating user profile for user: ${profile.userId}`, error);
       throw error;
     }
   }
-  
+
   async updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<UserProfile | undefined> {
     try {
       const [updatedProfile] = await db
@@ -372,7 +398,7 @@ export class DatabaseStorage implements IStorage {
         .set(data)
         .where(eq(userProfiles.userId, userId))
         .returning();
-      
+
       return updatedProfile;
     } catch (error) {
       logger.error(`Error updating user profile for user: ${userId}`, error);
@@ -382,84 +408,84 @@ export class DatabaseStorage implements IStorage {
 
   // Stub implementations for remaining required methods
   // These should be expanded as needed for the application
-  
+
   async getDocument(id: number): Promise<Document | undefined> {
     logger.warn('STUB: getDocument called, but it is not fully implemented.');
     return Promise.resolve(undefined);
   }
-  
+
   async getDocumentsByUserId(userId: number): Promise<Document[]> {
     logger.warn('STUB: getDocumentsByUserId called, but it is not fully implemented.');
     return Promise.resolve([]);
   }
-  
+
   async createDocument(document: InsertDocument): Promise<Document> {
     logger.warn('STUB: createDocument called, but it is not fully implemented.');
     // To prevent downstream issues from a fake success, reject promise clearly.
     return Promise.reject(new Error('STUB: createDocument - This method is a stub and requires full implementation.'));
   }
-  
+
   async updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined> {
     logger.warn('STUB: updateDocument called, but it is not fully implemented.');
     // To prevent downstream issues from a fake success, reject promise clearly.
     return Promise.reject(new Error('STUB: updateDocument - This method is a stub and requires full implementation.'));
   }
-  
+
   async getPollingStation(id: number): Promise<PollingStation | undefined> {
     logger.warn('STUB: getPollingStation called, but it is not fully implemented.');
     return Promise.resolve(undefined);
   }
-  
+
   async getAllPollingStations(): Promise<PollingStation[]> {
     logger.warn('STUB: getAllPollingStations called, but it is not fully implemented.');
     return Promise.resolve([]);
   }
-  
+
   async createPollingStation(station: InsertPollingStation): Promise<PollingStation> {
     logger.warn('STUB: createPollingStation called, but it is not fully implemented.');
     return Promise.reject(new Error('STUB: createPollingStation - This method is a stub and requires full implementation.'));
   }
-  
+
   async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
     logger.warn('STUB: updatePollingStation called, but it is not fully implemented.');
     return Promise.reject(new Error('STUB: updatePollingStation - This method is a stub and requires full implementation.'));
   }
-  
+
   async deletePollingStation(id: number): Promise<boolean> {
     logger.warn('STUB: deletePollingStation called, but it is not fully implemented.');
     return Promise.resolve(false); // Indicates no deletion occurred
   }
-  
+
   async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {
     logger.warn('STUB: getAssignmentsByUserId called, but it is not fully implemented.');
     return Promise.resolve([]);
   }
-  
+
   async getAssignmentsByStationId(stationId: number): Promise<Assignment[]> {
     logger.warn('STUB: getAssignmentsByStationId called, but it is not fully implemented.');
     return Promise.resolve([]);
   }
-  
+
   async getAssignment(id: number): Promise<Assignment | undefined> {
     logger.warn('STUB: getAssignment called, but it is not fully implemented.');
     return Promise.resolve(undefined);
   }
-  
+
   async getActiveAssignments(userId: number): Promise<Assignment[]> {
     logger.warn('STUB: getActiveAssignments called, but it is not fully implemented.');
     return Promise.resolve([]);
   }
-  
+
   async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
     logger.warn('STUB: createAssignment called, but it is not fully implemented.');
     return Promise.reject(new Error('STUB: createAssignment - This method is a stub and requires full implementation.'));
   }
-  
+
   async updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined> {
     logger.warn('STUB: updateAssignment called, but it is not fully implemented.');
     return Promise.reject(new Error('STUB: updateAssignment - This method is a stub and requires full implementation.'));
   }
-  
+
   // --- User Import Log Methods ---
   async getUserImportLog(importId: number): Promise<UserImportLog | undefined> {
     const [log] = await db

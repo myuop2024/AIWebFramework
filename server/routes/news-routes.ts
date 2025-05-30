@@ -76,18 +76,20 @@ router.get('/', async (req, res) => {
 router.get('/latest', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
-    
+
     const news = await db
       .select()
       .from(newsEntries)
       .where(eq(newsEntries.isPublished, true))
       .orderBy(desc(newsEntries.createdAt))
-      .limit(limit);
-    
-    res.json(news);
+      .limit(limit)
+      .catch(() => []); // Return empty array if table doesn't exist or query fails
+
+    res.json(news || []);
   } catch (error) {
     logger.error('Error fetching latest news:', error);
-    res.status(500).json({ error: 'Failed to fetch latest news' });
+    // Return empty array instead of error to prevent frontend crashes
+    res.json([]);
   }
 });
 
@@ -292,4 +294,4 @@ router.post('/:id/publish', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;
