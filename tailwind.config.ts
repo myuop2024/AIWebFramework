@@ -19,15 +19,15 @@ export default {
         '128': '32rem',
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        DEFAULT: '0.75rem',
       },
       colors: {
-        background: "hsl(var(--background))",
+        background: {
+          DEFAULT: '#f8fafc',
+        },
         foreground: "hsl(var(--foreground))",
         card: {
-          DEFAULT: "hsl(var(--card))",
+          DEFAULT: '#fff',
           foreground: "hsl(var(--card-foreground))",
         },
         popover: {
@@ -35,11 +35,11 @@ export default {
           foreground: "hsl(var(--popover-foreground))",
         },
         primary: {
-          DEFAULT: "hsl(var(--primary))",
+          DEFAULT: '#4f46e5',
           foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
+          DEFAULT: '#3b82f6',
           foreground: "hsl(var(--secondary-foreground))",
         },
         muted: {
@@ -47,14 +47,16 @@ export default {
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
+          DEFAULT: '#34d399',
           foreground: "hsl(var(--accent-foreground))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        border: "hsl(var(--border))",
+        border: {
+          DEFAULT: '#e5e7eb',
+        },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         chart: {
@@ -76,7 +78,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       fontSize: {
@@ -153,6 +155,20 @@ export default {
       },
       backdropBlur: {
         xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+      },
+      backgroundOpacity: {
+        10: '0.1',
+        20: '0.2',
+        30: '0.3',
+        40: '0.4',
+        50: '0.5',
+        60: '0.6',
+        70: '0.7',
+        80: '0.8',
+        90: '0.9',
       },
       boxShadow: {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',

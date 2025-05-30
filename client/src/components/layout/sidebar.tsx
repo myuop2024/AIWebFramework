@@ -179,27 +179,25 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
       <aside 
         id="sidebar" 
         className={cn(
-          "w-80 lg:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out",
-          "fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto shadow-xl lg:shadow-none",
+          "w-80 lg:w-64 bg-white/80 dark:bg-gray-900/80 border-r border-gray-200 dark:border-gray-800 overflow-y-auto transition-transform duration-300 ease-in-out backdrop-blur-md shadow-xl lg:shadow-none",
+          "fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto",
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <div className="p-6">
-          {/* Header with close button for mobile */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center">
-              <div className="h-10 w-10 flex items-center justify-center rounded-full bg-primary text-white font-bold text-xl">
+          {/* Modern CAFFE Branding */}
+          <div className="flex flex-col items-start mb-8 rounded-xl bg-white/60 dark:bg-gray-800/60 shadow-lg p-4 backdrop-blur-md border border-slate-200">
+            <div className="flex items-center mb-2">
+              <div className="h-12 w-12 flex items-center justify-center rounded-full bg-primary text-white font-bold text-2xl shadow-md">
                 C
               </div>
-              <h1 className="ml-3 text-2xl font-bold text-gray-800 dark:text-white">CAFFE</h1>
+              <div className="ml-4">
+                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">CAFFE</h1>
+                <span className="text-xs font-semibold text-primary/80 tracking-wider uppercase">Election Observation System</span>
+              </div>
             </div>
-            <button
-              onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 touch-target"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
+          <div className="border-b border-slate-200 dark:border-gray-700 mb-6" />
           
           {/* User Profile Summary */}
           {user && (

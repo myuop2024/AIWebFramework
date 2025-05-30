@@ -49,6 +49,7 @@ import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
 import { initGlobalErrorHandlers } from "@/lib/error-logger";
 import AdvancedFeatures from "@/pages/advanced-features";
+import { Helmet } from 'react-helmet';
 
 function Router() {
   return (
@@ -192,13 +193,19 @@ function App() {
   }, [location]);
 
   return (
-    <ErrorBoundary captureContext={{ location: window.location.href }}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Router />
-        </TooltipProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <>
+      <Helmet>
+        <title>CAFFE Election Observation System</title>
+        <meta name="description" content="CAFFE Election Observation System - Modern, secure, and AI-powered election observation platform." />
+      </Helmet>
+      <ErrorBoundary captureContext={{ location: window.location.href }}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Router />
+          </TooltipProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </>
   );
 }
 
