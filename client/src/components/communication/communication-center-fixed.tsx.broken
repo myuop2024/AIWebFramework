@@ -1002,20 +1002,19 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
             <DialogTitle>Incoming Call</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center justify-center py-6">
-            <Avatar className="h-20 w-20 mb-4">
-              {(() => {
-                const caller = incomingCall?.callerId ? getUserById(incomingCall.callerId) : null;
-                const callerName = caller ? (caller.firstName && caller.lastName ? `${caller.firstName} ${caller.lastName}` : caller.username) : `User ${incomingCall?.callerId || 'Unknown'}`;
-                return (
-                  <>
-                    <Avatar className="h-20 w-20 mb-4">
-                      <AvatarImage src={caller?.profileImage || `${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${caller?.username || incomingCall?.callerId || 'default'}`} />
-                      <AvatarFallback>{getInitials(caller)}</AvatarFallback>
-                    </Avatar>
-                    <p className="text-xl font-semibold mb-1">{callerName}</p>
-                  </>
-                );
-              })()}
+            {(() => {
+              const caller = incomingCall?.callerId ? getUserById(incomingCall.callerId) : null;
+              const callerName = caller ? (caller.firstName && caller.lastName ? `${caller.firstName} ${caller.lastName}` : caller.username) : `User ${incomingCall?.callerId || 'Unknown'}`;
+              return (
+                <>
+                  <Avatar className="h-20 w-20 mb-4">
+                    <AvatarImage src={caller?.profileImage || `${process.env.NEXT_PUBLIC_DICEBEAR_API_URL}/7.x/avataaars/svg?seed=${caller?.username || incomingCall?.callerId || 'default'}`} />
+                    <AvatarFallback>{getInitials(caller)}</AvatarFallback>
+                  </Avatar>
+                  <p className="text-xl font-semibold mb-1">{callerName}</p>
+                </>
+              );
+            })()}
             <p className="text-sm text-muted-foreground mb-8">
               {incomingCall?.type === 'video' ? 'Video call' : 'Audio call'}
             </p>
