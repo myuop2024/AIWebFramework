@@ -153,7 +153,10 @@ const profileSchema = z.object({
   trn: z.string()
     .min(1, "TRN is required")
     .refine(
-      (val) => /^\d{9}$/.test(val.replace(/-/g, "")), 
+      (val) => {
+        const digitsOnly = val.replace(/[^0-9]/g, "");
+        return /^\d{9}$/.test(digitsOnly);
+      }, 
       { message: "TRN must be 9 digits (e.g., 123-456-789)" }
     ),
   idType: z.string().min(1, "ID type is required"),
