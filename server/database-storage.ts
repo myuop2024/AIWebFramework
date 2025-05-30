@@ -431,59 +431,170 @@ export class DatabaseStorage implements IStorage {
     return Promise.reject(new Error('STUB: updateDocument - This method is a stub and requires full implementation.'));
   }
 
+  // Polling Station Methods
   async getPollingStation(id: number): Promise<PollingStation | undefined> {
-    logger.warn('STUB: getPollingStation called, but it is not fully implemented.');
-    return Promise.resolve(undefined);
+    try {
+      const [station] = await db.select().from(pollingStations).where(eq(pollingStations.id, id));
+      return station;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting polling station by ID ${id}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async getAllPollingStations(): Promise<PollingStation[]> {
-    logger.warn('STUB: getAllPollingStations called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      return await db.select().from(pollingStations).orderBy(asc(pollingStations.name));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all polling stations: ${err.message}`, err);
+      throw err;
+    }
   }
 
-  async createPollingStation(station: InsertPollingStation): Promise<PollingStation> {
-    logger.warn('STUB: createPollingStation called, but it is not fully implemented.');
-    return Promise.reject(new Error('STUB: createPollingStation - This method is a stub and requires full implementation.'));
+  async createPollingStation(stationData: InsertPollingStation): Promise<PollingStation> {
+    try {
+      const [newStation] = await db
+        .insert(pollingStations)
+        .values(stationData)
+        .returning();
+      if (!newStation) {
+        throw new Error("Polling station creation failed, no data returned.");
+      }
+      logger.info(`Polling station created: ${newStation.name} (ID: ${newStation.id})`);
+      return newStation;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating polling station: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async updatePollingStation(id: number, data: Partial<PollingStation>): Promise<PollingStation | undefined> {
-    logger.warn('STUB: updatePollingStation called, but it is not fully implemented.');
-    return Promise.reject(new Error('STUB: updatePollingStation - This method is a stub and requires full implementation.'));
+    try {
+      // Ensure 'id' is not part of the data to be updated
+      const { id: stationId, ...updateData } = data;
+
+      const [updatedStation] = await db
+        .update(pollingStations)
+        .set({...updateData, updatedAt: new Date() })
+        .where(eq(pollingStations.id, id))
+        .returning();
+      if (updatedStation) {
+        logger.info(`Polling station updated: ${updatedStation.name} (ID: ${updatedStation.id})`);
+      }
+      return updatedStation;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating polling station ID ${id}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async deletePollingStation(id: number): Promise<boolean> {
-    logger.warn('STUB: deletePollingStation called, but it is not fully implemented.');
-    return Promise.resolve(false); // Indicates no deletion occurred
+    try {
+      // Consider checking for active assignments to this station before deleting
+      const assignmentsToStation = await db.select({count: sql<number>`count(*)::int`}).from(assignments).where(eq(assignments.stationId, id));
+      if(assignmentsToStation[0].count > 0) {
+        logger.warn(`Attempt to delete polling station ID ${id} which has ${assignmentsToStation[0].count} assignments.`);
+        throw new Error(`Cannot delete polling station ID ${id} as it has ${assignmentsToStation[0].count} active or past assignments. Please reassign or remove them first.`);
+      }
+
+      const result = await db.delete(pollingStations).where(eq(pollingStations.id, id)).returning();
+      const success = result.length > 0;
+      if (success) {
+        logger.info(`Polling station deleted: ID ${id}`);
+      }
+      return success;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error deleting polling station ID ${id}: ${err.message}`, err);
+      throw err;
+    }
   }
 
+  // Assignment Methods
   async getAssignmentsByUserId(userId: number): Promise<Assignment[]> {
-    logger.warn('STUB: getAssignmentsByUserId called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      return await db.select().from(assignments).where(eq(assignments.userId, String(userId)));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting assignments for user ID ${userId}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async getAssignmentsByStationId(stationId: number): Promise<Assignment[]> {
-    logger.warn('STUB: getAssignmentsByStationId called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      return await db.select().from(assignments).where(eq(assignments.stationId, stationId));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting assignments for station ID ${stationId}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async getAssignment(id: number): Promise<Assignment | undefined> {
-    logger.warn('STUB: getAssignment called, but it is not fully implemented.');
-    return Promise.resolve(undefined);
+    try {
+      const [assignment] = await db.select().from(assignments).where(eq(assignments.id, id));
+      return assignment;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting assignment by ID ${id}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async getActiveAssignments(userId: number): Promise<Assignment[]> {
-    logger.warn('STUB: getActiveAssignments called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      return await db
+        .select()
+        .from(assignments)
+        .where(and(eq(assignments.userId, String(userId)), eq(assignments.status, 'active')));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting active assignments for user ID ${userId}: ${err.message}`, err);
+      throw err;
+    }
   }
 
-  async createAssignment(assignment: InsertAssignment): Promise<Assignment> {
-    logger.warn('STUB: createAssignment called, but it is not fully implemented.');
-    return Promise.reject(new Error('STUB: createAssignment - This method is a stub and requires full implementation.'));
+  async createAssignment(assignmentData: InsertAssignment): Promise<Assignment> {
+    try {
+      const [newAssignment] = await db
+        .insert(assignments)
+        .values({...assignmentData, createdAt: new Date(), updatedAt: new Date()})
+        .returning();
+      if (!newAssignment) {
+        throw new Error("Assignment creation failed, no data returned.");
+      }
+      logger.info(`Assignment created for user ID ${newAssignment.userId} at station ID ${newAssignment.stationId} (Assignment ID: ${newAssignment.id})`);
+      return newAssignment;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating assignment: ${err.message}`, err);
+      throw err;
+    }
   }
 
   async updateAssignment(id: number, data: Partial<Assignment>): Promise<Assignment | undefined> {
-    logger.warn('STUB: updateAssignment called, but it is not fully implemented.');
-    return Promise.reject(new Error('STUB: updateAssignment - This method is a stub and requires full implementation.'));
+    try {
+      // Ensure 'id' is not part of the data to be updated
+      const { id: assignmentId, ...updateData } = data;
+      const [updatedAssignment] = await db
+        .update(assignments)
+        .set({...updateData, updatedAt: new Date()})
+        .where(eq(assignments.id, id))
+        .returning();
+      if (updatedAssignment) {
+        logger.info(`Assignment updated: ID ${updatedAssignment.id}`);
+      }
+      return updatedAssignment;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating assignment ID ${id}: ${err.message}`, err);
+      throw err;
+    }
   }
 
   // --- User Import Log Methods ---
@@ -545,4 +656,345 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Add more methods as needed to fulfill the interface
+
+  // Role Operations
+  async createRole(roleData: InsertRole): Promise<Role> {
+    try {
+      const [newRole] = await db
+        .insert(roles)
+        .values({
+          ...roleData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      if (!newRole) {
+        // This case should ideally be handled by Drizzle throwing an error if insertion fails.
+        // If Drizzle returns an empty array on failure, this check is valid.
+        throw new Error("Role creation failed, no data returned.");
+      }
+      logger.info(`Role created: ${newRole.name} (ID: ${newRole.id})`);
+      return newRole;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating role: ${err.message}`, err);
+      throw err; // Re-throw the original or wrapped error
+    }
+  }
+
+  async getRoleById(id: number): Promise<Role | undefined> {
+    try {
+      const [role] = await db.select().from(roles).where(eq(roles.id, id));
+      return role;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting role by ID: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getRoleByName(name: string): Promise<Role | undefined> {
+    try {
+      const [role] = await db.select().from(roles).where(eq(roles.name, name));
+      return role;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting role by name: ${name} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getAllRoles(): Promise<Role[]> {
+    try {
+      return await db.select().from(roles).orderBy(asc(roles.name));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all roles: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateRole(id: number, data: Partial<Omit<Role, 'id' | 'createdAt' | 'updatedAt' | 'isSystem'>> & { permissions?: string[] }): Promise<Role | undefined> {
+    try {
+      const roleToUpdate = await this.getRoleById(id);
+      if (!roleToUpdate) {
+        logger.warn(`Attempt to update non-existent role with ID: ${id}`);
+        return undefined; // Or throw a specific "NotFound" error
+      }
+
+      if (roleToUpdate.isSystem) {
+        if (data.name !== undefined && data.name !== roleToUpdate.name) {
+          throw new Error("System role name cannot be changed.");
+        }
+        if (data.description !== undefined && data.description !== roleToUpdate.description) {
+          throw new Error("System role description cannot be changed.");
+        }
+      }
+
+      const updateData: Partial<Role> = { ...data, updatedAt: new Date() };
+
+      // Ensure permissions are stored as JSONB, Drizzle should handle JS array to JSONB conversion.
+      // If data.permissions is explicitly null, it will be set to null.
+      // If data.permissions is undefined, the field won't be updated unless it's part of the spread.
+      // To be safe, explicitly handle permissions if it's part of `data`.
+      if (data.permissions !== undefined) {
+        updateData.permissions = data.permissions;
+      }
+
+
+      const [updatedRole] = await db
+        .update(roles)
+        .set(updateData)
+        .where(eq(roles.id, id))
+        .returning();
+      if (updatedRole) {
+        logger.info(`Role updated: ${updatedRole.name} (ID: ${updatedRole.id})`);
+      }
+      return updatedRole;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating role: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async deleteRole(id: number): Promise<boolean> {
+    try {
+      const roleToDelete = await this.getRoleById(id);
+      if (!roleToDelete) {
+        logger.warn(`Attempted to delete non-existent role with ID: ${id}`);
+        return false;
+      }
+      if (roleToDelete.isSystem) {
+        logger.warn(`Attempted to delete system role: ${roleToDelete.name} (ID: ${id})`);
+        throw new Error("System roles cannot be deleted.");
+      }
+
+      const usersWithRole = await db.select({ count: sql<number>`count(*)::int` }).from(usersTable).where(eq(usersTable.role, roleToDelete.name));
+      if (usersWithRole[0].count > 0) {
+         logger.warn(`Attempted to delete role '${roleToDelete.name}' (ID: ${id}) that is still assigned to ${usersWithRole[0].count} users.`);
+         throw new Error(`Cannot delete role '${roleToDelete.name}' as it is still assigned to ${usersWithRole[0].count} users. Please reassign users before deleting this role.`);
+      }
+
+      const result = await db.delete(roles).where(eq(roles.id, id)).returning();
+      const success = result.length > 0;
+      if (success) {
+        logger.info(`Role deleted: ${roleToDelete.name} (ID: ${id})`);
+      }
+      return success;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error deleting role: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getPermissionsForRole(roleId: number): Promise<string[] | undefined> {
+    try {
+      const role = await this.getRoleById(roleId);
+      if (role && role.permissions) {
+        if (Array.isArray(role.permissions) && role.permissions.every(p => typeof p === 'string')) {
+          return role.permissions as string[];
+        }
+        // This case should ideally not happen if data is inserted correctly via `updateRole` or `createRole`.
+        // Drizzle should handle JSONB conversion, so `role.permissions` should already be a JavaScript array.
+        logger.warn(`Permissions for role ID ${roleId} are not in the expected format (array of strings). Found: ${JSON.stringify(role.permissions)}. Attempting to use as is if array, otherwise empty.`);
+        // If it's an array but not of strings, or not an array at all, this is problematic.
+        // For robustness, we could try to filter or convert, but it indicates an upstream issue.
+        return Array.isArray(role.permissions) ? role.permissions.map(String) : [];
+      }
+      return undefined; // Role not found or has no permissions field
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting permissions for role ID: ${roleId} - ${err.message}`, err);
+      throw err;
+    }
+  }
+  // Ensure all other existing methods in DatabaseStorage are maintained.
+
+  // Form Template Methods
+  async getAllFormTemplates(): Promise<FormTemplate[]> {
+    try {
+      return await db.select().from(formTemplates).orderBy(asc(formTemplates.name));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all form templates: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getActiveFormTemplates(): Promise<FormTemplate[]> {
+    try {
+      return await db.select().from(formTemplates).where(eq(formTemplates.isActive, true)).orderBy(asc(formTemplates.name));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting active form templates: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getFormTemplatesByCategory(category: string): Promise<FormTemplate[]> {
+    try {
+      return await db.select().from(formTemplates).where(eq(formTemplates.category, category)).orderBy(asc(formTemplates.name));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting form templates by category ${category}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getFormTemplate(id: number): Promise<FormTemplate | undefined> {
+    try {
+      const [template] = await db.select().from(formTemplates).where(eq(formTemplates.id, id));
+      return template;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting form template by ID ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async createFormTemplate(templateData: InsertFormTemplate): Promise<FormTemplate> {
+    try {
+      const [newTemplate] = await db
+        .insert(formTemplates)
+        .values({ ...templateData, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      if (!newTemplate) {
+        throw new Error("Form template creation failed, no data returned.");
+      }
+      logger.info(`Form template created: ${newTemplate.name} (ID: ${newTemplate.id})`);
+      return newTemplate;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating form template: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateFormTemplate(id: number, data: Partial<FormTemplate>): Promise<FormTemplate | undefined> {
+    try {
+      const { id: templateId, createdAt, ...updateData } = data; // Exclude id and createdAt from update set
+      const [updatedTemplate] = await db
+        .update(formTemplates)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(eq(formTemplates.id, id))
+        .returning();
+      if (updatedTemplate) {
+        logger.info(`Form template updated: ${updatedTemplate.name} (ID: ${updatedTemplate.id})`);
+      }
+      return updatedTemplate;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating form template ID ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async deleteFormTemplate(id: number): Promise<boolean> {
+    try {
+      // Check if any reports are using this template
+      const linkedReports = await db.select({ count: sql<number>`count(*)::int` }).from(reports).where(eq(reports.templateId, id));
+      if (linkedReports[0].count > 0) {
+        logger.warn(`Attempt to delete form template ID ${id} which is linked to ${linkedReports[0].count} reports.`);
+        throw new Error(`Cannot delete form template ID ${id} as it is currently linked to ${linkedReports[0].count} reports. Please reassign or delete these reports first.`);
+      }
+
+      const result = await db.delete(formTemplates).where(eq(formTemplates.id, id)).returning();
+      const success = result.length > 0;
+      if (success) {
+        logger.info(`Form template deleted: ID ${id}`);
+      }
+      return success;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error deleting form template ID ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  // Report Methods
+  async createReport(reportData: InsertReport): Promise<Report> {
+    try {
+      const [newReport] = await db
+        .insert(reports)
+        .values({ ...reportData, createdAt: new Date(), updatedAt: new Date() })
+        .returning();
+      if (!newReport) {
+        throw new Error("Report creation failed, no data returned.");
+      }
+      logger.info(`Report created: ID ${newReport.id} by user ID ${newReport.userId}`);
+      return newReport;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating report: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getReport(id: number): Promise<Report | undefined> {
+    try {
+      const [report] = await db.select().from(reports).where(eq(reports.id, id));
+      return report;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting report by ID ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getReportsByUserId(userId: number): Promise<Report[]> {
+    try {
+      // Assuming reports.userId is varchar, similar to assignments.userId
+      return await db.select().from(reports).where(eq(reports.userId, String(userId))).orderBy(desc(reports.createdAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting reports for user ID ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getReportsByStationId(stationId: number): Promise<Report[]> {
+    try {
+      return await db.select().from(reports).where(eq(reports.stationId, stationId)).orderBy(desc(reports.createdAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting reports for station ID ${stationId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getReportsByStatus(status: string): Promise<Report[]> {
+    try {
+      return await db.select().from(reports).where(eq(reports.status, status)).orderBy(desc(reports.createdAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting reports by status ${status}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateReportStatus(id: number, status: string, reviewedByUserId?: number): Promise<Report | undefined> {
+    try {
+      const updateData: Partial<Report> = { status, updatedAt: new Date() };
+      if (reviewedByUserId !== undefined) {
+        updateData.reviewedBy = String(reviewedByUserId); // Assuming reviewedBy is varchar
+        updateData.reviewedAt = new Date();
+      }
+
+      const [updatedReport] = await db
+        .update(reports)
+        .set(updateData)
+        .where(eq(reports.id, id))
+        .returning();
+      if (updatedReport) {
+        logger.info(`Report ID ${updatedReport.id} status updated to ${updatedReport.status}`);
+      }
+      return updatedReport;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating status for report ID ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
 }

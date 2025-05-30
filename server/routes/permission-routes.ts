@@ -16,24 +16,22 @@ const router = Router();
  */
 router.get('/permissions', ensureAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
   try {
-    // Example permission data - in a real implementation this would come from the database
-    const permissions = [
-      { id: 1, name: 'view_reports', description: 'View reports submitted by observers' },
-      { id: 2, name: 'create_reports', description: 'Create new incident reports' },
-      { id: 3, name: 'approve_reports', description: 'Approve reports submitted by observers' },
-      { id: 4, name: 'manage_observers', description: 'Add, edit, and remove observers' },
-      { id: 5, name: 'manage_stations', description: 'Add, edit, and remove polling stations' },
-      { id: 6, name: 'manage_assignments', description: 'Assign observers to polling stations' },
-      { id: 7, name: 'view_analytics', description: 'View analytics and predictions dashboard' },
-      { id: 8, name: 'manage_roles', description: 'Assign and manage user roles' },
-      { id: 9, name: 'view_all_users', description: 'View all users in the system' },
-      { id: 10, name: 'access_system_settings', description: 'Access and modify system settings' },
-    ];
-
-    return res.status(200).json(permissions);
+    const allRoles = await storage.getAllRoles();
+    const uniquePermissions = new Set<string>();
+    allRoles.forEach(role => {
+      if (role.permissions && Array.isArray(role.permissions)) {
+        role.permissions.forEach(permission => {
+          if (typeof permission === 'string') { // Ensure permission is a string
+            uniquePermissions.add(permission);
+          }
+        });
+      }
+    });
+    res.status(200).json({ permissions: Array.from(uniquePermissions).sort() });
   } catch (error) {
-    logger.error('Error retrieving permissions', error as Error);
-    return res.status(500).json({ message: 'Internal server error' });
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error retrieving all permissions', err);
+    return res.status(500).json({ message: 'Internal server error while retrieving permissions', details: err.message });
   }
 });
 
@@ -42,9 +40,10 @@ router.get('/permissions', ensureAuthenticated, ensureAdmin, async (req: Request
  */
 router.get('/users/:userId/permissions', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.userId);
+    const userIdParam = req.params.userId;
+    const userId = parseInt(userIdParam);
     if (isNaN(userId)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
+      return res.status(400).json({ message: 'Invalid user ID format' });
     }
 
     const user = await storage.getUser(userId);
@@ -52,53 +51,31 @@ router.get('/users/:userId/permissions', ensureAuthenticated, ensureSupervisor, 
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // In a real implementation we would fetch the user's permissions from the database
-    // Here we return mock data based on the user's role
     let rolePermissions: string[] = [];
-    
-    // Basic permissions for all roles
-    const basePermissions = ['view_reports', 'create_reports'];
-    
-    if (user.role === 'observer') {
-      rolePermissions = [...basePermissions];
-    } else if (user.role === 'roving_observer') {
-      rolePermissions = [...basePermissions, 'view_stations_in_area'];
-    } else if (user.role === 'supervisor') {
-      rolePermissions = [...basePermissions, 'approve_reports', 'manage_observers', 'view_analytics'];
-    } else if (user.role === 'admin') {
-      rolePermissions = [
-        ...basePermissions,
-        'approve_reports',
-        'manage_observers',
-        'manage_stations',
-        'manage_assignments',
-        'view_analytics',
-        'view_all_users'
-      ];
-    } else if (user.role === 'director') {
-      // Director has all permissions
-      rolePermissions = [
-        ...basePermissions,
-        'approve_reports',
-        'manage_observers',
-        'manage_stations',
-        'manage_assignments',
-        'view_analytics',
-        'manage_roles',
-        'view_all_users',
-        'access_system_settings'
-      ];
+    if (user.role) {
+      const role = await storage.getRoleByName(user.role); // Assumes user.role is the role name
+      if (role && role.permissions && Array.isArray(role.permissions)) {
+        // Ensure all permissions are strings, just in case of data inconsistency
+        rolePermissions = role.permissions.filter(p => typeof p === 'string') as string[];
+      } else if (role) {
+        logger.warn(`Role '${user.role}' for user ID ${userId} has no permissions array or it's malformed.`);
+      } else {
+        logger.warn(`Role '${user.role}' not found in roles table for user ID ${userId}. User will have no permissions.`);
+      }
+    } else {
+      logger.warn(`User ID ${userId} has no role assigned. User will have no permissions.`);
     }
 
     return res.status(200).json({
       userId: user.id,
       username: user.username,
-      role: user.role,
-      permissions: rolePermissions
+      role: user.role || 'N/A', // Handle cases where role might be null/undefined
+      permissions: rolePermissions.sort()
     });
   } catch (error) {
-    logger.error(`Error retrieving permissions for user ID ${req.params.userId}`, error as Error);
-    return res.status(500).json({ message: 'Internal server error' });
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error(`Error retrieving permissions for user ID ${req.params.userId}`, err);
+    return res.status(500).json({ message: 'Internal server error while fetching user permissions', details: err.message });
   }
 });
 
@@ -146,8 +123,9 @@ router.post('/users/:userId/role', ensureAuthenticated, ensureAdmin, async (req:
       }
     });
   } catch (error) {
-    logger.error(`Error updating role for user ID ${req.params.userId}`, error as Error);
-    return res.status(500).json({ message: 'Internal server error' });
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error(`Error updating role for user ID ${req.params.userId}`, err);
+    return res.status(500).json({ message: 'Internal server error while updating user role', details: err.message });
   }
 });
 
