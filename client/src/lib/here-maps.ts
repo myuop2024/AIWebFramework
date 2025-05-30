@@ -114,7 +114,10 @@ function loadHereMapsScript(): Promise<void> {
       };
       
       const onScriptError = (e: Event) => {
-        const error = new Error("Failed to load HERE Maps API scripts");
+        const target = e.target as HTMLScriptElement;
+        const errorMessage = `Failed to load HERE Maps script: ${target?.src || 'unknown'}`;
+        console.error('Script loading error:', errorMessage, e);
+        const error = new Error(errorMessage);
         hereMapsLoadError = error;
         reject(error);
       };
@@ -202,10 +205,12 @@ export function useHereMaps(): UseHereMapsResult {
 
     // Check if API key is configured before loading
     try {
-      getHereApiKey();
+      const apiKey = getHereApiKey();
+      console.log('HERE Maps API key configured, length:', apiKey.length);
     } catch (error) {
       if (isMounted) {
-        const configError = new Error("HERE Maps API key not configured. Please check your environment variables.");
+        const configError = error instanceof Error ? error : new Error("HERE Maps API key not configured. Please check your environment variables.");
+        console.error('HERE Maps configuration error:', configError.message);
         setLoadError(configError);
         hereMapsLoadError = configError;
       }

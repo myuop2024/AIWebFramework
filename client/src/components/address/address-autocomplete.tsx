@@ -491,7 +491,12 @@ export default function AddressAutocomplete({
               <line x1="12" y1="8" x2="12" y2="12"></line>
               <line x1="12" y1="16" x2="12.01" y2="16"></line>
             </svg>
-            <span>Map service unavailable: {loadError.message}</span>
+            <span>
+              {loadError.message.includes('API key') 
+                ? 'HERE Maps API key required. Please configure VITE_HERE_API_KEY.' 
+                : `Map service unavailable: ${loadError.message}`
+              }
+            </span>
           </div>
           <button
             type="button"

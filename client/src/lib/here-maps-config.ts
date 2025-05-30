@@ -9,15 +9,23 @@ export function getHereApiKey(): string {
   const apiKey = 
     import.meta.env.VITE_HERE_API_KEY ||
     process.env.VITE_HERE_API_KEY ||
-    (typeof window !== 'undefined' && window.REPL_SECRETS?.VITE_HERE_API_KEY);
+    (typeof window !== 'undefined' && (window as any).REPL_SECRETS?.VITE_HERE_API_KEY);
 
   // Check if API key exists and is not a placeholder
-  if (!apiKey || apiKey === 'your_here_maps_api_key' || apiKey === '') {
-    console.error('HERE Maps API key not found. Please ensure VITE_HERE_API_KEY is set in your environment variables or Replit secrets.');
-    throw new Error('HERE Maps API key is missing or not configured properly');
+  if (!apiKey || apiKey === 'your_here_maps_api_key' || apiKey === '' || apiKey.trim() === '') {
+    const errorMessage = 'HERE Maps API key is missing. Please set VITE_HERE_API_KEY in your environment variables.';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
 
-  return apiKey;
+  // Validate API key format (basic validation)
+  if (apiKey.length < 20) {
+    const errorMessage = 'HERE Maps API key appears to be invalid (too short).';
+    console.error(errorMessage);
+    throw new Error(errorMessage);
+  }
+
+  return apiKey.trim();
 }
 
 // Check if HERE Maps is properly configured
@@ -43,4 +51,4 @@ declare global {
       VITE_HERE_API_KEY?: string;
     };
   }
-} 
+}
