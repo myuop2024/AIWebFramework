@@ -55,23 +55,4 @@ const AlertDescription = React.forwardRef<
 ))
 AlertDescription.displayName = "AlertDescription"
 
-export function Alert({ className, variant = 'info', ...props }: { className?: string, variant?: 'info' | 'success' | 'warning' | 'error' } & React.HTMLAttributes<HTMLDivElement>) {
-  const variantStyles = {
-    info: 'bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
-    success: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200',
-    warning: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-200',
-    error: 'bg-red-50 text-red-800 dark:bg-red-900/40 dark:text-red-200',
-  };
-  return (
-    <div
-      className={cn(
-        'rounded-lg shadow-md flex items-start gap-3 p-4 font-semibold',
-        variantStyles[variant],
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
 export { Alert, AlertTitle, AlertDescription }
