@@ -29,7 +29,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, Shield, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
-import AddressAutocomplete from "@/components/address/address-autocomplete";
+import AddressAutocompleteFallback from "@/components/address/address-autocomplete-fallback";
 import { type UserProfile } from '@shared/schema';
 
 // Jamaican banks and credit unions list
@@ -368,49 +368,50 @@ export default function ProfileForm() {
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <AddressAutocomplete 
+                      <AddressAutocompleteFallback 
                         initialValue={field.value || ""}
                         placeholder="Start typing your address to search..."
-                        onAddressSelect={(addressData) => {
-                          // Update the address field with full address (including house number)
-                          field.onChange(addressData.fullAddress);
-                          // Log the full address data for debugging
+                        onAddressSelect={(addressData: any) => {
+                          // Update the address field with the selected address
+                          field.onChange(addressData.title);
                           console.log('Address selected:', addressData);
+                          
                           // Process the parish field first
                           let detectedParish = null;
+                          
                           // Check if the city field is actually a parish (common in Jamaica)
-                          if (addressData.city) {
+                          if (addressData.address?.city) {
                             const cityContainsParish = JAMAICAN_PARISHES.find(parish => 
-                              addressData.city === parish || 
-                              addressData.city.includes(parish) ||
-                              (parish.startsWith("St.") && addressData.city.includes(parish.substring(4)))
+                              addressData.address.city === parish || 
+                              addressData.address.city.includes(parish) ||
+                              (parish.startsWith("St.") && addressData.address.city.includes(parish.substring(4)))
                             );
                             if (cityContainsParish) {
                               detectedParish = cityContainsParish;
                             } else {
-                              form.setValue("city", addressData.city);
+                              form.setValue("city", addressData.address.city);
                             }
                           }
+                          
                           // Try to get parish from state field if not found in city
-                          if (!detectedParish && addressData.state) {
+                          if (!detectedParish && addressData.address?.state) {
                             const stateContainsParish = JAMAICAN_PARISHES.find(parish => 
-                              addressData.state === parish || 
-                              addressData.state.includes(parish) ||
-                              (parish.startsWith("St.") && addressData.state.includes(parish.substring(4)))
+                              addressData.address.state === parish || 
+                              addressData.address.state.includes(parish) ||
+                              (parish.startsWith("St.") && addressData.address.state.includes(parish.substring(4)))
                             );
                             
                             if (stateContainsParish) {
                               detectedParish = stateContainsParish;
                             } else {
-                              // Only use state as parish if we haven't found a parish yet
-                              detectedParish = addressData.state;
+                              detectedParish = addressData.address.state;
                             }
                           }
                           
                           // Special case for Kingston
                           if (!detectedParish && 
-                             (addressData.fullAddress?.includes("Kingston") || 
-                              addressData.city?.includes("Kingston"))) {
+                             (addressData.title?.includes("Kingston") || 
+                              addressData.address?.city?.includes("Kingston"))) {
                             detectedParish = "Kingston";
                           }
                           
@@ -418,20 +419,15 @@ export default function ProfileForm() {
                           if (detectedParish) {
                             console.log("Setting parish to:", detectedParish);
                             form.setValue("state", detectedParish);
-                            
-                            // Log form state after setting to debug
-                            setTimeout(() => {
-                              console.log("Form value for parish after setting:", form.getValues("state"));
-                              console.log("Form field state:", form.getFieldState("state"));
-                            }, 100);
                           }
                           
-                          if (addressData.postalCode) {
-                            form.setValue("postOfficeRegion", addressData.postalCode);
+                          // Fill other fields
+                          if (addressData.address?.postalCode) {
+                            form.setValue("postOfficeRegion", addressData.address.postalCode);
                           }
                           
-                          if (addressData.country) {
-                            form.setValue("country", addressData.country);
+                          if (addressData.address?.countryName) {
+                            form.setValue("country", addressData.address.countryName);
                           }
                         }}
                       />
