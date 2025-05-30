@@ -10,8 +10,8 @@ import logger from '../utils/logger';
  * Middleware to log all API requests with timing information
  */
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
-  // Skip non-API requests
-  if (!req.originalUrl.startsWith('/api')) {
+  // Skip non-API requests and static files
+  if (!req.originalUrl.startsWith('/api') || req.originalUrl.includes('/uploads/')) {
     return next();
   }
   
@@ -22,15 +22,17 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   res.on('finish', () => {
     const responseTime = Date.now() - startTime;
     
-    // Log request with timing
-    logger.logApiRequest(req, res.statusCode, responseTime);
+    // Only log significant requests to reduce overhead
+    if (responseTime > 200 || res.statusCode >= 400) {
+      logger.logApiRequest(req, res.statusCode, responseTime);
+    }
     
-    // Log slow requests
-    if (responseTime > 500) {
+    // Log slow requests with higher threshold
+    if (responseTime > 1000) {
       logger.warn('Slow API request', {
         ...logger.getRequestInfo(req),
         responseTime: `${responseTime}ms`,
-        threshold: '500ms'
+        threshold: '1000ms'
       });
     }
   });

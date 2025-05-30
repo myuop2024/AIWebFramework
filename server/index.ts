@@ -99,52 +99,29 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- Enhanced request logging middleware ---
+// Consolidated request logging middleware
 app.use((req, res, next) => {
+  // Skip non-API requests for performance
+  if (!req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    logger.info('HTTP Request', {
-      method: req.method,
-      url: req.originalUrl,
-      status: res.statusCode,
-      duration,
-      ip: req.ip,
-      userId: req.session?.userId || 'unauthenticated',
-      userAgent: req.headers['user-agent']
-    });
-  });
-  next();
-});
-
-// Original request logging middleware - will keep for now for backward compatibility
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+    
+    // Only log if duration is significant or status indicates error
+    if (duration > 100 || res.statusCode >= 400) {
+      logger.info('HTTP Request', {
+        method: req.method,
+        url: req.originalUrl,
+        status: res.statusCode,
+        duration,
+        ip: req.ip,
+        userId: req.session?.userId || 'unauthenticated'
+      });
     }
   });
-
   next();
 });
 
@@ -160,20 +137,47 @@ process.on('unhandledRejection', (reason: any) => {
 
 const PAGE_LOG_PATH = path.join(process.cwd(), 'logs', 'page-logs.json');
 
+// Batch page logs to reduce file I/O
+let logBuffer: any[] = [];
+let lastFlush = Date.now();
+const FLUSH_INTERVAL = 30000; // 30 seconds
+const BUFFER_SIZE = 50;
+
 function savePageLog(entry: any) {
-  let logs: any[] = [];
+  logBuffer.push(entry);
+  
+  // Flush if buffer is full or enough time has passed
+  if (logBuffer.length >= BUFFER_SIZE || Date.now() - lastFlush > FLUSH_INTERVAL) {
+    flushLogs();
+  }
+}
+
+function flushLogs() {
+  if (logBuffer.length === 0) return;
+  
   try {
+    let logs: any[] = [];
     if (fs.existsSync(PAGE_LOG_PATH)) {
       logs = JSON.parse(fs.readFileSync(PAGE_LOG_PATH, 'utf-8'));
     }
-  } catch {}
-  logs.push(entry);
-  // Prune logs older than 1 day
-  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-  logs = logs.filter(l => new Date(l.timestamp).getTime() > oneDayAgo);
-  fs.mkdirSync(path.dirname(PAGE_LOG_PATH), { recursive: true });
-  fs.writeFileSync(PAGE_LOG_PATH, JSON.stringify(logs, null, 2));
+    
+    logs.push(...logBuffer);
+    logBuffer = [];
+    lastFlush = Date.now();
+    
+    // Prune logs older than 1 day
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    logs = logs.filter(l => new Date(l.timestamp).getTime() > oneDayAgo);
+    
+    fs.mkdirSync(path.dirname(PAGE_LOG_PATH), { recursive: true });
+    fs.writeFileSync(PAGE_LOG_PATH, JSON.stringify(logs, null, 2));
+  } catch (error) {
+    console.error('Error flushing logs:', error);
+  }
 }
+
+// Flush logs periodically
+setInterval(flushLogs, FLUSH_INTERVAL);
 
 app.post('/api/log', (req, res) => {
   const entry = {
@@ -390,41 +394,4 @@ app.get('/api/logs', (req, res) => {
   }
 })();
 
-app.use((req, res, next) => {
-  const userId = req.session?.userId || req.user?.id || 'unauthenticated';
-  const start = Date.now();
-  let errorMsg = null;
-
-  // Capture errors
-  res.on('error', (err) => {
-    errorMsg = err?.message || String(err);
-  });
-
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const entry: any = {
-      type: 'api_call',
-      method: req.method,
-      path: req.originalUrl,
-      userId,
-      query: req.query,
-      userAgent: req.headers['user-agent'],
-      referrer: req.headers['referer'] || req.headers['referrer'],
-      status: res.statusCode,
-      duration,
-      timestamp: new Date().toISOString(),
-    };
-    // Log request body for POST/PUT/PATCH, but exclude password fields
-    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
-      const safeBody = { ...req.body };
-      if (safeBody.password) safeBody.password = '[REDACTED]';
-      if (safeBody.newPassword) safeBody.newPassword = '[REDACTED]';
-      if (safeBody.currentPassword) safeBody.currentPassword = '[REDACTED]';
-      entry.body = safeBody;
-    }
-    if (errorMsg) entry.error = errorMsg;
-    savePageLog(entry);
-    console.log(`[API CALL] ${req.method} ${req.originalUrl} - User: ${userId} - Status: ${res.statusCode} - ${duration}ms`);
-  });
-  next();
-});
+// This middleware is now handled by the consolidated request logging above

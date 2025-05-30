@@ -125,7 +125,7 @@ export function SmartAnalytics({ className }: SmartAnalyticsProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
-    // Simulate real-time analytics updates
+    // Reduce update frequency to save CPU
     const interval = setInterval(() => {
       setMetrics(prev => prev.map(metric => ({
         ...metric,
@@ -134,7 +134,7 @@ export function SmartAnalytics({ className }: SmartAnalyticsProps) {
           : metric.value,
         change: metric.change + (Math.random() - 0.5) * 1
       })));
-    }, 5000);
+    }, 30000); // Update every 30 seconds instead of 5
 
     return () => clearInterval(interval);
   }, []);
@@ -376,4 +376,4 @@ export function SmartAnalytics({ className }: SmartAnalyticsProps) {
       </Tabs>
     </div>
   );
-} 
+}
