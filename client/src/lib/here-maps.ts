@@ -57,7 +57,7 @@ function loadHereMapsScript(): Promise<void> {
 
   hereMapsLoadPromise = new Promise((resolve, reject) => {
     // Skip if already loaded
-    if (isHereMapsLoaded) {
+    if (isHereMapsLoaded && window.H) {
       resolve();
       return;
     }
@@ -79,21 +79,19 @@ function loadHereMapsScript(): Promise<void> {
         return;
       }
 
-      // Check if script already exists
+      // Check if scripts already exist and window.H is available
       const existingScript = document.getElementById("here-maps-script");
-      if (existingScript) {
+      if (existingScript && window.H) {
+        isHereMapsLoaded = true;
         resolve();
         return;
       }
 
-      // Create script element
-      const script = document.createElement("script");
-      script.id = "here-maps-script";
-      script.type = "text/javascript";
-      script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
-      script.async = true;
-      script.defer = true;
-      
+      // Remove existing scripts if they exist but window.H is not available
+      if (existingScript) {
+        existingScript.remove();
+      }
+
       // Track loading state
       let scriptsLoaded = 0;
       const totalScripts = 5;
@@ -101,17 +99,32 @@ function loadHereMapsScript(): Promise<void> {
       const onScriptLoad = () => {
         scriptsLoaded++;
         if (scriptsLoaded === totalScripts) {
-          isHereMapsLoaded = true;
-          resolve();
+          // Wait a bit for window.H to be available
+          setTimeout(() => {
+            if (window.H) {
+              isHereMapsLoaded = true;
+              resolve();
+            } else {
+              const error = new Error("HERE Maps API loaded but window.H not available");
+              hereMapsLoadError = error;
+              reject(error);
+            }
+          }, 100);
         }
       };
       
       const onScriptError = (e: Event) => {
-        const error = new Error("Failed to load HERE Maps API");
+        const error = new Error("Failed to load HERE Maps API scripts");
         hereMapsLoadError = error;
         reject(error);
       };
 
+      // Create script element for core
+      const script = document.createElement("script");
+      script.id = "here-maps-script";
+      script.type = "text/javascript";
+      script.src = `https://js.api.here.com/v3/3.1/mapsjs-core.js`;
+      
       script.addEventListener("load", () => {
         // Load additional scripts after the core is loaded
         const scripts = [
@@ -129,25 +142,31 @@ function loadHereMapsScript(): Promise<void> {
         document.head.appendChild(link);
         
         // Load each script sequentially
-        scripts.forEach(scriptSrc => {
-          const additionalScript = document.createElement("script");
-          additionalScript.type = "text/javascript";
-          additionalScript.src = `https://js.api.here.com/v3/3.1/${scriptSrc}`;
-          additionalScript.async = true;
-          additionalScript.defer = true;
-          additionalScript.addEventListener("load", onScriptLoad);
-          additionalScript.addEventListener("error", onScriptError);
-          document.body.appendChild(additionalScript);
-        });
+        let loadedScripts = 0;
+        const loadNextScript = () => {
+          if (loadedScripts < scripts.length) {
+            const additionalScript = document.createElement("script");
+            additionalScript.type = "text/javascript";
+            additionalScript.src = `https://js.api.here.com/v3/3.1/${scripts[loadedScripts]}`;
+            additionalScript.addEventListener("load", () => {
+              loadedScripts++;
+              onScriptLoad();
+              loadNextScript();
+            });
+            additionalScript.addEventListener("error", onScriptError);
+            document.head.appendChild(additionalScript);
+          }
+        };
 
-        // Count the core script as loaded
+        // Count the core script as loaded and start loading additional scripts
         onScriptLoad();
+        loadNextScript();
       });
       
       script.addEventListener("error", onScriptError);
       
       // Append script to document
-      document.body.appendChild(script);
+      document.head.appendChild(script);
     } catch (error) {
       hereMapsLoadError = error as Error;
       reject(error);
@@ -170,12 +189,26 @@ export function useHereMaps(): UseHereMapsResult {
     if (isHereMapsLoaded && window.H) {
       setH(window.H as HereMapsApi);
       setIsLoaded(true);
+      setLoadError(null);
       return;
     }
 
     // If already errored, set error state
     if (hereMapsLoadError) {
       setLoadError(hereMapsLoadError);
+      setIsLoaded(false);
+      return;
+    }
+
+    // Check if API key is configured before loading
+    try {
+      getHereApiKey();
+    } catch (error) {
+      if (isMounted) {
+        const configError = new Error("HERE Maps API key not configured. Please check your environment variables.");
+        setLoadError(configError);
+        hereMapsLoadError = configError;
+      }
       return;
     }
 
@@ -183,13 +216,21 @@ export function useHereMaps(): UseHereMapsResult {
     loadHereMapsScript()
       .then(() => {
         if (isMounted) {
-          setH(window.H as HereMapsApi);
-          setIsLoaded(true);
+          if (window.H) {
+            setH(window.H as HereMapsApi);
+            setIsLoaded(true);
+            setLoadError(null);
+          } else {
+            const error = new Error("HERE Maps scripts loaded but API not available");
+            setLoadError(error);
+          }
         }
       })
       .catch((error) => {
         if (isMounted) {
+          console.error("HERE Maps loading error:", error);
           setLoadError(error);
+          setIsLoaded(false);
         }
       });
 
@@ -366,9 +407,38 @@ export function formatDuration(seconds: number): string {
   }
 }
 
+// Global diagnostics function
+if (typeof window !== 'undefined') {
+  (window as any).testHereMaps = async () => {
+    console.log('🔍 Running HERE Maps diagnostics...');
+    
+    try {
+      // Import and run diagnostics
+      const { logHereDiagnostics } = await import('./here-maps-diagnostics');
+      const result = await logHereDiagnostics();
+      
+      if (result.overallStatus === 'working') {
+        console.log('✅ HERE Maps is working correctly');
+      } else if (result.overallStatus === 'partial') {
+        console.log('⚠️ HERE Maps has some issues but partially working');
+      } else {
+        console.log('❌ HERE Maps is not working');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Failed to run diagnostics:', error);
+      return null;
+    }
+  };
+
+  console.log('💡 HERE Maps diagnostics available: Run window.testHereMaps() in console to test');
+}
+
 // Augment window interface to include HERE Maps
 declare global {
   interface Window {
     H: HereMapsApi;
+    testHereMaps?: () => Promise<any>;
   }
 }
