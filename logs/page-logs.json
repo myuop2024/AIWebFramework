@@ -4455,5 +4455,53 @@
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
     "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arjlc%3A",
     "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-30T22:19:27.941Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-30T22:19:27.938Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T22:19:27.992Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-30T22:19:33.634Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin%2Fuser-imports&id=%3Arjn1%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-30T22:19:33.628Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin%2Fuser-imports&id=%3Arjn1%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/supervisor/team-management",
+    "timestamp": "2025-05-30T22:20:08.348Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin%2Fuser-imports&id=%3Arjn1%3A",
+    "userId": "unauthenticated"
   }
 ]
