@@ -436,12 +436,6 @@ export default function ProfileForm() {
                   <FormDescription>
                     Start typing your address to see suggestions from HERE Maps
                   </FormDescription>
-                  {/* Show a warning if HERE Maps is unavailable */}
-                  {typeof window !== 'undefined' && window.H === undefined && (
-                    <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
-                      <strong>Address lookup is currently unavailable.</strong> Please enter your address manually or contact support. For advanced help, open your browser console and run <code>window.testHereMaps()</code>.
-                    </div>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
