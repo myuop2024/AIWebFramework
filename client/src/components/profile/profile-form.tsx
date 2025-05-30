@@ -567,7 +567,7 @@ export default function ProfileForm() {
                           inputMode="numeric"
                           pattern="[0-9]*"
                           maxLength={11}
-                          {...field} 
+                          value={field.value || ""}
                           onChange={(e) => {
                             // Format TRN as 123-456-789
                             const value = e.target.value.replace(/[^0-9]/g, "");
