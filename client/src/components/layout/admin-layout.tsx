@@ -54,6 +54,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
+          {/* DEBUG: Show userData and role */}
+          <pre className="mb-4 p-2 bg-yellow-50 text-xs text-left rounded border border-yellow-200 text-yellow-800 overflow-x-auto">
+            userData: {JSON.stringify(userData, null, 2)}
+            {userData?.user && `\nrole: ${userData.user.role}`}
+            {`\nisFetching: ${isFetching}`}
+          </pre>
           {isFetching ? (
             <p>Loading...</p>
           ) : (
