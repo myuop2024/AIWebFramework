@@ -8,7 +8,7 @@ import {
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
-  Kanban, Trello, X, Sparkles
+  Kanban, Trello, X, Sparkles, Upload
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -83,6 +83,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" /> },
     { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" /> },
     { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" /> },
+    { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-5 w-5" /> },
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
