@@ -35,7 +35,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
     queryKey: ['/api/users/profile'],
   });
 
-  const isAdmin = userData?.user?.role === 'admin';
+  const isAdmin = ['admin', 'director'].includes(userData?.user?.role);
 
   // Store collapsed state in localStorage
   useEffect(() => {
