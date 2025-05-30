@@ -3191,5 +3191,189 @@
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
     "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2b8%3A",
     "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:05:15.061Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:05:15.057Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:05:15.254Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:05:18.827Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-30T16:05:27.536Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:05:27.748Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:05:27.785Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-30T16:05:31.199Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar340%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:06:09.051Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:06:09.054Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:06:09.249Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:06:13.277Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-30T16:06:16.261Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:06:16.454Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:06:16.496Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar350%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:07:03.125Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-05-30T16:07:03.122Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:07:03.416Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:07:06.507Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-30T16:07:12.128Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-05-30T16:07:12.313Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/dashboard",
+    "timestamp": "2025-05-30T16:07:12.350Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/profile",
+    "timestamp": "2025-05-30T16:07:21.281Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar37c%3A",
+    "userId": "unauthenticated"
   }
 ]
