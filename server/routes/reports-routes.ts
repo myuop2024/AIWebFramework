@@ -3,11 +3,12 @@ import { db } from '../db';
 import { reports, users, pollingStations, formTemplates, type Report, type InsertReport } from '@shared/schema';
 import { eq, desc, and, sql, like } from 'drizzle-orm';
 import * as logger from '../utils/logger';
+import { ensureAuthenticated } from '../middleware/auth';
 
 const router = Router();
 
 // GET /api/reports - Get all reports with pagination and filtering
-router.get('/', async (req, res) => {
+router.get('/', ensureAuthenticated, async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -101,7 +102,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/reports/stats - Get report statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.query.userId as string;
     
@@ -150,7 +151,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // GET /api/reports/types - Get all report types
-router.get('/types', async (req, res) => {
+router.get('/types', ensureAuthenticated, async (req, res) => {
   try {
     const types = await db
       .selectDistinct({ reportType: reports.reportType })
@@ -164,7 +165,7 @@ router.get('/types', async (req, res) => {
 });
 
 // GET /api/reports/:id - Get single report
-router.get('/:id', async (req, res) => {
+router.get('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -213,7 +214,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/reports - Create new report
-router.post('/', async (req, res) => {
+router.post('/', ensureAuthenticated, async (req, res) => {
   try {
     const { 
       userId, 
@@ -264,7 +265,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/reports/:id - Update report
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { content, reportType, status, checkinTime, checkoutTime } = req.body;
@@ -315,7 +316,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // POST /api/reports/:id/review - Review report
-router.post('/:id/review', async (req, res) => {
+router.post('/:id/review', ensureAuthenticated, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { status, reviewedBy } = req.body;
@@ -358,7 +359,7 @@ router.post('/:id/review', async (req, res) => {
 });
 
 // DELETE /api/reports/:id - Delete report
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -390,7 +391,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/reports/user/:userId - Get reports for specific user
-router.get('/user/:userId', async (req, res) => {
+router.get('/user/:userId', ensureAuthenticated, async (req, res) => {
   try {
     const userId = req.params.userId;
     const page = parseInt(req.query.page as string) || 1;
@@ -452,4 +453,4 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-export default router; 
+export default router;

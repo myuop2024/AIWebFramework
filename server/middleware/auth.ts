@@ -52,6 +52,16 @@ export const ensureAuthenticated = (req: Request, res: Response, next: NextFunct
     return next();
   }
 
+  // Check for Replit Auth session
+  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+    const user = req.user as any;
+    if (user.claims?.sub) {
+      // Set session data from Replit auth for compatibility
+      req.session.userId = user.claims.sub;
+      return next();
+    }
+  }
+
   // Check for user data from Replit auth headers
   const replitUserId = req.headers['x-replit-user-id'];
   const replitUserName = req.headers['x-replit-user-name'];
