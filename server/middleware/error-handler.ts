@@ -3,55 +3,56 @@ import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
 
 /**
- * Global error handler middleware
- * Logs detailed error information to console and returns appropriate error responses
+ * Global final error handler middleware
+ * Logs detailed error information using logger and sends appropriate error responses to the client.
+ * This should be registered AFTER database logging middleware.
  */
-export function errorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
+export function finalErrorHandler(err: any, req: Request, res: Response, _next: NextFunction) {
   // Log detailed error information
-  console.error('Error caught by error handler:');
-  console.error('URL:', req.originalUrl);
-  console.error('Method:', req.method);
-  console.error('User ID:', req.session?.userId || 'Not authenticated');
-  console.error('Error message:', err.message);
-  console.error('Stack trace:', err.stack);
+  // console.error('Error caught by error handler:'); // Replaced by logger calls
+  // console.error('URL:', req.originalUrl); // Covered by logger
+  // console.error('Method:', req.method); // Covered by logger
+  // console.error('User ID:', req.session?.userId || 'Not authenticated'); // Covered by logger
+  // console.error('Error message:', err.message); // Covered by logger
+  // console.error('Stack trace:', err.stack); // Covered by logger
   
-  // Get request info for logging
-  const requestInfo = {
-    url: req.originalUrl,
-    method: req.method,
-    userId: req.session?.userId,
-    path: req.path,
-    userAgent: req.headers['user-agent'],
-    ip: req.ip
-  };
-  
-  // Set appropriate status code
   const statusCode = err.statusCode || err.status || 500;
-  
-  // Log based on error severity
-  try {
-    if (statusCode >= 500) {
-      logger.error('Server error in API request', err, requestInfo);
-    } else if (statusCode >= 400) {
-      logger.warn('Client error in API request', { 
-        message: err.message,
-        stack: err.stack,
-        ...requestInfo 
-      });
-    }
-  } catch (logError) {
-    console.error('Failed to log error:', logError);
-    // Fallback to basic console logging
-    console.error('Original error:', err.message);
+
+  // Construct consistent log object
+  const logObject = {
+    message: err.message,
+    stack: err.stack,
+    statusCode,
+    path: req.path,
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip,
+    userId: req.session?.userId || (req.user as any)?.id || 'unauthenticated',
+    userAgent: req.headers['user-agent'],
+    errorCode: err.code, // Preserve custom error code if any
+  };
+
+  // Log based on error severity using the logger utility
+  if (statusCode >= 500) {
+    logger.error('Final Error Handler: Server Error', logObject);
+  } else { // 4xx errors
+    logger.warn('Final Error Handler: Client Error', logObject);
   }
   
-  // Return error response
+  // Send response if headers not sent already
+  if (res.headersSent) {
+    // If headers already sent, delegate to the default Express error handler
+    // which closes the connection and fails the request.
+    return _next(err);
+  }
+
   res.status(statusCode).json({
-    message: err.message || 'Internal Server Error',
-    errorCode: err.code || 'UNKNOWN_ERROR',
-    timestamp: new Date().toISOString(),
-    // Only include stack trace in development
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    message: err.message || (statusCode >= 500 ? 'Internal Server Error' : 'Client Error'),
+    errorCode: err.code || (statusCode >= 500 ? 'INTERNAL_ERROR' : 'CLIENT_ERROR'),
+    timestamp: new Date().toISOString()
+    // Stack trace inclusion can be decided by logger configuration or environment,
+    // but generally not sent to client in production for security.
+    // For development, it's in the logObject.
   });
 }
 
@@ -98,7 +99,7 @@ export function asyncHandler(fn: (req: Request, res: Response, next: NextFunctio
 }
 
 export default {
-  errorHandler,
+  finalErrorHandler, // Renamed from errorHandler
   requestLogger,
   asyncHandler
 };

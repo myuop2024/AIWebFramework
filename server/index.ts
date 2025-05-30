@@ -7,9 +7,14 @@ import { pool, checkDbConnection } from "./db";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
 import path from "path";
-import { requestLogger, errorMonitor } from "./middleware/error-monitoring";
 import logger from "./utils/logger";
 import { attachUser } from "./middleware/auth";
+import {
+  finalErrorHandler,
+  requestLogger as mainRequestLogger,
+  // asyncHandler is available if needed by routes directly, but error handling is central
+} from "./middleware/error-handler";
+import { ErrorLogger } from "./services/error-logger";
 import { Server } from "http";
 import passport from "passport";
 import fs from 'fs';
@@ -83,8 +88,8 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 // Make storage available to all routes via app.locals
 app.locals.storage = storage;
 
-// Apply error monitoring middleware
-app.use(requestLogger);
+// Apply main request logger from error-handler.ts
+app.use(mainRequestLogger);
 
 // Add session debug middleware
 app.use((req, res, next) => {
@@ -126,13 +131,46 @@ app.use((req, res, next) => {
 });
 
 // Global error handlers for all uncaught exceptions and unhandled promise rejections
-process.on('uncaughtException', (err) => {
-  logger.critical('Uncaught Exception', err);
-  process.exit(1); // Optional: restart process
+process.on('uncaughtException', async (error: Error, origin: string) => {
+  logger.critical(`UNCAUGHT EXCEPTION --- Origin: ${origin}`, error);
+
+  try {
+    await ErrorLogger.logError({
+      message: `Uncaught Exception: ${error.message}`,
+      error: error,
+      source: origin || 'uncaughtException',
+      level: 'critical',
+    });
+    logger.info('Uncaught exception successfully logged to database.');
+  } catch (dbLogError) {
+    logger.error('CRITICAL: Failed to log uncaught exception to database.', dbLogError instanceof Error ? dbLogError : new Error(String(dbLogError)));
+  } finally {
+    logger.info('Shutting down due to uncaught exception...');
+    process.exit(1);
+  }
 });
 
-process.on('unhandledRejection', (reason: any) => {
-  logger.critical('Unhandled Promise Rejection', reason instanceof Error ? reason : new Error(String(reason)));
+process.on('unhandledRejection', async (reason: any, promise: Promise<any>) => {
+  const errorMessage = reason instanceof Error ? reason.message : String(reason);
+  const errorObject = reason instanceof Error ? reason : new Error(errorMessage);
+
+  logger.error(`UNHANDLED PROMISE REJECTION --- Reason: ${errorMessage}`, errorObject);
+
+  try {
+    await ErrorLogger.logError({
+      message: `Unhandled Promise Rejection: ${errorMessage}`,
+      error: errorObject,
+      source: 'unhandledRejection',
+      level: 'critical', // Or 'error' as per original snippet, critical if exiting
+      // context: { promiseDetails: util.inspect(promise) } // Example, be careful with promise object size
+    });
+    logger.info('Unhandled rejection successfully logged to database.');
+  } catch (dbLogError) {
+    logger.error('CRITICAL: Failed to log unhandled rejection to database.', dbLogError instanceof Error ? dbLogError : new Error(String(dbLogError)));
+  } finally {
+    logger.info('Shutting down due to unhandled promise rejection...');
+    process.exit(1);
+  }
 });
 
 const PAGE_LOG_PATH = path.join(process.cwd(), 'logs', 'page-logs.json');
@@ -303,31 +341,14 @@ app.get('/api/logs', (req, res) => {
     // Setup routes
     server = await registerRoutes(app);
 
-    // Register error monitoring middleware
-    app.use(errorMonitor);
+    // --- Error Handling Pipeline (MUST be registered after all routes) ---
     
-    // Fallback error handler (should be last)
-    app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      // Log the error with our enhanced logger
-      logger.error('Uncaught error', err, { 
-        path: req.path, 
-        method: req.method, 
-        userId: req.session?.userId 
-      });
+    // 1. Log errors to database
+    // This middleware should call next(err) to pass the error to the next handler.
+    app.use(ErrorLogger.createErrorMiddleware());
 
-      // Send response if headers not sent already
-      if (!res.headersSent) {
-        res.status(status).json({ 
-          message, 
-          status,
-          timestamp: new Date().toISOString(),
-          path: req.path
-        });
-      }
-    });
+    // 2. Log to console/file and send response to client (final step)
+    app.use(finalErrorHandler);
 
     // Setup Vite for development or static files for production
     if (app.get("env") === "development") {

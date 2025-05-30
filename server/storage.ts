@@ -92,6 +92,15 @@ export interface IStorage {
   
   // Registration form operations
   getAllRegistrationForms(): Promise<RegistrationForm[]>;
+
+  // Role operations
+  createRole(roleData: InsertRole): Promise<Role>;
+  getRoleById(id: number): Promise<Role | undefined>;
+  getRoleByName(name: string): Promise<Role | undefined>;
+  getAllRoles(): Promise<Role[]>;
+  updateRole(id: number, data: Partial<Omit<Role, 'id' | 'createdAt' | 'updatedAt' | 'isSystem'>> & { permissions?: string[] }): Promise<Role | undefined>;
+  deleteRole(id: number): Promise<boolean>;
+  getPermissionsForRole(roleId: number): Promise<string[] | undefined>;
 }
 
 // Import database storage
