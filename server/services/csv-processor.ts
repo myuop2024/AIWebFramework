@@ -52,17 +52,22 @@ async function hashPassword(password: string): Promise<string> {
 /**
  * Process a CSV file with user data, using Google AI to enhance the data quality
  */
-export async function processCSVFile(filePath: string): Promise<ProcessedResult> {
+export async function processCSVFile(filePath: string, recordsOverride?: any[]): Promise<ProcessedResult> {
   try {
-    // Read the CSV file
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    
-    // Parse the CSV content
-    const records = parse(fileContent, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true
-    });
+    let records;
+    if (recordsOverride) {
+      records = recordsOverride;
+    } else {
+      // Read the CSV file
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      // Parse the CSV content
+      const { parse } = await import('csv-parse/sync');
+      records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+    }
 
     // Basic validation before AI processing
     const errorRows: { rowIndex: number; data: any; error: string; explanation?: string }[] = [];

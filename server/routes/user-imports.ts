@@ -9,6 +9,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { processCSVFile } from '../services/csv-processor';
+import xlsx from 'xlsx';
+import axios from 'axios';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -30,11 +32,21 @@ const upload = multer({
     }
   }),
   fileFilter: (req, file, cb) => {
-    // Accept only CSV files
-    if (file.mimetype === 'text/csv' || path.extname(file.originalname).toLowerCase() === '.csv') {
+    // Accept CSV and Excel files
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowed = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.csv', '.xlsx', '.xls'
+    ];
+    if (
+      allowed.includes(file.mimetype) ||
+      allowed.includes(ext)
+    ) {
       cb(null, true);
     } else {
-      cb(new Error('Only CSV files are allowed'));
+      cb(new Error('Only CSV or Excel files are allowed'));
     }
   },
   limits: {
@@ -141,56 +153,66 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
   }
 });
 
-// Process CSV file upload and use Google AI to enhance the data
+// Process CSV or Excel file upload and use AI to enhance the data
 router.post('/csv', ensureAuthenticated, ensureAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let records;
+    if (ext === '.xlsx' || ext === '.xls') {
+      // Parse Excel file
+      const workbook = xlsx.readFile(req.file.path);
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      records = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+    } else {
+      // Parse CSV as before
+      const { parse } = await import('csv-parse/sync');
+      const fileContent = fs.readFileSync(req.file.path, 'utf-8');
+      records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+    }
+    // Call Python microservice for AI cleaning/enrichment
+    let aiResult;
+    try {
+      const aiResponse = await axios.post('http://localhost:8000/clean_enrich', { records });
+      aiResult = aiResponse.data;
+    } catch (err) {
+      console.error('Python AI microservice failed, falling back to Google AI:', err);
+      // Fallback: use existing Google AI logic (processCSVFile)
+      aiResult = await processCSVFile(req.file.path, records);
+    }
     // Create an import log
     const importLog = await storage.createUserImportLog({
-      sourceType: 'csv',
+      sourceType: ext === '.csv' ? 'csv' : 'excel',
       importedBy: req.session?.userId || 0,
-      totalRecords: 0, // Will be updated after processing
+      totalRecords: aiResult.data.length + aiResult.errorRows.length,
       successCount: 0,
       failureCount: 0,
-      status: 'processing',
+      status: 'analyzed',
       filename: req.file.originalname,
       options: {
         defaultRole: req.body.defaultRole || 'observer',
         verificationStatus: req.body.verificationStatus || 'pending'
       }
     });
-
-    // Process the CSV file with Google AI
-    const processedResult = await processCSVFile(req.file.path);
-    
-    // Update the import log with processed data counts
-    await storage.updateUserImportLog(importLog.id, {
-      totalRecords: processedResult.data.length + processedResult.errorRows.length,
-      status: 'analyzed'
-    });
-
     // Return the processed data
     res.status(200).json({
       importId: importLog.id,
-      data: processedResult.data.map(user => ({ 
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        username: user.username,
-        phoneNumber: user.phoneNumber,
-        role: user.role
-      })), // Don't send passwords back to client
-      errorRows: processedResult.errorRows,
-      enhancementStats: processedResult.enhancementStats,
-      duplicateWarnings: processedResult.duplicateWarnings,
+      data: aiResult.data,
+      errorRows: aiResult.errorRows,
+      enhancementStats: aiResult.enhancementStats,
+      duplicateWarnings: aiResult.duplicateWarnings,
       status: 'ready_for_import'
     });
   } catch (error) {
-    console.error('Error processing CSV file:', error);
-    res.status(500).json({ message: 'Failed to process CSV file: ' + (error instanceof Error ? error.message : String(error)) });
+    console.error('Error processing file:', error);
+    res.status(500).json({ message: 'Failed to process file: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });
 

@@ -171,19 +171,19 @@ export default function UserImportCSV() {
         <CardHeader>
           <CardTitle>Import Users from CSV</CardTitle>
           <CardDescription>
-            Upload a CSV file with user data. Our AI will enhance and validate the data before import.
+            Upload a CSV or Excel file with user data. Our AI will enhance and validate the data before import.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             <div>
-              <Label htmlFor="file-upload">CSV File</Label>
+              <Label htmlFor="file-upload">CSV or Excel File</Label>
               <div className="mt-1 flex items-center space-x-2">
                 <Input
                   id="file-upload"
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx,.xls"
                   onChange={handleFileChange}
                   disabled={uploadMutation.isPending}
                 />
