@@ -13,9 +13,12 @@ interface User {
   profileImageUrl?: string | null;
 }
 
+import { IncomingMessage } from 'http'; // Added for request object in connection handler
+
 interface WebSocketClient extends WebSocket {
-  userId?: number;
+  userId?: number; // This will be the authenticated ID
   isAlive?: boolean;
+  authenticatedUserId?: number; // Temporary property to hold ID from upgrade
 }
 
 export class CommunicationService {
@@ -27,12 +30,12 @@ export class CommunicationService {
     try {
       // Use a different path to avoid conflicts with HMR websockets
       // Set noServer to true to avoid port binding conflicts - we'll handle connections manually
-      this.wss = new WebSocketServer({ 
-        server, 
-        path: '/api/ws',
+      // server option removed, path option removed.
+      this.wss = new WebSocketServer({
+        noServer: true, // Crucial: HTTP server will handle upgrades
         clientTracking: true,
         // Add EADDRINUSE error handling by using noServer mode when needed
-        noServer: false,
+        // noServer: false, // This was the old value
         // Increase the per-message deflate options for better performance
         perMessageDeflate: {
           zlibDeflateOptions: {
@@ -64,7 +67,8 @@ export class CommunicationService {
       
       this.initializeWebSocketServer();
       this.startPingInterval();
-      console.log('WebSocket server initialized on /api/ws path');
+      // console.log('WebSocket server initialized on /api/ws path'); // Path is now handled externally
+      console.log('CommunicationService: WebSocketServer configured with noServer: true. Waiting for external upgrade handling.');
     } catch (error) {
       console.error('Failed to initialize WebSocket server:', error);
       // Create a dummy WSS that doesn't actually bind to any port/server
@@ -77,15 +81,41 @@ export class CommunicationService {
     }
   }
 
+  // Method to get the WSS instance for external upgrade handling
+  public getWss(): WebSocketServer {
+    return this.wss;
+  }
+
   private initializeWebSocketServer() {
-    this.wss.on('connection', (ws: WebSocketClient) => {
-      console.log('[WS] Connection established');
+    this.wss.on('connection', (ws: WebSocketClient, request: IncomingMessage) => { // Added request parameter
+      // Security Enhancement: Prioritize authenticatedUserId set during HTTP upgrade
+      if (!ws.authenticatedUserId) {
+        console.warn('[WS] Connection attempt without authenticatedUserId. Terminating.');
+        ws.terminate();
+        return;
+      }
+
+      // Assign the authenticated user ID to ws.userId for consistent use within the service
+      ws.userId = ws.authenticatedUserId;
+      // Clear the temporary property if desired, though not strictly necessary
+      // delete ws.authenticatedUserId;
+
+      console.log(`[WS] Connection established for authenticated user ${ws.userId}`);
       ws.isAlive = true;
+
+      // Register the client immediately with the authenticated ID
+      // This replaces the need for the client to send a 'register' message for basic ID association.
+      // The 'register' message might still be used by client to signal readiness or fetch initial data.
+      this.clients.set(ws.userId, ws);
+      this.updateUserActivity(ws.userId);
+      this.broadcastUserList(); // Broadcast user list upon new authenticated connection
+      console.log(`[WS] User ${ws.userId} auto-registered based on authenticated session.`);
+
 
       // Set up ping response
       ws.on('pong', () => {
         ws.isAlive = true;
-        if (ws.userId) {
+        if (ws.userId) { // ws.userId is now the authenticated one
           this.updateUserActivity(ws.userId);
         }
       });
@@ -98,8 +128,15 @@ export class CommunicationService {
 
           switch (data.type) {
             case 'register':
-              console.log(`[WS] Register message for userId: ${data.userId}`);
-              await this.handleRegister(ws, data);
+              // 'register' message can now be simplified or used as a confirmation/trigger
+              // The actual ws.userId is already set from authenticated session.
+              console.log(`[WS] Received 'register' message from user ${ws.userId} (client sent ${data.userId}).`);
+              if (data.userId && ws.userId !== data.userId) {
+                console.warn(`[WS] Client-sent userId ${data.userId} in register message does not match authenticated session userId ${ws.userId}. Prioritizing session userId.`);
+              }
+              // Call handleRegister to perform any actions needed upon client readiness,
+              // but it will use the already set ws.userId.
+              await this.handleRegister(ws, { userId: ws.userId }); // Pass the authenticated ws.userId
               break;
             case 'message':
               console.log(`[WS] Chat message from ${data.message?.senderId} to ${data.message?.receiverId}:`, data.message?.content);
@@ -172,20 +209,34 @@ export class CommunicationService {
   }
 
   private async handleRegister(ws: WebSocketClient, data: any) {
-    const userId = data.userId;
-    if (!userId) return;
+    // ws.userId should already be set and authenticated from the 'connection' event.
+    // This function now primarily handles client readiness signals or requests for initial data.
+    const authenticatedUserId = ws.userId;
 
-    // Store the client with its userId
-    this.clients.set(userId, ws);
-    ws.userId = userId;
+    if (!authenticatedUserId) {
+      console.warn('[WS] handleRegister called for a WebSocket without an authenticated userId. Ignoring.');
+      return;
+    }
+
+    const clientSentUserId = data.userId;
+    if (clientSentUserId && authenticatedUserId !== clientSentUserId) {
+      console.warn(`[WS] handleRegister: Client-sent userId ${clientSentUserId} does not match authenticated session userId ${authenticatedUserId}. Using session userId.`);
+    }
+
+    // Ensure client is in the map (should be if auto-registered on connection)
+    if (!this.clients.has(authenticatedUserId)) {
+        this.clients.set(authenticatedUserId, ws);
+        console.log(`[WS] User ${authenticatedUserId} added to clients map during handleRegister (should have been on connection).`);
+    }
     
     // Update user activity timestamp
-    this.updateUserActivity(userId);
+    this.updateUserActivity(authenticatedUserId);
 
     // Send the current user list to the newly connected client
+    // This might be redundant if already sent on 'connection' but ensures client gets it if 'register' is their trigger.
     await this.broadcastUserList();
 
-    console.log(`User ${userId} registered`);
+    console.log(`User ${authenticatedUserId} 'register' message processed.`);
   }
 
   private async handleMessage(data: any) {
