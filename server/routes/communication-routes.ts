@@ -5,10 +5,15 @@ import { CommunicationService } from '../services/communication-service'; // Ass
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 const router = express.Router();
 
 // --- Multer Configuration for File Uploads ---
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Ensure the upload directory exists
 // Adjusted path to be relative to the project root assuming 'server/routes' is the current file's dir.
