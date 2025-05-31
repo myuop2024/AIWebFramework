@@ -1,16 +1,18 @@
-import { spawn, ChildProcess } from 'child_process';
-import fetch from 'node-fetch';
-import path from 'path';
+import axios from 'axios';
+import crypto from 'crypto';
 import { storage } from '../storage';
 import logger from '../utils/logger';
+import { DiditVerificationRecord, DiditSession } from '../models/didit'; // Assuming these models exist or will be adapted
 
 /**
  * Configuration interface for Didit service
  */
 interface DiditConfig {
-  apiKey?: string;
-  apiSecret?: string;
-  baseUrl?: string;
+  clientId?: string;
+  clientSecret?: string;
+  baseUrl?: string; // For API like /me e.g. https://api.didit.me/v1
+  authUrl?: string; // For /oauth/authorize e.g. https://auth.didit.me/oauth/authorize
+  tokenUrl?: string; // For /oauth/token e.g. https://auth.didit.me/oauth/token
   enabled?: boolean;
 }
 
@@ -19,392 +21,290 @@ interface DiditConfig {
  */
 class DiditConnector {
   private config: DiditConfig = {
-    apiKey: '',
-    apiSecret: '',
     baseUrl: process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
+    authUrl: 'https://auth.didit.me/oauth/authorize',
+    tokenUrl: 'https://auth.didit.me/oauth/token',
     enabled: false
   };
   
-  private serverProcess: ChildProcess | null = null;
-  private serverRunning = false;
   private initialized = false;
+  private static instance: DiditConnector;
 
-  constructor() {
-    // We'll initialize later from system settings
+  private constructor() {
+    // Private constructor to prevent direct instantiation
+  }
+
+  public static getInstance(): DiditConnector {
+    if (!DiditConnector.instance) {
+      DiditConnector.instance = new DiditConnector();
+    }
+    return DiditConnector.instance;
   }
 
   /**
    * Initialize configuration from system settings
    */
-  async initializeConfig(): Promise<void> {
+  public async initializeConfig(): Promise<void> {
     try {
-      if (this.initialized) return;
+      // if (this.initialized) return; // Allow re-initialization if settings change
       
-      const apiKeySetting = await storage.getSystemSetting('didit_api_key');
-      const apiSecretSetting = await storage.getSystemSetting('didit_api_secret');
+      const clientIdSetting = await storage.getSystemSetting('didit_client_id');
+      const clientSecretSetting = await storage.getSystemSetting('didit_client_secret');
       const baseUrlSetting = await storage.getSystemSetting('didit_base_url');
+      const authUrlSetting = await storage.getSystemSetting('didit_auth_url');
+      const tokenUrlSetting = await storage.getSystemSetting('didit_token_url');
       const enabledSetting = await storage.getSystemSetting('didit_enabled');
       
-      this.config = {
-        apiKey: apiKeySetting?.settingValue,
-        apiSecret: apiSecretSetting?.settingValue,
-        baseUrl: baseUrlSetting?.settingValue || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
-        enabled: enabledSetting?.settingValue || false
-      };
+      this.config.clientId = clientIdSetting?.settingValue || process.env.DIDIT_CLIENT_ID;
+      this.config.clientSecret = clientSecretSetting?.settingValue || process.env.DIDIT_CLIENT_SECRET;
+      this.config.baseUrl = baseUrlSetting?.settingValue || process.env.DIDIT_API_URL || 'https://api.didit.me/v1';
+      this.config.authUrl = authUrlSetting?.settingValue || 'https://auth.didit.me/oauth/authorize';
+      this.config.tokenUrl = tokenUrlSetting?.settingValue || 'https://auth.didit.me/oauth/token';
+      this.config.enabled = enabledSetting?.settingValue === 'true' || false;
       
       this.initialized = true;
       logger.info('Didit connector initialized with config', {
-        apiKeyPresent: !!this.config.apiKey,
-        apiSecretPresent: !!this.config.apiSecret,
+        clientIdPresent: !!this.config.clientId,
         baseUrl: this.config.baseUrl,
+        authUrl: this.config.authUrl,
+        tokenUrl: this.config.tokenUrl,
         enabled: this.config.enabled
       });
     } catch (error) {
-      logger.error('Error initializing Didit configuration', { error: error instanceof Error ? error : new Error(String(error)) });
-      throw error;
+      logger.error('Failed to initialize Didit configuration', { error: error instanceof Error ? error : new Error(String(error)) });
+      this.config.enabled = false; // Ensure it's disabled on error
+      // throw error; // Propagate error if needed, or handle gracefully
     }
   }
 
   /**
    * Update configuration with new values
    */
-  updateConfig(newConfig: DiditConfig): void {
+  public async updateConfig(newConfig: Partial<DiditConfig>): Promise<void> {
+    // Preserve existing values if not provided in newConfig, then re-initialize
+    // const oldConfig = { ...this.config }; // oldConfig not used
     this.config = { ...this.config, ...newConfig };
-    logger.info('Didit configuration updated', {
-      apiKeyPresent: !!this.config.apiKey,
-      apiSecretPresent: !!this.config.apiSecret,
-      baseUrl: this.config.baseUrl,
-      enabled: this.config.enabled
+
+    // Typically, system settings are the source of truth, so this method might just trigger a re-read
+    // For direct updates (e.g. tests or dynamic changes not via DB settings):
+    logger.info('Didit configuration updated directly. For persistent changes, update system settings.', {
+        clientIdPresent: !!this.config.clientId,
+        baseUrl: this.config.baseUrl,
+        authUrl: this.config.authUrl,
+        tokenUrl: this.config.tokenUrl,
+        enabled: this.config.enabled
     });
+    // If newConfig implies a change in settings that would be fetched by initializeConfig,
+    // you might want to call initializeConfig again or ensure settings are written back to storage.
+    // For this refactor, we assume updateConfig is for runtime adjustments or tests.
+    // If it should persist, the calling code should handle storage.updateSystemSetting.
+  }
+
+  public getAuthorizationUrl(state: string, callbackUrl: string): string {
+    if (!this.config.clientId) {
+      throw new Error('Didit Client ID is not configured.');
+    }
+    if (!this.config.authUrl) {
+      throw new Error('Didit Auth URL is not configured.');
+    }
+
+    const url = new URL(this.config.authUrl);
+    url.searchParams.append('client_id', this.config.clientId);
+    url.searchParams.append('redirect_uri', callbackUrl);
+    url.searchParams.append('response_type', 'code');
+    url.searchParams.append('scope', 'openid profile email'); // Standard OIDC scopes
+    url.searchParams.append('state', state);
+    return url.toString();
+  }
+
+  async exchangeCodeForToken(code: string, callbackUrl: string): Promise<any> {
+    await this.initializeConfig(); // Ensure config is loaded
+    if (!this.config.clientId || !this.config.clientSecret) {
+      throw new Error('Didit Client ID or Secret is not configured.');
+    }
+    if (!this.config.tokenUrl) {
+      throw new Error('Didit Token URL is not configured.');
+    }
+
+    try {
+      const response = await axios.post(this.config.tokenUrl, {
+        grant_type: 'authorization_code',
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        code: code,
+        redirect_uri: callbackUrl
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.data?.access_token) {
+        throw new Error('Invalid token response from Didit.me');
+      }
+      return response.data; // Contains access_token, id_token, etc.
+    } catch (error: any) {
+      logger.error('Error exchanging code for token with Didit.me', {
+        message: error.message,
+        responseData: error.response?.data
+      });
+      throw new Error(`Failed to exchange code for token: ${error.response?.data?.error_description || error.message}`);
+    }
+  }
+
+  async getUserVerificationData(accessToken: string): Promise<any> {
+    await this.initializeConfig(); // Ensure config is loaded
+    if (!this.config.baseUrl) {
+      throw new Error('Didit API Base URL is not configured.');
+    }
+    // Standard OIDC UserInfo endpoint is typically /userinfo, Didit might use /me or similar
+    const userInfoUrl = `${this.config.baseUrl}/me`;
+
+    try {
+      const response = await axios.get(userInfoUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
+        }
+      });
+      const userData = response.data;
+      return { // Adapt this structure based on actual Didit.me response and application needs
+        id: userData.id || userData.sub,
+        name: userData.name,
+        email: userData.email,
+        email_verified: userData.email_verified,
+        profile: userData.profile,
+        raw_data: userData
+      };
+    } catch (error: any) {
+      logger.error('Error fetching user data from Didit.me', {
+        message: error.message,
+        responseData: error.response?.data
+      });
+      throw new Error(`Failed to retrieve user verification data: ${error.response?.data?.error_description || error.message}`);
+    }
   }
 
   /**
    * Test connection to the Didit API
    */
-  async testConnection(): Promise<{ success: boolean; message: string }> {
-    try {
-      if (!this.config.apiKey || !this.config.apiSecret) {
-        return {
-          success: false,
-          message: 'API credentials are not configured. Please provide both API key and secret.'
-        };
-      }
+  public async testConnection(): Promise<{ success: boolean; message: string }> {
+    await this.initializeConfig();
 
-      if (!this.config.enabled) {
-        return {
-          success: false,
-          message: 'Didit integration is currently disabled. Enable it to test the connection.'
-        };
-      }
-
-      // Test connection by making a real API call
-      const testUrl = `${this.config.baseUrl}/health`;
-      const response = await fetch(testUrl, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-          'X-API-Secret': this.config.apiSecret,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-
-      // Validate the credentials with auth endpoint
-      const authUrl = `${this.config.baseUrl}/auth/validate`;
-      const authResponse = await fetch(authUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.config.apiKey}`,
-          'X-API-Secret': this.config.apiSecret,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!authResponse.ok) {
-        throw new Error('Invalid credentials');
-      }
-      
-      return {
-        success: true,
-        message: 'Connection successful. Didit.me integration is properly configured and responsive.'
-      };
-    } catch (error) {
-      logger.error('Error testing Didit connection', { error: error instanceof Error ? error : new Error(String(error)), config: this.config });
-      return {
-        success: false,
-        message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      };
-    }
-  }
-
-  /**
-   * Ensure the Didit integration server is running
-   */
-  async ensureServerRunning(): Promise<void> {
     if (!this.config.enabled) {
-      throw new Error('Didit integration is not enabled');
+      return { success: false, message: 'Didit integration is currently disabled.' };
     }
-    
-    if (this.serverRunning) {
-      return;
-    }
-    
-    await this.startServer();
-  }
-
-  /**
-   * Start the Didit integration server
-   */
-  async startServer(): Promise<void> {
-    if (this.serverRunning) {
-      logger.info('Didit server is already running');
-      return;
+    const requiredConfigs = ['clientId', 'clientSecret', 'baseUrl', 'authUrl', 'tokenUrl'];
+    for (const key of requiredConfigs) {
+      if (!this.config[key as keyof DiditConfig]) {
+        return { success: false, message: `Didit configuration missing: ${key}. Please configure it in admin settings.` };
+      }
     }
 
     try {
-      const serverPath = path.join(process.cwd(), 'didit-integration', 'app.js');
-      
-      this.serverProcess = spawn('node', [serverPath], {
-        env: {
-          ...process.env,
-          DIDIT_API_KEY: this.config.apiKey || '',
-          DIDIT_API_SECRET: this.config.apiSecret || '',
-          DIDIT_BASE_URL: this.config.baseUrl || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
-          PORT: '5000',
-          HOST: '0.0.0.0'
-        },
-        detached: false,
-        stdio: 'pipe'
-      });
-      
-      this.serverProcess.stdout?.on('data', (data) => {
-        logger.info(`Didit server: ${data.toString().trim()}`);
-      });
-      
-      this.serverProcess.stderr?.on('data', (data) => {
-        logger.error(`Didit server error: ${data.toString().trim()}`);
-      });
-      
-      this.serverProcess.on('close', (code) => {
-        logger.info(`Didit server process exited with code ${code}`);
-        this.serverRunning = false;
-        this.serverProcess = null;
-      });
-      
-      // Wait for server to be ready
-      await new Promise<void>((resolve, reject) => {
-        // In a real implementation, we'd check if the server is responding
-        // For now, we'll just wait a short time
-        // setTimeout(() => {
-        //   this.serverRunning = true;
-        //   resolve();
-        // }, 1000);
-        const startTime = Date.now();
-        const timeout = 30000; // 30 seconds timeout for server to start
-        const interval = 2000; // Poll every 2 seconds
-
-        const pollServer = async () => {
-          try {
-            const diditServerUrl = `http://localhost:${process.env.DIDIT_INTEGRATION_PORT || '5000'}`;
-            const response = await fetch(diditServerUrl);
-            if (response.ok) {
-              logger.info('Didit integration server is responsive.');
-              this.serverRunning = true;
-              resolve();
-            } else {
-              throw new Error(`Server responded with ${response.status}`);
+      let urlToTest = this.config.authUrl!;
+      if (this.config.authUrl!.includes('/authorize')) {
+        try {
+            const wellKnownUrl = this.config.authUrl!.replace('/authorize', '/.well-known/openid-configuration');
+            const wellKnownResponse = await axios.head(wellKnownUrl, { timeout: 5000 });
+            if (wellKnownResponse.status >= 200 && wellKnownResponse.status < 500) {
+                urlToTest = wellKnownUrl;
             }
-          } catch (error) {
-            if (Date.now() - startTime > timeout) {
-              logger.error('Didit integration server start timed out.');
-              this.serverProcess?.kill(); 
-              reject(new Error('Didit server start timed out'));
-            } else {
-              setTimeout(pollServer, interval);
-            }
-          }
-        };
-        pollServer();
+        } catch (e) {
+            logger.warn('Didit .well-known/openid-configuration endpoint not found or failed, testing authUrl directly.', { authUrl: this.config.authUrl, error: e instanceof Error ? e.message : String(e) });
+        }
+      }
+      
+      const response = await axios.head(urlToTest, { timeout: 5000 });
+      if (response.status >= 200 && response.status < 500) {
+        return { success: true, message: `Didit configuration appears valid and Auth URL (${urlToTest}) is reachable.` };
+      }
+      return { success: false, message: `Auth URL (${urlToTest}) returned status ${response.status}.`};
+    } catch (error: any) {
+      logger.error('Error testing Didit connection (Auth URL reachability test)', {
+        errorMessage: error.message,
+        authUrl: this.config.authUrl
       });
-      
-      logger.info('Didit integration server started');
-    } catch (error) {
-      logger.error('Failed to start Didit integration server', { error: error instanceof Error ? error : new Error(String(error)) });
-      throw error;
+      return { success: false, message: `Failed to reach Auth URL (${this.config.authUrl}): ${error.message}. Check network/DNS.` };
     }
   }
 
-  /**
-   * Stop the Didit integration server
-   */
-  stopServer(): void {
-    if (this.serverProcess) {
-      this.serverProcess.kill();
-      this.serverProcess = null;
-      this.serverRunning = false;
-      logger.info('Didit integration server stopped');
-    }
-  }
-
-  /**
-   * Check verification status with Didit service
-   */
-  async checkVerificationStatus(email: string): Promise<{ verified: boolean, status: string, verificationDetails?: any }> {
-    try {
-      if (!email) {
-        throw new Error('Email is required');
-      }
-
-      if (!this.config.enabled) {
-        return { 
-          verified: false, 
-          status: 'none',
-          verificationDetails: null
-        };
-      }
-
-      if (!this.initialized) {
-        await this.initializeConfig();
-      }
-
-      // Ensure the server is running
-      await this.ensureServerRunning();
-      
-      // This would normally make an API call to the Didit service
-      // For now, we'll just return a fake status for demonstration
-      
-      // In a real implementation, we would check the user's verification status in our database
-      // or make an API call to Didit's service
-      const user = await storage.getUserByEmail(email);
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      const userProfile = await storage.getUserProfile(user.id);
-      if (!userProfile) {
-        return { verified: false, status: 'none' };
-      }
-      
-      // Check if user has verification status in profile
-      if (userProfile.verificationStatus === 'verified' && userProfile.verificationId) {
-        // If verified, return details (in a real implementation, we might fetch these from Didit)
-        return {
-          verified: true,
-          status: 'verified',
-          verificationDetails: {
-            id: userProfile.verificationId,
-            timestamp: userProfile.verifiedAt?.toISOString() || new Date().toISOString(),
-            documentType: 'National ID Card', // Example data
-            fullName: `${user.firstName} ${user.lastName}`,
-            documentNumber: '1234567890' // Example data
-          }
-        };
-      } else if (userProfile.verificationStatus === 'pending') {
-        return {
-          verified: false,
-          status: 'pending'
-        };
-      } else if (userProfile.verificationStatus === 'failed') {
-        return {
-          verified: false,
-          status: 'failed'
-        };
-      }
-      
-      // Default status
-      return { verified: false, status: 'none' };
-    } catch (error) {
-      logger.error('Error checking verification status', { email, error: error instanceof Error ? error : new Error(String(error)) });
-      throw error;
-    }
-  }
-
-  /**
-   * Get verification details from Didit service
-   */
-  async getVerificationDetails(verificationId: string): Promise<any> {
-    try {
-      if (!this.config.enabled) {
-        throw new Error('Didit integration is not enabled');
-      }
-
-      // This would normally make an API call to the Didit service
-      // For now, we'll just return fake details
-      
-      return {
-        id: verificationId,
-        timestamp: new Date().toISOString(),
-        documentType: 'National ID Card',
-        fullName: 'John Doe',
-        documentNumber: '1234567890'
-      };
-    } catch (error) {
-      logger.error('Error getting verification details', { verificationId, error: error instanceof Error ? error : new Error(String(error)) });
-      throw error;
-    }
-  }
-
-  /**
-   * Initiates the verification process with Didit.me
-   * @param email The email of the user to verify
-   * @param callbackUrl The URL Didit should redirect to after verification
-   * @returns The redirect URL for the user to start verification
-   */
-  async startVerification(email: string, callbackUrl: string): Promise<string> {
+  public async startVerification(state: string, callbackUrl: string): Promise<string> {
+    await this.initializeConfig();
     if (!this.config.enabled) {
       throw new Error('Didit integration is not enabled.');
     }
-    if (!this.config.apiKey || !this.config.apiSecret) {
-      throw new Error('Didit API key or secret is not configured.');
+    if (!this.config.clientId) {
+      throw new Error('Didit Client ID is not configured.');
     }
-    if (!email) {
-      throw new Error('Email is required to start verification.');
+    if (!state) {
+      throw new Error('State parameter is required to start verification.');
     }
     if (!callbackUrl) {
       throw new Error('Callback URL is required.');
     }
+    const authorizationUrl = this.getAuthorizationUrl(state, callbackUrl);
+    logger.info('Generated Didit authorization URL', { url: authorizationUrl });
+    return authorizationUrl;
+  }
 
-    logger.warn(
-      '*****************************************************************************\n' +
-      '** WARNING: DiditConnector.startVerification is using a MOCK implementation. **\n' +
-      '** This will NOT perform real identity verification.                         **\n' +
-      '** TODO: Implement actual API call to Didit.me service.                      **\n' +
-      '*****************************************************************************'
-    );
-
-    // In a real implementation, this would involve:
-    // 1. Making an API call to this.config.baseUrl (e.g., /verifications/initiate)
-    //    with the email, callbackUrl, and API credentials (this.config.apiKey, this.config.apiSecret).
-    //    The request body might include: { email, callback_url: callbackUrl, client_reference_id: userId_or_some_local_id }
-    // 2. Receiving a response from Didit.me containing a unique verification ID and a redirect URL for the user.
-    //    Example response: { verification_id: "didit_verification_XYZ", redirect_uri: "https://verify.didit.me/start/XYZ" }
-    // 3. Storing the verification_id and associating it with the user (e.g., in userProfile or a dedicated table)
-    //    to later query the status using this ID or receive webhook updates.
-    // 4. Returning the redirect_uri provided by Didit.me for the user to start the verification flow.
-
-    // For now, returning a MOCK redirect URL that points to a local mock verification page.
-    // Ensure this matches the mock verification route in server/routes/didit-verification.ts
-    let appBaseUrl = process.env.APP_BASE_URL;
-    if (!appBaseUrl) {
-      if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-        appBaseUrl = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.replit.dev`;
-      } else {
-        const port = process.env.PORT || '8080'; // Default to 8080 if PORT is not set
-        appBaseUrl = `http://localhost:${port}`;
-      }
+  public async checkVerificationStatus(state: string): Promise<{ status: string; details?: any }> {
+    await this.initializeConfig();
+    if (!this.config.enabled) {
+      throw new Error('Didit integration is not enabled.');
     }
-    const mockRedirectUrl = `${appBaseUrl}/api/verification/mockverify?email=${encodeURIComponent(email)}`;
-    
-    // Optionally, we could still try to use the spawned didit-integration server if it handles initiation
-    // const diditIntegrationServerUrl = `http://localhost:${process.env.DIDIT_INTEGRATION_PORT || '5000'}`;
-    // const mockRedirectUrl = `${diditIntegrationServerUrl}/initiate?email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    logger.warn('checkVerificationStatus is called, but its role in OAuth flow is unclear. Returning mock status.', { state });
 
-    return mockRedirectUrl;
+    const session = await storage.getDiditSessionByState(state);
+    if (session && session.access_token && session.user_profile) {
+      return { status: 'completed', details: JSON.parse(session.user_profile as string || '{}') };
+    }
+    if (session && session.access_token && !session.user_profile) {
+      return { status: 'token_exchanged_pending_user_data', details: { message: "Access token obtained, user data fetch pending." } };
+    }
+    if (session && session.auth_code) {
+       return { status: 'code_received_pending_token', details: { message: "Authorization code received, pending token exchange." } };
+    }
+    if (session) {
+      return { status: 'pending_callback', details: {message: "Authorization URL generated, awaiting callback."}};
+    }
+    return { status: 'unknown_or_not_started', details: { message: "No active Didit session found for this state." } };
+  }
+
+  public async getVerificationDetails(state: string): Promise<DiditVerificationRecord | null> {
+    await this.initializeConfig();
+    if (!this.config.enabled) {
+      throw new Error('Didit integration is not enabled.');
+    }
+    logger.info('Attempting to get verification details (user data stored in session)', { state });
+    
+    const session = await storage.getDiditSessionByState(state);
+
+    if (session && session.user_profile) {
+      const profile = typeof session.user_profile === 'string' ? JSON.parse(session.user_profile) : session.user_profile;
+
+      const record: DiditVerificationRecord = {
+        state: session.state,
+        status: 'completed',
+        didit_user_id: profile.id || profile.sub,
+        user_profile: profile,
+        created_at: session.created_at ? new Date(session.created_at) : new Date(),
+        updated_at: session.updated_at ? new Date(session.updated_at) : new Date(),
+      };
+      return record;
+    }
+
+    logger.warn('No user profile / verification details found in session for state', { state });
+    return null;
+  }
+
+  public isEnabled(): boolean {
+    if (!this.initialized) {
+        logger.warn("Checking isEnabled before DiditConnector is fully initialized. Config might be stale.");
+    }
+    return !!this.config.enabled;
   }
 }
 
-export const diditConnector = new DiditConnector();
+export const diditConnector = DiditConnector.getInstance();

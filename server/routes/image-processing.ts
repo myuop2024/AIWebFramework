@@ -27,8 +27,8 @@ const upload = multer({
 
 // Ensure processed images directory exists
 function ensureProcessedDirExists() {
-  // In ESM modules, __dirname is not available, so use the current working directory
-  const processedDir = path.join(process.cwd(), 'uploads/processed');
+  // Files will be served from /uploads/*, which maps to public/uploads/*
+  const processedDir = path.join(process.cwd(), 'public/uploads/processed');
   if (!fs.existsSync(processedDir)) {
     fs.mkdirSync(processedDir, { recursive: true });
   }
