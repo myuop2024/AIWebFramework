@@ -934,6 +934,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Registration form operations
+  async getAllRegistrationForms(): Promise<RegistrationForm[]> {
+    try {
+      return await db.select().from(registrationForms).orderBy(asc(registrationForms.id));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all registration forms: ${err.message}`, err);
+      throw err;
+    }
+  }
+
   // Report Methods
   async createReport(reportData: InsertReport): Promise<Report> {
     try {
