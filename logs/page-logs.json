@@ -4623,5 +4623,53 @@
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
     "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fchat&id=%3Armqf%3A",
     "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T01:47:52.459Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin%2Fuser-imports&id=%3Arpkl%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T01:47:52.467Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin%2Fuser-imports&id=%3Arpkl%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T04:54:07.460Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T04:54:07.467Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T05:55:02.957Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/admin/user-imports",
+    "timestamp": "2025-05-31T05:55:02.963Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
   }
 ]
