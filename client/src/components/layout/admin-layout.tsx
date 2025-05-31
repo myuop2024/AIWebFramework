@@ -17,6 +17,10 @@ import {
   LucideIcon,
   LogOut,
   Home,
+  UserCheck, // Added for User Verification
+  ShieldCheck, // Added for Role Management
+  MapPin, // Added for Polling Station Management
+  ClipboardList, // Added for Station Assignments
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -82,46 +86,87 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       href: '/admin-dashboard',
       icon: BarChart
     },
+    // Users & Access Control Section Header
     {
-      name: 'Observer Management',
-      href: '/admin/verification',
-      icon: Users
+      name: 'Users & Access Control',
+      isHeader: true
+    },
+    {
+      name: 'User Management', // Renamed from 'Observer Management'
+      href: '/admin/user-management', // New or updated href
+      icon: Users // Existing, or UserCog / UsersRound
+    },
+    {
+      name: 'User Verification', // Was part of 'Observer Management', now more specific
+      href: '/admin/verification', // Existing href
+      icon: UserCheck // New Icon
+    },
+    {
+      name: 'Role Management', // New item
+      href: '/admin/role-management', // New href
+      icon: ShieldCheck // New Icon
+    },
+    {
+      name: 'User Imports',
+      href: '/admin/user-imports', // Existing
+      icon: UserPlus // Existing
+    },
+    // Content & Data Management Section Header
+    {
+      name: 'Content & Data Management',
+      isHeader: true
     },
     {
       name: 'Reports Management',
       href: '/admin/reports',
-      icon: FileText
-    },
-    {
-      name: 'Analytics',
-      href: '/admin/analytics',
-      icon: LineChart
+      icon: FileText // Existing
     },
     {
       name: 'Registration Forms',
       href: '/admin/registration-forms',
-      icon: Pencil
-    },
-    {
-      name: 'Training Integrations',
-      href: '/admin/training-integrations',
-      icon: BookOpen
-    },
-    {
-      name: 'User Imports',
-      href: '/admin/user-imports',
-      icon: UserPlus
+      icon: Pencil // Existing
     },
     {
       name: 'ID Card Management',
       href: '/admin/id-cards',
-      icon: CreditCard
+      icon: CreditCard // Existing
     },
     {
-      name: 'System Settings',
+      name: 'Polling Station Management',
+      href: '/admin/polling-station-management',
+      icon: MapPin,
+    },
+    {
+      name: 'Station Assignments',
+      href: '/admin/station-assignments',
+      icon: ClipboardList,
+    },
+    {
+      name: 'Station Analytics',
+      href: '/admin/station-analytics',
+      icon: BarChart, // Reusing BarChart as BarChartHorizontal is not imported
+    },
+    // Platform & Integrations Section Header
+    {
+      name: 'Platform & Integrations',
+      isHeader: true
+    },
+    {
+      name: 'Analytics',
+      href: '/admin/analytics',
+      icon: LineChart // Existing
+    },
+    {
+      name: 'Training Integrations',
+      href: '/admin/training-integrations',
+      icon: BookOpen // Existing
+    },
+    // This will become the entry point for the Settings Hub
+    {
+      name: 'Settings', // Renamed from 'System Settings'
       href: '/admin/settings',
-      icon: Settings,
-      highlight: true
+      icon: Settings, // Existing
+      highlight: true // Keep or remove highlight as per design for the new structure
     },
   ];
 
@@ -190,6 +235,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
         <nav className="mt-6">
           <ul className="space-y-1">
             {navigationItems.map((item) => {
+              if (item.isHeader) {
+                return (
+                  <li key={item.name} className={cn("pt-4 pb-1 px-3", collapsed ? "hidden" : "")}>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{item.name}</span>
+                  </li>
+                );
+              }
               const isActive = location.startsWith(item.href);
               return (
                 <li key={item.name} className={collapsed ? "px-1" : "px-2"}>

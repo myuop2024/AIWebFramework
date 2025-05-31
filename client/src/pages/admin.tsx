@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Tabs, TabsContent, TabsList, TabsTrigger removed
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ export default function Admin() {
   const [, navigate] = useLocation();
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("users");
+  // const [activeTab, setActiveTab] = useState("users"); // Removed activeTab state
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -92,238 +92,17 @@ export default function Admin() {
     }, 800);
   };
   
-  // Handler for user management
-  const handleManageUsers = () => {
-    setIsActionLoading(true);
-    
-    // Import dynamically to avoid circular dependencies
-    import('@/components/admin/user-management').then(({ UserManagement }) => {
-      setIsActionLoading(false);
-      openModal(
-        "User Management", 
-        <UserManagement />
-      );
-    }).catch(error => {
-      console.error('Error loading UserManagement component:', error);
-      setIsActionLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to load user management component",
-        variant: "destructive",
-      });
-    });
-  };
+  // handleManageUsers function removed
   
-  // Handler for processing verifications
-  const handleProcessVerifications = () => {
-    setIsActionLoading(true);
-    
-    import('@/components/admin/verification-queue').then((module) => {
-      // Make sure we get the component correctly regardless of export style
-      const VerificationQueue = module.default || module.VerificationQueue;
-      setIsActionLoading(false);
-      openModal(
-        "User Verification", 
-        <VerificationQueue />
-      );
-    }).catch(error => {
-      console.error('Error loading VerificationQueue component:', error);
-      setIsActionLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to load verification queue component",
-        variant: "destructive",
-      });
-    });
-  };
+  // handleProcessVerifications function removed
   
-  // Handler for editing roles
-  const handleEditRoles = () => {
-    setIsActionLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsActionLoading(false);
-      openModal(
-        "Edit User Roles", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">User Roles Management</h3>
-          <div class="space-y-4">
-            <div class="p-3 bg-gray-50 rounded border">
-              <h4 class="font-medium mb-2">Administrator</h4>
-              <p class="text-sm text-gray-600 mb-2">Full access to all system functions and settings</p>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
-                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border">
-              <h4 class="font-medium mb-2">Observer</h4>
-              <p class="text-sm text-gray-600 mb-2">Can submit reports and view assigned polling stations</p>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
-                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border">
-              <h4 class="font-medium mb-2">Supervisor</h4>
-              <p class="text-sm text-gray-600 mb-2">Can review reports and manage observers</p>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
-                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-gray-50 rounded border">
-              <h4 class="font-medium mb-2">Analyst</h4>
-              <p class="text-sm text-gray-600 mb-2">View-only access to reports and analytics</p>
-              <div class="flex gap-2">
-                <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Edit Permissions</button>
-                <button class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">Rename</button>
-              </div>
-            </div>
-            
-            <button class="w-full mt-4 px-4 py-2 bg-primary text-white rounded">Add New Role</button>
-          </div>
-        </div>
-        `
-      );
-    }, 800);
-  };
+  // handleEditRoles function removed
   
-  // Handler for managing stations
-  const handleManageStations = () => {
-    setIsActionLoading(true);
-    
-    // Import dynamically to avoid circular dependencies
-    import('@/components/admin/polling-station-management').then(({ PollingStationManagement }) => {
-      setIsActionLoading(false);
-      openModal(
-        "Polling Station Management", 
-        <PollingStationManagement />
-      );
-    }).catch(error => {
-      console.error('Error loading PollingStationManagement component:', error);
-      setIsActionLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to load polling station management component",
-        variant: "destructive",
-      });
-    });
-  };
+  // handleManageStations function removed
   
-  // Handler for managing assignments
-  const handleManageAssignments = () => {
-    setIsActionLoading(true);
-    
-    // Import dynamically to avoid circular dependencies
-    import('@/components/admin/assignment-management').then(({ AssignmentManagement }) => {
-      setIsActionLoading(false);
-      openModal(
-        "Station Assignments", 
-        <AssignmentManagement />
-      );
-    }).catch(error => {
-      console.error('Error loading AssignmentManagement component:', error);
-      setIsActionLoading(false);
-      toast({
-        title: "Error",
-        description: "Failed to load assignment management component",
-        variant: "destructive",
-      });
-    });
-  };
+  // handleManageAssignments function removed
   
-  // Handler for viewing station analytics
-  const handleViewStationAnalytics = () => {
-    setIsActionLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsActionLoading(false);
-      openModal(
-        "Station Analytics", 
-        `
-        <div>
-          <h3 class="text-lg font-medium mb-4">Polling Station Analytics</h3>
-          
-          <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="p-3 bg-gray-50 rounded border text-center">
-              <div class="text-2xl font-bold text-red-600">14</div>
-              <div class="text-sm">High Risk Stations</div>
-            </div>
-            <div class="p-3 bg-gray-50 rounded border text-center">
-              <div class="text-2xl font-bold text-amber-600">32</div>
-              <div class="text-sm">Medium Risk Stations</div>
-            </div>
-            <div class="p-3 bg-gray-50 rounded border text-center">
-              <div class="text-2xl font-bold text-green-600">78</div>
-              <div class="text-sm">Low Risk Stations</div>
-            </div>
-          </div>
-          
-          <div class="space-y-3 mb-6">
-            <h4 class="font-medium">Station Coverage</h4>
-            <div class="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full bg-primary" style="width: 82%"></div>
-            </div>
-            <div class="flex justify-between text-sm">
-              <span>0%</span>
-              <span>82% Coverage</span>
-              <span>100%</span>
-            </div>
-          </div>
-          
-          <div class="space-y-4">
-            <h4 class="font-medium">High Risk Stations</h4>
-            
-            <div class="p-3 bg-red-50 rounded border">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="font-medium">Central High School</div>
-                  <div class="text-sm text-gray-500">Risk Score: 8.7/10</div>
-                </div>
-                <div>
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-red-50 rounded border">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="font-medium">West Side Elementary</div>
-                  <div class="text-sm text-gray-500">Risk Score: 8.2/10</div>
-                </div>
-                <div>
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-                </div>
-              </div>
-            </div>
-            
-            <div class="p-3 bg-red-50 rounded border">
-              <div class="flex justify-between items-center">
-                <div>
-                  <div class="font-medium">Memorial Stadium</div>
-                  <div class="text-sm text-gray-500">Risk Score: 7.9/10</div>
-                </div>
-                <div>
-                  <button class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">View Details</button>
-                </div>
-              </div>
-            </div>
-            
-            <button class="w-full mt-2 px-4 py-2 bg-gray-100 text-gray-800 rounded">View All High Risk Stations</button>
-          </div>
-        </div>
-        `
-      );
-    }, 800);
-  };
+  // handleViewStationAnalytics function removed
   
   // Handler for sending notification
   const handleSendNotification = () => {
@@ -433,75 +212,7 @@ export default function Admin() {
     }, 800);
   };
   
-  // Handler for review reports
-  const handleReviewReports = () => {
-    setIsActionLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsActionLoading(false);
-      openModal(
-        "Report Management", 
-        `
-        <div>
-          <div class="flex justify-between mb-4">
-            <h3 class="text-lg font-medium">Reports Requiring Review (18)</h3>
-            <div>
-              <select class="text-sm border rounded p-1">
-                <option>All Reports</option>
-                <option>Pending Review</option>
-                <option>Flagged Issues</option>
-                <option>Approved</option>
-              </select>
-            </div>
-          </div>
-          <ul class="space-y-3">
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Incident Report #143</div>
-                <div class="text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Pending Review</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Station:</span> Main City Hall
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Submitted by:</span> John Smith
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Date:</span> May 4, 2025 (2:34 PM)
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Review Details</button>
-              </div>
-            </li>
-            <li class="p-3 border rounded">
-              <div class="flex justify-between mb-1">
-                <div class="font-medium">Observer Report #144</div>
-                <div class="text-sm text-red-600 bg-red-50 px-2 py-0.5 rounded">Flagged</div>
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Station:</span> Central Community Center
-              </div>
-              <div class="text-sm mb-1">
-                <span class="font-medium">Submitted by:</span> Sarah Wilson
-              </div>
-              <div class="text-sm mb-2">
-                <span class="font-medium">Date:</span> May 4, 2025 (3:15 PM)
-              </div>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 bg-green-600 text-white rounded text-sm">Approve</button>
-                <button class="px-3 py-1 bg-red-600 text-white rounded text-sm">Reject</button>
-                <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Review Details</button>
-              </div>
-            </li>
-          </ul>
-        </div>
-        `
-      );
-    }, 800);
-  };
+  // handleReviewReports function removed
   
   // Note: handleManageEvents function is already defined above
   
@@ -663,112 +374,15 @@ export default function Admin() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-8">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Users</span>
-          </TabsTrigger>
-          <TabsTrigger value="permissions" className="flex items-center gap-2">
-            <Lock className="h-4 w-4" />
-            <span className="hidden sm:inline">Permissions</span>
-          </TabsTrigger>
-          <TabsTrigger value="stations" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            <span className="hidden sm:inline">Polling Stations</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Reports</span>
-          </TabsTrigger>
-          <TabsTrigger value="events" className="flex items-center gap-2">
-            <CalendarClock className="h-4 w-4" />
-            <span className="hidden sm:inline">Events</span>
-          </TabsTrigger>
-          <TabsTrigger value="system" className="flex items-center gap-2">
-            <Server className="h-4 w-4" />
-            <span className="hidden sm:inline">System</span>
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs component and TabsList removed */}
 
-        {/* Users Tab */}
-        <TabsContent value="users" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  User Management
-                </CardTitle>
-                <CardDescription>
-                  Manage observers, coordinators, and administrators
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total Users</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.users?.total || "0"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Pending Verification</span>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : systemStats?.users?.byRole?.pending || "0"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Admin Users</span>
-                  <Badge>{statsLoading ? "..." : systemStats?.users?.byRole?.admin || "0"}</Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleManageUsers}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Manage Users"}
-                </Button>
-              </CardFooter>
-            </Card>
+      {/* Users Section (formerly Users Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">User Management Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* User Management Card Removed */}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  User Verification
-                </CardTitle>
-                <CardDescription>
-                  Review and approve new observer registrations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Pending Documents</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.users?.byRole?.pending_documents || "0"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">ID Verifications</span>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : systemStats?.users?.byRole?.pending_verification || "0"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Rejected</span>
-                  <Badge variant="destructive">{statsLoading ? "..." : systemStats?.users?.byRole?.rejected || "0"}</Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleProcessVerifications}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Process Verifications"}
-                </Button>
-              </CardFooter>
-            </Card>
+            {/* User Verification Card Removed */}
 
             <Card>
               <CardHeader>
@@ -806,52 +420,13 @@ export default function Admin() {
               </CardFooter>
             </Card>
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Permissions Tab */}
-        <TabsContent value="permissions" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-primary" />
-                  Role Management
-                </CardTitle>
-                <CardDescription>
-                  Manage user roles and permissions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="font-medium">Administrator</span>
-                    <Badge>Full Access</Badge>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="font-medium">Coordinator</span>
-                    <Badge variant="outline">Limited Access</Badge>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="font-medium">Observer</span>
-                    <Badge variant="outline">Restricted Access</Badge>
-                  </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="font-medium">Guest</span>
-                    <Badge variant="secondary">View Only</Badge>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleEditRoles}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Edit Roles"}
-                </Button>
-              </CardFooter>
-            </Card>
+      {/* Permissions Section (formerly Permissions Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Permissions Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Role Management Card Removed */}
 
             <Card>
               <CardHeader>
@@ -917,226 +492,27 @@ export default function Admin() {
               </CardFooter>
             </Card>
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Polling Stations Tab */}
-        <TabsContent value="stations" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Polling Stations
-                </CardTitle>
-                <CardDescription>
-                  Manage election polling stations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total Stations</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.pollingStations?.total || "0"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Active Stations</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {statsLoading ? "..." : 
-                      // Calculate active stations by subtracting high-risk (inactive) stations from total
-                      (systemStats?.pollingStations?.total || 0) - (systemStats?.pollingStations?.riskAssessment?.highRisk || 0)
-                    }
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Observer Coverage</span>
-                  <Badge>{statsLoading ? "..." : 
-                    // Calculate percentage of stations that have observer coverage
-                    systemStats?.pollingStations?.total && systemStats.assignments?.active
-                      ? Math.round((systemStats.assignments.active / systemStats.pollingStations.total) * 100) + "%"
-                      : "0%"
-                  }</Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleManageStations}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Manage Stations"}
-                </Button>
-              </CardFooter>
-            </Card>
+      {/* Polling Stations Section (formerly Polling Stations Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Polling Stations Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Polling Stations Card Removed */}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  Station Assignments
-                </CardTitle>
-                <CardDescription>
-                  Assign observers to polling stations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total Assignments</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : systemStats?.assignments?.active || "0"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Unassigned Stations</span>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : 
-                      // Calculate unassigned stations
-                      Math.max(0, (systemStats?.pollingStations?.total || 0) - (systemStats?.assignments?.active || 0))
-                    }
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Coverage Rate</span>
-                  <Badge>{statsLoading ? "..." : 
-                    systemStats?.pollingStations?.total && systemStats?.assignments?.active
-                      ? Math.round((systemStats.assignments.active / systemStats.pollingStations.total) * 100) + "%"
-                      : "0%"
-                  }</Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleManageAssignments}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Manage Assignments"}
-                </Button>
-              </CardFooter>
-            </Card>
+            {/* Station Assignments Card Removed */}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart className="h-5 w-5 text-primary" />
-                  Station Analytics
-                </CardTitle>
-                <CardDescription>
-                  View station coverage and statistics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">High Risk Stations</span>
-                  <Badge variant="destructive">{statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.highRisk || "0"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Medium Risk</span>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.mediumRisk || "0"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Low Risk</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    {statsLoading ? "..." : systemStats?.pollingStations?.riskAssessment?.lowRisk || "0"}
-                  </Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default"
-                  onClick={handleViewStationAnalytics}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "View Analytics"}
-                </Button>
-              </CardFooter>
-            </Card>
+            {/* Station Analytics Card Removed */}
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Reports Tab */}
-        <TabsContent value="reports" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Report Management
-                </CardTitle>
-                <CardDescription>
-                  Manage observer reports and data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Total Reports</span>
-                  <Badge variant="secondary">
-                    {statsLoading ? "..." : 
-                      // Sum all report counts from all statuses
-                      Object.values(systemStats?.reports?.byStatus || {}).reduce((sum: number, count: number) => sum + count, 0)
-                    }
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Pending Review</span>
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    {statsLoading ? "..." : systemStats?.reports?.pending || "0"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Flagged Issues</span>
-                  <Badge variant="destructive">
-                    {statsLoading ? "..." : systemStats?.reports?.byType?.flagged || "0"}
-                  </Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default" 
-                  onClick={handleReviewReports}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Loading..." : "Review Reports"}
-                </Button>
-              </CardFooter>
-            </Card>
+      {/* Reports Section (formerly Reports Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Reports Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Report Management Card Removed */}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Form Templates
-                </CardTitle>
-                <CardDescription>
-                  Manage report templates and fields
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Active Templates</span>
-                  <Badge variant="secondary">{statsLoading ? "..." : "8"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Draft Templates</span>
-                  <Badge variant="outline">{statsLoading ? "..." : "3"}</Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Required Fields</span>
-                  <Badge>{statsLoading ? "..." : "12"}</Badge>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant="default" 
-                  onClick={() => navigate("/form-templates")}
-                >
-                  Edit Templates
-                </Button>
-              </CardFooter>
-            </Card>
+            {/* Form Templates Card Removed */}
 
             <Card>
               <CardHeader>
@@ -1176,11 +552,12 @@ export default function Admin() {
               </CardFooter>
             </Card>
           </div>
-        </TabsContent>
+        </div>
 
-        {/* Events Tab */}
-        <TabsContent value="events" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Events Section (formerly Events Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">Events Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1414,11 +791,12 @@ export default function Admin() {
               </CardFooter>
             </Card>
           </div>
-        </TabsContent>
+        </div>
 
-        {/* System Tab */}
-        <TabsContent value="system" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* System Section (formerly System Tab) */}
+      <div className="space-y-6 mb-12">
+        <h2 className="text-2xl font-semibold text-gray-800 mt-8 mb-4">System Section</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1557,8 +935,8 @@ export default function Admin() {
               </CardFooter>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      {/* Closing Tabs tag removed */}
 
       {/* Modal for displaying content */}
       <AdminModal 

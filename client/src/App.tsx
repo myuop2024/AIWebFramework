@@ -20,7 +20,7 @@ import Chat from "@/pages/chat";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
 import AdminDashboard from "@/pages/admin-dashboard";
-import VerificationPage from "@/pages/admin/verification";
+import UserVerificationPage from "@/pages/admin/verification"; // Renamed import for clarity
 import TrainingIntegrationsAdmin from "@/pages/admin/training-integrations";
 import RegistrationFormsAdmin from "@/pages/admin/registration-forms";
 import IdCardManagement from "@/pages/admin/id-cards";
@@ -30,6 +30,12 @@ import AdminSettings from "@/pages/admin/settings";
 import RoutePlanningPage from "@/pages/route-planning-page";
 import ObserverRoutePlanningPage from "@/pages/observer-route-planning";
 import DirectMapAccess from "@/pages/direct-map-access";
+import UserManagementPage from "@/pages/admin/user-management-page"; // Added for User Management
+import RoleManagementPage from "@/pages/admin/role-management-page"; // Added for Role Management
+import PollingStationManagementPage from "@/pages/admin/polling-station-management-page"; // Added for Polling Station Management
+import AssignmentManagementPage from "@/pages/admin/assignment-management-page"; // Added for Station Assignments
+import StationAnalyticsPage from "@/pages/admin/station-analytics-page"; // Added for Station Analytics
+import ReportsManagementPage from "@/pages/admin/reports-management-page"; // Added for Admin Report Management
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
@@ -100,14 +106,20 @@ function Router() {
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin" component={Admin} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin-dashboard" component={AdminDashboard} allowedRoles={["admin", "director"]} />
-      <RoleProtectedRoute path="/admin/verification" component={VerificationPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/verification" component={UserVerificationPage} allowedRoles={["admin", "director"]} /> {/* Updated component */}
       <RoleProtectedRoute path="/admin/training-integrations" component={TrainingIntegrationsAdmin} allowedRoles={["admin", "director"]} />
-      <RoleProtectedRoute path="/admin/registration-forms" component={RegistrationFormsAdmin} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/registration-forms" component={FormTemplates} allowedRoles={["admin", "director"]} /> {/* Changed component to FormTemplates */}
       <RoleProtectedRoute path="/admin/id-cards" component={IdCardManagement} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/polling-station-management" component={PollingStationManagementPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/station-assignments" component={AssignmentManagementPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/station-analytics" component={StationAnalyticsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/reports" component={ReportsManagementPage} allowedRoles={["admin", "director"]} /> {/* New Admin Route for Reports */}
       <RoleProtectedRoute path="/admin/user-imports" component={UserImportsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/role-management" component={RoleManagementPage} allowedRoles={["admin", "director"]} /> {/* New Route */}
+      <RoleProtectedRoute path="/admin/user-management" component={UserManagementPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
       
       {/* Supervisor Routes */}

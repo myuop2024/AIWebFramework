@@ -2,13 +2,13 @@ import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { 
-  Home, User, MapPin, FileText, BookOpen, 
+  Home, User, MapPin, FileText,
   HelpCircle, MessageSquare, LogOut, 
-  FileEdit, ClipboardList, Settings, BarChart,
-  UserCheck, GraduationCap, Navigation, ChevronDown,
-  Users, Shield, CalendarRange, PanelTop, Cog,
+  FileEdit, ClipboardList, Settings,
+  GraduationCap, Navigation, ChevronDown,
+  Users, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
-  Kanban, Trello, X, Sparkles, Upload
+  Kanban, Trello, X, Sparkles
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -78,12 +78,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   // Admin links (only shown to users with admin or director role)
   const adminLinks = isAdmin ? [
     { path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" /> },
-    { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5" /> },
-    { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5" /> },
-    { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" /> },
-    { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" /> },
-    { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" /> },
-    { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-5 w-5" /> },
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
