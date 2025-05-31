@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import fs from 'fs';
+import crypto from 'crypto'; // Added
+import { getKey } from '../services/encryption-service'; // Added
 import path from 'path';
 import { createCanvas } from 'canvas';
 import { imageProcessingService } from '../services/image-processing-service';
@@ -82,8 +84,15 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
     const filename = imageProcessingService.generateFilename(req.file.originalname);
     const processedDir = ensureProcessedDirExists();
     const filePath = path.join(processedDir, filename);
+
+    // Encrypt the buffer
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', getKey(), iv);
+    const encryptedBuffer = Buffer.concat([cipher.update(result.buffer), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    const profilePhotoIvString = iv.toString('hex') + ':' + authTag.toString('hex');
     
-    fs.writeFileSync(filePath, result.buffer);
+    fs.writeFileSync(filePath, encryptedBuffer); // Write encrypted buffer
 
     // Return the URL path to the processed image
     const imageUrl = `/uploads/processed/${filename}`;
@@ -140,13 +149,15 @@ router.post('/process-profile-photo', upload.single('profilePhoto'), async (req:
         if (profile) {
           // Update existing profile
           await storage.updateUserProfile(req.session.userId, {
-            profilePhotoUrl: imageUrl
+            profilePhotoUrl: imageUrl,
+            profile_photo_iv: profilePhotoIvString // Save the IV string
           });
         } else {
           // Create new profile
           await storage.createUserProfile({
             userId: req.session.userId,
-            profilePhotoUrl: imageUrl
+            profilePhotoUrl: imageUrl,
+            profile_photo_iv: profilePhotoIvString // Save the IV string
           });
         }
       }
@@ -213,15 +224,23 @@ router.post('/process-id-photo', upload.single('idPhoto'), async (req: Request, 
     const filename = imageProcessingService.generateFilename(req.file.originalname);
     const processedDir = ensureProcessedDirExists();
     const filePath = path.join(processedDir, filename);
-    
-    fs.writeFileSync(filePath, processedImageBuffer);
+
+    // Encrypt the buffer
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', getKey(), iv);
+    const encryptedBuffer = Buffer.concat([cipher.update(processedImageBuffer), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    const idPhotoIvString = iv.toString('hex') + ':' + authTag.toString('hex');
+
+    fs.writeFileSync(filePath, encryptedBuffer); // Write encrypted buffer
 
     // Return the URL path to the processed image
     const imageUrl = `/uploads/processed/${filename}`;
     
     res.status(200).json({ 
       message,
-      imageUrl
+      imageUrl,
+      idPhotoIv: idPhotoIvString // Return IV string for client to save
     });
   } catch (error) {
     console.error('Error enhancing ID photo:', error);

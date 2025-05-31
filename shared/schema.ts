@@ -88,6 +88,9 @@ export const users = pgTable("users", {
   twoFactorVerified: boolean("two_factor_verified").default(false),
   // Recovery codes for 2FA (stored as JSON array)
   recoveryCodes: jsonb("recovery_codes"),
+  // IV for personal info encryption
+  personalInfoIv: jsonb("personal_info_iv").nullable(),
+  isPersonalInfoEncrypted: boolean("is_personal_info_encrypted").default(false).notNull(),
 });
 
 // User profile table for KYC
@@ -121,8 +124,10 @@ export const userProfiles = pgTable("user_profiles", {
   language: text("language"),
   region: text("region"),
   // Encryption fields
-  encryptionIv: text("encryption_iv"), // Initialization vector for encrypted fields
+  encryptionIv: text("encryption_iv"), // Initialization vector for encrypted fields (for PII like address, etc.)
   isEncrypted: boolean("is_encrypted").default(false),
+  profile_photo_iv: text("profile_photo_iv").nullable(), // IV for profile photo file encryption
+  id_photo_iv: text("id_photo_iv").nullable(),           // IV for ID photo file encryption
 });
 
 // Documents table
@@ -132,6 +137,8 @@ export const documents = pgTable("documents", {
   documentType: text("document_type").notNull(),
   documentUrl: text("document_url").notNull(),
   ocrText: text("ocr_text"),
+  ocr_text_iv: text("ocr_text_iv").nullable(),
+  is_ocr_text_encrypted: boolean("is_ocr_text_encrypted").default(false).notNull(),
   verificationStatus: text("verification_status").notNull().default("pending"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
@@ -201,7 +208,10 @@ export const reports = pgTable("reports", {
   mileageTraveled: integer("mileage_traveled"),
   locationLat: real("location_lat"),
   locationLng: real("location_lng"),
-  encryptedData: boolean("encrypted_data").default(false),
+  isContentEncrypted: boolean("is_content_encrypted").default(false).notNull(), // Renamed from encryptedData
+  content_iv: text("content_iv").nullable(),
+  isDescriptionEncrypted: boolean("is_description_encrypted").default(false).notNull(),
+  description_iv: text("description_iv").nullable(),
   // --- Added columns for analytics and reporting ---
   createdAt: timestamp("created_at").defaultNow(),
   severity: text("severity"),
@@ -220,8 +230,9 @@ export const reportAttachments = pgTable("report_attachments", {
   fileSize: integer("file_size").notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   ocrProcessed: boolean("ocr_processed").default(false),
-  ocrText: text("ocr_text"),
-  encryptionIv: text("encryption_iv"), // Initialization vector for encryption
+  ocrText: text("ocr_text"), // Assuming ocrText can be null if not processed or no text found
+  encryptionIv: text("encryption_iv"), // Will be used for ocrText IV as per subtask note
+  is_ocr_text_encrypted: boolean("is_ocr_text_encrypted").default(false).notNull(),
 });
 
 // Events and training
@@ -276,6 +287,8 @@ export const messages = pgTable("messages", {
   type: text("type").default("text").notNull(), // text, file, image, system
   read: boolean("read").default(false),
   sentAt: timestamp("sent_at").defaultNow(),
+  content_iv: text("content_iv").nullable(),
+  is_content_encrypted: boolean("is_content_encrypted").default(false).notNull(),
 });
 
 // Define a type for Message type
@@ -305,6 +318,8 @@ export const userImportLogs = pgTable("user_import_logs", {
   importedAt: timestamp("imported_at").defaultNow(),
   status: text("status").notNull(), // "in_progress", "completed", "failed"
   errors: jsonb("errors"), // Any error details
+  errors_iv: text("errors_iv").nullable(),
+  is_errors_encrypted: boolean("is_errors_encrypted").default(false).notNull(),
   options: jsonb("options"), // Import options (verification status, etc.)
   sourceType: text("source_type").notNull(), // "csv", "google_form", "json", etc.
 });
@@ -508,6 +523,8 @@ export const taskComments = pgTable("task_comments", {
   taskId: integer("task_id").references(() => tasks.id),
   userId: varchar("user_id").references(() => users.id),
   comment: text("comment").notNull(),
+  comment_iv: text("comment_iv").nullable(), // Corrected from content_iv
+  is_comment_encrypted: boolean("is_comment_encrypted").default(false).notNull(), // Corrected from is_content_encrypted
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -554,8 +571,9 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles)
   .omit({
     id: true,
     verifiedAt: true,
-    encryptionIv: true,
-    isEncrypted: true,
+    encryptionIv: true, // For general PII fields
+    isEncrypted: true,    // For general PII fields
+    // profile_photo_iv and id_photo_iv are handled separately during file upload/processing
   });
 
 export const insertDocumentSchema = createInsertSchema(documents)
@@ -593,7 +611,8 @@ export const insertReportSchema = createInsertSchema(reports)
     reviewedAt: true,
     reviewedBy: true,
     contentHash: true,
-    encryptedData: true,
+    // encryptedData was renamed to isContentEncrypted and related IV/flag fields added.
+    // These will be handled by application logic, not auto-set by schema.
   });
 
 export const insertReportAttachmentSchema = createInsertSchema(reportAttachments)

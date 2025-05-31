@@ -7,6 +7,7 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import logger from "./utils/logger";
+import { encryptUserFields, decryptUserFields } from "./services/encryption-service";
 
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -70,9 +71,12 @@ async function upsertUser(claims: any) {
     role: "observer", 
   };
 
+  // Encrypt sensitive fields before upserting
+  const encryptedUserData = encryptUserFields(userData);
+
   // Add or update the user in our database
-  await storage.upsertUser(userData);
-  logger.info(`User ${claims["sub"]} upserted with email ${claims["email"]}`);
+  await storage.upsertUser(encryptedUserData);
+  logger.info(`User ${claims["sub"]} upserted with email ${encryptedUserData.email}`); // email will be encrypted
 }
 
 export async function setupAuth(app: Express) {
@@ -154,13 +158,17 @@ export async function setupAuth(app: Express) {
         return res.status(401).json({ message: "User ID not found" });
       }
       
-      const user = await storage.getUser(userId);
-      if (!user) {
+      let userFromDb = await storage.getUser(userId);
+      if (!userFromDb) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return user data without sensitive information
-      res.json(user);
+      // Decrypt user data before sending to client
+      // Use user's own role for decryption logic if applicable, or admin role if appropriate context
+      const decryptedUser = decryptUserFields(userFromDb, (req.user as any).claims?.role || userFromDb.role);
+
+      // Return decrypted user data
+      res.json(decryptedUser);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user data" });

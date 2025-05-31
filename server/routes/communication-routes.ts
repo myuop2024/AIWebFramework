@@ -2,6 +2,7 @@ import express from 'express';
 import { storage } from '../storage'; // Assuming path is correct
 import { z } from 'zod';
 import { CommunicationService } from '../services/communication-service'; // Assuming path is correct
+import { encryptFields, decryptFields } from '../services/encryption-service';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -124,8 +125,24 @@ const ensureAuthenticated = (req, res, next) => {
 router.get('/conversations', ensureAuthenticated, async (req, res, next) => {
   try {
     // req.userId is guaranteed by ensureAuthenticated middleware
-    const conversations = await storage.getRecentConversations(req.userId);
-    res.json(conversations);
+    const conversationsFromDb = await storage.getRecentConversations(req.userId);
+    // IMPORTANT: Decryption permission for message content needs to be sender/receiver,
+    // not just canViewSensitiveData. Current generic decryptFields uses canViewSensitiveData.
+    // This needs refinement for actual message security.
+    const userRoleForDecryption = (req.user as any)?.role; // Placeholder for actual permission check
+    const decryptedConversations = conversationsFromDb.map(conv => {
+      if (conv.lastMessage && conv.lastMessage.content) {
+        const decryptedLastMessage = decryptFields(
+          conv.lastMessage,
+          userRoleForDecryption,
+          "content_iv",
+          "is_content_encrypted"
+        );
+        return { ...conv, lastMessage: decryptedLastMessage };
+      }
+      return conv;
+    });
+    res.json(decryptedConversations);
   } catch (error) {
     console.error('Error getting conversations:', error);
     // Pass error to centralized error handler
@@ -143,8 +160,13 @@ router.get('/messages/:userId', ensureAuthenticated, async (req, res, next) => {
     const otherUserId = paramValidation.data.userId;
 
     // req.userId is guaranteed by ensureAuthenticated middleware
-    const messages = await storage.getMessagesBetweenUsers(req.userId, otherUserId);
-    res.json(messages);
+    const messagesFromDb = await storage.getMessagesBetweenUsers(req.userId, otherUserId);
+    // IMPORTANT: Decryption permission for message content needs to be sender/receiver.
+    const userRoleForDecryption = (req.user as any)?.role; // Placeholder
+    const decryptedMessages = messagesFromDb.map(msg =>
+      decryptFields(msg, userRoleForDecryption, "content_iv", "is_content_encrypted")
+    );
+    res.json(decryptedMessages);
   } catch (error) {
     console.error('Error getting messages:', error);
     next(error);
@@ -211,31 +233,46 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
       type,
       read: false,
       sentAt: new Date(), // Server-generated timestamp
+      // Initialize IV and flag fields for encryption
+      content_iv: null,
+      is_content_encrypted: false,
     };
 
-    const createdMessage = await storage.createMessage(messageData);
+    const encryptedMessageData = encryptFields(
+      { ...messageData }, // Create a copy
+      ["content"],
+      "content_iv",
+      "is_content_encrypted"
+    );
 
-    console.log(`[API] Message sent from ${req.userId} to ${receiverId}:`, content);
+    const createdMessageFromDb = await storage.createMessage(encryptedMessageData);
+
+    // Decrypt for response
+    // IMPORTANT: Decryption permission for message content needs to be sender/receiver.
+    const userRoleForDecryption = (req.user as any)?.role; // Placeholder
+    const createdMessage = decryptFields(
+      createdMessageFromDb, userRoleForDecryption, "content_iv", "is_content_encrypted"
+    );
+
+    console.log(`[API] Message sent from ${req.userId} to ${receiverId}:`, createdMessage.content); // Log decrypted content if needed, or remove
 
     // Actively notify receiver and sender (for their other sessions) via WebSocket
     if (communicationService) {
       // Send to receiver
       communicationService.sendToUser(receiverId, {
         type: WS_NOTIFICATION_TYPES.NEW_MESSAGE,
-        message: createdMessage,
+        message: createdMessage, // Send decrypted message
       });
       // Send to sender's other connected sessions
-      // Ensure sender doesn't receive it on the same session that made the POST by client-side handling if needed,
-      // but typically, different sessions are different WebSocket clients.
-      if (req.userId !== receiverId) { // Avoid sending another message if sender is also receiver (self-chat, though currently blocked)
+      if (req.userId !== receiverId) {
         communicationService.sendToUser(req.userId, {
           type: WS_NOTIFICATION_TYPES.NEW_MESSAGE,
-          message: createdMessage,
+          message: createdMessage, // Send decrypted message
         });
       }
     }
 
-    res.status(201).json(createdMessage);
+    res.status(201).json(createdMessage); // Send decrypted message
   } catch (error) {
     console.error('Error sending message:', error);
     next(error);

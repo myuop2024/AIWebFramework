@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../middleware/auth';
+import { encryptFields, decryptFields } from '../services/encryption-service'; // Added
 import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
@@ -98,19 +99,43 @@ router.post('/', ensureAuthenticated, upload.single('image'), async (req, res) =
     // Create hash for content integrity
     const contentHashValue = storage.generateContentHash(reportContent);
     
-    // Create the report - need to use 'as any' to bypass the strict typing temporarily
-    // This approach is safer than modifying the shared schema which might affect other components
-    const report = await storage.createReport({
+    let reportDataToCreate = {
       userId: req.user!.id,
       stationId: parsedStationId,
-      reportType: 'incidentReport',
-      content: reportContent,
+      reportType: 'incidentReport', // This is a quick report, type is 'incidentReport'
+      content: reportContent, // This is the JSONB field containing description, incidentType etc.
+      description: null, // Main report description is not set by quick reports directly
       status: 'submitted',
       submittedAt: new Date(),
       locationLat: reportContent.locationLat,
       locationLng: reportContent.locationLng,
-      contentHash: contentHashValue
-    } as any);
+      contentHash: contentHashValue,
+      // Ensure IV and flag fields are initialized for encryption function if not already there
+      content_iv: null,
+      isContentEncrypted: false,
+      description_iv: null,
+      isDescriptionEncrypted: false,
+    };
+
+    // Encrypt the 'content' field (which holds the reportContent object)
+    // encryptFields will stringify reportDataToCreate.content if it's an object.
+    reportDataToCreate = encryptFields(
+      reportDataToCreate,
+      ["content"], // Field to encrypt on the reports table
+      "content_iv",
+      "isContentEncrypted"
+    );
+    // Description field on the report itself is not used by quick reports, so no need to encrypt reportDataToCreate.description here.
+
+    // Create the report - need to use 'as any' to bypass the strict typing temporarily
+    // This approach is safer than modifying the shared schema which might affect other components
+    const createdReportFromDb = await storage.createReport(reportDataToCreate as any);
+
+    // Decrypt for response
+    let decryptedReportForResponse = decryptFields(
+      createdReportFromDb, (req.user as any)?.role, "content_iv", "isContentEncrypted", ["content"]
+    );
+    // No need to decrypt description_iv as it's not set here.
     
     // If an image was uploaded, create an attachment for it
     if (req.file) {
@@ -130,7 +155,7 @@ router.post('/', ensureAuthenticated, upload.single('image'), async (req, res) =
     }
     
     // Return the report without attachments
-    res.status(201).json(report);
+    res.status(201).json(decryptedReportForResponse);
   } catch (error: unknown) {
     console.error('Error submitting quick incident report:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

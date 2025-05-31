@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { users, userProfiles, assignments, reports, pollingStations, type User, type InsertUser } from '@shared/schema';
+import { decryptProfileFields, encryptUserFields, decryptUserFields } from '../services/encryption-service'; // Updated
 import { eq, desc, and, sql, like } from 'drizzle-orm';
 import * as logger from '../utils/logger';
 
@@ -81,7 +82,11 @@ router.get('/profile', async (req, res) => {
       submittedReports: reportStats[0]?.submitted || 0
     };
     
-    res.json(profile);
+    // Decrypt sensitive fields before sending
+    // First decrypt fields from 'users' table, then from 'userProfiles'
+    let fullyDecryptedProfile = decryptUserFields(profile, (req.user as any)?.role);
+    fullyDecryptedProfile = decryptProfileFields(fullyDecryptedProfile, (req.user as any)?.role);
+    res.json(fullyDecryptedProfile);
   } catch (error) {
     logger.error('Error fetching user profile:', error);
     res.status(500).json({ error: 'Failed to fetch user profile' });
@@ -156,9 +161,15 @@ router.get('/', async (req, res) => {
     
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
+
+    // Decrypt sensitive fields for each user
+    const fullyDecryptedUsersList = usersList.map(user => {
+      let decryptedUser = decryptUserFields(user, (req.user as any)?.role);
+      return decryptProfileFields(decryptedUser, (req.user as any)?.role);
+    });
     
     res.json({
-      users: usersList,
+      users: fullyDecryptedUsersList,
       pagination: {
         page,
         limit,
@@ -273,7 +284,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json(user[0]);
+    // Decrypt sensitive fields before sending
+    let fullyDecryptedUser = decryptUserFields(user[0], (req.user as any)?.role);
+    fullyDecryptedUser = decryptProfileFields(fullyDecryptedUser, (req.user as any)?.role);
+    res.json(fullyDecryptedUser);
   } catch (error) {
     logger.error('Error fetching user:', error);
     res.status(500).json({ error: 'Failed to fetch user' });
@@ -320,15 +334,20 @@ router.put('/:id', async (req, res) => {
     if (role !== undefined) updateData.role = role;
     if (verificationStatus !== undefined) updateData.verificationStatus = verificationStatus;
     if (trainingStatus !== undefined) updateData.trainingStatus = trainingStatus;
+
+    // Encrypt sensitive fields from the users table before updating
+    const encryptedUpdateData = encryptUserFields(updateData as Record<string, any>);
     
     const result = await db
       .update(users)
-      .set(updateData)
+      .set(encryptedUpdateData)
       .where(eq(users.id, id))
       .returning();
     
-    logger.info('User updated:', { id, email });
-    res.json(result[0]);
+    logger.info('User updated:', { id, email: result[0]?.email }); // email might be encrypted
+    // Decrypt result before sending back to client
+    const decryptedResult = decryptUserFields(result[0], (req.user as any)?.role);
+    res.json(decryptedResult);
   } catch (error) {
     logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
@@ -505,8 +524,11 @@ router.get('/search', async (req, res) => {
         sql`(${users.firstName} ILIKE ${`%${query}%`} OR ${users.lastName} ILIKE ${`%${query}%`} OR ${users.email} ILIKE ${`%${query}%`} OR ${users.username} ILIKE ${`%${query}%`} OR ${users.observerId} ILIKE ${`%${query}%`})`
       )
       .limit(limit);
+
+    // Decrypt results before sending. Note: Search functionality on encrypted fields will be impaired.
+    const decryptedSearchResults = searchResults.map(user => decryptUserFields(user, (req.user as any)?.role));
     
-    res.json(searchResults);
+    res.json(decryptedSearchResults);
   } catch (error) {
     logger.error('Error searching users:', error);
     res.status(500).json({ error: 'Failed to search users' });

@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '../middleware/auth';
+import { decryptProfileFields, encryptUserFields, decryptUserFields } from '../../services/encryption-service'; // Updated path
 
 const router = Router();
 
@@ -13,17 +14,21 @@ const verificationStatusSchema = z.object({
 // Get all users
 router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
   try {
-    const users = await storage.getAllUsers();
+    const usersFromDb = await storage.getAllUsers();
     
+    // Decrypt each user
+    const decryptedUsers = usersFromDb.map(user => decryptUserFields(user, (req.user as any)?.role));
+
     // For security, filter out sensitive information like password hashes
-    const safeUsers = users.map(user => ({
+    // and use decrypted values
+    const safeUsers = decryptedUsers.map(user => ({
       id: user.id,
       username: user.username,
-      email: user.email,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
+      email: user.email, // Now decrypted
+      firstName: user.firstName || '', // Now decrypted
+      lastName: user.lastName || '', // Now decrypted
       role: user.role,
-      observerId: user.observerId,
+      observerId: user.observerId, // Now decrypted
       // Map verificationStatus to match the client expectations
       verificationStatus: user.verificationStatus || 'pending',
       // Also provide isActive for backwards compatibility
@@ -31,7 +36,7 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
       // Add training status with default
       trainingStatus: user.trainingStatus || 'not_started',
       // Add phone number if available
-      phoneNumber: user.phoneNumber || null,
+      phoneNumber: user.phoneNumber || null, // Now decrypted
       createdAt: user.createdAt || new Date()
     }));
     
@@ -50,29 +55,36 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
       return res.status(400).json({ error: 'Invalid user ID' });
     }
     
-    const user = await storage.getUser(userId);
-    if (!user) {
+    let userFromDb = await storage.getUser(userId);
+    if (!userFromDb) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Decrypt user fields from users table
+    userFromDb = decryptUserFields(userFromDb, (req.user as any)?.role);
     
     // Get user profile
-    const profile = await storage.getUserProfile(userId);
+    let profileFromDb = await storage.getUserProfile(userId);
+
+    // Decrypt profile fields
+    profileFromDb = decryptProfileFields(profileFromDb, (req.user as any)?.role);
     
-    // Return user with profile, removing sensitive information
+    // Return user with profile, using decrypted values
     const safeUser = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      role: user.role,
-      observerId: user.observerId,
+      id: userFromDb.id,
+      username: userFromDb.username,
+      email: userFromDb.email, // Now decrypted
+      firstName: userFromDb.firstName || '', // Now decrypted
+      lastName: userFromDb.lastName || '', // Now decrypted
+      role: userFromDb.role,
+      observerId: userFromDb.observerId, // Now decrypted
+      phoneNumber: userFromDb.phoneNumber, // Now decrypted
       // Handle missing fields with defaults
-      isActive: user.verificationStatus === 'verified',
+      isActive: userFromDb.verificationStatus === 'verified',
       // Add proper verification status in response
-      verificationStatus: user.verificationStatus || 'pending',
-      createdAt: user.createdAt || new Date(),
-      profile: profile || null
+      verificationStatus: userFromDb.verificationStatus || 'pending',
+      createdAt: userFromDb.createdAt || new Date(),
+      profile: profileFromDb || null
     };
     
     res.json(safeUser);
@@ -105,22 +117,29 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
       return res.status(400).json({ error: 'Invalid input', details: validationResult.error });
     }
     
-    const updateData = validationResult.data;
+    const updateDataFromRequest = validationResult.data;
+
+    // Encrypt user fields before sending to storage.updateUser
+    const encryptedUpdateData = encryptUserFields(updateDataFromRequest as Record<string, any>);
     
     // Update user
-    const updatedUser = await storage.updateUser(userId, updateData);
+    let updatedUser = await storage.updateUser(userId, encryptedUpdateData);
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Decrypt user for response
+    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
     
     res.json({
       id: updatedUser.id,
       username: updatedUser.username,
-      email: updatedUser.email,
-      firstName: updatedUser.firstName || '',
-      lastName: updatedUser.lastName || '',
+      email: updatedUser.email, // Decrypted
+      firstName: updatedUser.firstName || '', // Decrypted
+      lastName: updatedUser.lastName || '', // Decrypted
       role: updatedUser.role,
-      observerId: updatedUser.observerId,
+      observerId: updatedUser.observerId, // Decrypted
+      phoneNumber: updatedUser.phoneNumber, // Decrypted
       // Handle missing fields with defaults
       isActive: updatedUser.verificationStatus === 'verified',
       verificationStatus: updatedUser.verificationStatus || 'pending'
@@ -140,28 +159,40 @@ router.get('/api/admin/users/:id/documents', isAuthenticated, isAdmin, async (re
     }
     
     // Check if the user exists
-    const user = await storage.getUser(userId);
-    if (!user) {
+    let userFromDb = await storage.getUser(userId);
+    if (!userFromDb) {
       return res.status(404).json({ error: 'User not found' });
     }
+
+    // Decrypt user fields
+    userFromDb = decryptUserFields(userFromDb, (req.user as any)?.role);
     
     // Get all documents for this user
-    const documents = await storage.getDocumentsByUserId(userId);
+    let documentsFromDb = await storage.getDocumentsByUserId(userId);
+
+    // Decrypt ocrText in documents if present
+    const userRole = (req.user as any)?.role;
+    const decryptedDocuments = documentsFromDb.map(doc =>
+      decryptFields(doc, userRole, "ocr_text_iv", "is_ocr_text_encrypted")
+    );
     
     // Get user profile for additional verification data
-    const profile = await storage.getUserProfile(userId);
+    let profileFromDb = await storage.getUserProfile(userId);
+
+    // Decrypt profile fields
+    profileFromDb = decryptProfileFields(profileFromDb, (req.user as any)?.role);
     
-    // Return the documents and profile info
+    // Return the documents and profile info using decrypted user data
     res.json({
       user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        verificationStatus: user.verificationStatus
+        id: userFromDb.id,
+        firstName: userFromDb.firstName, // Decrypted
+        lastName: userFromDb.lastName, // Decrypted
+        email: userFromDb.email, // Decrypted
+        verificationStatus: userFromDb.verificationStatus
       },
-      documents,
-      profile
+      documents: decryptedDocuments, // Use decrypted documents
+      profile: profileFromDb
     });
   } catch (error) {
     console.error('Error fetching user documents:', error);
@@ -195,15 +226,18 @@ router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req:
     }
     
     // Update user verification status
-    const updatedUser = await storage.updateUser(userId, { verificationStatus });
+    let updatedUser = await storage.updateUser(userId, { verificationStatus });
     if (!updatedUser) {
       return res.status(500).json({ error: 'Failed to update verification status' });
     }
+
+    // Decrypt user for response (though only verificationStatus is expected to change)
+    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
     
     // Return updated user info
     res.json({
       id: updatedUser.id,
-      verificationStatus: updatedUser.verificationStatus,
+      verificationStatus: updatedUser.verificationStatus, // This field is not encrypted
       message: `User verification status updated to ${verificationStatus}`
     });
   } catch (error) {
@@ -231,20 +265,24 @@ router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, asy
     const newVerificationStatus = currentStatus ? 'pending' : 'verified';
     
     // Update with the new status
-    const updatedUser = await storage.updateUser(userId, { 
+    let updatedUser = await storage.updateUser(userId, {
       verificationStatus: newVerificationStatus 
     });
     
     if (!updatedUser) {
       return res.status(500).json({ error: 'Failed to update user status' });
     }
+
+    // Decrypt user for response
+    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
     
     // For response, map verification status to isActive
-    const isActive = updatedUser.verificationStatus === 'verified';
+    const isActive = updatedUser.verificationStatus === 'verified'; // This field is not encrypted
     
     res.json({
       id: updatedUser.id,
       isActive: isActive,
+      // Potentially include other decrypted fields if needed by client, e.g. updatedUser.email
       message: isActive ? 'User account activated' : 'User account deactivated'
     });
   } catch (error) {

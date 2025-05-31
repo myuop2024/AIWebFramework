@@ -12,6 +12,10 @@ import {
 import { analyzeIncidentPatternsWithGemini } from '../services/google-ai-service';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
 import * as logger from '../utils/logger';
+import { decryptFields } from '../services/encryption-service';
+
+// Define fields for decryption to avoid magic strings
+const reportContentFieldsToParseAsObjectOnDecrypt = ["content"]; // Since content is jsonb
 
 const router = Router();
 
@@ -492,8 +496,21 @@ router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Respo
     const stationId = req.query.stationId ? parseInt(req.query.stationId as string) : undefined;
     
     // Fetch all relevant reports from storage
-    const submittedReports = await storage.getReportsByStatus('submitted');
-    const inProgressReports = await storage.getReportsByStatus('in_progress');
+    let submittedReportsFromDb = await storage.getReportsByStatus('submitted');
+    let inProgressReportsFromDb = await storage.getReportsByStatus('in_progress');
+
+    const userRole = (req.user as any)?.role; // Get user role for decryption
+
+    // Decrypt reports
+    const submittedReports = submittedReportsFromDb.map(r => {
+      let tempReport = decryptFields(r, userRole, "content_iv", "isContentEncrypted", reportContentFieldsToParseAsObjectOnDecrypt);
+      return decryptFields(tempReport, userRole, "description_iv", "isDescriptionEncrypted");
+    });
+    const inProgressReports = inProgressReportsFromDb.map(r => {
+      let tempReport = decryptFields(r, userRole, "content_iv", "isContentEncrypted", reportContentFieldsToParseAsObjectOnDecrypt);
+      return decryptFields(tempReport, userRole, "description_iv", "isDescriptionEncrypted");
+    });
+
     const reports = [...submittedReports, ...inProgressReports];
     
     if (reports.length === 0) {

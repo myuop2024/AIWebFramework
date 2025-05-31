@@ -4,6 +4,7 @@ import { bulkUserImportSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { encryptUserFields, encryptFields, decryptFields } from '../services/encryption-service';
 import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
@@ -59,8 +60,12 @@ const router = Router();
 // Get all user import logs (admin only)
 router.get('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
   try {
-    const logs = await storage.getAllUserImportLogs();
-    res.status(200).json(logs);
+    const logsFromDb = await storage.getAllUserImportLogs();
+    const userRole = (req.user as any)?.role;
+    const decryptedLogs = logsFromDb.map(log =>
+      decryptFields(log, userRole, "errors_iv", "is_errors_encrypted", ["errors"])
+    );
+    res.status(200).json(decryptedLogs);
   } catch (error) {
     console.error('Error fetching user import logs:', error);
     res.status(500).json({ message: 'Failed to fetch user import logs' });
@@ -75,12 +80,15 @@ router.get('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
       return res.status(400).json({ message: 'Invalid import log ID' });
     }
     
-    const log = await storage.getUserImportLog(id);
-    if (!log) {
+    let logFromDb = await storage.getUserImportLog(id);
+    if (!logFromDb) {
       return res.status(404).json({ message: 'User import log not found' });
     }
     
-    res.status(200).json(log);
+    const userRole = (req.user as any)?.role;
+    const decryptedLog = decryptFields(logFromDb, userRole, "errors_iv", "is_errors_encrypted", ["errors"]);
+
+    res.status(200).json(decryptedLog);
   } catch (error) {
     console.error('Error fetching user import log:', error);
     res.status(500).json({ message: 'Failed to fetch user import log' });
@@ -99,6 +107,9 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
     }
     
     const { users, options } = result.data;
+
+    // Encrypt sensitive fields for each user using the correct function for 'users' table
+    const encryptedUsers = users.map(user => encryptUserFields(user as Record<string, any>));
     
     // Hash passwords if they exist in plain text
     const passwordHash = (pwd: string) => crypto.createHash('sha256').update(pwd).digest('hex');
@@ -127,27 +138,41 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
     });
     
     // Perform the bulk import
-    const importResult = await storage.bulkCreateUsers(users, {
+    const importResult = await storage.bulkCreateUsers(encryptedUsers, { // Use encryptedUsers
       defaultRole: options?.defaultRole,
       verificationStatus: options?.verificationStatus,
       passwordHash
     });
     
-    // Update the import log with results
-    await storage.updateUserImportLog(importLog.id, {
+    // Prepare data for updating import log, including errors
+    let updateLogData = {
       successCount: importResult.success.length,
       failureCount: importResult.failures.length,
       status: 'completed',
       errors: importResult.failures.map(f => ({
         data: {
           username: f.data.username,
-          email: f.data.email,
-          firstName: f.data.firstName,
-          lastName: f.data.lastName
+          email: f.data.email, // This email was already encrypted when passed to bulkCreateUsers
+          firstName: f.data.firstName, // Also encrypted
+          lastName: f.data.lastName    // Also encrypted
         },
         error: f.error
-      }))
-    });
+      })),
+      // Ensure IV and flag fields are initialized for encryption
+      errors_iv: null,
+      is_errors_encrypted: false,
+    };
+
+    // Encrypt the errors field
+    updateLogData = encryptFields(
+      updateLogData,
+      ["errors"],
+      "errors_iv",
+      "is_errors_encrypted"
+    );
+
+    // Update the import log with results
+    await storage.updateUserImportLog(importLog.id, updateLogData);
     
     res.status(201).json({
       importId: importLog.id,
@@ -261,6 +286,9 @@ router.post('/csv/confirm/:id', ensureAuthenticated, ensureAdmin, async (req, re
 
     const { users, options } = result.data;
 
+    // Encrypt sensitive fields for each user using the correct function for 'users' table
+    const encryptedUsers = users.map(user => encryptUserFields(user as Record<string, any>));
+
     // Update the import log status
     await storage.updateUserImportLog(importId, {
       status: 'importing',
@@ -268,26 +296,40 @@ router.post('/csv/confirm/:id', ensureAuthenticated, ensureAdmin, async (req, re
     });
 
     // Perform the bulk import
-    const importResult = await storage.bulkCreateUsers(users, {
+    const importResult = await storage.bulkCreateUsers(encryptedUsers, { // Use encryptedUsers
       defaultRole: options?.defaultRole || (importLog.options as any)?.defaultRole,
       verificationStatus: options?.verificationStatus || (importLog.options as any)?.verificationStatus
     });
 
-    // Update the import log with results
-    await storage.updateUserImportLog(importId, {
+    // Prepare data for updating import log, including errors
+    let updateLogData = {
       successCount: importResult.success.length,
       failureCount: importResult.failures.length,
       status: 'completed',
       errors: importResult.failures.map(f => ({
         data: {
           username: f.data.username,
-          email: f.data.email,
-          firstName: f.data.firstName,
-          lastName: f.data.lastName
+          email: f.data.email, // This email was already encrypted
+          firstName: f.data.firstName, // Also encrypted
+          lastName: f.data.lastName    // Also encrypted
         },
         error: f.error
-      }))
-    });
+      })),
+      // Ensure IV and flag fields are initialized for encryption
+      errors_iv: null,
+      is_errors_encrypted: false,
+    };
+
+    // Encrypt the errors field
+    updateLogData = encryptFields(
+      updateLogData,
+      ["errors"],
+      "errors_iv",
+      "is_errors_encrypted"
+    );
+
+    // Update the import log with results
+    await storage.updateUserImportLog(importId, updateLogData);
 
     res.status(201).json({
       importId,

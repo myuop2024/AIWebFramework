@@ -24,6 +24,7 @@ import {
   taskPriorityEnum
 } from '@shared/schema';
 import { eq, and, isNull, or, not, desc, asc, sql, inArray } from 'drizzle-orm';
+import { encryptFields, decryptFields } from '../../services/encryption-service';
 
 export const projectManagementRouter = Router();
 
@@ -510,11 +511,17 @@ projectManagementRouter.get('/tasks/:id', ensureAuthenticated, async (req: Reque
     }
     
     // Get comments
-    const comments = await db.select({
+    const commentsFromDb = await db.select({
+      // Select all fields including new IV and flag fields from taskComments
       id: taskComments.id,
-      content: taskComments.content,
+      comment: taskComments.comment, // field name is 'comment'
+      taskId: taskComments.taskId,
+      userId: taskComments.userId,
       createdAt: taskComments.createdAt,
+      updatedAt: taskComments.updatedAt,
       isPrivate: taskComments.isPrivate,
+      comment_iv: taskComments.comment_iv,
+      is_comment_encrypted: taskComments.is_comment_encrypted,
       user: {
         id: users.id,
         firstName: users.firstName,
@@ -526,6 +533,18 @@ projectManagementRouter.get('/tasks/:id', ensureAuthenticated, async (req: Reque
     .innerJoin(users, eq(taskComments.userId, users.id))
     .where(eq(taskComments.taskId, taskId))
     .orderBy(asc(taskComments.createdAt));
+
+    const userRoleForDecryption = (req.user as any)?.role;
+    const comments = commentsFromDb.map(c => {
+      const decryptedComment = decryptFields(
+        c,
+        userRoleForDecryption,
+        "comment_iv",
+        "is_comment_encrypted"
+      );
+      // Keep user info structure
+      return { ...decryptedComment, user: c.user };
+    });
     
     // Get attachments
     const attachments = await db.select().from(taskAttachments)
@@ -916,7 +935,23 @@ projectManagementRouter.post('/tasks/:id/comments', ensureAuthenticated, async (
     });
     
     // Create the comment
-    const [comment] = await db.insert(taskComments).values(validatedData).returning();
+    let dataToInsert = {
+      ...validatedData,
+      comment_iv: null, // Initialize IV field
+      is_comment_encrypted: false, // Initialize flag field
+    };
+    dataToInsert = encryptFields(dataToInsert, ["comment"], "comment_iv", "is_comment_encrypted");
+
+    const [commentFromDb] = await db.insert(taskComments).values(dataToInsert).returning();
+
+    // Decrypt comment for the response
+    const userRoleForDecryption = (req.user as any)?.role;
+    const comment = decryptFields(
+      commentFromDb,
+      userRoleForDecryption,
+      "comment_iv",
+      "is_comment_encrypted"
+    );
     
     // Get the user info for the response
     const [userInfo] = await db.select({

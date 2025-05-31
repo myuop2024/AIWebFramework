@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { ensureAuthenticated } from '../middleware/auth';
+import { encryptFields, decryptFields } from '../services/encryption-service';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { getKey } from '../services/encryption-service'; // Added getKey
 
 // Configure multer for report attachment uploads
 const upload = multer({
@@ -74,14 +76,28 @@ router.post('/', ensureAuthenticated, upload.single('file'), async (req, res) =>
       return res.status(403).json({ message: 'You do not have permission to add attachments to this report' });
     }
     
-    // Create the attachment record
-    const attachment = await storage.createReportAttachment({
+    // Encrypt the file in place
+    const plaintextBuffer = fs.readFileSync(req.file.path);
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', getKey(), iv);
+    const encryptedBuffer = Buffer.concat([cipher.update(plaintextBuffer), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    const ivString = iv.toString('hex') + ':' + authTag.toString('hex');
+    fs.writeFileSync(req.file.path, encryptedBuffer);
+
+    // Create the attachment record with encryption metadata
+    const attachmentData = {
       reportId,
       fileType: req.file.mimetype,
       fileName: req.file.originalname,
       filePath: req.file.path,
-      fileSize: req.file.size,
-    });
+      fileSize: encryptedBuffer.length, // Use encrypted size
+      file_encryption_iv: ivString,
+      is_file_encrypted: true,
+      // ocrText, encryptionIv (for ocr), is_ocr_text_encrypted are not set here
+    };
+
+    const attachment = await storage.createReportAttachment(attachmentData);
     
     res.status(201).json(attachment);
   } catch (error: unknown) {
@@ -112,8 +128,13 @@ router.get('/report/:reportId', ensureAuthenticated, async (req, res) => {
       return res.status(403).json({ message: 'You do not have permission to view this report\'s attachments' });
     }
     
-    const attachments = await storage.getAttachmentsByReportId(reportId);
-    res.status(200).json(attachments);
+    const attachmentsFromDb = await storage.getAttachmentsByReportId(reportId);
+    // Decrypt ocrText if present
+    const userRole = (req.user as any)?.role;
+    const decryptedAttachments = attachmentsFromDb.map(att =>
+      decryptFields(att, userRole, "encryptionIv", "is_ocr_text_encrypted")
+    );
+    res.status(200).json(decryptedAttachments);
   } catch (error: unknown) {
     console.error('Error fetching report attachments:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -208,9 +229,33 @@ router.get('/:attachmentId', ensureAuthenticated, async (req, res) => {
     // Send the file
     res.setHeader('Content-Disposition', `attachment; filename="${attachment.fileName}"`);
     res.setHeader('Content-Type', attachment.fileType);
-    
-    const fileStream = fs.createReadStream(attachment.filePath);
-    fileStream.pipe(res);
+
+    if (attachment.is_file_encrypted && attachment.file_encryption_iv) {
+      try {
+        const encryptedBuffer = fs.readFileSync(attachment.filePath);
+        const [ivHex, authTagHex] = attachment.file_encryption_iv.split(':');
+
+        if (!ivHex || !authTagHex) {
+          throw new Error('Invalid stored IV format for file decryption.');
+        }
+
+        const ivBuffer = Buffer.from(ivHex, 'hex');
+        const authTagBuffer = Buffer.from(authTagHex, 'hex');
+
+        const decipher = crypto.createDecipheriv('aes-256-gcm', getKey(), ivBuffer);
+        decipher.setAuthTag(authTagBuffer);
+
+        const decryptedBuffer = Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
+        res.send(decryptedBuffer);
+      } catch (decryptionError) {
+        console.error('Error decrypting attachment file:', decryptionError);
+        return res.status(500).json({ message: 'Failed to decrypt attachment file.' });
+      }
+    } else {
+      // File is not encrypted or IV is missing, stream directly (legacy or error case)
+      const fileStream = fs.createReadStream(attachment.filePath);
+      fileStream.pipe(res);
+    }
   } catch (error: unknown) {
     console.error('Error downloading report attachment:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -241,12 +286,35 @@ router.post('/:attachmentId/ocr', ensureAuthenticated, async (req, res) => {
     
     // In a real implementation, we would process the image with Tesseract.js or another OCR engine
     // For now, we'll simulate OCR by adding a placeholder value
-    const updatedAttachment = await storage.updateReportAttachment(attachmentId, {
+    let ocrUpdateData = {
       ocrProcessed: true,
-      ocrText: 'Sample OCR text extracted from image. This would be actual extracted text in production.'
+      ocrText: 'Sample OCR text extracted from image. This would be actual extracted text in production.',
+      // Ensure IV and flag fields are initialized if not already on the attachment object from DB
+      encryptionIv: attachment.encryptionIv || null,
+      is_ocr_text_encrypted: attachment.is_ocr_text_encrypted || false,
+    };
+
+    // Encrypt ocrText
+    ocrUpdateData = encryptFields(
+      ocrUpdateData,
+      ["ocrText"],
+      "encryptionIv", // Using existing encryptionIv field as per subtask note
+      "is_ocr_text_encrypted"
+    );
+
+    const updatedAttachmentFromDb = await storage.updateReportAttachment(attachmentId, {
+      ocrProcessed: ocrUpdateData.ocrProcessed,
+      ocrText: ocrUpdateData.ocrText,
+      encryptionIv: ocrUpdateData.encryptionIv, // Save the IV
+      is_ocr_text_encrypted: ocrUpdateData.is_ocr_text_encrypted, // Save the flag
     });
+
+    // Decrypt for response
+    const decryptedAttachment = decryptFields(
+      updatedAttachmentFromDb, (req.user as any)?.role, "encryptionIv", "is_ocr_text_encrypted"
+    );
     
-    res.status(200).json(updatedAttachment);
+    res.status(200).json(decryptedAttachment);
   } catch (error: unknown) {
     console.error('Error processing OCR for attachment:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

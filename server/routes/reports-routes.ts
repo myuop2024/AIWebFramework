@@ -4,6 +4,12 @@ import { reports, users, pollingStations, formTemplates, type Report, type Inser
 import { eq, desc, and, sql, like } from 'drizzle-orm';
 import * as logger from '../utils/logger';
 import { ensureAuthenticated } from '../middleware/auth';
+import { encryptFields, decryptFields } from '../services/encryption-service';
+
+// Define fields for encryption to avoid magic strings
+const reportContentFieldsToEncrypt = ["content"];
+const reportDescriptionFieldsToEncrypt = ["description"];
+const reportFieldsToParseAsObjectOnDecrypt = ["content"]; // Since content is jsonb
 
 const router = Router();
 
@@ -83,9 +89,15 @@ router.get('/', ensureAuthenticated, async (req, res) => {
     
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
+
+    const decryptedReportsList = reportsList.map(report => {
+      let tempReport = decryptFields(report, (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+      tempReport = decryptFields(tempReport, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+      return tempReport;
+    });
     
     res.json({
-      reports: reportsList,
+      reports: decryptedReportsList,
       pagination: {
         page,
         limit,
@@ -206,7 +218,9 @@ router.get('/:id', ensureAuthenticated, async (req, res) => {
       return res.status(404).json({ error: 'Report not found' });
     }
     
-    res.json(report[0]);
+    let decryptedReport = decryptFields(report[0], (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+    decryptedReport = decryptFields(decryptedReport, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+    res.json(decryptedReport);
   } catch (error) {
     logger.error('Error fetching report:', error);
     res.status(500).json({ error: 'Failed to fetch report' });
@@ -250,14 +264,21 @@ router.post('/', ensureAuthenticated, async (req, res) => {
       checkinTime: checkinTime ? new Date(checkinTime) : null,
       checkoutTime: checkoutTime ? new Date(checkoutTime) : null
     };
+
+    let dataToInsert = { ...newReport };
+    dataToInsert = encryptFields(dataToInsert, reportContentFieldsToEncrypt, "content_iv", "isContentEncrypted");
+    dataToInsert = encryptFields(dataToInsert, reportDescriptionFieldsToEncrypt, "description_iv", "isDescriptionEncrypted");
     
     const result = await db
       .insert(reports)
-      .values(newReport)
+      .values(dataToInsert as InsertReport) // Cast after encryption
       .returning();
     
     logger.info('Report created:', { id: result[0].id, userId, stationId, reportType });
-    res.status(201).json(result[0]);
+
+    let decryptedResult = decryptFields(result[0], (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+    decryptedResult = decryptFields(decryptedResult, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+    res.status(201).json(decryptedResult);
   } catch (error) {
     logger.error('Error creating report:', error);
     res.status(500).json({ error: 'Failed to create report' });
@@ -300,15 +321,21 @@ router.put('/:id', ensureAuthenticated, async (req, res) => {
     if (status !== undefined) updateData.status = status;
     if (checkinTime !== undefined) updateData.checkinTime = checkinTime ? new Date(checkinTime) : null;
     if (checkoutTime !== undefined) updateData.checkoutTime = checkoutTime ? new Date(checkoutTime) : null;
+
+    let dataToUpdate = { ...updateData };
+    dataToUpdate = encryptFields(dataToUpdate, reportContentFieldsToEncrypt, "content_iv", "isContentEncrypted");
+    dataToUpdate = encryptFields(dataToUpdate, reportDescriptionFieldsToEncrypt, "description_iv", "isDescriptionEncrypted");
     
     const result = await db
       .update(reports)
-      .set(updateData)
+      .set(dataToUpdate)
       .where(eq(reports.id, id))
       .returning();
     
     logger.info('Report updated:', { id, status });
-    res.json(result[0]);
+    let decryptedResult = decryptFields(result[0], (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+    decryptedResult = decryptFields(decryptedResult, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+    res.json(decryptedResult);
   } catch (error) {
     logger.error('Error updating report:', error);
     res.status(500).json({ error: 'Failed to update report' });
@@ -351,7 +378,9 @@ router.post('/:id/review', ensureAuthenticated, async (req, res) => {
       .returning();
     
     logger.info('Report reviewed:', { id, status, reviewedBy });
-    res.json(result[0]);
+    let decryptedResult = decryptFields(result[0], (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+    decryptedResult = decryptFields(decryptedResult, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+    res.json(decryptedResult);
   } catch (error) {
     logger.error('Error reviewing report:', error);
     res.status(500).json({ error: 'Failed to review report' });
@@ -435,9 +464,15 @@ router.get('/user/:userId', ensureAuthenticated, async (req, res) => {
     
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
+
+    const decryptedUserReports = userReports.map(report => {
+      let tempReport = decryptFields(report, (req.user as any)?.role, "content_iv", "isContentEncrypted", reportFieldsToParseAsObjectOnDecrypt);
+      tempReport = decryptFields(tempReport, (req.user as any)?.role, "description_iv", "isDescriptionEncrypted");
+      return tempReport;
+    });
     
     res.json({
-      reports: userReports,
+      reports: decryptedUserReports,
       pagination: {
         page,
         limit,
