@@ -138,19 +138,30 @@ export function useCommunication(userId: number) {
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const ringtoneAudio = useRef<HTMLAudioElement | null>(null); // Ref for ringtone
 
+  // Call management functions - moved before usage to fix initialization order
+  const handleCallEnd = useCallback((isCurrentUserInvolved = true) => {
+    stopRingtone();
+    if (isCurrentUserInvolved) { // Only cleanup if this user was part of the call
+        cleanupPeerConnection();
+        setActiveCall(null);
+        setIncomingCall(null); // Clear incoming call as well
+        console.log('Call ended and resources cleaned up.');
+    }
+  }, [localStream, remoteStream]); // Dependencies for streams if they are directly used in cleanup
+
   // --- WebSocket Connection and Management ---
   useEffect(() => {
     let reconnectTimer: NodeJS.Timeout | null = null;
     let heartbeatTimer: NodeJS.Timeout | null = null;
     let wsInstance: WebSocket | null = null;
     let isUnmounting = false;
-    
+
     // Heartbeat to detect silent connection drops
     const startHeartbeat = (ws: WebSocket) => {
       if (heartbeatTimer) {
         clearInterval(heartbeatTimer);
       }
-      
+
       heartbeatTimer = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           try {
@@ -206,19 +217,19 @@ export function useCommunication(userId: number) {
         wsInstance.onclose = (event) => {
           console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
           setSocket(null); // Clear socket state
-          
+
           // Always try to reconnect unless unmounting
           if (!isUnmounting) {
             // Clear any existing reconnection timer
             if (reconnectTimer) {
               clearTimeout(reconnectTimer);
             }
-            
+
             const backoffTime = Math.min(
               30000, // Max 30 seconds
               1000 + Math.floor(Math.random() * 3000) // Base time with jitter
             );
-            
+
             console.log(`Scheduling WebSocket reconnection in ${backoffTime}ms...`);
             reconnectTimer = setTimeout(() => {
               if (!isUnmounting && (document.visibilityState === 'visible' || document.visibilityState === 'prerender')) {
@@ -561,15 +572,6 @@ export function useCommunication(userId: number) {
     }
   };
 
-  const handleCallEnd = useCallback((isCurrentUserInvolved = true) => {
-    stopRingtone();
-    if (isCurrentUserInvolved) { // Only cleanup if this user was part of the call
-        cleanupPeerConnection();
-        setActiveCall(null);
-        setIncomingCall(null); // Clear incoming call as well
-        console.log('Call ended and resources cleaned up.');
-    }
-  }, [localStream, remoteStream]); // Dependencies for streams if they are directly used in cleanup
 
   const initializePeerConnection = useCallback((callReceiverId: number, callType: 'audio' | 'video', isInitiator: boolean) => {
     cleanupPeerConnection(); // Ensure any old connection is closed
