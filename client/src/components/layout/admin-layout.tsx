@@ -21,6 +21,8 @@ import {
   ShieldCheck, // Added for Role Management
   MapPin, // Added for Polling Station Management
   ClipboardList, // Added for Station Assignments
+  CalendarDays, // Added for Event Management
+  GraduationCap, // Added for Training Management
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -146,15 +148,30 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       href: '/admin/station-analytics',
       icon: BarChart, // Reusing BarChart as BarChartHorizontal is not imported
     },
+    // Events & Training Section Header
+    {
+      name: 'Events & Training',
+      isHeader: true
+    },
+    {
+      name: 'Event Management',
+      href: '/admin/event-management',
+      icon: CalendarDays,
+    },
+    {
+      name: 'Training Management',
+      href: '/admin/training-management',
+      icon: GraduationCap,
+    },
     // Platform & Integrations Section Header
     {
       name: 'Platform & Integrations',
       isHeader: true
     },
     {
-      name: 'Analytics',
-      href: '/admin/analytics',
-      icon: LineChart // Existing
+      name: 'Report Analytics', // Updated name
+      href: '/admin/report-analytics', // Updated href
+      icon: LineChart // Existing icon
     },
     {
       name: 'Training Integrations',

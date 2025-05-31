@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Tabs, TabsContent, TabsList, TabsTrigger removed
 import { 
   User, UsersRound, FileText, MapPin, Calendar, ShieldCheck, BarChart3, AlertTriangle, Settings 
 } from "lucide-react";
-import { UserManagement } from "@/components/admin/user-management";
-import { RoleManagement } from "@/components/admin/role-management";
+// UserManagement and RoleManagement imports removed as they are separate pages now
 import { BackgroundAnimation } from "@/components/three/BackgroundAnimation";
 import { ThreeBarChart } from "@/components/three/ThreeBarChart";
 import { ElectoralMapViewer } from "@/components/three/ElectoralMapViewer";
@@ -15,7 +14,7 @@ import AdminLayout from "@/components/layout/admin-layout";
 import { usePerformanceSettings } from "@/components/ui/performance-toggle";
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState("overview");
+  // const [activeTab, setActiveTab] = useState("overview"); // activeTab state removed
   const { toast } = useToast();
   const [performanceSettings] = usePerformanceSettings();
 
@@ -115,22 +114,16 @@ export default function AdminDashboard() {
         count={performanceSettings.lowPerformanceMode ? 15 : 25}
       />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="stations">Polling Stations</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
-          </TabsList>
-        </div>
+      {/* Tabs, TabsList, and TabsTrigger removed */}
+      <div className="flex justify-between items-center mb-4"> {/* Added mb-4 for spacing */}
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        {/* TabsList removed from here */}
+      </div>
         
-        <TabsContent value="overview" className="space-y-6">
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Overview content starts here, was previously TabsContent value="overview" */}
+      <div className="space-y-6">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
@@ -327,76 +320,9 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-        
-        <TabsContent value="users">
-          <UserManagement />
-        </TabsContent>
-        
-        <TabsContent value="reports">
-          <Card>
-            <CardHeader>
-              <CardTitle>Reports Management</CardTitle>
-              <CardDescription>Manage and review observer reports</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ThreeBarChart 
-                data={getReportStatusData()}
-                height={300}
-                width={800}
-                title="Reports by Status"
-                enabled={performanceSettings.enable3D}
-              />
-              <p className="text-center mt-4 text-gray-500">Select a tab to manage reports by status</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="stations">
-          <Card>
-            <CardHeader>
-              <CardTitle>Polling Stations Management</CardTitle>
-              <CardDescription>Manage polling stations and view risk assessments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ThreeBarChart 
-                  data={getStationRiskData()}
-                  height={300}
-                  width={450}
-                  title="Stations by Risk Level"
-                  enabled={performanceSettings.enable3D}
-                />
-                
-                <div className="flex items-center justify-center">
-                  <ElectoralMapViewer 
-                    stationData={getStationsWithGeoData()}
-                    height={300}
-                    width={450}
-                    enabled={performanceSettings.enable3D}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="system">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>System Settings</CardTitle>
-                  <CardDescription>Manage roles, permissions and core system settings</CardDescription>
-                </div>
-                <Settings className="h-6 w-6 text-muted-foreground" />
-              </CardHeader>
-            </Card>
-            
-            <RoleManagement />
-          </div>
-        </TabsContent>
-      </Tabs>
+        {/* Other TabsContent sections (users, reports, stations, system) removed */}
+      </div>
+      {/* Closing </Tabs> tag removed */}
     </AdminLayout>
   );
 }

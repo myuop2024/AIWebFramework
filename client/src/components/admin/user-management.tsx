@@ -423,6 +423,38 @@ export function UserManagement() {
             </div>
           )}
         </div>
+
+        {/* Send General Notification Card */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Send General Notification</CardTitle>
+            <CardDescription>Send alerts and messages to observers or other user groups.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="gen-notification-title">Notification Title</Label>
+              <Input id="gen-notification-title" placeholder="Enter notification title" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gen-notification-message">Message</Label>
+              <Input id="gen-notification-message" placeholder="Enter message" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch id="gen-urgent" />
+              <Label htmlFor="gen-urgent">Mark as urgent</Label>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => {
+              // Logic to get title and message from new inputs in this component
+              // For now, just a toast:
+              toast({
+                  title: "Notification Sent",
+                  description: "Your notification has been sent to users.",
+              });
+            }}>Send Notification</Button>
+          </CardFooter>
+        </Card>
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="text-sm text-gray-500">
