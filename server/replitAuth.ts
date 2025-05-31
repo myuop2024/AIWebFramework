@@ -91,8 +91,13 @@ export async function setupAuth(app: Express) {
     const user = {};
     updateUserSession(user, tokens);
     // Store or update the user in our database
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      await upsertUser(tokens.claims());
+      verified(null, user);
+    } catch (err) {
+      logger.error('Error during upsertUser in Replit Auth verify', err);
+      verified(err);
+    }
   };
 
   for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
@@ -162,7 +167,7 @@ export async function setupAuth(app: Express) {
       // Return user data without sensitive information
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
+      logger.error("Error fetching user for /api/auth/user:", error);
       res.status(500).json({ message: "Failed to fetch user data" });
     }
   });

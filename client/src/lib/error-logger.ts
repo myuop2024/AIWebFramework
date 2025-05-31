@@ -14,16 +14,71 @@ export interface ClientErrorLog {
 }
 
 /**
+ * Sanitizes an object to remove or mask sensitive fields.
+ */
+function sanitizeObject(data: any): any {
+  if (typeof data !== 'object' || data === null) {
+    return data;
+  }
+
+  const sensitiveKeys = [
+    'password',
+    'currentPassword',
+    'newPassword',
+    'token',
+    'secret',
+    'twoFactorSecret',
+    'recoveryCodes',
+    'trn',
+    'idNumber',
+    'bankAccount',
+    'creditCard',
+    'cvv',
+    'ssn',
+    'passportNumber'
+    // Add other PII or sensitive keys that might appear in requestData
+  ];
+
+  const sanitizedData = { ...data };
+
+  for (const key of sensitiveKeys) {
+    if (sanitizedData.hasOwnProperty(key)) {
+      sanitizedData[key] = '[REDACTED]';
+    }
+  }
+
+  // Recursively sanitize nested objects if necessary
+  // For simplicity, this example only sanitizes top-level keys in the `requestData` context.
+  // A more robust solution might involve deeper inspection or a more generic recursive sanitizer.
+  if (sanitizedData.user && typeof sanitizedData.user === 'object') {
+    sanitizedData.user = sanitizeObject(sanitizedData.user);
+  }
+   if (sanitizedData.profile && typeof sanitizedData.profile === 'object') {
+    sanitizedData.profile = sanitizeObject(sanitizedData.profile);
+  }
+  // If requestData itself is an object that might contain sensitive fields directly:
+  // Object.keys(sanitizedData).forEach(key => {
+  //   if (sensitiveKeys.includes(key) && sanitizedData[key]) {
+  //     sanitizedData[key] = '[REDACTED]';
+  //   }
+  // });
+
+
+  return sanitizedData;
+}
+
+/**
  * Log client-side errors to the server
  */
 export async function logClientError(error: ClientErrorLog): Promise<void> {
   try {
-    // Add browser information
+    // Add browser information and sanitize context
     const errorData = {
       ...error,
       level: error.level || 'error',
       url: error.url || window.location.href,
-      userAgent: error.userAgent || navigator.userAgent
+      userAgent: error.userAgent || navigator.userAgent,
+      context: error.context ? sanitizeObject(error.context) : undefined,
     };
 
     // Send error to server
@@ -141,6 +196,9 @@ export function logApiError(
   error: any, 
   requestData?: any
 ): void {
+  // Sanitize requestData before logging
+  const sanitizedRequestData = requestData ? sanitizeObject(requestData) : undefined;
+
   logClientError({
     message: `API Error: ${error.message || 'Unknown error'}`,
     source: 'api-request',
@@ -148,7 +206,7 @@ export function logApiError(
     code: error.code || error.status?.toString(),
     context: {
       endpoint,
-      requestData,
+      requestData: sanitizedRequestData, // Use sanitized requestData
       response: error.response ? {
         status: error.response.status,
         statusText: error.response.statusText,

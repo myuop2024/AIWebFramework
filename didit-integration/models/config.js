@@ -18,9 +18,15 @@ const DEFAULT_CONFIG = {
     tokenUrl: 'https://auth.didit.me/oauth/token',
     meUrl: 'https://api.didit.me/v1/me'
   },
-  security: {
-    encryptionKey: crypto.lib.WordArray.random(16).toString()
+  didit: { // didit config remains the same
+    clientId: '',
+    clientSecret: '',
+    redirectUri: 'http://localhost:3000/verification-callback',
+    authUrl: 'https://auth.didit.me/oauth/authorize',
+    tokenUrl: 'https://auth.didit.me/oauth/token',
+    meUrl: 'https://api.didit.me/v1/me'
   }
+  // security.encryptionKey is removed from here and sourced from environment
 };
 
 /**
@@ -32,8 +38,10 @@ const ensureConfigFile = async () => {
     
     // Create the file if it doesn't exist
     if (!await fs.pathExists(CONFIG_FILE)) {
-      await fs.writeJson(CONFIG_FILE, DEFAULT_CONFIG, { spaces: 2 });
-      console.log('Created default configuration file');
+      // Only write default didit settings, not the security key
+      const initialConfig = { didit: DEFAULT_CONFIG.didit };
+      await fs.writeJson(CONFIG_FILE, initialConfig, { spaces: 2 });
+      console.log('Created default configuration file with Didit settings.');
     }
   } catch (error) {
     console.error('Error ensuring config file exists:', error);
@@ -51,14 +59,34 @@ ensureConfigFile().catch(err => {
  * @param {string} value - The value to encrypt
  * @returns {string} The encrypted value
  */
+const getEncryptionKey = () => {
+  const key = process.env.DIDIT_CONFIG_ENCRYPTION_KEY;
+  if (!key) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CRITICAL: DIDIT_CONFIG_ENCRYPTION_KEY environment variable is not set in production.');
+    } else {
+      // Fallback to a hardcoded key ONLY in non-production environments and log a very loud warning.
+      // This is still insecure but prevents complete breakage in a local dev setup if the env var is forgotten.
+      // A truly secure approach would be to require it always, or use a dev-specific fixed key known not to be secure.
+      console.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY is not set. Using a default, insecure key for development. DO NOT USE THIS IN PRODUCTION.');
+      return 'default_insecure_dev_key_32bytes!'; // Ensure this is 32 bytes for AES-256 if used directly, though CryptoJS handles various lengths.
+    }
+  }
+  if (key.length < 32 && process.env.NODE_ENV === 'production') {
+     // Basic check, though CryptoJS might derive a key. For production, enforce strong key practices.
+     console.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY should ideally be a 32-byte (256-bit) string for maximum security.');
+  }
+  return key;
+};
+
 const encryptValue = async (value) => {
   try {
-    const config = await getConfig();
+    const encryptionKey = getEncryptionKey();
     if (!value) return '';
     
     return crypto.AES.encrypt(
       value.toString(), 
-      config.security.encryptionKey
+      encryptionKey
     ).toString();
   } catch (error) {
     console.error('Encryption error:', error);
@@ -73,12 +101,12 @@ const encryptValue = async (value) => {
  */
 const decryptValue = async (encryptedValue) => {
   try {
-    const config = await getConfig();
+    const encryptionKey = getEncryptionKey();
     if (!encryptedValue) return '';
     
     const bytes = crypto.AES.decrypt(
       encryptedValue.toString(), 
-      config.security.encryptionKey
+      encryptionKey
     );
     return bytes.toString(crypto.enc.Utf8);
   } catch (error) {

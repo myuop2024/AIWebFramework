@@ -62,7 +62,7 @@ router.get('/', ensureAuthenticated, ensureAdmin, async (req, res) => {
     const logs = await storage.getAllUserImportLogs();
     res.status(200).json(logs);
   } catch (error) {
-    console.error('Error fetching user import logs:', error);
+    logger.error('Error fetching user import logs:', error);
     res.status(500).json({ message: 'Failed to fetch user import logs' });
   }
 });
@@ -82,7 +82,7 @@ router.get('/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
     
     res.status(200).json(log);
   } catch (error) {
-    console.error('Error fetching user import log:', error);
+    logger.error('Error fetching user import log:', error);
     res.status(500).json({ message: 'Failed to fetch user import log' });
   }
 });
@@ -156,7 +156,7 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
       failureCount: importResult.failures.length
     });
   } catch (error) {
-    console.error('Error in bulk user import:', error);
+    logger.error('Error in bulk user import:', error);
     res.status(500).json({ message: 'Failed to import users' });
   }
 });
@@ -191,7 +191,7 @@ router.post('/csv', ensureAuthenticated, ensureAdmin, upload.single('file'), asy
       const aiResponse = await axios.post('http://localhost:8000/clean_enrich', { records });
       aiResult = aiResponse.data;
     } catch (err) {
-      console.error('Python AI microservice failed, falling back to Google AI:', err);
+      logger.error('Python AI microservice failed, falling back to Google AI:', err);
       // Fallback: use existing Google AI logic (processCSVFile)
       aiResult = await processCSVFile(req.file.path, records);
     }
@@ -227,7 +227,7 @@ router.post('/csv', ensureAuthenticated, ensureAdmin, upload.single('file'), asy
       status: 'ready_for_import'
     });
   } catch (error) {
-    console.error('Error processing file:', error);
+    logger.error('Error processing file in /csv route:', error);
     res.status(500).json({ message: 'Failed to process file: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });
@@ -297,7 +297,7 @@ router.post('/csv/confirm/:id', ensureAuthenticated, ensureAdmin, async (req, re
       status: 'completed'
     });
   } catch (error) {
-    console.error('Error confirming CSV import:', error);
+    logger.error('Error confirming CSV import in /csv/confirm/:id route:', error);
     res.status(500).json({ message: 'Failed to import users: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });

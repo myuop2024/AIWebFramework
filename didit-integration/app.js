@@ -31,8 +31,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Session configuration
+const sessionSecret = process.env.SESSION_SECRET || 'your-session-secret-change-me-in-production';
+const defaultSessionSecret = 'your-session-secret-change-me-in-production';
+
+if (sessionSecret === defaultSessionSecret && process.env.NODE_ENV === 'production') {
+  const errorMessage = 'CRITICAL: Default SESSION_SECRET is being used in a production environment for Didit.me integration. This is insecure. Please set a strong, unique SESSION_SECRET environment variable.';
+  console.error(errorMessage); // Use console.error as logger might not be set up yet or is basic
+  throw new Error(errorMessage); // Halt startup
+} else if (sessionSecret === defaultSessionSecret) {
+  console.warn('WARNING: Using default SESSION_SECRET for Didit.me integration. This is insecure and should ONLY be used for development/testing. Set a proper SESSION_SECRET environment variable for production.');
+}
+
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret-change-me-in-production',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {

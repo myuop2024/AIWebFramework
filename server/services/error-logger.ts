@@ -40,6 +40,17 @@ export class ErrorLogger {
       path: request.path
     } : {};
 
+    // Sanitize context if it contains request body, params, or query
+    let sanitizedContext = context;
+    if (context && (context.body || context.params || context.query)) {
+      sanitizedContext = {
+        ...context,
+        ...(context.body && { body: ErrorLogger.sanitizeRequestBody(context.body) }),
+        ...(context.params && { params: ErrorLogger.sanitizeRequestParams(context.params) }),
+        ...(context.query && { query: ErrorLogger.sanitizeRequestQuery(context.query) }),
+      };
+    }
+
     // Format the error for console logging
     const logData = {
       timestamp: new Date().toISOString(),
@@ -52,7 +63,7 @@ export class ErrorLogger {
         errorName: error.name,
         stack: error.stack 
       }),
-      context
+      context: sanitizedContext // Use sanitized context
     };
 
     // Console logging based on level
@@ -82,7 +93,7 @@ export class ErrorLogger {
           userAgent: requestInfo.userAgent || null,
           path: requestInfo.path || null,
           method: requestInfo.method || null,
-          context: context ? context : null
+          context: sanitizedContext ? sanitizedContext : null // Use sanitized context
         };
 
         await db.insert(errorLogs).values(errorData);
@@ -100,6 +111,7 @@ export class ErrorLogger {
    */
   static createErrorMiddleware() {
     return async (err: any, req: Request, res: any, next: any) => {
+      // The body, params, query will be sanitized by the logError method.
       await ErrorLogger.logError({
         message: err.message || 'Internal server error',
         source: 'express',
@@ -142,6 +154,88 @@ export class ErrorLogger {
       userId,
       context: { peerId }
     });
+  }
+
+  /**
+   * Sanitizes a request body to remove or mask sensitive fields.
+   */
+  static sanitizeRequestBody(body: any): any {
+    if (typeof body !== 'object' || body === null) {
+      return body;
+    }
+
+    const sensitiveKeys = [
+      'password',
+      'currentPassword',
+      'newPassword',
+      'token',
+      'secret',
+      'twoFactorSecret',
+      'recoveryCodes',
+      'trn', // Tax Registration Number
+      'idNumber', // Generic ID number
+      'bankAccount',
+      // Add other PII or sensitive keys as needed
+      'creditCard',
+      'cvv',
+      'ssn',
+      'passportNumber'
+    ];
+
+    const sanitizedBody = { ...body };
+
+    for (const key of sensitiveKeys) {
+      if (sanitizedBody.hasOwnProperty(key)) {
+        sanitizedBody[key] = '[REDACTED]';
+      }
+    }
+
+    // Example for nested objects, can be made more recursive if needed
+    if (sanitizedBody.user && typeof sanitizedBody.user === 'object') {
+        sanitizedBody.user = ErrorLogger.sanitizeRequestBody(sanitizedBody.user);
+    }
+    if (sanitizedBody.profile && typeof sanitizedBody.profile === 'object') {
+        sanitizedBody.profile = ErrorLogger.sanitizeRequestBody(sanitizedBody.profile);
+    }
+
+    return sanitizedBody;
+  }
+
+  /**
+   * Sanitizes request parameters (e.g., from req.params).
+   */
+  static sanitizeRequestParams(params: any): any {
+    if (typeof params !== 'object' || params === null) {
+      return params;
+    }
+    const sensitiveKeys = ['userId', 'email', 'token', 'observerId', 'stationId', 'reportId', 'assignmentId']; // Add others if they appear in paths
+    const sanitizedParams = { ...params };
+    for (const key of sensitiveKeys) {
+      if (sanitizedParams.hasOwnProperty(key)) {
+        // Params are often IDs or simple strings, redacting might obscure too much.
+        // Consider if partial redaction or type checking is needed.
+        // For now, simple redaction for consistency.
+        sanitizedParams[key] = '[REDACTED_PARAM]';
+      }
+    }
+    return sanitizedParams;
+  }
+
+  /**
+   * Sanitizes request query parameters (e.g., from req.query).
+   */
+  static sanitizeRequestQuery(query: any): any {
+    if (typeof query !== 'object' || query === null) {
+      return query;
+    }
+    const sensitiveKeys = ['token', 'apiKey', 'signature', 'email', 'search', 'q', 'userId']; // Common sensitive query params
+    const sanitizedQuery = { ...query };
+    for (const key of sensitiveKeys) {
+      if (sanitizedQuery.hasOwnProperty(key)) {
+        sanitizedQuery[key] = '[REDACTED_QUERY]';
+      }
+    }
+    return sanitizedQuery;
   }
 }
 

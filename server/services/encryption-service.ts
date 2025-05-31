@@ -13,8 +13,18 @@ const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'CAFFE_encryption_key_must_
 
 // Ensure we have a proper 32-byte key for AES-256
 const getKey = (): Buffer => {
-  // If we have an environment key, use it as the base
   let keyBase = ENCRYPTION_KEY;
+  const defaultKey = 'CAFFE_encryption_key_must_be_32_bytes!';
+
+  if (keyBase === defaultKey && process.env.NODE_ENV === 'production') {
+    const errorMessage = 'CRITICAL: Default ENCRYPTION_KEY is being used in a production environment. This is insecure. Please set a strong, unique ENCRYPTION_KEY environment variable.';
+    logger.critical(errorMessage);
+    // For critical security, it's often best to prevent the application from running with such a configuration.
+    // Consider whether to throw an error here to halt startup, or if logging is sufficient (not recommended for this).
+    throw new Error(errorMessage);
+  } else if (keyBase === defaultKey) {
+    logger.warn('WARNING: Using default ENCRYPTION_KEY. This is insecure and should ONLY be used for development/testing. Set a proper ENCRYPTION_KEY environment variable for production.');
+  }
   
   // Hash it to ensure we have exactly 32 bytes
   return crypto.createHash('sha256').update(keyBase).digest();
