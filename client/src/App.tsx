@@ -1,6 +1,6 @@
 import { Switch, Route, Redirect, useLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import React, { useEffect, Suspense } from "react";
+import React, { useEffect, Suspense, lazy } from "react";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import DynamicRegister from "@/pages/dynamic-register";
@@ -61,19 +61,20 @@ function Router() {
       <Route path="/faq" component={Faq} />
       <Route path="/map-view" component={DirectMapAccess} />
       <Route path="/jamaica-map" component={React.lazy(() => import("@/pages/standalone-map"))} />
-      
+
       {/* Protected Routes (require any authenticated user) */}
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/documents" component={Documents} />
       <ProtectedRoute path="/polling-stations" component={PollingStations} />
-      <ProtectedRoute path="/polling-stations/create" component={React.lazy(() => import("@/pages/polling-stations/create"))} />
-      <ProtectedRoute path="/polling-stations/import" component={React.lazy(() => import("@/pages/polling-stations/import"))} />
-      <ProtectedRoute path="/polling-stations/map" component={React.lazy(() => import("@/pages/polling-stations/map"))} />
-      <ProtectedRoute path="/polling-stations/regions" component={React.lazy(() => import("@/pages/polling-stations/regions"))} />
-      <ProtectedRoute path="/polling-stations/export" component={React.lazy(() => import("@/pages/polling-stations/export"))} />
-      <RoleProtectedRoute path="/polling-stations/report-template" component={React.lazy(() => import("@/pages/polling-stations/report-template"))} allowedRoles={["admin", "director"]} />
+      <ProtectedRoute path="/polling-stations/create" component={lazy(() => import("@/pages/polling-stations/create"))} />
+      <ProtectedRoute path="/polling-stations/import" component={lazy(() => import("@/pages/polling-stations/import"))} />
+      <ProtectedRoute path="/polling-stations/map" component={lazy(() => import("@/pages/polling-stations/map"))} />
+      <ProtectedRoute path="/polling-stations/regions" component={lazy(() => import("@/pages/polling-stations/regions"))} />
+      <ProtectedRoute path="/polling-stations/export" component={lazy(() => import("@/pages/polling-stations/export"))} />
+      <RoleProtectedRoute path="/polling-stations/report-template" component={lazy(() => import("@/pages/polling-stations/report-template"))} allowedRoles={["admin", "director"]} />
+      <ProtectedRoute path="/polling-stations/check-in" component={lazy(() => import("./pages/polling-stations/check-in"))} />
       <ProtectedRoute path="/reports" component={Reports} />
       <ProtectedRoute path="/reports/new" component={NewReport} />
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />
@@ -95,7 +96,7 @@ function Router() {
       <ProtectedRoute path="/project-management/:id/edit" component={ProjectEdit} />
       <ProtectedRoute path="/project-management/:id" component={ProjectDetail} />
       <ProtectedRoute path="/project-management" component={ProjectManagement} />
-      
+
       {/* Admin Routes (require admin or director role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin" component={Admin} allowedRoles={["admin", "director"]} />
@@ -109,7 +110,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
-      
+
       {/* Supervisor Routes */}
       <RoleProtectedRoute 
         path="/supervisor/team-management" 
@@ -131,7 +132,7 @@ function Router() {
         component={ScheduleMeeting} 
         allowedRoles={["supervisor", "admin", "director"]} 
       />
-      
+
       {/* Roving Observer Routes */}
       <RoleProtectedRoute 
         path="/roving/station-schedule" 
@@ -143,10 +144,10 @@ function Router() {
         component={AreaReportsPage} 
         allowedRoles={["roving_observer", "supervisor", "admin", "director"]} 
       />
-      
+
       {/* Advanced Features */}
       <Route path="/advanced-features" component={AdvancedFeatures} />
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

@@ -101,7 +101,7 @@ router.post("/", hasRole(["admin", "supervisor"]), async (req, res) => {
       longitude: validationResult.data.longitude || null,
       status: validationResult.data.isActive ? "active" : "inactive"
     };
-    
+
     const newStation = await storage.createPollingStation(stationData);
 
     res.status(201).json(newStation);
@@ -130,7 +130,7 @@ router.patch("/:id", hasRole(["admin", "supervisor"]), async (req, res) => {
       ...req.body,
       id
     });
-    
+
     if (!validationResult.success) {
       return res.status(400).json({ 
         error: "Validation failed", 
@@ -140,7 +140,7 @@ router.patch("/:id", hasRole(["admin", "supervisor"]), async (req, res) => {
 
     // Map validated data to the schema fields
     const updateData: any = {};
-    
+
     if (validationResult.data.name !== undefined) updateData.name = validationResult.data.name;
     if (validationResult.data.stationCode !== undefined) updateData.stationCode = validationResult.data.stationCode;
     if (validationResult.data.address !== undefined) updateData.address = validationResult.data.address;
@@ -151,7 +151,7 @@ router.patch("/:id", hasRole(["admin", "supervisor"]), async (req, res) => {
     if (validationResult.data.latitude !== undefined) updateData.latitude = validationResult.data.latitude;
     if (validationResult.data.longitude !== undefined) updateData.longitude = validationResult.data.longitude;
     if (validationResult.data.isActive !== undefined) updateData.status = validationResult.data.isActive ? "active" : "inactive";
-    
+
     // Update the station
     const updatedStation = await storage.updatePollingStation(id, updateData);
 
@@ -215,7 +215,7 @@ router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), 
 
       for (let i = 0; i < records.length; i++) {
         const record = records[i];
-        
+
         try {
           // Transform CSV record to match our schema
           const stationData = {
@@ -277,7 +277,7 @@ router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), 
 router.get("/export", hasRole(["admin", "supervisor"]), async (req, res) => {
   try {
     const stations = await storage.getAllPollingStations();
-    
+
     // Convert to CSV format
     const header = "id,name,stationCode,address,city,state,zipCode,capacity,latitude,longitude,status,coordinates\n";
     const rows = stations.map(station => {
@@ -302,7 +302,7 @@ router.get("/export", hasRole(["admin", "supervisor"]), async (req, res) => {
     // Set headers for file download
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=polling-stations.csv');
-    
+
     res.send(csv);
   } catch (error) {
     console.error("Error exporting polling stations:", error);
@@ -368,84 +368,47 @@ router.get('/user/:userId/assignments', ensureAuthenticated, async (req, res) =>
   }
 });
 
-// Get the current report form template for polling stations
-router.get('/report-template', ensureAuthenticated, async (req, res) => {
-  try {
-    // Fetch the template key from system settings
-    const setting = await storage.getSystemSetting('polling_station_report_template_id');
-    let templateId = setting?.settingValue;
-    if (!templateId) {
-      // Fallback: get the first active template in 'polling_station_report' category
-      const templates = await storage.getFormTemplatesByCategory('polling_station_report');
-      templateId = templates?.[0]?.id;
-    }
-    if (!templateId) return res.status(404).json({ message: 'No report template configured' });
-    const template = await storage.getFormTemplate(templateId);
-    if (!template) return res.status(404).json({ message: 'Report template not found' });
-    res.json(template);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch report template' });
-  }
-});
-
-// Admin: Set the active report form template for polling stations
-router.post('/admin/report-template', hasRole(['admin']), async (req, res) => {
-  try {
-    const { templateId } = req.body;
-    if (!templateId) return res.status(400).json({ message: 'templateId required' });
-    await storage.updateSystemSetting('polling_station_report_template_id', templateId, req.session.userId);
-    res.status(200).json({ message: 'Report template updated', templateId });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update report template' });
-  }
-});
-
-// Submit a report for a polling station
-router.post('/:stationId/report', ensureAuthenticated, async (req, res) => {
+// Check-in to a polling station
+router.post('/:stationId/check-in', ensureAuthenticated, async (req, res) => {
   try {
     const stationId = parseInt(req.params.stationId);
     const userId = req.session.userId;
-    if (isNaN(stationId) || !userId) return res.status(400).json({ message: 'Invalid station or user' });
-    // Fetch the current template
-    const setting = await storage.getSystemSetting('polling_station_report_template_id');
-    let templateId = setting?.settingValue;
-    if (!templateId) {
-      const templates = await storage.getFormTemplatesByCategory('polling_station_report');
-      templateId = templates?.[0]?.id;
-    }
-    if (!templateId) return res.status(400).json({ message: 'No report template configured' });
-    const template = await storage.getFormTemplate(templateId);
-    if (!template) return res.status(400).json({ message: 'Report template not found' });
-    // Validate the report data against the template fields (basic presence check)
-    const requiredFields = template.fields?.sections?.flatMap((s: any) => s.fields?.filter((f: any) => f.required).map((f: any) => f.id)) || [];
-    for (const fieldId of requiredFields) {
-      if (!(fieldId in req.body)) {
-        return res.status(400).json({ message: `Missing required field: ${fieldId}` });
-      }
-    }
-    // Save the report
-    const report = await storage.createPollingStationReport({
-      stationId,
-      userId,
-      templateId,
-      data: req.body,
-      submittedAt: new Date()
-    });
-    res.status(201).json(report);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to submit report' });
-  }
-});
 
-// Get all reports for a polling station
-router.get('/:stationId/reports', ensureAuthenticated, async (req, res) => {
-  try {
-    const stationId = parseInt(req.params.stationId);
-    if (isNaN(stationId)) return res.status(400).json({ message: 'Invalid station ID' });
-    const reports = await storage.getPollingStationReports(stationId);
-    res.status(200).json(reports);
+    if (isNaN(stationId) || !userId) {
+      return res.status(400).json({ message: 'Invalid station or user ID' });
+    }
+
+    // Verify the station exists
+    const station = await storage.getPollingStation(stationId);
+    if (!station) {
+      return res.status(404).json({ message: 'Polling station not found' });
+    }
+
+    // Check if user has an assignment for this station
+    const assignments = await storage.getAssignmentsByUserId(userId);
+    const stationAssignment = assignments.find(a => a.stationId === stationId);
+
+    if (!stationAssignment) {
+      return res.status(403).json({ message: 'You are not assigned to this polling station' });
+    }
+
+    // Record the check-in (you may need to implement this in storage)
+    const checkInData = {
+      userId,
+      stationId,
+      checkInTime: new Date(),
+      location: req.body.location || null
+    };
+
+    // For now, we'll just return success - implement actual storage later
+    res.status(200).json({
+      message: 'Successfully checked in',
+      station: station.name,
+      checkInTime: checkInData.checkInTime
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch reports' });
+    console.error('Error during check-in:', error);
+    res.status(500).json({ message: 'Failed to check in' });
   }
 });
 
