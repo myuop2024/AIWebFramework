@@ -139,6 +139,8 @@ export const documents = pgTable("documents", {
   ocrText: text("ocr_text"),
   ocr_text_iv: text("ocr_text_iv").nullable(),
   is_ocr_text_encrypted: boolean("is_ocr_text_encrypted").default(false).notNull(),
+  file_encryption_iv: text("file_encryption_iv").nullable(),
+  is_file_encrypted: boolean("is_file_encrypted").default(false).notNull(),
   verificationStatus: text("verification_status").notNull().default("pending"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
@@ -538,6 +540,8 @@ export const taskAttachments = pgTable("task_attachments", {
   fileType: text("file_type"),
   fileSize: integer("file_size"),
   createdAt: timestamp("created_at").defaultNow(),
+  file_encryption_iv: text("file_encryption_iv").nullable(),
+  is_file_encrypted: boolean("is_file_encrypted").default(false).notNull(),
 });
 
 export const taskHistory = pgTable("task_history", {

@@ -17,7 +17,9 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
     const usersFromDb = await storage.getAllUsers();
     
     // Decrypt each user
-    const decryptedUsers = usersFromDb.map(user => decryptUserFields(user, (req.user as any)?.role));
+    const requestingAdminId = (req.user as any)?.id as number;
+    const adminRole = (req.user as any)?.role;
+    const decryptedUsers = usersFromDb.map(user => decryptUserFields(user, requestingAdminId, adminRole));
 
     // For security, filter out sensitive information like password hashes
     // and use decrypted values
@@ -61,7 +63,9 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
     }
 
     // Decrypt user fields from users table
-    userFromDb = decryptUserFields(userFromDb, (req.user as any)?.role);
+    const requestingAdminIdForSingle = (req.user as any)?.id as number;
+    const adminRoleForSingle = (req.user as any)?.role;
+    userFromDb = decryptUserFields(userFromDb, requestingAdminIdForSingle, adminRoleForSingle);
     
     // Get user profile
     let profileFromDb = await storage.getUserProfile(userId);
@@ -129,7 +133,9 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
     }
 
     // Decrypt user for response
-    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
+    const requestingAdminIdForUpdate = (req.user as any)?.id as number;
+    const adminRoleForUpdate = (req.user as any)?.role;
+    updatedUser = decryptUserFields(updatedUser, requestingAdminIdForUpdate, adminRoleForUpdate);
     
     res.json({
       id: updatedUser.id,
@@ -165,7 +171,9 @@ router.get('/api/admin/users/:id/documents', isAuthenticated, isAdmin, async (re
     }
 
     // Decrypt user fields
-    userFromDb = decryptUserFields(userFromDb, (req.user as any)?.role);
+    const requestingAdminIdForDocs = (req.user as any)?.id as number;
+    const adminRoleForDocs = (req.user as any)?.role;
+    userFromDb = decryptUserFields(userFromDb, requestingAdminIdForDocs, adminRoleForDocs);
     
     // Get all documents for this user
     let documentsFromDb = await storage.getDocumentsByUserId(userId);
@@ -232,7 +240,9 @@ router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req:
     }
 
     // Decrypt user for response (though only verificationStatus is expected to change)
-    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
+    const requestingAdminIdForVerify = (req.user as any)?.id as number;
+    const adminRoleForVerify = (req.user as any)?.role;
+    updatedUser = decryptUserFields(updatedUser, requestingAdminIdForVerify, adminRoleForVerify);
     
     // Return updated user info
     res.json({
@@ -274,7 +284,9 @@ router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, asy
     }
 
     // Decrypt user for response
-    updatedUser = decryptUserFields(updatedUser, (req.user as any)?.role);
+    const requestingAdminIdForToggle = (req.user as any)?.id as number;
+    const adminRoleForToggle = (req.user as any)?.role;
+    updatedUser = decryptUserFields(updatedUser, requestingAdminIdForToggle, adminRoleForToggle);
     
     // For response, map verification status to isActive
     const isActive = updatedUser.verificationStatus === 'verified'; // This field is not encrypted

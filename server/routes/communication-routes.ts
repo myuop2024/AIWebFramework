@@ -2,7 +2,7 @@ import express from 'express';
 import { storage } from '../storage'; // Assuming path is correct
 import { z } from 'zod';
 import { CommunicationService } from '../services/communication-service'; // Assuming path is correct
-import { encryptFields, decryptFields } from '../services/encryption-service';
+import { encryptFields, decryptMessageFields } from '../services/encryption-service'; // Changed to decryptMessageFields
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -126,18 +126,11 @@ router.get('/conversations', ensureAuthenticated, async (req, res, next) => {
   try {
     // req.userId is guaranteed by ensureAuthenticated middleware
     const conversationsFromDb = await storage.getRecentConversations(req.userId);
-    // IMPORTANT: Decryption permission for message content needs to be sender/receiver,
-    // not just canViewSensitiveData. Current generic decryptFields uses canViewSensitiveData.
-    // This needs refinement for actual message security.
-    const userRoleForDecryption = (req.user as any)?.role; // Placeholder for actual permission check
+    // Decrypt lastMessage content using specific message decryption logic
     const decryptedConversations = conversationsFromDb.map(conv => {
-      if (conv.lastMessage && conv.lastMessage.content) {
-        const decryptedLastMessage = decryptFields(
-          conv.lastMessage,
-          userRoleForDecryption,
-          "content_iv",
-          "is_content_encrypted"
-        );
+      if (conv.lastMessage && conv.lastMessage.content && conv.lastMessage.is_content_encrypted) {
+        // req.userId is the requesting user's ID, guaranteed by ensureAuthenticated
+        const decryptedLastMessage = decryptMessageFields(conv.lastMessage, req.userId);
         return { ...conv, lastMessage: decryptedLastMessage };
       }
       return conv;
@@ -161,10 +154,9 @@ router.get('/messages/:userId', ensureAuthenticated, async (req, res, next) => {
 
     // req.userId is guaranteed by ensureAuthenticated middleware
     const messagesFromDb = await storage.getMessagesBetweenUsers(req.userId, otherUserId);
-    // IMPORTANT: Decryption permission for message content needs to be sender/receiver.
-    const userRoleForDecryption = (req.user as any)?.role; // Placeholder
+    // Decrypt messages using specific message decryption logic
     const decryptedMessages = messagesFromDb.map(msg =>
-      decryptFields(msg, userRoleForDecryption, "content_iv", "is_content_encrypted")
+      decryptMessageFields(msg, req.userId) // req.userId is the requesting user
     );
     res.json(decryptedMessages);
   } catch (error) {
@@ -247,12 +239,9 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
 
     const createdMessageFromDb = await storage.createMessage(encryptedMessageData);
 
-    // Decrypt for response
-    // IMPORTANT: Decryption permission for message content needs to be sender/receiver.
-    const userRoleForDecryption = (req.user as any)?.role; // Placeholder
-    const createdMessage = decryptFields(
-      createdMessageFromDb, userRoleForDecryption, "content_iv", "is_content_encrypted"
-    );
+    // Decrypt for response using specific message decryption logic
+    // req.userId is the sender here, so they are permitted to see the decrypted content.
+    const createdMessage = decryptMessageFields(createdMessageFromDb, req.userId);
 
     console.log(`[API] Message sent from ${req.userId} to ${receiverId}:`, createdMessage.content); // Log decrypted content if needed, or remove
 

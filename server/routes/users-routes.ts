@@ -84,7 +84,9 @@ router.get('/profile', async (req, res) => {
     
     // Decrypt sensitive fields before sending
     // First decrypt fields from 'users' table, then from 'userProfiles'
-    let fullyDecryptedProfile = decryptUserFields(profile, (req.user as any)?.role);
+    // For own profile, requestingUserId is the same as target user's ID.
+    const requestingUserIdForProfile = parseInt(userId); // userId is string | null, ensure it's number for decryptUserFields
+    let fullyDecryptedProfile = decryptUserFields(profile, requestingUserIdForProfile, (req.user as any)?.role);
     fullyDecryptedProfile = decryptProfileFields(fullyDecryptedProfile, (req.user as any)?.role);
     res.json(fullyDecryptedProfile);
   } catch (error) {
@@ -163,9 +165,11 @@ router.get('/', async (req, res) => {
     const totalPages = Math.ceil(total / limit);
 
     // Decrypt sensitive fields for each user
+    const requestingUserIdForList = (req.user as any)?.id as number; // Assuming admin/supervisor is making the request
+    const userRoleForList = (req.user as any)?.role;
     const fullyDecryptedUsersList = usersList.map(user => {
-      let decryptedUser = decryptUserFields(user, (req.user as any)?.role);
-      return decryptProfileFields(decryptedUser, (req.user as any)?.role);
+      let decryptedUser = decryptUserFields(user, requestingUserIdForList, userRoleForList);
+      return decryptProfileFields(decryptedUser, userRoleForList);
     });
     
     res.json({
@@ -285,8 +289,10 @@ router.get('/:id', async (req, res) => {
     }
     
     // Decrypt sensitive fields before sending
-    let fullyDecryptedUser = decryptUserFields(user[0], (req.user as any)?.role);
-    fullyDecryptedUser = decryptProfileFields(fullyDecryptedUser, (req.user as any)?.role);
+    const requestingUserIdForSingle = (req.user as any)?.id as number; // Assuming admin/supervisor or permitted user
+    const userRoleForSingle = (req.user as any)?.role;
+    let fullyDecryptedUser = decryptUserFields(user[0], requestingUserIdForSingle, userRoleForSingle);
+    fullyDecryptedUser = decryptProfileFields(fullyDecryptedUser, userRoleForSingle);
     res.json(fullyDecryptedUser);
   } catch (error) {
     logger.error('Error fetching user:', error);
@@ -346,7 +352,10 @@ router.put('/:id', async (req, res) => {
     
     logger.info('User updated:', { id, email: result[0]?.email }); // email might be encrypted
     // Decrypt result before sending back to client
-    const decryptedResult = decryptUserFields(result[0], (req.user as any)?.role);
+    // Assuming req.user.id is the ID of the user making the request.
+    const requestingUserIdForUpdate = (req.user as any)?.id as number;
+    const userRoleForUpdate = (req.user as any)?.role;
+    const decryptedResult = decryptUserFields(result[0], requestingUserIdForUpdate, userRoleForUpdate);
     res.json(decryptedResult);
   } catch (error) {
     logger.error('Error updating user:', error);
@@ -526,7 +535,9 @@ router.get('/search', async (req, res) => {
       .limit(limit);
 
     // Decrypt results before sending. Note: Search functionality on encrypted fields will be impaired.
-    const decryptedSearchResults = searchResults.map(user => decryptUserFields(user, (req.user as any)?.role));
+    const requestingUserIdForSearch = (req.user as any)?.id as number;
+    const userRoleForSearch = (req.user as any)?.role;
+    const decryptedSearchResults = searchResults.map(user => decryptUserFields(user, requestingUserIdForSearch, userRoleForSearch));
     
     res.json(decryptedSearchResults);
   } catch (error) {

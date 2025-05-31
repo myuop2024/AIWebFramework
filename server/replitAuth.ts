@@ -164,8 +164,10 @@ export async function setupAuth(app: Express) {
       }
       
       // Decrypt user data before sending to client
-      // Use user's own role for decryption logic if applicable, or admin role if appropriate context
-      const decryptedUser = decryptUserFields(userFromDb, (req.user as any).claims?.role || userFromDb.role);
+      // For fetching own user data, requestingUserId is the same as the target userId.
+      const numericUserId = parseInt(userId, 10); // Ensure userId is a number
+      const userRole = (req.user as any).claims?.role || userFromDb.role;
+      const decryptedUser = decryptUserFields(userFromDb, numericUserId, userRole);
 
       // Return decrypted user data
       res.json(decryptedUser);

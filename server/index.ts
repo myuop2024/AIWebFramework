@@ -56,6 +56,20 @@ const app = express();
 // Trust proxy for proper IP handling in cloud environments
 app.set('trust proxy', true);
 
+// Enforce HTTPS in production
+// This middleware should be placed after 'trust proxy' and before other request processing.
+if (process.env.NODE_ENV === 'production') {
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Check if the 'x-forwarded-proto' header is set to 'https' (common for proxies)
+    // or if req.secure is true (Express's built-in check, respects 'trust proxy')
+    if (req.headers['x-forwarded-proto'] !== 'https' && !req.secure) {
+      logger.info(`Redirecting HTTP to HTTPS for: ${req.headers.host}${req.url}`);
+      return res.redirect('https://' + req.headers.host + req.url);
+    }
+    next();
+  });
+}
+
 // Security middleware - apply early
 app.use(securityHeaders);
 app.use(corsConfig);

@@ -3,6 +3,7 @@
  * Uses AES-256-GCM for encryption with unique initialization vectors
  */
 import crypto from 'crypto';
+import logger from '../utils/logger'; // Added logger import
 
 // Encryption constants
 const ALGORITHM = 'aes-256-gcm';
@@ -321,31 +322,17 @@ export function encryptUserFields(data: Record<string, any>): Record<string, any
  * Decrypts sensitive fields in a user object from the 'users' table.
  * Uses IVs from 'personalInfoIv'.
  *
- * @param user User data object (potentially with encrypted fields)
- * @param userRole Role of the user requesting decryption
- * @returns User data object with specified fields decrypted if permitted
+ * @param user User data object (potentially with encrypted fields) - must contain 'id' field.
+ * @param requestingUserId The ID of the user making the request.
+ * @param userRole Role of the user requesting decryption.
+ * @returns User data object with specified fields decrypted if permitted.
  */
 export function decryptUserFields(
   user: Record<string, any> | null | undefined,
+  requestingUserId: number, // Added: ID of the user making the request
   userRole: string
 ): Record<string, any> | null | undefined {
-  if (!user || !user.isPersonalInfoEncrypted || !user.personalInfoIv) {
-    return user;
-  }
-
-  // IMPORTANT SECURITY NOTE:
-  // The canViewSensitiveData check is a general permission.
-  // Fields like 'twoFactorSecret' and 'recoveryCodes' (and potentially 'deviceId')
-  // should have much stricter decryption rules, typically only allowing the user themselves
-  // or highly privileged, specific system processes to decrypt them.
-  // This current implementation will allow any role passing canViewSensitiveData to decrypt them.
-  // This needs to be refined in a subsequent task with more context-specific authorization.
-  if (!canViewSensitiveData(userRole)) {
-    // If the user does not have general permission, return the user object as is.
-    // Specific fields like 2FA might still need to be hidden or handled differently
-    // even if some other fields are decrypted for permitted roles.
-    // For now, we return all fields as is (potentially still encrypted).
-    console.warn(`User with role '${userRole}' attempted to decrypt sensitive user fields without general permission.`);
+  if (!user || !user.isPersonalInfoEncrypted || !user.personalInfoIv || user.id === undefined) {
     return user;
   }
 
@@ -369,15 +356,39 @@ export function decryptUserFields(
 
   Object.keys(ivs).forEach(field => {
     if (user[field] && ivs[field]) {
-      // Determine if the field needs to be parsed as an object after decryption (e.g. recoveryCodes)
-      const asObject = field === 'recoveryCodes';
-      const decryptedValue = decrypt(user[field], ivs[field], asObject);
-      if (decryptedValue !== null) {
-        result[field] = decryptedValue;
+      let canDecryptField = false;
+
+      if (field === 'twoFactorSecret' || field === 'recoveryCodes') {
+        // These fields can only be decrypted by the owner.
+        canDecryptField = user.id === requestingUserId;
+        if (!canDecryptField) {
+          // If not owner, explicitly nullify or remove these fields from result for security.
+          // For now, we keep them encrypted as per original logic for non-permitted fields.
+          // Or, more securely: delete result[field];
+           logger.warn(`Attempt to decrypt sensitive 2FA field '${field}' for user ID ${user.id} by non-owner ${requestingUserId}. Field kept encrypted.`);
+        }
       } else {
-        // Decryption failed for this field, log and keep original or clear?
-        // Keeping original (still encrypted) might be safer to avoid data loss.
-        console.warn(`Decryption failed for field '${field}' for user ID ${user.id || 'unknown'}.`);
+        // For other fields, use the role-based general permission.
+        canDecryptField = canViewSensitiveData(userRole);
+        if (!canDecryptField) {
+            logger.warn(`User role '${userRole}' (requester ID ${requestingUserId}) does not have general permission to decrypt field '${field}' for user ID ${user.id}. Field kept encrypted.`);
+        }
+      }
+
+      if (canDecryptField) {
+        const asObject = field === 'recoveryCodes'; // recoveryCodes is JSON
+        const decryptedValue = decrypt(user[field], ivs[field], asObject);
+        if (decryptedValue !== null) {
+          result[field] = decryptedValue;
+        } else {
+          console.warn(`Decryption failed for field '${field}' for user ID ${user.id}. Field kept encrypted.`);
+        }
+      } else {
+        // If not permitted to decrypt (either 2FA field by non-owner, or other field by insufficient role),
+        // the field remains encrypted in the 'result' object (copied from 'user').
+        // Consider if these fields should be nulled out or removed from 'result' if the requester
+        // isn't the owner (for 2FA) or doesn't have canViewSensitiveData (for others).
+        // For now, they remain encrypted if permission is denied.
       }
     }
   });
@@ -430,3 +441,57 @@ export function shouldEncryptField(fieldName: string): boolean {
   return sensitiveFields.includes(fieldName);
 }
 */
+
+/**
+ * Decrypts message content if the requesting user is the sender or receiver.
+ *
+ * @param message The message object (must include senderId, receiverId, content, content_iv, is_content_encrypted).
+ * @param requestingUserId The ID of the user making the request.
+ * @returns The message object with 'content' decrypted if permitted, otherwise original message.
+ */
+export function decryptMessageFields(
+  message: Record<string, any> | null | undefined,
+  requestingUserId: number
+): Record<string, any> | null | undefined {
+  if (!message || !message.is_content_encrypted || !message.content_iv || !message.content) {
+    return message; // Not encrypted or necessary fields missing
+  }
+
+  // Permission check: Only sender or receiver can decrypt
+  if (requestingUserId !== message.senderId && requestingUserId !== message.receiverId) {
+    logger.warn(`User ${requestingUserId} attempted to decrypt message ${message.id || 'unknown'} not sent or received by them. Sender: ${message.senderId}, Receiver: ${message.receiverId}.`);
+    // Return message as is (content still encrypted)
+    return message;
+  }
+
+  const result = { ...message };
+  let ivs: Record<string, string> = {}; // IVs for message content are stored directly in content_iv
+
+  try {
+    // content_iv stores the IV for the 'content' field directly as a string "iv_hex:auth_tag_hex"
+    // but our generic decrypt function expects a JSON string of IVs like {"content": "iv_hex:auth_tag_hex"}
+    // So, we reconstruct this structure for the core 'decrypt' function.
+    // Alternatively, we can call 'decrypt' directly.
+
+    const [ivHex, authTagHex] = (message.content_iv as string).split(':');
+    if (!ivHex || !authTagHex) {
+      logger.error(`Invalid content_iv format for message ${message.id || 'unknown'}: ${message.content_iv}`);
+      return message; // Cannot decrypt
+    }
+
+    // The 'content' field itself is what's encrypted.
+    const decryptedContent = decrypt(message.content, message.content_iv, false); // false because message content is string
+
+    if (decryptedContent !== null) {
+      result.content = decryptedContent;
+    } else {
+      logger.warn(`Decryption failed for message content (ID: ${message.id || 'unknown'}). Content kept encrypted.`);
+    }
+  } catch (error) {
+    logger.error(`Error during message content decryption (ID: ${message.id || 'unknown'}):`, error);
+    // Return original message if decryption process fails
+    return message;
+  }
+
+  return result;
+}
