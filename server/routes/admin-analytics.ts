@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
-import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 import { db } from '../db';
 import { eq, and, gte, count, sql } from 'drizzle-orm';
 import {
@@ -19,7 +19,7 @@ const router = Router();
 // The ensureAuthenticated and ensureAdmin middleware are already defined and imported
 
 // Get analytics summary
-router.get('/summary', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/summary', ensureAuthenticated, hasPermission('analytics:view-summary'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -116,7 +116,7 @@ router.get('/summary', ensureAdmin, async (req: Request, res: Response) => {
 });
 
 // Get user statistics
-router.get('/users', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/users', ensureAuthenticated, hasPermission('analytics:view-users'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -174,7 +174,7 @@ router.get('/users', ensureAdmin, async (req: Request, res: Response) => {
 });
 
 // Get report type statistics
-router.get('/reports/types', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/reports/types', ensureAuthenticated, hasPermission('analytics:view-report-types'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -232,7 +232,7 @@ router.get('/reports/types', ensureAdmin, async (req: Request, res: Response) =>
 });
 
 // Get report status statistics
-router.get('/reports/status', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/reports/status', ensureAuthenticated, hasPermission('analytics:view-report-status'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -289,7 +289,7 @@ router.get('/reports/status', ensureAdmin, async (req: Request, res: Response) =
 });
 
 // Get stations with issues
-router.get('/stations/issues', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/stations/issues', ensureAuthenticated, hasPermission('analytics:view-station-issues'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -373,7 +373,7 @@ router.get('/stations/issues', ensureAdmin, async (req: Request, res: Response) 
 });
 
 // Get daily activity data
-router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/daily-activity', ensureAuthenticated, hasPermission('analytics:view-daily-activity'), async (req: Request, res: Response) => {
   try {
     const timeRangeParam = req.query.timeRange as string || '7d';
     
@@ -484,7 +484,7 @@ router.get('/daily-activity', ensureAdmin, async (req: Request, res: Response) =
 });
 
 // Get incident predictions with news integration
-router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/incident-predictions', ensureAuthenticated, hasPermission('analytics:view-incident-predictions'), async (req: Request, res: Response) => {
   try {
     logger.info('Admin requested incident predictions with Jamaican news integration');
     
@@ -560,7 +560,7 @@ router.get('/incident-predictions', ensureAdmin, async (req: Request, res: Respo
 });
 
 // Get latest Jamaican political news
-router.get('/news/jamaica', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/news/jamaica', ensureAuthenticated, hasPermission('analytics:view-news'), async (req: Request, res: Response) => {
   try {
     // Get days parameter (default to 7 days)
     const days = req.query.days ? parseInt(req.query.days as string) : 7;

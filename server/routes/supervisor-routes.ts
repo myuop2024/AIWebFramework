@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
-import { ensureAuthenticated, ensureSupervisor } from '../middleware/auth';
+import { ensureAuthenticated, ensureSupervisor, hasPermission } from '../middleware/auth';
 import logger from '../utils/logger';
 
 const router = Router();
@@ -8,7 +8,7 @@ const router = Router();
 /**
  * Get all observers assigned to the supervisor's team
  */
-router.get('/api/supervisor/team', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.get('/api/supervisor/team', ensureAuthenticated, hasPermission('supervisor-tasks:view-team'), async (req: Request, res: Response) => {
   try {
     // In a real implementation, this would fetch only observers assigned to this supervisor
     // For demo purposes, we'll return all observers with role 'observer'
@@ -44,7 +44,7 @@ router.get('/api/supervisor/team', ensureAuthenticated, ensureSupervisor, async 
 /**
  * Get pending reports that need supervisor approval
  */
-router.get('/api/supervisor/pending-reports', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.get('/api/supervisor/pending-reports', ensureAuthenticated, hasPermission('supervisor-tasks:view-pending-reports'), async (req: Request, res: Response) => {
   try {
     // In a real implementation, we would fetch real data from the database
     // For demo purposes, generate sample pending reports
@@ -77,7 +77,7 @@ router.get('/api/supervisor/pending-reports', ensureAuthenticated, ensureSupervi
 /**
  * Get all assignments managed by this supervisor
  */
-router.get('/api/supervisor/assignments', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.get('/api/supervisor/assignments', ensureAuthenticated, hasPermission('supervisor-tasks:view-assignments'), async (req: Request, res: Response) => {
   try {
     // In a real implementation, we would fetch from the database
     // For now, return sample assignments
@@ -107,7 +107,7 @@ router.get('/api/supervisor/assignments', ensureAuthenticated, ensureSupervisor,
 /**
  * Create new assignment for an observer
  */
-router.post('/api/assignments', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.post('/api/assignments', ensureAuthenticated, hasPermission('supervisor-tasks:create-assignment'), async (req: Request, res: Response) => {
   try {
     const { observerId, stationId, startTime, endTime } = req.body;
     
@@ -151,7 +151,7 @@ router.post('/api/assignments', ensureAuthenticated, ensureSupervisor, async (re
 /**
  * Cancel an assignment
  */
-router.patch('/api/assignments/:id/cancel', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.patch('/api/assignments/:id/cancel', ensureAuthenticated, hasPermission('supervisor-tasks:cancel-assignment'), async (req: Request, res: Response) => {
   try {
     const assignmentId = parseInt(req.params.id);
     
@@ -182,7 +182,7 @@ router.patch('/api/assignments/:id/cancel', ensureAuthenticated, ensureSuperviso
 /**
  * Approve a report
  */
-router.patch('/api/reports/:id/approve', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.patch('/api/reports/:id/approve', ensureAuthenticated, hasPermission('supervisor-tasks:approve-report'), async (req: Request, res: Response) => {
   try {
     const reportId = parseInt(req.params.id);
     
@@ -213,7 +213,7 @@ router.patch('/api/reports/:id/approve', ensureAuthenticated, ensureSupervisor, 
 /**
  * Reject a report
  */
-router.patch('/api/reports/:id/reject', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.patch('/api/reports/:id/reject', ensureAuthenticated, hasPermission('supervisor-tasks:reject-report'), async (req: Request, res: Response) => {
   try {
     const reportId = parseInt(req.params.id);
     const { feedback } = req.body;
@@ -250,7 +250,7 @@ router.patch('/api/reports/:id/reject', ensureAuthenticated, ensureSupervisor, a
 /**
  * Request update for a report
  */
-router.patch('/api/reports/:id/request-update', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.patch('/api/reports/:id/request-update', ensureAuthenticated, hasPermission('supervisor-tasks:request-report-update'), async (req: Request, res: Response) => {
   try {
     const reportId = parseInt(req.params.id);
     const { feedback } = req.body;

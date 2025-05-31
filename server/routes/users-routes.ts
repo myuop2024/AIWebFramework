@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { users, userProfiles, assignments, reports, pollingStations, type User, type InsertUser } from '@shared/schema';
+import { ensureAuthenticated, hasPermission } from '../middleware/auth';
 import { eq, desc, and, sql, like } from 'drizzle-orm';
 import * as logger from '../utils/logger';
 
 const router = Router();
 
 // GET /api/users/profile - Get current user profile (for dashboard)
+// This route is for the logged-in user to get their own profile.
+// It already has authentication logic internally.
 router.get('/profile', async (req, res) => {
   try {
     // Get user ID from session or passport user
@@ -89,7 +92,7 @@ router.get('/profile', async (req, res) => {
 });
 
 // GET /api/users - Get all users with pagination and filtering
-router.get('/', async (req, res) => {
+router.get('/', ensureAuthenticated, hasPermission('users:view'), async (req, res) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -175,7 +178,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/users/stats - Get user statistics
-router.get('/stats', async (req, res) => {
+router.get('/stats', ensureAuthenticated, hasPermission('users:view-stats'), async (req, res) => {
   try {
     // Get role counts
     const roleStats = await db
@@ -224,7 +227,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // GET /api/users/:id - Get single user
-router.get('/:id', async (req, res) => {
+router.get('/:id', ensureAuthenticated, hasPermission('users:view'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -281,7 +284,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // PUT /api/users/:id - Update user
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, hasPermission('users:edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { 
@@ -336,7 +339,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // GET /api/users/:id/assignments - Get user assignments
-router.get('/:id/assignments', async (req, res) => {
+router.get('/:id/assignments', ensureAuthenticated, hasPermission('users:view-assignments'), async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     const status = req.query.status as string;
@@ -382,7 +385,7 @@ router.get('/:id/assignments', async (req, res) => {
 });
 
 // GET /api/users/:id/reports - Get user reports
-router.get('/:id/reports', async (req, res) => {
+router.get('/:id/reports', ensureAuthenticated, hasPermission('users:view-reports'), async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     const status = req.query.status as string;
@@ -426,7 +429,7 @@ router.get('/:id/reports', async (req, res) => {
 });
 
 // POST /api/users/:id/verify - Verify user
-router.post('/:id/verify', async (req, res) => {
+router.post('/:id/verify', ensureAuthenticated, hasPermission('users:verify'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { verificationStatus, verifiedBy } = req.body;
@@ -479,7 +482,7 @@ router.post('/:id/verify', async (req, res) => {
 });
 
 // GET /api/users/search - Search users
-router.get('/search', async (req, res) => {
+router.get('/search', ensureAuthenticated, hasPermission('users:search'), async (req, res) => {
   try {
     const query = req.query.q as string;
     const limit = parseInt(req.query.limit as string) || 10;

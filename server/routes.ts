@@ -254,6 +254,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Remove any sensitive data
+      let roleDetails = null;
+      if (user.role) {
+        roleDetails = await storage.getRoleByName(user.role);
+      }
+
       const safeUser = {
         id: user.id,
         email: user.email,
@@ -262,7 +267,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username,
         observerId: user.observerId,
         role: user.role,
-        profileImageUrl: user.profileImageUrl
+        profileImageUrl: user.profileImageUrl,
+        permissions: (roleDetails && roleDetails.permissions) ? roleDetails.permissions : [],
       };
       
       res.status(200).json(safeUser);

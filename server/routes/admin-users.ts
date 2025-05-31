@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
-import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 
 const router = Router();
 
@@ -11,7 +11,7 @@ const verificationStatusSchema = z.object({
 });
 
 // Get all users
-router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.get('/api/admin/users', ensureAuthenticated, hasPermission('users:view'), async (req: Request, res: Response) => {
   try {
     const users = await storage.getAllUsers();
     
@@ -43,7 +43,7 @@ router.get('/api/admin/users', isAuthenticated, isAdmin, async (req: Request, re
 });
 
 // Get user by ID
-router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.get('/api/admin/users/:id', ensureAuthenticated, hasPermission('users:view'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
@@ -83,7 +83,7 @@ router.get('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request
 });
 
 // Update user
-router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.patch('/api/admin/users/:id', ensureAuthenticated, hasPermission('users:edit'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
@@ -132,7 +132,7 @@ router.patch('/api/admin/users/:id', isAuthenticated, isAdmin, async (req: Reque
 });
 
 // Get user documents for verification
-router.get('/api/admin/users/:id/documents', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.get('/api/admin/users/:id/documents', ensureAuthenticated, hasPermission('users:view-documents'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
@@ -170,7 +170,7 @@ router.get('/api/admin/users/:id/documents', isAuthenticated, isAdmin, async (re
 });
 
 // Update user verification status
-router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.post('/api/admin/users/:id/verify', ensureAuthenticated, hasPermission('users:verify'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
@@ -213,7 +213,7 @@ router.post('/api/admin/users/:id/verify', isAuthenticated, isAdmin, async (req:
 });
 
 // Disable/Enable user
-router.patch('/api/admin/users/:id/toggle-status', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.patch('/api/admin/users/:id/toggle-status', ensureAuthenticated, hasPermission('users:edit-status'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {

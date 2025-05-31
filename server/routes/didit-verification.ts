@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { diditConnector } from '../services/didit-connector';
-import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 
 const router = Router();
 
@@ -169,7 +169,7 @@ router.get('/result', async (req: Request, res: Response) => {
 });
 
 // Route for admin to test connection to Didit API
-router.get('/admin/test-connection', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/admin/test-connection', ensureAuthenticated, hasPermission('system:test-didit-connection'), async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     if (!userId) {
@@ -199,7 +199,7 @@ router.get('/admin/test-connection', ensureAdmin, async (req: Request, res: Resp
 });
 
 // Route to get admin settings for Didit
-router.get('/admin/settings', ensureAdmin, async (req: Request, res: Response) => {
+router.get('/admin/settings', ensureAuthenticated, hasPermission('system:view-didit-settings'), async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     if (!userId) {
@@ -232,7 +232,7 @@ router.get('/admin/settings', ensureAdmin, async (req: Request, res: Response) =
 });
 
 // Route to update admin settings for Didit
-router.put('/admin/settings', ensureAdmin, async (req: Request, res: Response) => {
+router.put('/admin/settings', ensureAuthenticated, hasPermission('system:edit-didit-settings'), async (req: Request, res: Response) => {
   try {
     const userId = req.session.userId;
     if (!userId) {

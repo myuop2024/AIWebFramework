@@ -4,8 +4,7 @@ import {
   ensureAuthenticated, 
   ensureAdmin,
   ensureSupervisor,
-  ensureRovingObserver,
-  ensureDirector
+  hasPermission
 } from '../middleware/auth';
 import { storage } from '../storage';
 
@@ -14,7 +13,7 @@ const router = Router();
 /**
  * Get all available permissions - Admin & Director only
  */
-router.get('/permissions', ensureAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.get('/permissions', ensureAuthenticated, hasPermission('permissions:view-all-available'), async (req: Request, res: Response) => {
   try {
     const allRoles = await storage.getAllRoles();
     const uniquePermissions = new Set<string>();
@@ -38,7 +37,7 @@ router.get('/permissions', ensureAuthenticated, ensureAdmin, async (req: Request
 /**
  * Get user permissions - Supervisor+ only
  */
-router.get('/users/:userId/permissions', ensureAuthenticated, ensureSupervisor, async (req: Request, res: Response) => {
+router.get('/users/:userId/permissions', ensureAuthenticated, hasPermission('users:view-permissions'), async (req: Request, res: Response) => {
   try {
     const userIdParam = req.params.userId;
     const userId = parseInt(userIdParam);
@@ -82,7 +81,7 @@ router.get('/users/:userId/permissions', ensureAuthenticated, ensureSupervisor, 
 /**
  * Update user roles - Admin & Director only
  */
-router.post('/users/:userId/role', ensureAuthenticated, ensureAdmin, async (req: Request, res: Response) => {
+router.post('/users/:userId/role', ensureAuthenticated, hasPermission('users:assign-role'), async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.userId);
     if (isNaN(userId)) {

@@ -2,18 +2,18 @@ import { Router } from 'express';
 import { db } from '../db';
 import { errorLogs } from '@shared/schema';
 import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull, inArray as in_, sql } from 'drizzle-orm';
-import { ensureAdmin } from '../middleware/auth';
+import { ensureAdmin, ensureAuthenticated, hasPermission } from '../middleware/auth';
 
 const router = Router();
 
 // Ensure all routes in this file require admin privileges
-router.use(ensureAdmin);
+// router.use(ensureAdmin); // Removed global middleware
 
 /**
  * GET /api/admin/error-logs
  * Retrieve error logs with filtering and pagination
  */
-router.get('/error-logs', async (req, res) => {
+router.get('/error-logs', ensureAuthenticated, hasPermission('error-logs:view'), async (req, res) => {
   try {
     // Parse query parameters
     const page = parseInt(req.query.page as string) || 1;
@@ -108,7 +108,7 @@ router.get('/error-logs', async (req, res) => {
  * GET /api/admin/error-logs/:id
  * Retrieve a specific error log by ID
  */
-router.get('/error-logs/:id', async (req, res) => {
+router.get('/error-logs/:id', ensureAuthenticated, hasPermission('error-logs:view'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -134,7 +134,7 @@ router.get('/error-logs/:id', async (req, res) => {
  * POST /api/admin/error-logs/:id/resolve
  * Mark an error log as resolved
  */
-router.post('/error-logs/:id/resolve', async (req, res) => {
+router.post('/error-logs/:id/resolve', ensureAuthenticated, hasPermission('error-logs:resolve'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -171,7 +171,7 @@ router.post('/error-logs/:id/resolve', async (req, res) => {
  * DELETE /api/admin/error-logs/:id
  * Delete an error log
  */
-router.delete('/error-logs/:id', async (req, res) => {
+router.delete('/error-logs/:id', ensureAuthenticated, hasPermission('error-logs:delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -192,7 +192,7 @@ router.delete('/error-logs/:id', async (req, res) => {
  * DELETE /api/admin/error-logs
  * Delete multiple error logs matching criteria (bulk delete)
  */
-router.delete('/error-logs', async (req, res) => {
+router.delete('/error-logs', ensureAuthenticated, hasPermission('error-logs:delete'), async (req, res) => {
   try {
     const { ids, olderThan, allResolved } = req.body;
 
