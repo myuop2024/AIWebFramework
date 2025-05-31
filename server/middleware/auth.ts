@@ -422,5 +422,5 @@ export default {
   attachUser,
   checkUserRole,
   hasRole: hasRoleMiddleware,
-  hasPermission,
+  hasPermission: hasPermission, // Added hasPermission to exports
 };
