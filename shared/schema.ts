@@ -128,7 +128,7 @@ export const userProfiles = pgTable("user_profiles", {
 // Documents table
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   documentType: text("document_type").notNull(),
   documentUrl: text("document_url").notNull(),
   ocrText: text("ocr_text"),
@@ -155,7 +155,7 @@ export const pollingStations = pgTable("polling_stations", {
 // User-polling station assignments
 export const assignments = pgTable("assignments", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
   isPrimary: boolean("is_primary").default(false),
   assignedAt: timestamp("assigned_at").defaultNow(),
@@ -180,13 +180,13 @@ export const formTemplates = pgTable("form_templates", {
   category: text("category").notNull(), // e.g., "polling", "incident", "observation"
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
 });
 
 // Observer reports
 export const reports = pgTable("reports", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   stationId: integer("station_id").notNull().references(() => pollingStations.id),
   templateId: integer("template_id").references(() => formTemplates.id),
   reportType: text("report_type").notNull(),
@@ -195,7 +195,7 @@ export const reports = pgTable("reports", {
   status: text("status").notNull().default("submitted"),
   submittedAt: timestamp("submitted_at").defaultNow(),
   reviewedAt: timestamp("reviewed_at"),
-  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
   checkinTime: timestamp("checkin_time"),
   checkoutTime: timestamp("checkout_time"),
   mileageTraveled: integer("mileage_traveled"),
@@ -206,7 +206,7 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow(),
   severity: text("severity"),
   category: text("category"),
-  pollingStationId: integer("polling_station_id").references(() => pollingStations.id),
+  // pollingStationId: integer("polling_station_id").references(() => pollingStations.id), // Redundant, stationId is used
   description: text("description"),
 });
 
@@ -238,7 +238,7 @@ export const events = pgTable("events", {
 // User event participation
 export const eventParticipation = pgTable("event_participation", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   eventId: integer("event_id").notNull().references(() => events.id),
   status: text("status").notNull().default("registered"),
   completionStatus: text("completion_status"),
@@ -270,8 +270,8 @@ export const newsEntries = pgTable("news_entries", {
 // Chat messages
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: varchar("sender_id").notNull().references(() => users.id),
-  receiverId: varchar("receiver_id").references(() => users.id),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  receiverId: integer("receiver_id").references(() => users.id),
   content: text("content").notNull(),
   type: text("type").default("text").notNull(), // text, file, image, system
   read: boolean("read").default(false),
@@ -290,7 +290,7 @@ export const registrationForms = pgTable("registration_forms", {
   fields: jsonb("fields").notNull(), // Array of registration field definitions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
   version: integer("version").default(1).notNull(),
 });
 
@@ -298,7 +298,7 @@ export const registrationForms = pgTable("registration_forms", {
 export const userImportLogs = pgTable("user_import_logs", {
   id: serial("id").primaryKey(),
   filename: text("filename").notNull(),
-  importedBy: varchar("imported_by").references(() => users.id),
+  importedBy: integer("imported_by").references(() => users.id),
   totalRecords: integer("total_records").notNull(),
   successCount: integer("success_count").notNull(),
   failureCount: integer("failure_count").notNull(),
@@ -326,7 +326,7 @@ export const trainingIntegrations = pgTable("training_integrations", {
 // User training content progress
 export const trainingProgress = pgTable("training_progress", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   contentId: text("content_id").notNull(), // External content ID (e.g., moodle_course_123)
   contentType: text("content_type").notNull(), // course, meeting, webinar, etc.
   source: text("source").notNull(), // moodle, zoom, internal
@@ -340,7 +340,7 @@ export const trainingProgress = pgTable("training_progress", {
 // External user mappings
 export const externalUserMappings = pgTable("external_user_mappings", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   system: text("system").notNull(), // moodle, zoom, etc.
   externalId: text("external_id").notNull(), // ID in the external system
   externalUsername: text("external_username"),
@@ -353,10 +353,10 @@ export const externalUserMappings = pgTable("external_user_mappings", {
 // Pending profile photo approvals
 export const photoApprovals = pgTable("photo_approvals", {
   id: serial("id").primaryKey(),
-  userId: varchar("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   photoUrl: text("photo_url").notNull(),
   status: text("status").notNull().default("pending"), // pending, approved, rejected
-  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   processedAt: timestamp("processed_at"),
   notes: text("notes"),
@@ -409,13 +409,13 @@ export const errorLogs = pgTable("error_logs", {
   message: text("message").notNull(),
   stack: text("stack"),
   metadata: jsonb("metadata"),
-  userId: varchar("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   userAgent: text("user_agent"),
   path: text("path"),
   timestamp: timestamp("timestamp").defaultNow(),
   resolved: boolean("resolved").default(false),
   resolvedAt: timestamp("resolved_at"),
-  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedBy: integer("resolved_by").references(() => users.id),
 });
 
 export type ErrorLog = typeof errorLogs.$inferSelect;
@@ -452,7 +452,7 @@ export const projects = pgTable("projects", {
   startDate: date("start_date"),
   endDate: date("end_date"),
   status: text("status").default("planning").notNull(),
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -464,7 +464,7 @@ export const milestones = pgTable("milestones", {
   description: text("description"),
   dueDate: date("due_date"),
   status: text("status").default("pending").notNull(),
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -487,8 +487,8 @@ export const tasks = pgTable("tasks", {
   status: text("status").default("pending").notNull(),
   priority: text("priority").default("medium"),
   dueDate: date("due_date"),
-  assignedTo: varchar("assigned_to").references(() => users.id),
-  createdBy: varchar("created_by").references(() => users.id),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  createdBy: integer("created_by").references(() => users.id),
   categoryId: integer("category_id").references(() => taskCategories.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -497,7 +497,7 @@ export const tasks = pgTable("tasks", {
 export const projectMembers = pgTable("project_members", {
   id: serial("id").primaryKey(),
   projectId: integer("project_id").references(() => projects.id),
-  userId: varchar("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   role: text("role").default("member"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -506,7 +506,7 @@ export const projectMembers = pgTable("project_members", {
 export const taskComments = pgTable("task_comments", {
   id: serial("id").primaryKey(),
   taskId: integer("task_id").references(() => tasks.id),
-  userId: varchar("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   comment: text("comment").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -515,7 +515,7 @@ export const taskComments = pgTable("task_comments", {
 export const taskAttachments = pgTable("task_attachments", {
   id: serial("id").primaryKey(),
   taskId: integer("task_id").references(() => tasks.id),
-  userId: varchar("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
   fileType: text("file_type"),
@@ -526,7 +526,7 @@ export const taskAttachments = pgTable("task_attachments", {
 export const taskHistory = pgTable("task_history", {
   id: serial("id").primaryKey(),
   taskId: integer("task_id").references(() => tasks.id),
-  userId: varchar("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
   action: text("action").notNull(),
   details: jsonb("details"),
   createdAt: timestamp("created_at").defaultNow(),

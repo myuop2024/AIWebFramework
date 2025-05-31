@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import logger from '../utils/logger';
 
 // Initialize the Google Generative AI with API key
 const apiKey = process.env.GOOGLE_API_KEY;
@@ -64,7 +65,7 @@ Please provide the enhanced data in valid JSON format. Return ONLY the JSON arra
     const jsonEndIndex = text.lastIndexOf(']') + 1;
     
     if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      console.error('Could not find valid JSON in the AI response');
+      logger.error('Could not find valid JSON in the AI response for processUserDataWithAI', { responseText: text });
       return userData; // Return original data if AI processing fails
     }
     
@@ -73,7 +74,7 @@ Please provide the enhanced data in valid JSON format. Return ONLY the JSON arra
     
     return enhancedData;
   } catch (error) {
-    console.error('Error using Google AI to process user data:', error);
+    logger.error('Error using Google AI to process user data', { error: error instanceof Error ? error : new Error(String(error)), userDataSetCount: userData.length });
     return userData; // Return original data if AI processing fails
   }
 }
@@ -121,7 +122,7 @@ Return an empty array for potentialDuplicates if no duplicates are found for a u
     const jsonEndIndex = text.lastIndexOf(']') + 1;
     
     if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      console.error('Could not find valid JSON in the AI response for duplicate detection');
+      logger.error('Could not find valid JSON in the AI response for duplicate detection', { responseText: text });
       // Return empty array of duplicates if AI processing fails
       return newUsers.map(user => ({ user, potentialDuplicates: [] }));
     }
@@ -131,7 +132,7 @@ Return an empty array for potentialDuplicates if no duplicates are found for a u
     
     return duplicateResults;
   } catch (error) {
-    console.error('Error using Google AI to detect duplicate users:', error);
+    logger.error('Error using Google AI to detect duplicate users', { error: error instanceof Error ? error : new Error(String(error)), newUserCount: newUsers.length, existingUserCount: existingUsers.length });
     // Return empty array of duplicates if AI processing fails
     return newUsers.map(user => ({ user, potentialDuplicates: [] }));
   }
@@ -166,7 +167,7 @@ Only return the explanation text without any additional formatting or JSON.
 
     return text.trim();
   } catch (error) {
-    console.error('Error generating import error explanation:', error);
+    logger.error('Error generating import error explanation with Google AI', { error: error instanceof Error ? error : new Error(String(error)), userData, originalErrorMessage: errorMessage });
     // Return original error if AI processing fails
     return errorMessage;
   }
@@ -325,7 +326,7 @@ If there's not enough data for meaningful predictions, provide generic but usefu
     const jsonEndIndex = text.lastIndexOf(']') + 1;
     
     if (jsonStartIndex === -1 || jsonEndIndex === -1) {
-      console.error('Could not find valid JSON in the Gemini response for incident predictions');
+      logger.error('Could not find valid JSON in the Gemini response for incident predictions', { responseText: text, pollingStationId });
       return getGenericPredictions();
     }
     
@@ -335,17 +336,17 @@ If there's not enough data for meaningful predictions, provide generic but usefu
       
       // Validate predictions format
       if (!Array.isArray(predictions) || predictions.length === 0) {
-        console.warn('Predictions array is empty or invalid');
+        logger.warn('Predictions array from Gemini is empty or invalid', { pollingStationId, parsedJson: predictions });
         return getGenericPredictions();
       }
       
       return predictions;
     } catch (parseError) {
-      console.error('Error parsing Gemini predictions response:', parseError);
+      logger.error('Error parsing Gemini predictions response', { parseError: parseError instanceof Error ? parseError : new Error(String(parseError)), responseTextFragment: text.substring(jsonStartIndex, jsonEndIndex), pollingStationId });
       return getGenericPredictions();
     }
   } catch (error) {
-    console.error('Error analyzing incident patterns with Gemini:', error);
+    logger.error('Error analyzing incident patterns with Gemini', { error: error instanceof Error ? error : new Error(String(error)), pollingStationId, reportCount: reports.length, newsArticleCount: newsArticles?.length });
     return getGenericPredictions();
   }
 }

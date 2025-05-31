@@ -12,6 +12,7 @@ import {
   ZoomPaginatedResponse,
   ZoomTrainingSession
 } from '../../shared/zoom-types';
+import logger from '../utils/logger';
 
 /**
  * Service for interacting with Zoom API
@@ -348,7 +349,7 @@ export class ZoomService {
             
             return this.convertMeetingToTrainingSession(meeting, attendance);
           } catch (error) {
-            console.error(`Error processing meeting ${meeting.id}:`, error);
+            logger.error(`Error processing meeting details (participants/recordings) for Zoom training session`, { meetingId: meeting.id, userId, error: error instanceof Error ? error : new Error(String(error)) });
             return this.convertMeetingToTrainingSession(meeting);
           }
         })
@@ -364,7 +365,7 @@ export class ZoomService {
         (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       );
     } catch (error) {
-      console.error('Error fetching training sessions:', error);
+      logger.error('Error fetching Zoom training sessions', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       throw error;
     }
   }

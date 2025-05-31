@@ -3,6 +3,7 @@
  * Uses AES-256-GCM for encryption with unique initialization vectors
  */
 import crypto from 'crypto';
+import logger from '../utils/logger';
 
 // Encryption constants
 const ALGORITHM = 'aes-256-gcm';
@@ -85,7 +86,7 @@ export function decrypt(encryptedData: string, iv: string, asObject = false): an
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    logger.error('Decryption error', { encryptedDataLength: encryptedData?.length, ivLength: iv?.length, asObject, error: error instanceof Error ? error : new Error(String(error)) });
     return null;
   }
 }
@@ -176,7 +177,7 @@ export function decryptProfileFields(
   try {
     ivs = JSON.parse(profile.encryptionIv || '{}');
   } catch (error) {
-    console.error('Error parsing encryption IVs:', error);
+    logger.error('Error parsing encryption IVs from profile', { profileId: profile.id, userId: profile.userId, error: error instanceof Error ? error : new Error(String(error)) });
     return profile;
   }
   

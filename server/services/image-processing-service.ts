@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import path from 'path';
 import axios from 'axios';
 import FormData from 'form-data';
+import logger from '../utils/logger';
 
 // Initialize Hugging Face client
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
@@ -46,7 +47,7 @@ export class ImageProcessingService {
       let message = undefined;
       if (!hasFace) {
         message = "No face clearly detected in the image. Please upload a photo where your face is clearly visible.";
-        console.warn("No face detected in profile photo");
+        logger.warn("No face detected in profile photo during processProfilePhoto", { targetWidth, targetHeight });
       }
       
       // Smart crop the image (centered around detected faces if any)
@@ -65,7 +66,7 @@ export class ImageProcessingService {
       try {
         processedBuffer = await this.removeBackground(this.canvasToBuffer(enhancedCanvas));
       } catch (bgError) {
-        console.error('Background removal error, using enhanced image instead:', bgError);
+        logger.error('Background removal error during processProfilePhoto, using enhanced image instead', { error: bgError instanceof Error ? bgError : new Error(String(bgError)), targetWidth, targetHeight });
         processedBuffer = this.canvasToBuffer(enhancedCanvas);
       }
       
@@ -75,7 +76,7 @@ export class ImageProcessingService {
         message
       };
     } catch (error) {
-      console.error('Error in AI profile photo processing:', error);
+      logger.error('Error in AI profile photo processing', { error: error instanceof Error ? error : new Error(String(error)), targetWidth, targetHeight });
       // Fallback to basic resizing if AI processing fails
       const buffer = await this.basicResizeImage(imageBuffer, targetWidth, targetHeight);
       return {
@@ -93,13 +94,13 @@ export class ImageProcessingService {
     try {
       // Convert buffer to base64 string
       const base64Image = imageBuffer.toString('base64');
-      console.log(`Face detection: Image converted to base64 (${base64Image.length} chars)`);
+      logger.debug(`Face detection: Image converted to base64 (length: ${base64Image.length})`);
       
       try {
         // First attempt with YOLOv8-Face-Detection model
         // This is a specialized face detection model that should work better than general object detection
-        console.log('Attempting face detection with YOLOv8-Face-Detection model...');
-        console.log('Using HuggingFace API Key:', process.env.HUGGINGFACE_API_KEY ? 'Present (hidden)' : 'Missing');
+        logger.debug('Attempting face detection with YOLOv8-Face-Detection model...');
+        logger.debug('Using HuggingFace API Key:', { apiKeyPresent: !!process.env.HUGGINGFACE_API_KEY });
         
         const startTime = Date.now();
         const response = await hf.objectDetection({
@@ -110,21 +111,21 @@ export class ImageProcessingService {
           }
         });
         const endTime = Date.now();
-        console.log(`YOLOv8 face detection completed in ${endTime - startTime}ms`);
+        logger.debug(`YOLOv8 face detection completed in ${endTime - startTime}ms`);
         
         // Log response information
         if (response && response.labels) {
-          console.log(`Face detection results: Found ${response.labels.length} potential faces/objects`);
+          logger.debug(`Face detection results: Found ${response.labels.length} potential faces/objects`);
           response.labels.forEach((label: any, index: number) => {
-            console.log(`Face/Object ${index + 1}: Label=${label.label}, Score=${label.score}`);
+            logger.debug(`Face/Object ${index + 1}: Label=${label.label}, Score=${label.score}`);
           });
         } else {
-          console.log('Face detection response format unexpected:', response);
+          logger.warn('Face detection response format unexpected from YOLOv8', { response });
         }
         
         // If no faces found with YOLOv8 model, fall back to general person detection
         if (!response.labels || response.labels.length === 0) {
-          console.log('No faces detected with YOLOv8, trying general person detection...');
+          logger.info('No faces detected with YOLOv8, trying general person detection...');
           const fallbackStartTime = Date.now();
           const generalResponse = await hf.objectDetection({
             model: 'facebook/detr-resnet-50',
@@ -135,10 +136,10 @@ export class ImageProcessingService {
             }
           });
           const fallbackEndTime = Date.now();
-          console.log(`General person detection completed in ${fallbackEndTime - fallbackStartTime}ms`);
+          logger.debug(`General person detection completed in ${fallbackEndTime - fallbackStartTime}ms`);
           
           if (generalResponse && generalResponse.labels) {
-            console.log(`Person detection results: Found ${generalResponse.labels.length} potential persons`);
+            logger.debug(`Person detection results: Found ${generalResponse.labels.length} potential persons`);
           }
           
           return generalResponse;
@@ -146,19 +147,19 @@ export class ImageProcessingService {
         
         return response;
       } catch (hfError) {
-        console.error('Hugging Face face detection error:', hfError);
-        console.log('Hugging Face error details:', JSON.stringify(hfError));
+        logger.error('Hugging Face face detection error', { error: hfError instanceof Error ? hfError : new Error(String(hfError)), model: 'keremberke/yolov8n-face-detection or facebook/detr-resnet-50' });
+        logger.debug('Hugging Face error details', { errorDetails: JSON.stringify(hfError) });
         
         // If GitHub fallback is enabled, try that instead
         if (useGitHubFallback) {
-          console.log('Using GitHub fallback for face detection');
+          logger.info('Using GitHub fallback for face detection');
           return this.detectFacesWithGitHub(imageBuffer);
         } else {
           throw hfError; // Re-throw if GitHub fallback is disabled
         }
       }
     } catch (error) {
-      console.error('Face detection error:', error);
+      logger.error('Face detection error', { error: error instanceof Error ? error : new Error(String(error)) });
       // Return empty array if detection fails - will default to center crop
       return { labels: [] };
     }
@@ -204,7 +205,7 @@ export class ImageProcessingService {
         ]
       };
     } catch (error) {
-      console.error('GitHub face detection fallback error:', error);
+      logger.error('GitHub face detection fallback error', { error: error instanceof Error ? error : new Error(String(error)) });
       return { labels: [] };
     }
   }
@@ -343,12 +344,12 @@ export class ImageProcessingService {
     try {
       // Convert buffer to base64 for Hugging Face API
       const base64Image = imageBuffer.toString('base64');
-      console.log(`ID photo enhancement: Image converted to base64 (${base64Image.length} chars)`);
+      logger.debug(`ID photo enhancement: Image converted to base64 (length: ${base64Image.length})`);
       
       // First try AK-Image-Optimizer model for ID photo optimization
       try {
-        console.log('Attempting ID photo enhancement with AK-Image-Optimizer model...');
-        console.log('Using HuggingFace API Key:', process.env.HUGGINGFACE_API_KEY ? 'Present (hidden)' : 'Missing');
+        logger.debug('Attempting ID photo enhancement with AK-Image-Optimizer model...');
+        logger.debug('Using HuggingFace API Key:', { apiKeyPresent: !!process.env.HUGGINGFACE_API_KEY });
         
         // Using the AK-Image-Optimizer model for better ID photo optimization
         const startTime = Date.now();
@@ -362,26 +363,25 @@ export class ImageProcessingService {
           }
         });
         const endTime = Date.now();
-        console.log(`AK-Image-Optimizer enhancement completed in ${endTime - startTime}ms`);
+        logger.debug(`AK-Image-Optimizer enhancement completed in ${endTime - startTime}ms`);
         
         // Log response information
         if (response) {
-          console.log('AK-Image-Optimizer response received. Response structure:', 
-            Object.keys(response).join(', '));
+          logger.debug('AK-Image-Optimizer response received.', { structure: Object.keys(response).join(', ') });
         }
         
         // Response is a blob containing the enhanced image
-        console.log('Converting enhanced image response to buffer');
+        logger.debug('Converting enhanced image response to buffer');
         const enhancedImageBuffer = Buffer.from(await response.arrayBuffer());
-        console.log(`Enhanced image buffer size: ${enhancedImageBuffer.length} bytes`);
+        logger.debug(`Enhanced image buffer size: ${enhancedImageBuffer.length} bytes`);
         
         return enhancedImageBuffer;
       } catch (optimizerError) {
-        console.error('AK-Image-Optimizer error, falling back to stable diffusion:', optimizerError);
-        console.log('Optimizer error details:', JSON.stringify(optimizerError));
+        logger.error('AK-Image-Optimizer error, falling back to stable diffusion', { error: optimizerError instanceof Error ? optimizerError : new Error(String(optimizerError)) });
+        logger.debug('Optimizer error details', { errorDetails: JSON.stringify(optimizerError) });
         
         // Fall back to stable diffusion model
-        console.log('Attempting fallback to Stable Diffusion model...');
+        logger.info('Attempting fallback to Stable Diffusion model for image enhancement...');
         const fallbackStartTime = Date.now();
         const fallbackResponse = await hf.imageToImage({
           model: "stabilityai/stable-diffusion-img2img",
@@ -394,30 +394,28 @@ export class ImageProcessingService {
           }
         });
         const fallbackEndTime = Date.now();
-        console.log(`Stable Diffusion enhancement completed in ${fallbackEndTime - fallbackStartTime}ms`);
+        logger.debug(`Stable Diffusion enhancement completed in ${fallbackEndTime - fallbackStartTime}ms`);
         
         // Log fallback response information
         if (fallbackResponse) {
-          console.log('Stable Diffusion response received. Response structure:', 
-            Object.keys(fallbackResponse).join(', '));
+          logger.debug('Stable Diffusion response received.', { structure: Object.keys(fallbackResponse).join(', ') });
         }
         
         // Response is a blob containing the enhanced image
-        console.log('Converting Stable Diffusion response to buffer');
+        logger.debug('Converting Stable Diffusion response to buffer');
         const enhancedImageBuffer = Buffer.from(await fallbackResponse.arrayBuffer());
-        console.log(`Fallback enhanced image buffer size: ${enhancedImageBuffer.length} bytes`);
+        logger.debug(`Fallback enhanced image buffer size: ${enhancedImageBuffer.length} bytes`);
         
         return enhancedImageBuffer;
       }
     } catch (error) {
-      console.error('All AI enhancement methods failed:', error);
-      console.log('Error details:', JSON.stringify(error));
-      console.log('Falling back to basic image processing');
+      logger.error('All AI enhancement methods failed', { error: error instanceof Error ? error : new Error(String(error)) });
+      logger.debug('AI enhancement error details', { errorDetails: JSON.stringify(error) });
+      logger.info('Falling back to basic image processing for AI enhancement');
       
       // Fallback to basic processing
       return this.processProfilePhoto(imageBuffer, 400, 600).then(result => {
-        console.log(`Basic processing completed with result: Face detected: ${result.hasFace}`);
-        console.log(`Basic processed image size: ${result.buffer.length} bytes`);
+        logger.info(`Basic processing fallback completed for AI enhancement. Face detected: ${result.hasFace}`, { bufferSize: result.buffer.length });
         return result.buffer;
       });
     }
@@ -446,7 +444,7 @@ export class ImageProcessingService {
       const upscaledImageBuffer = Buffer.from(await response.arrayBuffer());
       return upscaledImageBuffer;
     } catch (error) {
-      console.error('Image upscaling error:', error);
+      logger.error('Image upscaling error with AI model', { error: error instanceof Error ? error : new Error(String(error)) });
       // Fallback to basic resizing
       const image = await this.loadImage(imageBuffer);
       const canvas = createCanvas(image.width * 2, image.height * 2);
@@ -496,7 +494,7 @@ export class ImageProcessingService {
       
       return this.canvasToBuffer(canvas);
     } catch (error) {
-      console.error('Basic resize error:', error);
+      logger.error('Basic image resize error', { error: error instanceof Error ? error : new Error(String(error)), targetWidth, targetHeight });
       // Return original buffer if all processing fails
       return imageBuffer;
     }
@@ -513,7 +511,7 @@ export class ImageProcessingService {
       const isPNG = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
       
       if (!isJPEG && !isPNG) {
-        console.log("Converting unknown image format to PNG for reliable processing");
+        logger.info("Converting unknown image format to PNG for reliable processing in loadImage");
         // If format is not recognized, create a safe canvas image first
         const img = await loadImage(buffer);
         const canvas = createCanvas(img.width, img.height);
@@ -527,7 +525,7 @@ export class ImageProcessingService {
       
       return loadImage(buffer);
     } catch (error) {
-      console.error("Image loading error:", error);
+      logger.error("Image loading error in loadImage", { error: error instanceof Error ? error : new Error(String(error)), bufferLength: buffer?.length });
       // Create a small placeholder image if loading fails
       const canvas = createCanvas(300, 300);
       const ctx = canvas.getContext('2d');
@@ -557,12 +555,12 @@ export class ImageProcessingService {
     try {
       // Convert buffer to base64 for Hugging Face API
       const base64Image = imageBuffer.toString('base64');
-      console.log(`Background removal: Image converted to base64 (${base64Image.length} chars)`);
+      logger.debug(`Background removal: Image converted to base64 (length: ${base64Image.length})`);
       
       try {
         // First attempt with RMBG 2.0 which is an improved version for background removal
-        console.log('Attempting background removal with RMBG v2.0...');
-        console.log('Using HuggingFace API Key:', process.env.HUGGINGFACE_API_KEY ? 'Present (hidden)' : 'Missing');
+        logger.debug('Attempting background removal with RMBG v2.0...');
+        logger.debug('Using HuggingFace API Key:', { apiKeyPresent: !!process.env.HUGGINGFACE_API_KEY });
         
         const startTime = Date.now();
         const response = await hf.imageSegmentation({
@@ -570,17 +568,16 @@ export class ImageProcessingService {
           data: Buffer.from(base64Image, 'base64'),
         });
         const endTime = Date.now();
-        console.log(`RMBG 2.0 background removal completed in ${endTime - startTime}ms`);
+        logger.debug(`RMBG 2.0 background removal completed in ${endTime - startTime}ms`);
         
         // Log more info about the response
         if (response) {
-          console.log('RMBG 2.0 response received. Response structure:', 
-            Object.keys(response).join(', '));
+          logger.debug('RMBG 2.0 response received.', { structure: Object.keys(response).join(', ') });
         }
         
         // Extract the mask
         if (!response || !response.mask) {
-          console.log('No valid mask from RMBG 2.0, trying fallback to RMBG 1.4...');
+          logger.info('No valid mask from RMBG 2.0, trying fallback to RMBG 1.4...');
           
           // Try the original model as fallback
           const fallbackStartTime = Date.now();
@@ -589,40 +586,39 @@ export class ImageProcessingService {
             data: Buffer.from(base64Image, 'base64'),
           });
           const fallbackEndTime = Date.now();
-          console.log(`RMBG 1.4 fallback completed in ${fallbackEndTime - fallbackStartTime}ms`);
+          logger.debug(`RMBG 1.4 fallback completed in ${fallbackEndTime - fallbackStartTime}ms`);
           
           // Log more info about the fallback response
           if (fallbackResponse) {
-            console.log('RMBG 1.4 response received. Response structure:', 
-              Object.keys(fallbackResponse).join(', '));
+            logger.debug('RMBG 1.4 response received.', { structure: Object.keys(fallbackResponse).join(', ') });
           }
           
           if (!fallbackResponse || !fallbackResponse.mask) {
-            console.error('Both RMBG 2.0 and 1.4 failed to return valid masks');
+            logger.error('Both RMBG 2.0 and 1.4 failed to return valid masks for background removal');
             throw new Error('No valid segmentation mask returned from any API model');
           }
           
           // Use the fallback response instead
-          console.log('Using mask from RMBG 1.4 fallback');
+          logger.info('Using mask from RMBG 1.4 fallback for background removal');
           response.mask = fallbackResponse.mask;
         } else {
-          console.log('Successfully obtained mask from RMBG 2.0');
+          logger.debug('Successfully obtained mask from RMBG 2.0');
         }
         
         // Convert the mask to a canvas format we can work with
-        console.log('Converting original image and mask to canvas format');
+        logger.debug('Converting original image and mask to canvas format');
         const originalImage = await this.loadImage(imageBuffer);
-        console.log(`Original image dimensions: ${originalImage.width}x${originalImage.height}`);
+        logger.debug(`Original image dimensions for background removal: ${originalImage.width}x${originalImage.height}`);
         
-        console.log('Converting mask to image');
+        logger.debug('Converting mask to image');
         const maskBuffer = Buffer.from(await response.mask.arrayBuffer());
-        console.log(`Mask buffer size: ${maskBuffer.length} bytes`);
+        logger.debug(`Mask buffer size: ${maskBuffer.length} bytes`);
         
         const maskImage = await this.loadImage(maskBuffer);
-        console.log(`Mask image dimensions: ${maskImage.width}x${maskImage.height}`);
+        logger.debug(`Mask image dimensions: ${maskImage.width}x${maskImage.height}`);
         
         // Create a canvas with RGBA support for transparency
-        console.log('Creating canvas for transparent image');
+        logger.debug('Creating canvas for transparent image');
         const canvas = createCanvas(originalImage.width, originalImage.height);
         const ctx = canvas.getContext('2d');
         
@@ -630,19 +626,19 @@ export class ImageProcessingService {
         ctx.drawImage(originalImage, 0, 0);
         
         // Get image data to modify pixels
-        console.log('Extracting image data for pixel manipulation');
+        logger.debug('Extracting image data for pixel manipulation');
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         
         // Also get mask data
-        console.log('Extracting mask data');
+        logger.debug('Extracting mask data');
         const tempCanvas = createCanvas(maskImage.width, maskImage.height);
         const tempCtx = tempCanvas.getContext('2d');
         tempCtx.drawImage(maskImage, 0, 0);
         const maskData = tempCtx.getImageData(0, 0, maskImage.width, maskImage.height).data;
         
         // Apply the mask to create transparency
-        console.log('Applying mask to create transparency');
+        logger.debug('Applying mask to create transparency');
         // The mask is grayscale, so we only need to check one channel
         for (let i = 0; i < data.length; i += 4) {
           // Get the corresponding pixel in the mask
@@ -654,30 +650,30 @@ export class ImageProcessingService {
         }
         
         // Put the modified image data back
-        console.log('Applying modified image data to canvas');
+        logger.debug('Applying modified image data to canvas');
         ctx.putImageData(imageData, 0, 0);
         
         // Convert to PNG with transparency
-        console.log('Converting canvas to transparent PNG');
+        logger.debug('Converting canvas to transparent PNG');
         const resultBuffer = this.canvasToBuffer(canvas, 'image/png', 1.0);
-        console.log(`Final transparent image size: ${resultBuffer.length} bytes`);
+        logger.debug(`Final transparent image size: ${resultBuffer.length} bytes`);
         
         return resultBuffer;
       } catch (hfError) {
-        console.error('Hugging Face background removal error:', hfError);
-        console.log('Hugging Face error details:', JSON.stringify(hfError));
+        logger.error('Hugging Face background removal error', { error: hfError instanceof Error ? hfError : new Error(String(hfError)) });
+        logger.debug('Hugging Face error details for background removal', { errorDetails: JSON.stringify(hfError) });
         
         // If GitHub fallback is enabled, try that instead
         if (useGitHubFallback) {
-          console.log('Using GitHub fallback for background removal');
+          logger.info('Using GitHub fallback for background removal');
           return this.removeBackgroundWithGitHub(imageBuffer);
         } else {
           throw hfError; // Re-throw if GitHub fallback is disabled
         }
       }
     } catch (error) {
-      console.error('Background removal error:', error);
-      console.log('Returning original image without background removal');
+      logger.error('Background removal error', { error: error instanceof Error ? error : new Error(String(error)) });
+      logger.info('Returning original image without background removal due to error');
       // Return the original image buffer if background removal fails
       return imageBuffer;
     }
@@ -733,7 +729,7 @@ export class ImageProcessingService {
       // Convert to PNG with transparency
       return this.canvasToBuffer(canvas, 'image/png', 1.0);
     } catch (error) {
-      console.error('GitHub background removal fallback error:', error);
+      logger.error('GitHub background removal fallback error', { error: error instanceof Error ? error : new Error(String(error)) });
       return imageBuffer;
     }
   }
@@ -744,7 +740,16 @@ export class ImageProcessingService {
   generateFilename(originalFilename: string): string {
     const timestamp = Date.now();
     const randomString = crypto.randomBytes(8).toString('hex');
-    const extension = path.extname(originalFilename) || '.jpg';
+
+    // Get the original extension, convert to lowercase, and provide a default.
+    let extension = (path.extname(originalFilename) || '.jpg').toLowerCase();
+
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+      logger.warn(`Original file had a non-allowed extension '${extension}'. Defaulting to '.jpg'.`, { originalFilename });
+      extension = '.jpg';
+    }
     
     return `processed_${timestamp}_${randomString}${extension}`;
   }

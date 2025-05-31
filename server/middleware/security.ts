@@ -10,10 +10,12 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
+      // TODO: Refactor client-side styling to remove 'unsafe-inline'. This may involve moving inline styles to CSS files or using techniques like CSS-in-JS if appropriate.
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Note: Consider removing unsafe-eval in production
+      // TODO: Refactor client-side scripts to remove 'unsafe-inline'. This can be achieved by moving inline event handlers and scripts to external JS files and using techniques like adding event listeners programmatically. Nonces or hashes can also be considered.
+      scriptSrc: ["'self'", "'unsafe-inline'", "https:"], // Removed 'unsafe-eval'. Preserved "https:" to allow scripts from any HTTPS source if needed by CDNs etc.
       connectSrc: ["'self'", "https:", "wss:", "ws:"],
       frameSrc: ["'self'", "https://www.youtube.com"],
       objectSrc: ["'none'"],

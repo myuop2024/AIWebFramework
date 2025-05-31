@@ -6,6 +6,7 @@ import { users } from '@shared/schema';
 import { InsertUser } from '@shared/schema';
 import { scrypt, randomBytes } from 'crypto';
 import { promisify } from 'util';
+import logger from '../utils/logger';
 
 const scryptAsync = promisify(scrypt);
 
@@ -190,7 +191,7 @@ export async function processCSVFile(filePath: string, recordsOverride?: any[]):
           errorRow.error
         );
       } catch (error) {
-        console.error('Error generating explanation:', error);
+        logger.error('Error generating explanation for CSV error row', { rowIndex: errorRow.rowIndex, rowData: errorRow.data, originalError: errorRow.error, explanationError: error instanceof Error ? error : new Error(String(error)) });
       }
     }
 
@@ -201,7 +202,7 @@ export async function processCSVFile(filePath: string, recordsOverride?: any[]):
       duplicateWarnings
     };
   } catch (error) {
-    console.error('Error processing CSV file:', error);
+    logger.error('Error processing CSV file', { filePath, error: error instanceof Error ? error : new Error(String(error)) });
     throw new Error('Failed to process CSV file: ' + (error instanceof Error ? error.message : String(error)));
   }
 }

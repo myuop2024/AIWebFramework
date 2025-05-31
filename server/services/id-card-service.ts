@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import type { User, UserProfile, IdCardTemplate } from '@shared/schema';
 import { Readable } from 'stream';
+import logger from '../utils/logger';
 
 // Register custom fonts for better typography
 try {
@@ -15,7 +16,7 @@ try {
   registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
   registerFont('./assets/fonts/Roboto-Italic.ttf', { family: 'Roboto', style: 'italic' });
 } catch (error) {
-  console.log('Could not register fonts, using system defaults');
+  logger.warn('Could not register custom fonts, using system defaults.', { error: error instanceof Error ? error : new Error(String(error)) });
 }
 
 interface CardElement {
@@ -75,7 +76,7 @@ export class IdCardService {
       
       return pdfBuffer;
     } catch (error) {
-      console.error('Error generating ID card:', error);
+      logger.error('Error generating ID card', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       throw new Error('Failed to generate ID card');
     }
   }
@@ -453,7 +454,7 @@ export class IdCardService {
         const logoImage = await loadImage(templateData.logo);
         ctx.drawImage(logoImage, 50, 50, 180, 180);
       } catch (error) {
-        console.error('Error loading logo image:', error);
+        logger.error('Error loading logo image for ID card template', { templateName: template.name, logoUrl: templateData.logo, error: error instanceof Error ? error : new Error(String(error)) });
       }
     }
 
@@ -532,7 +533,7 @@ export class IdCardService {
             );
           }
         } catch (error) {
-          console.error('Error loading image:', error);
+          logger.error('Error loading image for ID card element', { userId: user.id, fieldName: element.fieldName, imageUrl: value, error: error instanceof Error ? error : new Error(String(error)) });
           // Draw a placeholder
           ctx.fillStyle = '#cccccc';
           ctx.fillRect(
@@ -554,7 +555,7 @@ export class IdCardService {
           const qrImage = await loadImage(qrCodeUrl);
           ctx.drawImage(qrImage, element.x - qrSize/2, element.y - qrSize/2, qrSize, qrSize);
         } catch (error) {
-          console.error('Error generating QR code:', error);
+          logger.error('Error generating QR code for ID card', { userId: user.id, qrData: value, error: error instanceof Error ? error : new Error(String(error)) });
         }
         break;
 
@@ -584,7 +585,7 @@ export class IdCardService {
             element.height || 80
           );
         } catch (error) {
-          console.error('Error generating barcode:', error);
+          logger.error('Error generating barcode for ID card', { userId: user.id, barcodeData: value, error: error instanceof Error ? error : new Error(String(error)) });
         }
         break;
     }

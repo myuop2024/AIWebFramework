@@ -67,6 +67,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { createHash } from "crypto";
+import bcrypt from 'bcrypt';
 
 // Communication interfaces removed - will be reimplemented in a new way
 
@@ -99,24 +100,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       logger.info(`User found, verifying password for: ${username}`);
-      // Verify password using SHA-256 (matching how passwords are stored)
-      const hashedPassword = createHash('sha256').update(password).digest('hex');
       
-      if (user.password !== hashedPassword) {
-        logger.warn(`Login failed: Invalid password for user: ${username}`);
-        return res.status(401).json({ message: 'Invalid username or password' });
+      // Attempt to verify with bcrypt first (preferred)
+      let passwordMatch = await bcrypt.compare(password, user.password);
+
+      if (!passwordMatch && user.password.length === 64 && !user.password.startsWith('$2')) {
+          // Potentially an old SHA256 hash (64 chars, doesn't look like bcrypt hash)
+          logger.info(`Attempting SHA256 fallback for user: ${username}`);
+          const sha256HashedPassword = createHash('sha256').update(password).digest('hex');
+          if (user.password === sha256HashedPassword) {
+              logger.info(`SHA256 password match for user: ${username}. Re-hashing with bcrypt.`);
+              passwordMatch = true; // Treat as a match for login purposes
+              // Rehash and update the password in the database
+              const saltRounds = 10; // Or use a configurable value
+              const newBcryptHash = await bcrypt.hash(password, saltRounds);
+              try {
+                  await storage.updateUser(user.id, { password: newBcryptHash });
+                  logger.info(`Password for user ${username} successfully re-hashed to bcrypt.`);
+              } catch (rehashError) {
+                  logger.error(`Failed to re-hash password for user ${username} to bcrypt`, rehashError);
+                  // Proceed with login, but log the failure to update hash
+              }
+          }
+      }
+
+      if (!passwordMatch) {
+          logger.warn(`Login failed: Invalid password for user: ${username}`);
+          return res.status(401).json({ message: 'Invalid username or password' });
       }
       
       logger.info(`Password verified for user: ${username}`);
       // Log user object for debugging (excluding password)
       const userForDebug = {...user};
-      delete userForDebug.password;
+      delete userForDebug.password; // Do not log the password hash
       logger.debug('User object for login:', userForDebug);
       
       // Store user in session
-      req.login(user, (err) => {
+      req.login(user, (err: any) => { // Added type for err
         if (err) {
-          logger.error('Error during login/session creation', { error: err.message, stack: err.stack });
+          logger.error('Error during login/session creation', { error: err.message, stack: err.stack, username: username });
           return res.status(500).json({ message: 'Error during login', details: err.message });
         }
         
@@ -130,14 +152,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           observerId: user.observerId,
           role: user.role,
           profileImageUrl: user.profileImageUrl
+          // Ensure deviceId is not sent here unless specifically intended for this older route
         };
         
         logger.info(`Login successful for user: ${username}`);
         return res.status(200).json(safeUser);
       });
     } catch (error) {
-      logger.error('Login error:', { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : 'No stack trace' });
-      res.status(500).json({ message: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
+      const err = error as Error; // Type assertion
+      logger.error('Login error:', { username: req.body?.username, error: err.message, stack: err.stack });
+      res.status(500).json({ message: 'Internal server error', details: err.message });
     }
   });
   
@@ -207,14 +231,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(201).json(safeUser);
       });
     } catch (error) {
-      console.error('Registration error:', error);
+      const result = insertUserSchema.safeParse(req.body); // Attempt to parse for context even in error
+      logger.error('Registration error:', error instanceof Error ? error : new Error(String(error)), {
+        username: result.success ? result.data.username : req.body?.username,
+        email: result.success ? result.data.email : req.body?.email
+      });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
   
   app.get('/api/user', ensureAuthenticated, async (req, res) => {
+    let userId = req.user?.id; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.user?.id;
+      userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ message: 'Invalid user session' });
       }
@@ -238,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.status(200).json(safeUser);
     } catch (error) {
-      console.error('Error fetching authenticated user:', error);
+      logger.error('Error fetching authenticated user', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -249,13 +278,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
   app.use('/uploads', express.static(uploadsDir));
-  console.log(`Serving static files from: ${uploadsDir}`);
+  logger.info(`Serving static files from: ${uploadsDir}`);
 
   // Initialize the communication service
   const communicationService = new CommunicationService(httpServer);
   setCommunicationService(communicationService);
   app.use('/api/communications', communicationRoutes);
-  console.log('Communication service initialized with WebSocket support');
+  logger.info('Communication service initialized with WebSocket support');
 
   // User metadata route for device binding UI (limited information)
   app.get('/api/users/metadata', async (req, res) => {
@@ -278,15 +307,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: user.email
       });
     } catch (error) {
-      console.error('Error fetching user metadata:', error);
+      logger.error('Error fetching user metadata', { username: req.query?.username, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
   
   // QR code data endpoint for observer verification
   app.get('/api/users/qrcode', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number;
+      userId = req.session.userId as number;
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
       }
@@ -294,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user
       const user = await storage.getUser(userId);
       if (!user) {
-        console.error(`User not found with ID: ${userId}`);
+        logger.warn(`User not found with ID: ${userId} in GET /api/users/qrcode`);
         return res.status(404).json({ message: 'User not found' });
       }
 
@@ -305,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username: user.username
       });
     } catch (error) {
-      console.error('Error fetching QR code data:', error);
+      logger.error('Error fetching QR code data', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -334,7 +364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // In a real implementation, send email to admin or user
       // For now, just log the request and clear the device ID
-      console.log(`Device reset requested for user: ${username}, observer ID: ${user.observerId}`);
+      logger.info(`Device reset requested for user: ${username}, observer ID: ${user.observerId}`);
 
       // Clear the device ID binding to allow login from a new device
       // In a production app, this might require admin approval
@@ -343,7 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return success
       res.status(200).json({ message: 'Device reset request has been submitted' });
     } catch (error) {
-      console.error('Error processing device reset request:', error);
+      logger.error('Error processing device reset request', { username: req.body?.username, email: req.body?.email, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -407,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // Remove password from response
-        const { password, ...userWithoutPassword } = user;
+        const { password, twoFactorSecret, recoveryCodes, ...userWithoutPassword } = user;
 
         res.status(201).json(userWithoutPassword);
       });
@@ -477,7 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             details: 'Failed to save authentication state' 
           });
         }
-        const { password: _, ...userWithoutPassword } = user;
+        const { password: _, twoFactorSecret, recoveryCodes, ...userWithoutPassword } = user;
         res.status(200).json(userWithoutPassword);
       });
     } catch (error) {
@@ -500,43 +530,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Current user endpoint for client authentication
-  app.get('/api/user', async (req, res) => {
-    try {
-      // If no session or userId, return 401 (client will handle this as "not logged in")
-      if (!req.session || !req.session.userId) {
-        logger.debug('GET /api/user: No authenticated user', {
-          sessionExists: !!req.session,
-          sessionID: req.sessionID
-        });
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-
-      // Get the user information
-      const userId = req.session.userId;
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        logger.warn(`GET /api/user: User not found with ID ${userId}`);
-        return res.status(404).json({ message: 'User not found' });
-      }
-      
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
-      
-      res.status(200).json(userWithoutPassword);
-    } catch (error) {
-      logger.error('Error in GET /api/user:', error instanceof Error ? error : new Error('Unknown error'), {
-        sessionID: req.sessionID
-      });
-      res.status(500).json({ 
-        message: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
   // Password change endpoint
+  // NOTE: The redundant GET /api/user route that was here has been removed.
+  // The correct one is defined earlier with ensureAuthenticated middleware.
   app.post('/api/user/change-password', async (req, res) => {
     try {
       // If no session or userId, return 401 (client will handle this as "not logged in")
@@ -762,20 +758,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/users/profile', async (req, res) => {
     try {
       // Determine authentication method
-      const userId = req.session?.userId || (req.user as any)?.claims?.sub;
+      let userId = req.session?.userId || (req.user as any)?.claims?.sub; // Define userId in a scope accessible by catch block
       const userRole = req.session?.role || (req.user as any)?.claims?.role;
 
       if (!userId) {
-        console.log('[AUTH] /api/users/profile: No authenticated user');
+        logger.warn('[AUTH] /api/users/profile: No authenticated user', { sessionExists: !!req.session, userIdFromSession: req.session?.userId, userFromReq: (req.user as any)?.claims?.sub });
         return res.status(401).json({ message: 'Unauthorized - No user ID in session' });
       }
+      userId = req.session?.userId || (req.user as any)?.claims?.sub; // Re-assign for clarity
 
-      console.log(`[DEBUG] /api/users/profile hit for user ID: ${userId}`);
+      logger.debug(`/api/users/profile hit for user ID: ${userId}`);
 
       // Fetch user
       const user = await storage.getUser(userId);
       if (!user) {
-        console.error(`[DEBUG] User not found with ID: ${userId}`);
+        logger.warn(`User not found with ID: ${userId} in GET /api/users/profile`);
         return res.status(404).json({ message: 'User not found' });
       }
 
@@ -797,7 +794,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documents: documents || [],
       });
     } catch (error) {
-      console.error('Error in /api/users/profile:', error);
+      logger.error('Error in GET /api/users/profile', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -806,10 +803,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number; // Type assertion (already verified in ensureAuthenticated)
+      userId = req.session.userId as number; // Type assertion (already verified in ensureAuthenticated)
       const userRole = req.session.role as string;
-      console.log(`Creating/updating profile for user ID: ${userId}`);
+      logger.info(`Creating/updating profile for user ID: ${userId}`);
 
       try {
         // Parse the incoming data with Zod schema
@@ -823,30 +821,30 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
         // Check if profile exists
         const existingProfile = await storage.getUserProfile(userId);
-        console.log(`Existing profile found: ${existingProfile ? 'Yes' : 'No'}`);
+        logger.debug(`Existing profile for user ${userId}: ${existingProfile ? 'Yes' : 'No'}`);
 
         let profile;
         if (existingProfile) {
           profile = await storage.updateUserProfile(userId, profileData);
-          console.log(`Profile updated for user ${userId}`);
+          logger.info(`Profile updated for user ${userId}`);
         } else {
           profile = await storage.createUserProfile({
             ...profileData,
             userId
           });
-          console.log(`Profile created for user ${userId}`);
+          logger.info(`Profile created for user ${userId}`);
         }
 
         // Update user verification status
         await storage.updateUser(userId, { verificationStatus: 'in-progress' });
-        console.log(`User verification status updated for ${userId}`);
+        logger.info(`User verification status updated for ${userId}`);
 
         // Return decrypted data to authorized users, otherwise return as-is
         const responseProfile = profile ? decryptProfileFields(profile, userRole) : null;
         res.status(200).json(responseProfile);
       } catch (validationError) {
         if (validationError instanceof ZodError) {
-          console.error('Validation error in profile data:', validationError);
+          logger.warn('Validation error in profile data for POST /api/users/profile', { userId, errors: validationError.errors });
           return res.status(400).json({ 
             message: fromZodError(validationError).message,
             errors: validationError.errors
@@ -855,7 +853,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         throw validationError; // Re-throw if not a ZodError
       }
     } catch (error) {
-      console.error('Error in /api/users/profile (POST):', error);
+      logger.error('Error in POST /api/users/profile', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -865,8 +863,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
   // Document routes
   app.post('/api/documents', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number; // Type assertion (verified in middleware)
+      userId = req.session.userId as number; // Type assertion (verified in middleware)
 
       try {
         const documentData = insertDocumentSchema.parse(req.body);
@@ -876,11 +875,11 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
           userId
         });
 
-        console.log(`Document created: ID ${document.id} for user ${userId}`);
+        logger.info(`Document created: ID ${document.id} for user ${userId}`);
         res.status(201).json(document);
       } catch (validationError) {
         if (validationError instanceof ZodError) {
-          console.error('Document data validation error:', validationError);
+          logger.warn('Document data validation error for POST /api/documents', { userId, errors: validationError.errors });
           return res.status(400).json({ 
             message: fromZodError(validationError).message,
             errors: validationError.errors 
@@ -889,7 +888,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         throw validationError; // Re-throw if not ZodError
       }
     } catch (error) {
-      console.error('Error creating document:', error);
+      logger.error('Error creating document for POST /api/documents', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error', 
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -898,16 +897,17 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.get('/api/documents', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number; // Type assertion (verified in middleware)
-      console.log(`Fetching documents for user ${userId}`);
+      userId = req.session.userId as number; // Type assertion (verified in middleware)
+      logger.debug(`Fetching documents for user ${userId}`);
 
       const documents = await storage.getDocumentsByUserId(userId);
-      console.log(`Found ${documents.length} documents for user ${userId}`);
+      logger.debug(`Found ${documents.length} documents for user ${userId}`);
 
       res.status(200).json(documents);
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      logger.error('Error fetching documents for GET /api/documents', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -918,12 +918,13 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Polling station routes are now handled by pollingStationsRoutes
 
   app.get('/api/users/assignments', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number;
-      console.log(`Fetching assignments for user ${userId}`);
+      userId = req.session.userId as number;
+      logger.debug(`Fetching assignments for user ${userId}`);
 
       const assignments = await storage.getAssignmentsByUserId(userId);
-      console.log(`Found ${assignments.length} assignments for user ${userId}`);
+      logger.debug(`Found ${assignments.length} assignments for user ${userId}`);
 
       // Get full station data
       const assignmentsWithStations = await Promise.all(
@@ -938,7 +939,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(assignmentsWithStations);
     } catch (error) {
-      console.error('Error fetching assignments:', error);
+      logger.error('Error fetching assignments for GET /api/users/assignments', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -947,12 +948,13 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.get('/api/users/assignments/active', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define userId in a scope accessible by catch block
     try {
-      const userId = req.session.userId as number;
-      console.log(`Fetching active assignments for user ${userId}`);
+      userId = req.session.userId as number;
+      logger.debug(`Fetching active assignments for user ${userId}`);
 
       const assignments = await storage.getActiveAssignments(userId);
-      console.log(`Found ${assignments.length} active assignments for user ${userId}`);
+      logger.debug(`Found ${assignments.length} active assignments for user ${userId}`);
 
       // Get full station data
       const assignmentsWithStations = await Promise.all(
@@ -967,7 +969,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(assignmentsWithStations);
     } catch (error) {
-      console.error('Error fetching active assignments:', error);
+      logger.error('Error fetching active assignments for GET /api/users/assignments/active', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -976,8 +978,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.get('/api/stations/:stationId/assignments', ensureAuthenticated, async (req, res) => {
+    let stationIdParam = req.params.stationId; // Define in a scope accessible by catch block
     try {
-      const stationId = parseInt(req.params.stationId);
+      stationIdParam = req.params.stationId;
+      const stationId = parseInt(stationIdParam);
       if (isNaN(stationId)) {
         return res.status(400).json({ message: 'Invalid station ID' });
       }
@@ -1003,33 +1007,37 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(assignmentsWithUsers);
     } catch (error) {
-      console.error('Error fetching station assignments:', error);
+      logger.error('Error fetching station assignments for GET /api/stations/:stationId/assignments', { stationId: stationIdParam, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   app.get('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
+    let assignmentIdParam = req.params.id; // Define in a scope accessible by catch block
+    let userId = req.session.userId as number;
+    let role = req.session.role;
     try {
-      const userId = req.session.userId as number;
-      const role = req.session.role;
-      const assignmentId = parseInt(req.params.id);
+      userId = req.session.userId as number;
+      role = req.session.role;
+      assignmentIdParam = req.params.id;
+      const assignmentId = parseInt(assignmentIdParam);
 
       if (isNaN(assignmentId)) {
         return res.status(400).json({ message: 'Invalid assignment ID' });
       }
 
-      console.log(`Fetching assignment ${assignmentId} for user ${userId} (role: ${role})`);
+      logger.debug(`Fetching assignment ${assignmentId} for user ${userId} (role: ${role})`);
 
       const assignment = await storage.getAssignment(assignmentId);
       if (!assignment) {
-        console.warn(`Assignment ${assignmentId} not found`);
+        logger.warn(`Assignment ${assignmentId} not found for GET /api/assignments/:id`, { assignmentId, userId });
         return res.status(404).json({ message: 'Assignment not found' });
       }
 
       // Security check - only allow users to view their own assignments 
       // unless they're an admin
       if (assignment.userId !== userId && role !== 'admin') {
-        console.warn(`Unauthorized access to assignment ${assignmentId} by user ${userId}`);
+        logger.warn(`Unauthorized access to assignment ${assignmentId} by user ${userId}`, { assignmentId, userId, role });
         return res.status(403).json({ message: 'Not authorized to access this assignment' });
       }
 
@@ -1041,7 +1049,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         station: station || null // Ensure null instead of undefined
       });
     } catch (error) {
-      console.error('Error fetching assignment:', error);
+      logger.error('Error fetching assignment for GET /api/assignments/:id', { assignmentId: assignmentIdParam, userId, role, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ 
         message: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
@@ -1050,15 +1058,18 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.post('/api/assignments', ensureAuthenticated, async (req, res) => {
+    let userId = req.session.userId as number; // Define for catch block
+    let role = req.session.role; // Define for catch block
+    let assignUserId = userId; // Default for catch block
     try {
-      const userId = req.session.userId as number;
-      const role = req.session.role;
+      userId = req.session.userId as number;
+      role = req.session.role;
 
-      console.log(`Creating assignment by user ${userId} (role: ${role})`);
+      logger.info(`Creating assignment by user ${userId} (role: ${role})`);
 
       // Basic validation
       if (!req.body.stationId || !req.body.startDate || !req.body.endDate) {
-        console.warn('Assignment creation missing required fields');
+        logger.warn('Assignment creation missing required fields for POST /api/assignments', { userId, body: req.body });
         return res.status(400).json({ 
           message: 'Missing required fields: stationId, startDate, and endDate are required' 
         });
@@ -1070,21 +1081,21 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       // Validate dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn('Invalid date format in assignment creation');
+        logger.warn('Invalid date format in assignment creation for POST /api/assignments', { userId, body: req.body });
         return res.status(400).json({ message: 'Invalid date format' });
       }
 
       if (startDate >= endDate) {
-        console.warn('End date not after start date in assignment creation');
+        logger.warn('End date not after start date in assignment creation for POST /api/assignments', { userId, body: req.body });
         return res.status(400).json({ message: 'End date must be after start date' });
       }
 
       // Only allow admins to assign other users
-      const assignUserId = role === 'admin' && req.body.userId 
+      assignUserId = role === 'admin' && req.body.userId
         ? parseInt(req.body.userId) 
         : userId;
 
-      console.log(`Assignment will be created for user ${assignUserId}`);
+      logger.info(`Assignment will be created for user ${assignUserId}`);
 
       // Create assignment with parsed dates
       const assignment = await storage.createAssignment({
@@ -1094,7 +1105,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         endDate
       });
 
-      console.log(`Assignment created: ID ${assignment.id}`);
+      logger.info(`Assignment created: ID ${assignment.id} for user ${assignUserId}`);
 
       // Get station info
       const station = await storage.getPollingStation(assignment.stationId);
@@ -1104,7 +1115,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         station: station || null // Ensure null instead of undefined
       });
     } catch (error) {
-      console.error('Error creating assignment:', error);
+      logger.error('Error creating assignment for POST /api/assignments', { userId, role, creatingForUserId: assignUserId, body: req.body, error: error instanceof Error ? error : new Error(String(error)) });
       // Send user-friendly error message
       if (error instanceof Error) {
         if (error.message.includes('conflict')) {
@@ -1123,10 +1134,14 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.put('/api/assignments/:id', ensureAuthenticated, async (req, res) => {
+    let assignmentIdParam = req.params.id; // Define for catch block
+    let userId = req.session.userId;
+    let userRole = req.session.role;
     try {
-      const userId = req.session.userId;
-      const userRole = req.session.role;
-      const assignmentId = parseInt(req.params.id);
+      userId = req.session.userId;
+      userRole = req.session.role;
+      assignmentIdParam = req.params.id;
+      const assignmentId = parseInt(assignmentIdParam);
 
       if (isNaN(assignmentId)) {
         return res.status(400).json({ message: 'Invalid assignment ID' });
@@ -1185,7 +1200,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         station
       });
     } catch (error) {
-      console.error('Error updating assignment:', error);
+      logger.error('Error updating assignment for PUT /api/assignments/:id', { assignmentId: assignmentIdParam, userId, userRole, body: req.body, error: error instanceof Error ? error : new Error(String(error)) });
       // Send user-friendly error message
       if (error instanceof Error) {
         if (error.message.includes('conflict')) {
@@ -1197,10 +1212,14 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   });
 
   app.post('/api/assignments/:id/check-in', ensureAuthenticated, async (req, res) => {
+    let assignmentIdParam = req.params.id; // Define for catch block
+    let userId = req.session.userId;
+    let userRole = req.session.role;
     try {
-      const userId = req.session.userId;
-      const userRole = req.session.role;
-      const assignmentId = parseInt(req.params.id);
+      userId = req.session.userId;
+      userRole = req.session.role;
+      assignmentIdParam = req.params.id;
+      const assignmentId = parseInt(assignmentIdParam);
 
       if (isNaN(assignmentId)) {
         return res.status(400).json({ message: 'Invalid assignment ID' });
@@ -1240,16 +1259,20 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         station
       });
     } catch (error) {
-      console.error('Error checking in:', error);
+      logger.error('Error checking in for POST /api/assignments/:id/check-in', { assignmentId: assignmentIdParam, userId, userRole, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'An error occurred while checking in' });
     }
   });
 
   app.post('/api/assignments/:id/check-out', ensureAuthenticated, async (req, res) => {
+    let assignmentIdParam = req.params.id; // Define for catch block
+    let userId = req.session.userId;
+    let userRole = req.session.role;
     try {
-      const userId = req.session.userId;
-      const userRole = req.session.role;
-      const assignmentId = parseInt(req.params.id);
+      userId = req.session.userId;
+      userRole = req.session.role;
+      assignmentIdParam = req.params.id;
+      const assignmentId = parseInt(assignmentIdParam);
 
       if (isNaN(assignmentId)) {
         return res.status(400).json({ message: 'Invalid assignment ID' });
@@ -1289,7 +1312,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         station
       });
     } catch (error) {
-      console.error('Error checking out:', error);
+      logger.error('Error checking out for POST /api/assignments/:id/check-out', { assignmentId: assignmentIdParam, userId, userRole, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'An error occurred while checking out' });
     }
   });
@@ -1347,7 +1370,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
               };
             }
           } catch (err) {
-            console.error('Error getting station for report:', err);
+            logger.error('Error getting station for report in GET /api/reports', { reportId: report.id, stationId: report.stationId, error: err instanceof Error ? err : new Error(String(err)) });
             // Return the report with a placeholder station on error
             return {
               ...report,
@@ -1359,7 +1382,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(reportsWithStations);
     } catch (error) {
-      console.error('Error fetching reports:', error);
+      logger.error('Error fetching reports for GET /api/reports', { userId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -1391,13 +1414,15 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       const settings = await storage.getAllSystemSettings();
       res.json(settings);
     } catch (error) {
-      console.error('Failed to fetch system settings:', error);
+      logger.error('Failed to fetch system settings for GET /api/system-settings', { error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch system settings' });
     }
   });
 
   app.get('/api/system-settings/:key', async (req, res) => {
+    let keyParam = req.params.key; // Define for catch block
     try {
+      keyParam = req.params.key;
       const { key } = req.params;
       const setting = await storage.getSystemSetting(key);
 
@@ -1407,13 +1432,17 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.json(setting);
     } catch (error) {
-      console.error(`Failed to fetch system setting with key ${req.params.key}:`, error);
+      logger.error(`Failed to fetch system setting with key ${keyParam} for GET /api/system-settings/:key`, { key: keyParam, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch system setting' });
     }
   });
 
   app.put('/api/system-settings/:key', ensureAdmin, async (req, res) => {
+    let keyParam = req.params.key; // Define for catch block
+    let userId = req.session.userId;
     try {
+      keyParam = req.params.key;
+      userId = req.session.userId;
       const { key } = req.params;
       const { value } = req.body;
 
@@ -1426,18 +1455,19 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         return res.status(404).json({ message: `Setting with key ${key} not found` });
       }
 
-      const userId = req.session.userId;
       const updatedSetting = await storage.updateSystemSetting(key, value, userId);
 
       res.json(updatedSetting);
     } catch (error) {
-      console.error(`Failed to update system setting with key ${req.params.key}:`, error);
+      logger.error(`Failed to update system setting with key ${keyParam} for PUT /api/system-settings/:key`, { key: keyParam, value: req.body.value, userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to update system setting' });
     }
   });
 
   app.post('/api/system-settings', ensureAdmin, async (req, res) => {
+    let userId = req.session.userId; // Define for catch block
     try {
+      userId = req.session.userId;
       const { settingKey, settingValue, description } = req.body;
 
       if (!settingKey || !settingValue) {
@@ -1449,8 +1479,6 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         return res.status(409).json({ message: `Setting with key ${settingKey} already exists` });
       }
 
-      const userId = req.session.userId;
-
       const newSetting = await storage.createSystemSetting({
         settingKey,
         settingValue,
@@ -1460,7 +1488,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(201).json(newSetting);
     } catch (error) {
-      console.error('Failed to create system setting:', error);
+      logger.error('Failed to create system setting for POST /api/system-settings', { body: req.body, userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to create system setting' });
     }
   });
@@ -1580,13 +1608,15 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         return res.json(defaultSettings);
       }
     } catch (error) {
-      console.error('Error fetching verification settings:', error);
+      logger.error('Error fetching verification settings for GET /api/admin/settings/verification', { error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch verification settings' });
     }
   });
 
   app.post('/api/admin/settings/verification', ensureAdmin, async (req, res) => {
+    let adminUserId = req.session.userId as number; // Define for catch block
     try {
+      adminUserId = req.session.userId as number;
       const { verificationSettingsSchema } = await import('@shared/schema');
       
       // Validate request body against the schema
@@ -1596,7 +1626,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       const updatedSetting = await storage.updateSystemSetting(
         'verification_settings',
         settings,
-        req.session.userId as number
+        adminUserId
       );
       
       if (!updatedSetting) {
@@ -1605,14 +1635,14 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
           settingKey: 'verification_settings',
           settingValue: settings,
           description: 'Verification requirements and process configuration',
-          updatedBy: req.session.userId as number
+          updatedBy: adminUserId
         });
       }
       
       return res.status(200).json(settings);
     } catch (error: any) {
-      console.error('Error updating verification settings:', error);
-      if (error.errors) {
+      logger.error('Error updating verification settings for POST /api/admin/settings/verification', { userId: adminUserId, body: req.body, error: error instanceof Error ? error : new Error(String(error)), zodErrors: error.errors });
+      if (error.errors) { // This is specific to ZodError, logger already captures full error.
         return res.status(400).json({ message: 'Invalid verification settings', errors: error.errors });
       }
       res.status(500).json({ message: 'Failed to update verification settings' });
@@ -1644,18 +1674,22 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       return res.json(formattedUsers);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users for GET /api/admin/users', { error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch users' });
     }
   });
 
   // Endpoint for approving or rejecting user verification
   app.post('/api/admin/users/:userId/verify', ensureAdmin, async (req, res) => {
+    let targetUserId = req.params.userId; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const userId = parseInt(req.params.userId);
+      targetUserId = req.params.userId;
+      adminUserId = req.session.userId;
+      const userIdInt = parseInt(targetUserId);
       const { verificationStatus } = req.body;
 
-      if (!userId || !verificationStatus) {
+      if (!userIdInt || !verificationStatus) {
         return res.status(400).json({ message: 'Missing required fields' });
       }
 
@@ -1664,15 +1698,16 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       }
 
       // Update the user's verification status
-      const updatedUser = await storage.updateUser(userId, { verificationStatus });
+      const userFromStorage = await storage.updateUser(userIdInt, { verificationStatus });
 
-      if (!updatedUser) {
+      if (!userFromStorage) {
         return res.status(404).json({ message: 'User not found' });
       }
-
+      // Sanitize user object before sending
+      const { password, twoFactorSecret, recoveryCodes, ...updatedUser } = userFromStorage;
       return res.json(updatedUser);
     } catch (error) {
-      console.error('Error updating user verification:', error);
+      logger.error('Error updating user verification for POST /api/admin/users/:userId/verify', { targetUserId, verificationStatus: req.body.verificationStatus, adminUserId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to update user verification' });
     }
   });
@@ -1680,16 +1715,16 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Pending profile photo approvals
   app.get('/api/admin/pending-photo-approvals', ensureAdmin, async (req, res) => {
     try {
-      console.log('Fetching pending photo approvals');
+      logger.debug('Fetching pending photo approvals');
       const pendingPhotos = await storage.getPendingPhotoApprovals();
-      console.log('Found pending photos:', pendingPhotos);
+      logger.debug('Found pending photos count:', {count: pendingPhotos.length});
 
       // Enhance with user information
       const pendingPhotosWithUserInfo = await Promise.all(
         pendingPhotos.map(async (photo) => {
-          console.log('Processing photo approval:', photo);
+          logger.debug('Processing photo approval', { photoId: photo.id, userId: photo.userId });
           const user = await storage.getUser(photo.userId);
-          console.log('Found user for photo:', user);
+          logger.debug('Found user for photo approval', { userId: photo.userId, username: user?.username });
 
           return {
             id: photo.id,
@@ -1702,18 +1737,22 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         })
       );
 
-      console.log('Returning enhanced photo approvals:', pendingPhotosWithUserInfo);
+      logger.debug('Returning enhanced photo approvals count:', {count: pendingPhotosWithUserInfo.length});
       res.status(200).json(pendingPhotosWithUserInfo);
     } catch (error) {
-      console.error('Error fetching pending photo approvals:', error);
+      logger.error('Error fetching pending photo approvals for GET /api/admin/pending-photo-approvals', { adminUserId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch pending photo approvals' });
     }
   });
 
   // Approve a pending profile photo
   app.post('/api/admin/pending-photo-approvals/:id/approve', ensureAdmin, async (req, res) => {
+    let approvalIdParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const approvalId = parseInt(req.params.id);
+      approvalIdParam = req.params.id;
+      adminUserId = req.session.userId;
+      const approvalId = parseInt(approvalIdParam);
       if (isNaN(approvalId)) {
         return res.status(400).json({ message: 'Invalid approval ID' });
       }
@@ -1745,24 +1784,29 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       }
 
       // Mark the approval as completed using the dedicated approval method
-      const adminId = req.session.userId;
-      if (!adminId) {
+      if (!adminUserId) {
+        // This case should ideally be caught by ensureAdmin, but good for robustness
+        logger.warn('Admin ID not found in session during photo approval');
         return res.status(401).json({ message: 'Unauthorized - admin ID not found in session' });
       }
       
-      await storage.approvePhotoApproval(approvalId, adminId);
+      await storage.approvePhotoApproval(approvalId, adminUserId);
 
       res.status(200).json({ message: 'Photo approved successfully' });
     } catch (error) {
-      console.error('Error approving profile photo:', error);
+      logger.error('Error approving profile photo for POST /api/admin/pending-photo-approvals/:id/approve', { approvalId: approvalIdParam, adminUserId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to approve profile photo' });
     }
   });
 
   // Reject a pending profile photo
   app.post('/api/admin/pending-photo-approvals/:id/reject', ensureAdmin, async (req, res) => {
+    let approvalIdParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const approvalId = parseInt(req.params.id);
+      approvalIdParam = req.params.id;
+      adminUserId = req.session.userId;
+      const approvalId = parseInt(approvalIdParam);
       if (isNaN(approvalId)) {
         return res.status(400).json({ message: 'Invalid approval ID' });
       }
@@ -1774,16 +1818,16 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       }
 
       // Mark the approval as rejected using the dedicated rejection method
-      const adminId = req.session.userId;
-      if (!adminId) {
+      if (!adminUserId) {
+        logger.warn('Admin ID not found in session during photo rejection');
         return res.status(401).json({ message: 'Unauthorized - admin ID not found in session' });
       }
       
-      await storage.rejectPhotoApproval(approvalId, adminId);
+      await storage.rejectPhotoApproval(approvalId, adminUserId);
 
       res.status(200).json({ message: 'Photo rejected successfully' });
     } catch (error) {
-      console.error('Error rejecting profile photo:', error);
+      logger.error('Error rejecting profile photo for POST /api/admin/pending-photo-approvals/:id/reject', { approvalId: approvalIdParam, adminUserId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to reject profile photo' });
     }
   });
@@ -1859,15 +1903,19 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         res.status(200).json(observers);
       }
     } catch (error) {
-      console.error('Error fetching verification queue:', error);
+      logger.error('Error fetching verification queue for GET /api/admin/verification-queue', { adminUserId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch verification queue' });
     }
   });
 
   // Approve observer verification
   app.post('/api/admin/verification/:id/approve', ensureAdmin, async (req, res) => {
+    let observerIdParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const observerId = parseInt(req.params.id);
+      observerIdParam = req.params.id;
+      adminUserId = req.session.userId;
+      const observerId = parseInt(observerIdParam);
       if (isNaN(observerId)) {
         return res.status(400).json({ message: 'Invalid observer ID' });
       }
@@ -1892,15 +1940,19 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         }
       });
     } catch (error) {
-      console.error('Error approving observer:', error);
+      logger.error('Error approving observer for POST /api/admin/verification/:id/approve', { observerIdToApprove: observerIdParam, adminUserId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to approve observer' });
     }
   });
 
   // Reject observer verification
   app.post('/api/admin/verification/:id/reject', ensureAdmin, async (req, res) => {
+    let observerIdParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const observerId = parseInt(req.params.id);
+      observerIdParam = req.params.id;
+      adminUserId = req.session.userId;
+      const observerId = parseInt(observerIdParam);
       if (isNaN(observerId)) {
         return res.status(400).json({ message: 'Invalid observer ID' });
       }
@@ -1932,10 +1984,17 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         }
       });
     } catch (error) {
+      const errorDetails = {
+        observerIdToReject: observerIdParam,
+        reason: req.body.reason,
+        adminUserId,
+        error: error instanceof Error ? error : new Error(String(error)),
+        zodErrors: error instanceof ZodError ? fromZodError(error).message : undefined
+      };
+      logger.error('Error rejecting observer for POST /api/admin/verification/:id/reject', errorDetails);
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
-      console.error('Error rejecting observer:', error);
       res.status(500).json({ message: 'Failed to reject observer' });
     }
   });
@@ -1995,7 +2054,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(stats);
     } catch (error) {
-      console.error('Error fetching system statistics:', error);
+      logger.error('Error fetching system statistics for GET /api/admin/system-stats', { adminUserId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Error fetching system statistics' });
     }
   });
@@ -2006,7 +2065,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       const templates = await storage.getAllFormTemplates();
       res.status(200).json(templates);
     } catch (error) {
-      console.error('Error fetching form templates:', error);
+      logger.error('Error fetching form templates for GET /api/form-templates', { userId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -2017,27 +2076,31 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       const templates = await storage.getActiveFormTemplates();
       res.status(200).json(templates);
     } catch (error) {
-      console.error('Error fetching active form templates:', error);
+      logger.error('Error fetching active form templates for GET /api/form-templates/active', { userId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Get form templates by category
   app.get('/api/form-templates/category/:category', ensureAuthenticated, async (req, res) => {
+    let categoryParam = req.params.category; // Define for catch block
     try {
+      categoryParam = req.params.category;
       const { category } = req.params;
       const templates = await storage.getFormTemplatesByCategory(category);
       res.status(200).json(templates);
     } catch (error) {
-      console.error('Error fetching form templates by category:', error);
+      logger.error('Error fetching form templates by category for GET /api/form-templates/category/:category', { category: categoryParam, userId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Get form template by ID
   app.get('/api/form-templates/:id', ensureAuthenticated, async (req, res) => {
+    let idParam = req.params.id; // Define for catch block
     try {
-      const id = parseInt(req.params.id);
+      idParam = req.params.id;
+      const id = parseInt(idParam);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid template ID' });
       }
@@ -2049,15 +2112,16 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(template);
     } catch (error) {
-      console.error('Error fetching form template:', error);
+      logger.error('Error fetching form template for GET /api/form-templates/:id', { templateId: idParam, userId: req.session.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Create form template (admin only)
   app.post('/api/form-templates', ensureAdmin, async (req, res) => {
+    let adminUserId = req.session.userId; // Define for catch block
     try {
-      const userId = req.session.userId;
+      adminUserId = req.session.userId;
 
       // Parse and validate extended template
       const extendedTemplate = formTemplateExtendedSchema.parse(req.body);
@@ -2079,23 +2143,33 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
         description: extendedTemplate.description || null,
         category: extendedTemplate.category,
         fields: fields,
-        createdBy: userId
+        createdBy: adminUserId
       });
 
       res.status(201).json(template);
     } catch (error) {
+      const errorDetails = {
+        userId: adminUserId,
+        body: req.body,
+        error: error instanceof Error ? error : new Error(String(error)),
+        zodErrors: error instanceof ZodError ? fromZodError(error).message : undefined
+      };
+      logger.error('Error creating form template for POST /api/form-templates', errorDetails);
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
-      console.error('Error creating form template:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Update form template (admin only)
   app.put('/api/form-templates/:id', ensureAdmin, async (req, res) => {
+    let idParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const id = parseInt(req.params.id);
+      idParam = req.params.id;
+      adminUserId = req.session.userId;
+      const id = parseInt(idParam);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid template ID' });
       }
@@ -2131,18 +2205,29 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(template);
     } catch (error) {
+      const errorDetails = {
+        templateId: idParam,
+        userId: adminUserId,
+        body: req.body,
+        error: error instanceof Error ? error : new Error(String(error)),
+        zodErrors: error instanceof ZodError ? fromZodError(error).message : undefined
+      };
+      logger.error('Error updating form template for PUT /api/form-templates/:id', errorDetails);
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
-      console.error('Error updating form template:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Activate/deactivate form template (admin only)
   app.patch('/api/form-templates/:id/status', ensureAdmin, async (req, res) => {
+    let idParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const id = parseInt(req.params.id);
+      idParam = req.params.id;
+      adminUserId = req.session.userId;
+      const id = parseInt(idParam);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid template ID' });
       }
@@ -2166,18 +2251,29 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(200).json(template);
     } catch (error) {
+      const errorDetails = {
+        templateId: idParam,
+        isActive: req.body.isActive,
+        userId: adminUserId,
+        error: error instanceof Error ? error : new Error(String(error)),
+        zodErrors: error instanceof ZodError ? fromZodError(error).message : undefined
+      };
+      logger.error('Error updating form template status for PATCH /api/form-templates/:id/status', errorDetails);
       if (error instanceof ZodError) {
         return res.status(400).json({ message: fromZodError(error).message });
       }
-      console.error('Error updating form template status:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
 
   // Delete form template (admin only)
   app.delete('/api/form-templates/:id', ensureAdmin, async (req, res) => {
+    let idParam = req.params.id; // Define for catch block
+    let adminUserId = req.session.userId;
     try {
-      const id = parseInt(req.params.id);
+      idParam = req.params.id;
+      adminUserId = req.session.userId;
+      const id = parseInt(idParam);
       if (isNaN(id)) {
         return res.status(400).json({ message: 'Invalid template ID' });
       }
@@ -2196,7 +2292,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
       res.status(204).end();
     } catch (error) {
-      console.error('Error deleting form template:', error);
+      logger.error('Error deleting form template for DELETE /api/form-templates/:id', { templateId: idParam, userId: adminUserId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -2249,7 +2345,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
   // Add project management routes
   app.use('/api/project-management', projectManagementRoutes);
-  console.log('Project management routes registered at /api/project-management');
+  logger.info('Project management routes registered at /api/project-management');
   
   // Add regions routes for parish/polling station regions
   app.use('/api/regions', regionsRoutes);
@@ -2296,16 +2392,23 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
       }
       // Optionally fetch related station and user info
       let station = null;
-      let user = null;
+      let userFromStorage = null;
       if (report.stationId) {
         station = await storage.getPollingStation(report.stationId);
       }
       if (report.userId) {
-        user = await storage.getUser(typeof report.userId === 'string' ? parseInt(report.userId) : report.userId);
+        userFromStorage = await storage.getUser(typeof report.userId === 'string' ? parseInt(report.userId) : report.userId);
       }
-      res.status(200).json({ ...report, station, user });
+
+      let safeUser = null;
+      if (userFromStorage) {
+        const { password, twoFactorSecret, recoveryCodes, ...sanitizedUser } = userFromStorage;
+        safeUser = sanitizedUser;
+      }
+
+      res.status(200).json({ ...report, station, user: safeUser });
     } catch (error) {
-      console.error('Error fetching report by ID:', error);
+      logger.error('Error fetching report by ID for GET /api/reports/:id', { reportId: req.params.id, userId: req.session?.userId, error: error instanceof Error ? error : new Error(String(error)) });
       res.status(500).json({ message: 'Failed to fetch report' });
     }
   });

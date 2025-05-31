@@ -53,14 +53,14 @@ class DiditConnector {
       };
       
       this.initialized = true;
-      console.log('Didit connector initialized with config:', {
+      logger.info('Didit connector initialized with config', {
         apiKeyPresent: !!this.config.apiKey,
         apiSecretPresent: !!this.config.apiSecret,
         baseUrl: this.config.baseUrl,
         enabled: this.config.enabled
       });
     } catch (error) {
-      console.error('Error initializing Didit configuration:', error);
+      logger.error('Error initializing Didit configuration', { error: error instanceof Error ? error : new Error(String(error)) });
       throw error;
     }
   }
@@ -70,7 +70,7 @@ class DiditConnector {
    */
   updateConfig(newConfig: DiditConfig): void {
     this.config = { ...this.config, ...newConfig };
-    console.log('Didit configuration updated:', {
+    logger.info('Didit configuration updated', {
       apiKeyPresent: !!this.config.apiKey,
       apiSecretPresent: !!this.config.apiSecret,
       baseUrl: this.config.baseUrl,
@@ -133,7 +133,7 @@ class DiditConnector {
         message: 'Connection successful. Didit.me integration is properly configured and responsive.'
       };
     } catch (error) {
-      console.error('Error testing Didit connection:', error);
+      logger.error('Error testing Didit connection', { error: error instanceof Error ? error : new Error(String(error)), config: this.config });
       return {
         success: false,
         message: `Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -161,7 +161,7 @@ class DiditConnector {
    */
   async startServer(): Promise<void> {
     if (this.serverRunning) {
-      console.log('Didit server is already running');
+      logger.info('Didit server is already running');
       return;
     }
 
@@ -182,15 +182,15 @@ class DiditConnector {
       });
       
       this.serverProcess.stdout?.on('data', (data) => {
-        console.log(`Didit server: ${data}`);
+        logger.info(`Didit server: ${data.toString().trim()}`);
       });
       
       this.serverProcess.stderr?.on('data', (data) => {
-        console.error(`Didit server error: ${data}`);
+        logger.error(`Didit server error: ${data.toString().trim()}`);
       });
       
       this.serverProcess.on('close', (code) => {
-        console.log(`Didit server process exited with code ${code}`);
+        logger.info(`Didit server process exited with code ${code}`);
         this.serverRunning = false;
         this.serverProcess = null;
       });
@@ -212,7 +212,7 @@ class DiditConnector {
             const diditServerUrl = `http://localhost:${process.env.DIDIT_INTEGRATION_PORT || '5000'}`;
             const response = await fetch(diditServerUrl);
             if (response.ok) {
-              console.log('Didit integration server is responsive.');
+              logger.info('Didit integration server is responsive.');
               this.serverRunning = true;
               resolve();
             } else {
@@ -220,7 +220,7 @@ class DiditConnector {
             }
           } catch (error) {
             if (Date.now() - startTime > timeout) {
-              console.error('Didit integration server start timed out.');
+              logger.error('Didit integration server start timed out.');
               this.serverProcess?.kill(); 
               reject(new Error('Didit server start timed out'));
             } else {
@@ -231,9 +231,9 @@ class DiditConnector {
         pollServer();
       });
       
-      console.log('Didit integration server started');
+      logger.info('Didit integration server started');
     } catch (error) {
-      console.error('Failed to start Didit integration server:', error);
+      logger.error('Failed to start Didit integration server', { error: error instanceof Error ? error : new Error(String(error)) });
       throw error;
     }
   }
@@ -246,7 +246,7 @@ class DiditConnector {
       this.serverProcess.kill();
       this.serverProcess = null;
       this.serverRunning = false;
-      console.log('Didit integration server stopped');
+      logger.info('Didit integration server stopped');
     }
   }
 
@@ -318,7 +318,7 @@ class DiditConnector {
       // Default status
       return { verified: false, status: 'none' };
     } catch (error) {
-      console.error('Error checking verification status:', error);
+      logger.error('Error checking verification status', { email, error: error instanceof Error ? error : new Error(String(error)) });
       throw error;
     }
   }
@@ -343,7 +343,7 @@ class DiditConnector {
         documentNumber: '1234567890'
       };
     } catch (error) {
-      console.error('Error getting verification details:', error);
+      logger.error('Error getting verification details', { verificationId, error: error instanceof Error ? error : new Error(String(error)) });
       throw error;
     }
   }
