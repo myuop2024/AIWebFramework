@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(apiKey!);
 
 // Access the Gemini Pro model
 const model = genAI.getGenerativeModel({
-  model: "gemini-pro",
+  model: "gemini-1.5-flash",
   safetySettings: [
     {
       category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,

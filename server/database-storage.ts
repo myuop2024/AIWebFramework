@@ -63,7 +63,7 @@ import {
   ErrorLogQueryOptions,
   ErrorLogDeleteCriteria
 } from "@shared/schema";
-import { eq, and, isNull, or, not, desc, asc, lt, gt, gte, lte, like, ilike, inArray } from "drizzle-orm";
+import { eq, and, isNull, or, not, desc, asc, lt, gt, gte, lte, like, ilike, inArray, sql } from "drizzle-orm";
 import logger from "./utils/logger";
 
 // Simple in-memory cache for user data
@@ -604,6 +604,27 @@ export class DatabaseStorage implements IStorage {
       .from(userImportLogs)
       .where(eq(userImportLogs.id, importId));
     return log;
+  }
+
+  async getAllUserImportLogs(): Promise<UserImportLog[]> {
+    return await db
+      .select()
+      .from(userImportLogs)
+      .orderBy(desc(userImportLogs.importedAt));
+  }
+
+  async createUserImportLog(logData: InsertUserImportLog): Promise<UserImportLog> {
+    const [newLog] = await db
+      .insert(userImportLogs)
+      .values({
+        ...logData,
+        importedAt: new Date()
+      })
+      .returning();
+    if (!newLog) {
+      throw new Error("User import log creation failed, no data returned.");
+    }
+    return newLog;
   }
 
   async updateUserImportLog(importId: number, data: Partial<UserImportLog>): Promise<void> {

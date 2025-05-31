@@ -101,6 +101,13 @@ export interface IStorage {
   updateRole(id: number, data: Partial<Omit<Role, 'id' | 'createdAt' | 'updatedAt' | 'isSystem'>> & { permissions?: string[] }): Promise<Role | undefined>;
   deleteRole(id: number): Promise<boolean>;
   getPermissionsForRole(roleId: number): Promise<string[] | undefined>;
+
+  // User import log operations
+  getUserImportLog(importId: number): Promise<UserImportLog | undefined>;
+  getAllUserImportLogs(): Promise<UserImportLog[]>;
+  createUserImportLog(logData: InsertUserImportLog): Promise<UserImportLog>;
+  updateUserImportLog(importId: number, data: Partial<UserImportLog>): Promise<void>;
+  bulkCreateUsers(users: InsertUser[], options: { defaultRole?: string; verificationStatus?: string; passwordHash?: (pwd: string) => string }): Promise<{ success: User[]; failures: { data: InsertUser; error: string }[] }>;
 }
 
 // Import database storage
