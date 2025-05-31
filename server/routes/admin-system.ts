@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { storage } from '../storage';
-import { ensureAuthenticated as isAuthenticated, ensureAdmin as isAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -8,7 +8,7 @@ import * as path from 'path';
 const router = Router();
 
 // Get system statistics for admin dashboard
-router.get('/api/admin/system-stats', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.get('/api/admin/system-stats', ensureAuthenticated, hasPermission('system:view-stats'), async (req: Request, res: Response) => {
   try {
     // Get user statistics
     const totalUsers = await storage.getTotalUserCount();
@@ -142,7 +142,7 @@ router.get('/api/admin/system-stats', isAuthenticated, isAdmin, async (req: Requ
 });
 
 // Get detailed system information
-router.get('/api/admin/system-info', isAuthenticated, isAdmin, async (req: Request, res: Response) => {
+router.get('/api/admin/system-info', ensureAuthenticated, hasPermission('system:view-info'), async (req: Request, res: Response) => {
   try {
     const systemInfo = {
       hostname: os.hostname(),

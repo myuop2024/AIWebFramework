@@ -11,7 +11,7 @@ import { storage } from '../storage';
 import { analyzeIncidentPatternsWithGemini } from '../services/google-ai-service';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
 import * as logger from '../utils/logger';
-import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 
 const router = Router();
 
@@ -20,7 +20,7 @@ const router = Router();
  * Get election issue predictions enhanced with Jamaican political news data
  * Admin-only endpoint
  */
-router.get('/news-enhanced-predictions', ensureAdmin, async (req, res) => {
+router.get('/news-enhanced-predictions', ensureAuthenticated, hasPermission('predictions:view-news-enhanced'), async (req, res) => {
   try {
     logger.info('Generating news-enhanced predictions');
     
@@ -95,7 +95,7 @@ router.get('/news-enhanced-predictions', ensureAdmin, async (req, res) => {
  * Get latest Jamaican political news (without predictions)
  * Admin-only endpoint
  */
-router.get('/news/jamaica', ensureAdmin, async (req, res) => {
+router.get('/news/jamaica', ensureAuthenticated, hasPermission('news:view-jamaica-political'), async (req, res) => {
   try {
     // Number of days to look back
     const days = req.query.days ? parseInt(req.query.days as string) : 7;

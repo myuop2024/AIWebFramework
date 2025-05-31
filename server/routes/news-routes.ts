@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { newsEntries, type News, type InsertNews } from '@shared/schema';
+import { ensureAuthenticated, hasPermission } from '../middleware/auth';
 import { eq, desc, and, like, sql } from 'drizzle-orm';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
 import * as logger from '../utils/logger';
@@ -147,7 +148,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/news - Create new news item
-router.post('/', async (req, res) => {
+router.post('/', ensureAuthenticated, hasPermission('news:create'), async (req, res) => {
   try {
     const { title, content, category, isPublished = true } = req.body;
     
@@ -180,7 +181,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/news/:id - Update news item
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, hasPermission('news:edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, content, category, isPublished } = req.body;
@@ -224,7 +225,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/news/:id - Delete news item
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ensureAuthenticated, hasPermission('news:delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -256,7 +257,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/news/:id/publish - Toggle publish status
-router.post('/:id/publish', async (req, res) => {
+router.post('/:id/publish', ensureAuthenticated, hasPermission('news:publish'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     

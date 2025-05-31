@@ -165,20 +165,74 @@ export function RoleManagement() {
   };
 
   // Permissions list - matches the permissions set in the database
-  const availablePermissions = [
-    { id: "admin", label: "Administrator Access" },
-    { id: "manage_users", label: "Manage Users" },
-    { id: "manage_roles", label: "Manage Roles" },
-    { id: "manage_polling_stations", label: "Manage Polling Stations" },
-    { id: "manage_assignments", label: "Manage Assignments" },
-    { id: "manage_reports", label: "Manage Reports" },
-    { id: "manage_events", label: "Manage Events" },
-    { id: "manage_settings", label: "Manage System Settings" },
-    { id: "view_analytics", label: "View Analytics" },
-    { id: "submit_reports", label: "Submit Reports" },
-    { id: "view_assignments", label: "View Assignments" },
-    { id: "view_polling_stations", label: "View Polling Stations" },
-    { id: "approve_users", label: "Approve User Registrations" },
+  const groupedPermissions = [
+    {
+      category: "User Management",
+      permissions: [
+        { id: "users:view", label: "View Users" },
+        { id: "users:create", label: "Create Users" },
+        { id: "users:edit", label: "Edit Users" },
+        { id: "users:delete", label: "Delete Users" },
+        { id: "users:assign-role", label: "Assign Roles to Users" },
+        { id: "users:view-documents", label: "View User Documents" },
+        { id: "users:verify", label: "Verify Users" },
+        { id: "users:edit-status", label: "Edit User Status" },
+        { id: "users:view-permissions", label: "View User Permissions" },
+        { id: "users:search", label: "Search Users" },
+        { id: "users:view-stats", label: "View User Statistics" },
+
+      ],
+    },
+    {
+      category: "Role Management",
+      permissions: [
+        { id: "roles:view", label: "View Roles" },
+        { id: "roles:create", label: "Create Roles" },
+        { id: "roles:edit", label: "Edit Roles" },
+        { id: "roles:delete", label: "Delete Roles" },
+      ],
+    },
+    {
+      category: "System & Configuration",
+      permissions: [
+        { id: "system:view-stats", label: "View System Statistics" },
+        { id: "system:view-info", label: "View System Information" },
+        { id: "system:edit-settings", label: "Edit System Settings" },
+        { id: "permissions:view-all-available", label: "View All Available Permissions"},
+        { id: "system:test-didit-connection", label: "Test Didit Connection" },
+        { id: "system:view-didit-settings", label: "View Didit Settings" },
+        { id: "system:edit-didit-settings", label: "Edit Didit Settings" },
+      ],
+    },
+    {
+      category: "Supervisor Tasks",
+      permissions: [
+        { id: "supervisor-tasks:view-team", label: "View Supervisor Team" },
+        { id: "supervisor-tasks:view-pending-reports", label: "View Pending Reports (Supervisor)" },
+        { id: "supervisor-tasks:view-assignments", label: "View Assignments (Supervisor)" },
+        { id: "supervisor-tasks:create-assignment", label: "Create Assignment (Supervisor)" },
+        { id: "supervisor-tasks:cancel-assignment", label: "Cancel Assignment (Supervisor)" },
+        { id: "supervisor-tasks:approve-report", label: "Approve Report (Supervisor)" },
+        { id: "supervisor-tasks:reject-report", label: "Reject Report (Supervisor)" },
+        { id: "supervisor-tasks:request-report-update", label: "Request Report Update (Supervisor)" },
+      ],
+    },
+    {
+      category: "Analytics",
+      permissions: [
+        { id: "analytics:view-summary", label: "View Analytics Summary" },
+        { id: "analytics:view-users", label: "View User Analytics" },
+        { id: "analytics:view-report-types", label: "View Report Type Analytics" },
+        { id: "analytics:view-report-status", label: "View Report Status Analytics" },
+        { id: "analytics:view-station-issues", label: "View Station Issue Analytics" },
+        { id: "analytics:view-daily-activity", label: "View Daily Activity Analytics" },
+        { id: "analytics:view-incident-predictions", label: "View Incident Predictions" },
+        { id: "analytics:view-news", label: "View News Analytics" },
+        { id: "analytics:view-dashboard", label: "View AI Analytics Dashboard" },
+        { id: "analytics:predict-issues", label: "Predict Issues (Analytics)" },
+        { id: "analytics:generate-report", label: "Generate Report (Analytics)" },
+      ],
+    }
   ];
 
   return (
@@ -356,35 +410,42 @@ export function RoleManagement() {
               Configure which actions users with this role can perform
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availablePermissions.map((permission) => (
-                <div key={permission.id} className="flex items-center space-x-2 border p-2 rounded">
-                  <Switch 
-                    id={`permission-${permission.id}`}
-                    checked={selectedRole?.permissions?.includes(permission.id) || false}
-                    onCheckedChange={(checked) => {
-                      if (!selectedRole) return;
-                      
-                      const newPermissions = checked 
-                        ? [...(selectedRole.permissions || []), permission.id]
-                        : (selectedRole.permissions || []).filter(p => p !== permission.id);
-                      
-                      setSelectedRole({
-                        ...selectedRole,
-                        permissions: newPermissions
-                      });
-                    }}
-                  />
-                  <label 
-                    htmlFor={`permission-${permission.id}`}
-                    className="text-sm font-medium cursor-pointer flex-1"
-                  >
-                    {permission.label}
-                  </label>
+          <div className="py-4 max-h-[60vh] overflow-y-auto"> {/* Added max-h and overflow for scroll */}
+            {groupedPermissions.map((group) => (
+              <div key={group.category} className="mb-6">
+                <h4 className="text-lg font-semibold mb-3 text-primary">{group.category}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  {group.permissions.map((permission) => (
+                    <div key={permission.id} className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-50 transition-colors">
+                      <Switch
+                        id={`permission-${permission.id}`}
+                        checked={selectedRole?.permissions?.includes(permission.id) || false}
+                        onCheckedChange={(checked) => {
+                          if (!selectedRole) return;
+
+                          const currentPermissions = selectedRole.permissions || [];
+                          const newPermissions = checked
+                            ? [...currentPermissions, permission.id]
+                            : currentPermissions.filter(p => p !== permission.id);
+
+                          setSelectedRole({
+                            ...selectedRole,
+                            permissions: newPermissions.filter((p, index, self) => self.indexOf(p) === index) // Ensure uniqueness
+                          });
+                        }}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                      <label
+                        htmlFor={`permission-${permission.id}`}
+                        className="text-sm font-medium cursor-pointer flex-1 leading-snug"
+                      >
+                        {permission.label}
+                      </label>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPermissionsOpen(false)}>

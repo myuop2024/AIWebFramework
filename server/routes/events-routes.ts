@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { events, eventParticipation, users, type Event, type InsertEvent, type EventParticipation, type InsertEventParticipation } from '@shared/schema';
+import { ensureAuthenticated, hasPermission } from '../middleware/auth';
 import { eq, desc, and, gte, lte, sql, asc } from 'drizzle-orm';
 import * as logger from '../utils/logger';
 
@@ -162,7 +163,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/events - Create new event
-router.post('/', async (req, res) => {
+router.post('/', ensureAuthenticated, hasPermission('events:create'), async (req, res) => {
   try {
     const { title, description, eventType, location, startTime, endTime } = req.body;
     
@@ -195,7 +196,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/events/:id - Update event
-router.put('/:id', async (req, res) => {
+router.put('/:id', ensureAuthenticated, hasPermission('events:edit'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, description, eventType, location, startTime, endTime } = req.body;
@@ -239,7 +240,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/events/:id - Delete event
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ensureAuthenticated, hasPermission('events:delete'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     
@@ -277,7 +278,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/events/:id/register - Register user for event
-router.post('/:id/register', async (req, res) => {
+router.post('/:id/register', ensureAuthenticated, hasPermission('events:register'), async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const { userId } = req.body;
@@ -335,7 +336,7 @@ router.post('/:id/register', async (req, res) => {
 });
 
 // PUT /api/events/:id/participants/:userId - Update participant status
-router.put('/:id/participants/:userId', async (req, res) => {
+router.put('/:id/participants/:userId', ensureAuthenticated, hasPermission('events:manage-participants'), async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const userId = req.params.userId;
@@ -383,7 +384,7 @@ router.put('/:id/participants/:userId', async (req, res) => {
 });
 
 // DELETE /api/events/:id/participants/:userId - Remove participant
-router.delete('/:id/participants/:userId', async (req, res) => {
+router.delete('/:id/participants/:userId', ensureAuthenticated, hasPermission('events:manage-participants'), async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     const userId = req.params.userId;
@@ -422,7 +423,7 @@ router.delete('/:id/participants/:userId', async (req, res) => {
 });
 
 // GET /api/events/:id/participants - Get event participants
-router.get('/:id/participants', async (req, res) => {
+router.get('/:id/participants', ensureAuthenticated, hasPermission('events:view-participants'), async (req, res) => {
   try {
     const eventId = parseInt(req.params.id);
     

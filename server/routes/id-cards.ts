@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { idCardService } from '../services/id-card-service';
-import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
+import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
 import { idCardTemplateSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
@@ -9,7 +9,7 @@ import { fromZodError } from 'zod-validation-error';
 const router = Router();
 
 // Get all ID card templates (admin only)
-router.get('/templates', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.get('/templates', ensureAuthenticated, hasPermission('id-cards:view-templates'), async (req, res) => {
   try {
     const templates = await storage.getAllIdCardTemplates();
     res.status(200).json(templates);
@@ -20,7 +20,7 @@ router.get('/templates', ensureAuthenticated, ensureAdmin, async (req, res) => {
 });
 
 // Get a specific ID card template (admin only)
-router.get('/templates/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.get('/templates/:id', ensureAuthenticated, hasPermission('id-cards:view-templates'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -57,7 +57,7 @@ router.get('/templates/active', ensureAuthenticated, async (req, res) => {
 });
 
 // Create a new ID card template (admin only)
-router.post('/templates', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.post('/templates', ensureAuthenticated, hasPermission('id-cards:create-template'), async (req, res) => {
   try {
     const result = idCardTemplateSchema.safeParse(req.body);
     if (!result.success) {
@@ -76,7 +76,7 @@ router.post('/templates', ensureAuthenticated, ensureAdmin, async (req, res) => 
 });
 
 // Update an ID card template (admin only)
-router.put('/templates/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.put('/templates/:id', ensureAuthenticated, hasPermission('id-cards:edit-template'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -104,7 +104,7 @@ router.put('/templates/:id', ensureAuthenticated, ensureAdmin, async (req, res) 
 });
 
 // Delete an ID card template (admin only)
-router.delete('/templates/:id', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.delete('/templates/:id', ensureAuthenticated, hasPermission('id-cards:delete-template'), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
@@ -181,7 +181,7 @@ router.get('/download', ensureAuthenticated, async (req, res) => {
 });
 
 // Preview ID card template (admin only)
-router.post('/preview-template', ensureAuthenticated, ensureAdmin, async (req, res) => {
+router.post('/preview-template', ensureAuthenticated, hasPermission('id-cards:preview-template'), async (req, res) => {
   try {
     const result = idCardTemplateSchema.safeParse(req.body);
     if (!result.success) {
