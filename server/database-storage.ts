@@ -410,25 +410,76 @@ export class DatabaseStorage implements IStorage {
   // These should be expanded as needed for the application
 
   async getDocument(id: number): Promise<Document | undefined> {
-    logger.warn('STUB: getDocument called, but it is not fully implemented.');
-    return Promise.resolve(undefined);
+    try {
+      const [document] = await db
+        .select() // Selects all columns including new AI ones
+        .from(documents)
+        .where(eq(documents.id, id));
+      return document;
+    } catch (error) {
+      logger.error(`Error getting document by ID ${id}:`, error);
+      throw error;
+    }
   }
 
   async getDocumentsByUserId(userId: number): Promise<Document[]> {
-    logger.warn('STUB: getDocumentsByUserId called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      // Assuming documents.userId is varchar, ensure comparison is appropriate or cast if needed.
+      // For now, assuming direct comparison works based on schema.
+      return await db
+        .select() // Selects all columns
+        .from(documents)
+        .where(eq(documents.userId, String(userId))) // Ensure userId is string if schema expects varchar
+        .orderBy(desc(documents.uploadedAt));
+    } catch (error) {
+      logger.error(`Error getting documents for user ID ${userId}:`, error);
+      throw error;
+    }
   }
 
-  async createDocument(document: InsertDocument): Promise<Document> {
-    logger.warn('STUB: createDocument called, but it is not fully implemented.');
-    // To prevent downstream issues from a fake success, reject promise clearly.
-    return Promise.reject(new Error('STUB: createDocument - This method is a stub and requires full implementation.'));
+  async createDocument(documentData: InsertDocument): Promise<Document> {
+    try {
+      const [newDocument] = await db
+        .insert(documents)
+        .values({
+          ...documentData,
+          // Ensure uploadedAt is set if not handled by default in schema/DB for this specific table
+          uploadedAt: documentData.uploadedAt || new Date(),
+        })
+        .returning();
+      if (!newDocument) {
+        throw new Error("Document creation failed, no data returned.");
+      }
+      logger.info(`Document created: ID ${newDocument.id} for user ID ${newDocument.userId}`);
+      return newDocument;
+    } catch (error) {
+      logger.error(`Error creating document for user ID ${documentData.userId}:`, error);
+      throw error;
+    }
   }
 
   async updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined> {
-    logger.warn('STUB: updateDocument called, but it is not fully implemented.');
-    // To prevent downstream issues from a fake success, reject promise clearly.
-    return Promise.reject(new Error('STUB: updateDocument - This method is a stub and requires full implementation.'));
+    try {
+      const { id: docId, userId, ...updateData } = data; // Exclude id and userId from direct set if they are part of data
+
+      const [updatedDocument] = await db
+        .update(documents)
+        .set({
+          ...updateData,
+          // aiProcessedAt can be set here if it's part of an AI update
+          // updatedAt: new Date(), // If you add an updatedAt field to documents table
+        })
+        .where(eq(documents.id, id))
+        .returning();
+
+      if (updatedDocument) {
+        logger.info(`Document updated: ID ${updatedDocument.id}`);
+      }
+      return updatedDocument;
+    } catch (error) {
+      logger.error(`Error updating document ID ${id}:`, error);
+      throw error;
+    }
   }
 
   // Polling Station Methods

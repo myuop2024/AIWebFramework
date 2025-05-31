@@ -134,6 +134,12 @@ export const documents = pgTable("documents", {
   ocrText: text("ocr_text"),
   verificationStatus: text("verification_status").notNull().default("pending"),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
+  // New fields for AI processing results
+  aiSummary: text("ai_summary"),
+  aiSentimentLabel: text("ai_sentiment_label"),
+  aiSentimentScore: real("ai_sentiment_score"),
+  aiProcessedAt: timestamp("ai_processed_at"),
+  aiProcessingError: text("ai_processing_error"),
 });
 
 // Polling stations table
@@ -561,9 +567,15 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles)
 export const insertDocumentSchema = createInsertSchema(documents)
   .omit({
     id: true,
-    ocrText: true,
+    // ocrText: true, // Keep ocrText, it might be populated by a separate process or initial upload
     verificationStatus: true,
     uploadedAt: true,
+    // AI fields are typically populated post-upload by the AI service, not on initial insert
+    aiSummary: true,
+    aiSentimentLabel: true,
+    aiSentimentScore: true,
+    aiProcessedAt: true,
+    aiProcessingError: true,
   });
 
 export const insertPollingStationSchema = createInsertSchema(pollingStations)

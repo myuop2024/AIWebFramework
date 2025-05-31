@@ -70,12 +70,14 @@ type AnalyticsData = {
     count: number;
     trend: 'increasing' | 'decreasing' | 'stable';
     percentChange: number;
+    explanation?: string; // Added AI-generated explanation
   }[];
   aiInsights: {
     insight: string;
     confidence: number;
     category: string;
     relatedReportIds: number[];
+    suggestedAction?: string; // Added for AI-driven suggestions
   }[];
   reportsByLocation: {
     locationName: string;
@@ -87,6 +89,15 @@ type AnalyticsData = {
     count: number;
     percentage: number;
   }[];
+  pollingStationHotspots?: PollingStationHotspot[]; // Added for AI-driven hotspot summaries
+};
+
+// New type for Polling Station Hotspots on the client
+type PollingStationHotspot = {
+  stationId: number;
+  stationName: string;
+  criticalReportCount: number;
+  issueSummary?: string;
 };
 
 // News-enhanced prediction types
@@ -514,11 +525,11 @@ export function AnalyticsDashboard() {
             </TabsContent>
 
             {/* Locations Tab */}
-            <TabsContent value="locations">
+            <TabsContent value="locations" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Reports by Location</CardTitle>
-                  <CardDescription>Polling stations with most reported issues</CardDescription>
+                  <CardDescription>Polling stations with most reported issues overall.</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -526,8 +537,8 @@ export function AnalyticsDashboard() {
                       <thead>
                         <tr className="border-b bg-muted/50">
                           <th className="py-3 px-4 text-left">Location</th>
-                          <th className="py-3 px-4 text-center">Reports Count</th>
-                          <th className="py-3 px-4 text-center">Severity</th>
+                          <th className="py-3 px-4 text-center">Total Reports</th>
+                          <th className="py-3 px-4 text-center">Overall Severity Score</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -545,6 +556,36 @@ export function AnalyticsDashboard() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Polling Station Hotspots Section */}
+              {data?.pollingStationHotspots && data.pollingStationHotspots.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                       <AlertTriangle className="h-5 w-5 text-orange-500 mr-2" />
+                      AI Identified Hotspots
+                    </CardTitle>
+                    <CardDescription>Stations with multiple critical reports and AI-generated issue summaries.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {data.pollingStationHotspots.map((hotspot) => (
+                      <Card key={hotspot.stationId} className="border-l-4 border-orange-500">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-md">{hotspot.stationName}</CardTitle>
+                          <CardDescription>
+                            Critical Reports: {hotspot.criticalReportCount}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="font-semibold">AI Summary of Issues:</span> {hotspot.issueSummary || "Summary not available."}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* Trends Tab */}
@@ -567,25 +608,34 @@ export function AnalyticsDashboard() {
                       </thead>
                       <tbody>
                         {data?.recentTrends?.map((trend, index) => (
-                          <tr key={index} className="border-b">
-                            <td className="py-3 px-4">{trend.category}</td>
-                            <td className="py-3 px-4 text-center">{trend.count}</td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="flex justify-center">
-                                {getTrendIcon(trend.trend)}
-                              </div>
-                            </td>
-                            <td className={`py-3 px-4 text-right ${
-                              trend.percentChange > 0 
-                                ? 'text-red-600' 
-                                : trend.percentChange < 0 
-                                ? 'text-green-600' 
-                                : ''
-                            }`}>
-                              {trend.percentChange > 0 && '+'}
-                              {trend.percentChange}%
-                            </td>
-                          </tr>
+                          <>
+                            <tr key={index} className="border-b">
+                              <td className="py-3 px-4">{trend.category}</td>
+                              <td className="py-3 px-4 text-center">{trend.count}</td>
+                              <td className="py-3 px-4 text-center">
+                                <div className="flex justify-center">
+                                  {getTrendIcon(trend.trend)}
+                                </div>
+                              </td>
+                              <td className={`py-3 px-4 text-right ${
+                                trend.percentChange > 0
+                                  ? 'text-red-600'
+                                  : trend.percentChange < 0
+                                  ? 'text-green-600'
+                                  : ''
+                              }`}>
+                                {trend.percentChange > 0 && '+'}
+                                {trend.percentChange}%
+                              </td>
+                            </tr>
+                            {trend.explanation && (
+                              <tr key={`${index}-explanation`} className="border-b bg-slate-50 dark:bg-slate-800">
+                                <td colSpan={4} className="py-2 px-4 text-xs text-gray-600 dark:text-gray-300 italic">
+                                  <span className="font-semibold">AI Explanation:</span> {trend.explanation}
+                                </td>
+                              </tr>
+                            )}
+                          </>
                         ))}
                       </tbody>
                     </table>
@@ -615,12 +665,15 @@ export function AnalyticsDashboard() {
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <p>{insight.insight}</p>
+                          <p><span className="font-semibold">Insight:</span> {insight.insight}</p>
+                          {insight.suggestedAction && (
+                            <p className="mt-2"><span className="font-semibold">Suggested Action:</span> <span className="text-blue-600 dark:text-blue-400">{insight.suggestedAction}</span></p>
+                          )}
                           {insight.relatedReportIds.length > 0 && (
-                            <div className="mt-2">
-                              <span className="text-sm text-gray-500">Related Reports: </span>
+                            <div className="mt-3">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Related Reports: </span>
                               {insight.relatedReportIds.map((id, idx) => (
-                                <Badge key={idx} variant="outline" className="ml-1">
+                                <Badge key={idx} variant="outline" className="ml-1 text-xs">
                                   #{id}
                                 </Badge>
                               ))}

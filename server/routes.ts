@@ -23,7 +23,9 @@ import adminAnalyticsRoutes from './routes/admin-analytics';
 import adminUserRoutes from './routes/admin-users';
 import adminSystemRoutes from './routes/admin-system';
 import adminRolesRoutes from './routes/admin-roles';
+import adminAppSettingsRoutes from './routes/admin-app-settings';
 import idCardRoutes from './routes/id-cards';
+import documentProcessingRoutes from './routes/document-processing'; // Import document processing routes
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
 import communicationRoutes, { setCommunicationService } from './routes/communication-routes';
@@ -2224,6 +2226,12 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Admin role management routes
   app.use('/', adminRolesRoutes);
+
+  // Admin App Settings routes (for Hugging Face API Key, etc.)
+  app.use('/api/admin', adminAppSettingsRoutes);
+
+  // Document Processing AI routes
+  app.use('/api/documents', documentProcessingRoutes); // Mount document processing routes
 
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);
