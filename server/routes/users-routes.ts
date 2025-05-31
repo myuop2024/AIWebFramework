@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, userProfiles, assignments, reports, pollingStations, type User, type InsertUser } from '@shared/schema';
-import { eq, desc, and, sql, like } from 'drizzle-orm';
+import { storage } from '../storage'; // Import storage
+import { users, userProfiles, assignments, reports, pollingStations, type User, type InsertUser, updateUserProfileSchema } from '@shared/schema';
+import { eq, desc, and, sql, like, ilike } from 'drizzle-orm'; // Added ilike
 import * as logger from '../utils/logger';
+import { ensureAuthenticated, hasPermission } from '../middleware/auth'; // Import auth middleware
 
 const router = Router();
 
@@ -97,6 +99,10 @@ router.get('/', async (req, res) => {
     const verificationStatus = req.query.verificationStatus as string;
     const trainingStatus = req.query.trainingStatus as string;
     const search = req.query.search as string;
+    // New query parameters for profile fields
+    const city = req.query.city as string;
+    const state = req.query.state as string;
+    const trn = req.query.trn as string;
     
     const offset = (page - 1) * limit;
     
@@ -115,6 +121,19 @@ router.get('/', async (req, res) => {
       conditions.push(eq(users.trainingStatus, trainingStatus));
     }
     
+    // Add new filter conditions for city, state, and trn
+    if (city) {
+      conditions.push(ilike(userProfiles.city, `%${city}%`));
+    }
+
+    if (state) {
+      conditions.push(ilike(userProfiles.state, `%${state}%`));
+    }
+
+    if (trn) {
+      conditions.push(eq(userProfiles.trn, trn));
+    }
+
     if (search) {
       conditions.push(
         sql`(${users.firstName} ILIKE ${`%${search}%`} OR ${users.lastName} ILIKE ${`%${search}%`} OR ${users.email} ILIKE ${`%${search}%`} OR ${users.username} ILIKE ${`%${search}%`})`
@@ -149,10 +168,12 @@ router.get('/', async (req, res) => {
       .offset(offset);
     
     // Get total count for pagination
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(users)
-      .where(whereClause);
+    // Need to join with userProfiles for accurate count if profile filters are applied
+    let countQuery = db.select({ count: sql<number>`count(distinct ${users.id})` }).from(users);
+    if (city || state || trn) { // Only join if profile filters are active
+        countQuery = countQuery.leftJoin(userProfiles, eq(users.id, userProfiles.userId));
+    }
+    const totalResult = await countQuery.where(whereClause);
     
     const total = totalResult[0]?.count || 0;
     const totalPages = Math.ceil(total / limit);
@@ -261,8 +282,15 @@ router.get('/:id', async (req, res) => {
         bankAccount: userProfiles.bankAccount,
         accountType: userProfiles.accountType,
         accountCurrency: userProfiles.accountCurrency,
-        profilePhotoUrl: userProfiles.profilePhotoUrl,
-        verifiedAt: userProfiles.verifiedAt
+        profilePhotoUrl: userProfiles.profilePhotoUrl, // This is from userProfiles
+        verifiedAt: userProfiles.verifiedAt,
+        // Added fields for comprehensive CRM view
+        idPhotoUrl: userProfiles.idPhotoUrl,
+        profileVerificationStatus: userProfiles.verificationStatus, // Aliased to avoid conflict
+        verificationId: userProfiles.verificationId,
+        notifications: userProfiles.notifications,
+        language: userProfiles.language,
+        region: userProfiles.region
       })
       .from(users)
       .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
@@ -332,6 +360,45 @@ router.put('/:id', async (req, res) => {
   } catch (error) {
     logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// PUT /api/users/:id/profile - Update user profile
+router.put('/:id/profile', ensureAuthenticated, hasPermission('crm_edit_user_profile_details'), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    // Validate request body
+    const validationResult = updateUserProfileSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ error: 'Invalid request body', details: validationResult.error.flatten() });
+    }
+
+    const validatedData = validationResult.data;
+
+    // Check if user exists
+    const existingUser = await storage.getUser(userId);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update user profile
+    const updatedProfile = await storage.updateUserProfileByUserId(userId, validatedData);
+
+    if (!updatedProfile) {
+      // This might happen if the profile doesn't exist or an update error occurs
+      return res.status(404).json({ error: 'User profile not found or failed to update' });
+    }
+
+    logger.info('User profile updated:', { userId });
+    res.json(updatedProfile);
+  } catch (error) {
+    logger.error('Error updating user profile:', { userId: req.params.id, error });
+    res.status(500).json({ error: 'Failed to update user profile' });
   }
 });
 

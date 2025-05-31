@@ -65,6 +65,7 @@ export interface IStorage {
   getUserProfile(userId: number): Promise<UserProfile | undefined>;
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
   updateUserProfile(userId: number, data: Partial<UserProfile>): Promise<UserProfile | undefined>;
+  updateUserProfileByUserId(userId: number, data: Partial<Omit<UserProfile, 'id' | 'userId' | 'verifiedAt' | 'encryptionIv' | 'isEncrypted'>>): Promise<UserProfile | undefined>;
 
   // Document operations
   getDocument(id: number): Promise<Document | undefined>;

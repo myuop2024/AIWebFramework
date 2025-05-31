@@ -177,6 +177,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateUserProfileByUserId(userId: number, data: Partial<Omit<UserProfile, 'id' | 'userId' | 'verifiedAt' | 'encryptionIv' | 'isEncrypted'>>): Promise<UserProfile | undefined> {
+    try {
+      const [updatedProfile] = await db
+        .update(userProfiles)
+        .set(data)
+        .where(eq(userProfiles.userId, userId))
+        .returning();
+
+      return updatedProfile;
+    } catch (error) {
+      logger.error(`Error updating user profile for user ID: ${userId}`, error);
+      throw error;
+    }
+  }
+
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
       const [user] = await db

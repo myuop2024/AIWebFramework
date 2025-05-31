@@ -27,9 +27,12 @@ import IdCardManagement from "@/pages/admin/id-cards";
 import UserImportsPage from "@/pages/admin/user-imports";
 import Analytics from "@/pages/analytics";
 import AdminSettings from "@/pages/admin/settings";
+import GoogleSyncSettingsPage from "@/pages/admin/google-sync-settings-page"; // Import Google Sync Settings page
 import RoutePlanningPage from "@/pages/route-planning-page";
 import ObserverRoutePlanningPage from "@/pages/observer-route-planning";
 import DirectMapAccess from "@/pages/direct-map-access";
+import CrmDashboardPage from "@/pages/crm-dashboard-page"; // Import CRM Dashboard page
+import UserDetailPage from "@/pages/crm/user-detail-page"; // Import CRM User Detail page
 // New role-specific pages
 import PermissionManagement from "@/pages/admin/permission-management";
 import TeamManagement from "@/pages/supervisor/team-management";
@@ -95,6 +98,10 @@ function Router() {
       <ProtectedRoute path="/project-management/:id/edit" component={ProjectEdit} />
       <ProtectedRoute path="/project-management/:id" component={ProjectDetail} />
       <ProtectedRoute path="/project-management" component={ProjectManagement} />
+
+      {/* CRM Route */}
+      <ProtectedRoute path="/crm" component={CrmDashboardPage} />
+      <ProtectedRoute path="/crm/user/:id" component={UserDetailPage} />
       
       {/* Admin Routes (require admin or director role) */}
       <RoleProtectedRoute path="/form-templates" component={FormTemplates} allowedRoles={["admin", "director"]} />
@@ -109,6 +116,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/settings/google-sync" component={GoogleSyncSettingsPage} allowedRoles={["admin", "director"]} /> {/* Add new route */}
       
       {/* Supervisor Routes */}
       <RoleProtectedRoute 

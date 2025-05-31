@@ -558,6 +558,26 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles)
     isEncrypted: true,
   });
 
+export const updateUserProfileSchema = z.object({
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postOfficeRegion: z.string().optional(),
+  country: z.string().optional(),
+  trn: z.string().optional(),
+  idType: z.string().optional(),
+  idNumber: z.string().optional(),
+  bankName: z.string().optional(),
+  bankBranchLocation: z.string().optional(),
+  bankAccount: z.string().optional(),
+  accountType: z.string().optional(),
+  accountCurrency: z.string().optional(),
+  profilePhotoUrl: z.string().optional(),
+  idPhotoUrl: z.string().optional(),
+  // Add KYC-related fields if admins are supposed to edit them
+  // For now, keeping it to the fields mentioned above
+});
+
 export const insertDocumentSchema = createInsertSchema(documents)
   .omit({
     id: true,

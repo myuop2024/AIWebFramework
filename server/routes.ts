@@ -44,6 +44,7 @@ import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
 import projectManagementRoutes from './routes/project-management-routes';
 import regionsRoutes from './routes/regions-routes';
+import googleSyncRoutes from './routes/google-sync-routes'; // Import Google Sync routes
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
@@ -2365,6 +2366,7 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   app.use('/api/reports', reportsRoutes);
   app.use('/api/assignments', assignmentsRoutes);
   app.use('/api/users', usersRoutes);
+  app.use('/api/google-sync', googleSyncRoutes); // Register Google Sync routes
   
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());

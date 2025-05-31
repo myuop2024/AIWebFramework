@@ -6,8 +6,8 @@ import {
   HelpCircle, MessageSquare, LogOut, 
   FileEdit, ClipboardList, Settings, BarChart,
   UserCheck, GraduationCap, Navigation, ChevronDown,
-  Users, Shield, CalendarRange, PanelTop, Cog,
-  Map as MapIcon, Phone, Video, Headphones,
+  Users, Shield, CalendarRange, PanelTop, Cog, CloudCog, // Added CloudCog for Google Sync
+  Map as MapIcon, Phone, Video, Headphones, Briefcase,
   Kanban, Trello, X, Sparkles, Upload
 } from "lucide-react";
 import {
@@ -26,7 +26,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const [location, navigate] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logoutMutation } = useAuth(); // user object should contain permissions
   
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -67,6 +67,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> },
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> },
     { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" /> },
+    // CRM Link - conceptually needs 'crm_view_user_list' or 'crm_view_dashboard'
+    // We will use 'crm_view_user_list' as an example permission for now.
+    // Visibility will be controlled where it's rendered.
+    { path: "/crm", label: "CRM", icon: <Briefcase className="h-5 w-5" />, permission: "crm_view_user_list" },
     { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" /> },
   ];
   
@@ -84,6 +88,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" /> },
     { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" /> },
     { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-5 w-5" /> },
+    { path: "/admin/settings/google-sync", label: "Google Sheets Sync", icon: <CloudCog className="h-5 w-5" /> }, // Added Google Sync link
   ] : [];
   
   // Supervisor links (only shown to supervisor, admin, or director)
@@ -221,6 +226,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-4">Main</p>
             
             {navLinks.map((link) => {
+              // Check for permission if defined for the link
+              if (link.permission && !user?.permissions?.includes(link.permission)) {
+                return null; // Don't render if user doesn't have permission
+              }
+
               const isActive = location === link.path || location.startsWith(link.path + '/');
               
               // Special case for Polling Stations - show dropdown
