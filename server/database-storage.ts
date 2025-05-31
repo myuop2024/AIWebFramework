@@ -638,23 +638,76 @@ export class DatabaseStorage implements IStorage {
   async bulkCreateUsers(users: InsertUser[], options: { defaultRole?: string; verificationStatus?: string; passwordHash?: (pwd: string) => string }): Promise<{ success: User[]; failures: { data: InsertUser; error: string }[] }> {
     const success: User[] = [];
     const failures: { data: InsertUser; error: string }[] = [];
-    for (const user of users) {
-      try {
-        const userData = { ...user };
-        if (user.password && options.passwordHash) {
-          userData.password = options.passwordHash(user.password);
+
+    try {
+      await db.transaction(async (tx) => {
+        for (const user of users) {
+          try {
+            const userData = { ...user };
+            if (user.password && options.passwordHash) {
+              userData.password = options.passwordHash(user.password);
+            }
+            if (options.defaultRole) {
+              (userData as any).role = options.defaultRole;
+            }
+            if (options.verificationStatus) {
+              (userData as any).verificationStatus = options.verificationStatus;
+            }
+
+            // Generate observer ID if not provided
+            const observerId = (userData as any).observerId || generateObserverId();
+
+            const [createdUser] = await tx
+              .insert(usersTable)
+              .values({
+                ...userData,
+                observerId,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              })
+              .returning();
+
+            if (!createdUser) {
+                throw new Error('User creation returned no result');
+            }
+            success.push(createdUser);
+
+          } catch (error: any) {
+            // Log individual error and add to failures, then rethrow to abort transaction
+            logger.error('Error creating user within bulk transaction (will be rolled back)', { username: user.username, email: user.email, error: error.message });
+            failures.push({ data: user, error: error.message || 'Unknown error' });
+            throw error; // This will trigger a rollback of the transaction
+          }
         }
-        if (options.defaultRole) {
-          (userData as any).role = options.defaultRole;
-        }
-        if (options.verificationStatus) {
-          (userData as any).verificationStatus = options.verificationStatus;
-        }
-        const created = await this.createUser(userData as InsertUser);
-        success.push(created);
-      } catch (error: any) {
-        failures.push({ data: user, error: error.message || 'Unknown error' });
+      });
+    } catch (transactionError: any) {
+      // This catch block is for errors that cause the transaction to fail (e.g., the rethrown error from inner catch)
+      // The 'failures' array will already be populated with specific errors.
+      // 'success' array will be empty as transaction is rolled back.
+      logger.error('Bulk user import transaction failed and was rolled back.', { errorMessage: transactionError.message, stack: transactionError.stack });
+      // Ensure success array is empty on transaction failure, as all operations are rolled back.
+      // The failures array will contain the individual errors that led to the rollback.
+      // No need to clear success here as it's scoped outside the transaction block's modifications if tx fails.
+      // However, if the transaction fails, the 'success' array as seen by the caller should indeed be empty.
+      // The current structure might return partially filled success if other non-tx errors occur.
+      // For a full rollback, the success array should effectively be considered empty.
+      // To be absolutely clear, we can reset it, though Drizzle's transaction should ensure this.
+      if (failures.length > 0 && success.length > 0 && failures.length + success.length === users.length ) {
+         // This implies some succeeded before a failure that rolled back the transaction.
+         // The 'success' array should represent the final state.
+         // If transaction rolls back, all are failures effectively.
+         // However, the current logic collects successes then rolls back.
+         // The most straightforward is to ensure failures are accurate, and success is what committed.
+         // If tx.rollback() is called, success should be empty.
       }
+       // If the transaction itself fails (e.g. connection error, or error rethrown from inner catch),
+       // all operations within it are rolled back. The `failures` array will contain the errors
+       // that occurred before the transaction was rolled back. The `success` array should be cleared
+       // or considered invalid because none of those users were actually committed.
+       // For simplicity, we'll rely on the fact that if transactionError is caught, 'success'
+       // items were never truly committed. The `failures` array is the source of truth for what went wrong.
+       // Reset success array to reflect rollback
+       success.length = 0;
     }
     return { success, failures };
   }

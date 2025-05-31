@@ -31,7 +31,7 @@ npm install
 cp .env.example .env
 ```
 
-4. Edit the `.env` file and add your Didit.me credentials
+4. Edit the `.env` file and add your Didit.me credentials and **critically, a strong `DIDIT_CONFIG_ENCRYPTION_KEY`**.
 
 ## Configuration
 
@@ -42,7 +42,17 @@ You need to register your application with Didit.me to get the required OAuth2 c
 1. Create a developer account at Didit.me
 2. Register a new OAuth2 application
 3. Set the redirect URI to `http://localhost:3000/verification-callback` (or your custom URL)
-4. Copy the Client ID and Client Secret to your `.env` file
+4. Copy the Client ID and Client Secret to your `.env` file (or configure them via the admin UI).
+
+### **CRITICAL SECURITY NOTE: Encryption Key**
+
+The `didit-integration` module encrypts sensitive configuration (like the Didit.me Client Secret) at rest in the `data/config.json` file. To do this, it requires a strong encryption key.
+
+**You MUST set the `DIDIT_CONFIG_ENCRYPTION_KEY` environment variable in your production environment.**
+
+- This key should be a unique, randomly generated string, ideally 32 bytes (256 bits) long. You can generate one using a command like `openssl rand -hex 32`.
+- **DO NOT use the default development fallback key in production.** The application will warn or fail to start if this key is not set in production.
+- This key must be kept secret and managed securely. Loss of this key will mean inability to decrypt existing stored secrets.
 
 ### Admin Access
 
@@ -50,7 +60,7 @@ Default admin credentials:
 - Username: `admin`
 - Password: `admin123`
 
-**Important:** Change these credentials in production!
+**Important:** Change these credentials immediately after first setup, especially in production! You can do this by manually editing the `data/admin.json` file (password should be a bcrypt hash) or by implementing an admin password change feature.
 
 ## Usage
 
@@ -94,11 +104,11 @@ Access the admin panel at `/admin/settings` to:
 
 ## Security Considerations
 
-- Client secrets are encrypted at rest
-- CSRF protection with state parameters
-- Session management with secure cookies
-- Input validation
-- Sensitive data sanitization
+- Client secrets are encrypted at rest (requires secure `DIDIT_CONFIG_ENCRYPTION_KEY`).
+- CSRF protection with state parameters.
+- Session management with secure cookies (requires secure `SESSION_SECRET`).
+- Input validation.
+- Sensitive data sanitization.
 
 ## License
 
