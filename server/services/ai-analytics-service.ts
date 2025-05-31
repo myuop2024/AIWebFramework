@@ -5,6 +5,7 @@ import { eq, and, or, sql, desc, gte, lte } from 'drizzle-orm';
 import crypto from 'crypto';
 import type { Report } from '@shared/schema';
 import { analyzeIncidentPatternsWithGemini, IncidentPrediction } from './google-ai-service';
+import logger from '../utils/logger';
 
 // Initialize Hugging Face client with API token
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
@@ -109,7 +110,7 @@ export class AIAnalyticsService {
         topIssueCategories,
       };
     } catch (error) {
-      console.error('Error generating analytics dashboard data:', error);
+      logger.error('Error generating analytics dashboard data', { error: error instanceof Error ? error : new Error(String(error)), startDate, endDate });
       throw new Error('Failed to generate analytics data');
     }
   }
@@ -240,7 +241,7 @@ export class AIAnalyticsService {
       
       return locationReports;
     } catch (error) {
-      console.error('Error fetching reports by location:', error);
+      logger.error('Error fetching reports by location', { error: error instanceof Error ? error : new Error(String(error)), dateFilter });
       return [];
     }
   }
@@ -289,7 +290,7 @@ export class AIAnalyticsService {
       // Sort by count descending
       return result.sort((a, b) => b.count - a.count);
     } catch (error) {
-      console.error('Error fetching top issue categories:', error);
+      logger.error('Error fetching top issue categories', { error: error instanceof Error ? error : new Error(String(error)), dateFilter });
       return [];
     }
   }
@@ -396,7 +397,7 @@ export class AIAnalyticsService {
         })
         .slice(0, 10);
     } catch (error) {
-      console.error('Error calculating trends:', error);
+      logger.error('Error calculating trends', { error: error instanceof Error ? error : new Error(String(error)), dateFilter });
       return [];
     }
   }
@@ -472,7 +473,7 @@ export class AIAnalyticsService {
             insights.push(insight);
           }
         } catch (err) {
-          console.error(`Error generating insight for category ${category}:`, err);
+          logger.error(`Error generating insight for category ${category}`, { category, error: err instanceof Error ? err : new Error(String(err)) });
         }
       }
       
@@ -481,7 +482,7 @@ export class AIAnalyticsService {
         const locationInsights = await this.generateLocationBasedInsights(reportCorpus);
         insights.push(...locationInsights);
       } catch (err) {
-        console.error('Error generating location-based insights:', err);
+        logger.error('Error generating location-based insights', { error: err instanceof Error ? err : new Error(String(err)) });
       }
       
       // Time-based insights
@@ -489,12 +490,12 @@ export class AIAnalyticsService {
         const timeInsights = await this.generateTimeBasedInsights(reportCorpus);
         insights.push(...timeInsights);
       } catch (err) {
-        console.error('Error generating time-based insights:', err);
+        logger.error('Error generating time-based insights', { error: err instanceof Error ? err : new Error(String(err)) });
       }
       
       return insights;
     } catch (error) {
-      console.error('Error generating AI insights:', error);
+      logger.error('Error generating AI insights', { error: error instanceof Error ? error : new Error(String(error)), dateFilter });
       return [];
     }
   }
@@ -544,7 +545,7 @@ export class AIAnalyticsService {
         relatedReportIds,
       };
     } catch (error) {
-      console.error(`Error generating insight for category ${category}:`, error);
+      logger.error(`Error generating insight for category ${category}`, { category, error: error instanceof Error ? error : new Error(String(error)) });
       return null;
     }
   }
@@ -605,7 +606,7 @@ export class AIAnalyticsService {
       
       return 'general issues';
     } catch (error) {
-      console.error('Error classifying report content:', error);
+      logger.error('Error classifying report content', { reportId: report?.id, error: error instanceof Error ? error : new Error(String(error)) });
       return 'general issues';
     }
   }
@@ -701,12 +702,12 @@ export class AIAnalyticsService {
       
       // If no reports are found, return generic predictions
       if (!stationReports || stationReports.length === 0) {
-        console.log('No reports found, using generic predictions');
+        logger.info('No reports found for issue prediction, using generic predictions', { stationId });
         return this.getLegacyGenericPredictions();
       }
       
       try {
-        console.log(`Using Google Gemini for pattern analysis with ${stationReports.length} reports`);
+        logger.info(`Using Google Gemini for pattern analysis with ${stationReports.length} reports`, { stationId, reportCount: stationReports.length });
         // Use Google's Gemini model for advanced predictions with more context and reasoning
         const enhancedPredictions = await analyzeIncidentPatternsWithGemini(stationReports, stationId);
         
@@ -717,13 +718,13 @@ export class AIAnalyticsService {
           suggestedAction: `${prediction.suggestedAction} ${prediction.estimatedImpact === 'high' ? '(HIGH PRIORITY)' : ''}`
         }));
       } catch (aiError) {
-        console.error('Error using Gemini for predictions, falling back to traditional analysis:', aiError);
+        logger.error('Error using Gemini for predictions, falling back to traditional analysis', { stationId, error: aiError instanceof Error ? aiError : new Error(String(aiError)) });
         
         // Fall back to our simpler analysis approach
         return this.generateFallbackPredictions(stationReports);
       }
     } catch (error) {
-      console.error('Error predicting issues:', error);
+      logger.error('Error predicting issues', { stationId, error: error instanceof Error ? error : new Error(String(error)) });
       return this.getLegacyGenericPredictions();
     }
   }
@@ -731,7 +732,7 @@ export class AIAnalyticsService {
   // Generate fallback predictions using simpler pattern analysis
   private async generateFallbackPredictions(stationReports: any[]): Promise<PredictedIssue[]> {
     try {
-      console.log('Using fallback prediction algorithm');
+      logger.info('Using fallback prediction algorithm', { reportCount: stationReports.length });
       // Analyze patterns in reports
       const categoryCounts: Record<string, number> = {};
       const severityCounts: Record<string, number> = {};
@@ -792,7 +793,7 @@ export class AIAnalyticsService {
       
       return predictions.sort((a, b) => b.probability - a.probability);
     } catch (error) {
-      console.error('Error in fallback prediction mechanism:', error);
+      logger.error('Error in fallback prediction mechanism', { error: error instanceof Error ? error : new Error(String(error)), reportCount: stationReports.length });
       return this.getLegacyGenericPredictions();
     }
   }
@@ -935,7 +936,7 @@ export class AIAnalyticsService {
       
       return reportSections.join('\n\n');
     } catch (error) {
-      console.error('Error generating comprehensive report:', error);
+      logger.error('Error generating comprehensive report', { error: error instanceof Error ? error : new Error(String(error)), startDate, endDate });
       return 'Error generating report. Please try again later.';
     }
   }

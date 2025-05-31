@@ -9,6 +9,7 @@ import {
   MoodleCompletionStatus,
   MoodleGradeReport
 } from '../../shared/moodle-types';
+import logger from '../utils/logger';
 
 /**
  * Service for interacting with Moodle LMS API
@@ -223,7 +224,7 @@ export class MoodleService {
       
       return Math.round((completedActivities / totalActivities) * 100);
     } catch (error) {
-      console.error('Error calculating course progress:', error);
+      logger.error('Error calculating Moodle course progress', { userId, courseId, error: error instanceof Error ? error : new Error(String(error)) });
       return 0;
     }
   }

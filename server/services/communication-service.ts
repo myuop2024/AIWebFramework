@@ -1,6 +1,7 @@
 import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { storage } from '../storage';
+import logger from '../utils/logger';
 import { InsertMessage } from '@shared/schema';
 
 interface User {
@@ -57,20 +58,19 @@ export class CommunicationService {
       // Listen for server errors to handle gracefully
       this.wss.on('error', (err: any) => {
         if (err.code === 'EADDRINUSE') {
-          console.warn('WebSocket port already in use, switching to noServer mode');
+          logger.warn('WebSocket port already in use, switching to noServer mode. This usually happens in dev with HMR.', { error: err });
           // If port is in use, switch to noServer mode
           (this.wss as any).options.noServer = true;
         } else {
-          console.error('WebSocket server error:', err);
+          logger.error('WebSocket server error', { error: err });
         }
       });
       
       this.initializeWebSocketServer();
       this.startPingInterval();
-      // console.log('WebSocket server initialized on /api/ws path'); // Path is now handled externally
-      console.log('CommunicationService: WebSocketServer configured with noServer: true. Waiting for external upgrade handling.');
+      logger.info('CommunicationService: WebSocketServer configured with noServer: true. Waiting for external upgrade handling.');
     } catch (error) {
-      console.error('Failed to initialize WebSocket server:', error);
+      logger.error('Failed to initialize WebSocket server', { error: error instanceof Error ? error : new Error(String(error)) });
       // Create a dummy WSS that doesn't actually bind to any port/server
       this.wss = {
         on: () => {},
@@ -90,7 +90,7 @@ export class CommunicationService {
     this.wss.on('connection', (ws: WebSocketClient, request: IncomingMessage) => { // Added request parameter
       // Security Enhancement: Prioritize authenticatedUserId set during HTTP upgrade
       if (!ws.authenticatedUserId) {
-        console.warn('[WS] Connection attempt without authenticatedUserId. Terminating.');
+        logger.warn('[WS] Connection attempt without authenticatedUserId. Terminating.', { ip: request.socket.remoteAddress });
         ws.terminate();
         return;
       }
@@ -100,7 +100,7 @@ export class CommunicationService {
       // Clear the temporary property if desired, though not strictly necessary
       // delete ws.authenticatedUserId;
 
-      console.log(`[WS] Connection established for authenticated user ${ws.userId}`);
+      logger.info(`[WS] Connection established for authenticated user ${ws.userId}`, { userId: ws.userId, ip: request.socket.remoteAddress });
       ws.isAlive = true;
 
       // Register the client immediately with the authenticated ID
@@ -109,7 +109,7 @@ export class CommunicationService {
       this.clients.set(ws.userId, ws);
       this.updateUserActivity(ws.userId);
       this.broadcastUserList(); // Broadcast user list upon new authenticated connection
-      console.log(`[WS] User ${ws.userId} auto-registered based on authenticated session.`);
+      logger.info(`[WS] User ${ws.userId} auto-registered based on authenticated session.`, { userId: ws.userId });
 
 
       // Set up ping response
@@ -124,22 +124,22 @@ export class CommunicationService {
       ws.on('message', async (message: string) => {
         try {
           const data = JSON.parse(message);
-          console.log('[WS] Message received:', data);
+          logger.debug('[WS] Message received', { userId: ws.userId, type: data.type, messageData: data });
 
           switch (data.type) {
             case 'register':
               // 'register' message can now be simplified or used as a confirmation/trigger
               // The actual ws.userId is already set from authenticated session.
-              console.log(`[WS] Received 'register' message from user ${ws.userId} (client sent ${data.userId}).`);
+              logger.info(`[WS] Received 'register' message from user ${ws.userId} (client sent ${data.userId}).`, { authenticatedUserId: ws.userId, clientSentUserId: data.userId });
               if (data.userId && ws.userId !== data.userId) {
-                console.warn(`[WS] Client-sent userId ${data.userId} in register message does not match authenticated session userId ${ws.userId}. Prioritizing session userId.`);
+                logger.warn(`[WS] Client-sent userId in register message does not match authenticated session userId. Prioritizing session userId.`, { clientSent: data.userId, sessionUserId: ws.userId });
               }
               // Call handleRegister to perform any actions needed upon client readiness,
               // but it will use the already set ws.userId.
               await this.handleRegister(ws, { userId: ws.userId }); // Pass the authenticated ws.userId
               break;
             case 'message':
-              console.log(`[WS] Chat message from ${data.message?.senderId} to ${data.message?.receiverId}:`, data.message?.content);
+              logger.info(`[WS] Chat message from ${data.message?.senderId} to ${data.message?.receiverId}`, { senderId: data.message?.senderId, receiverId: data.message?.receiverId, contentPreview: data.message?.content?.substring(0, 20) });
               await this.handleMessage(data);
               break;
             case 'call-offer':
@@ -161,10 +161,10 @@ export class CommunicationService {
               }
               break;
             default:
-              console.warn('[WS] Unknown message type:', data.type);
+              logger.warn('[WS] Unknown message type received', { userId: ws.userId, type: data.type, data });
           }
         } catch (error) {
-          console.error('[WS] Error handling message:', error);
+          logger.error('[WS] Error handling message', { userId: ws.userId, message, error: error instanceof Error ? error : new Error(String(error)) });
         }
       });
 
@@ -173,7 +173,7 @@ export class CommunicationService {
         // Find and remove the disconnected client
         Array.from(this.clients.entries()).forEach(([userId, client]) => {
           if (client === ws) {
-            console.log(`[WS] User ${userId} disconnected`);
+            logger.info(`[WS] User ${userId} disconnected`, { userId });
             this.clients.delete(userId);
           }
         });
@@ -214,19 +214,19 @@ export class CommunicationService {
     const authenticatedUserId = ws.userId;
 
     if (!authenticatedUserId) {
-      console.warn('[WS] handleRegister called for a WebSocket without an authenticated userId. Ignoring.');
+      logger.warn('[WS] handleRegister called for a WebSocket without an authenticated userId. Ignoring.');
       return;
     }
 
     const clientSentUserId = data.userId;
     if (clientSentUserId && authenticatedUserId !== clientSentUserId) {
-      console.warn(`[WS] handleRegister: Client-sent userId ${clientSentUserId} does not match authenticated session userId ${authenticatedUserId}. Using session userId.`);
+      logger.warn(`[WS] handleRegister: Client-sent userId does not match authenticated session userId. Using session userId.`, { clientSent: clientSentUserId, sessionUserId: authenticatedUserId });
     }
 
     // Ensure client is in the map (should be if auto-registered on connection)
     if (!this.clients.has(authenticatedUserId)) {
         this.clients.set(authenticatedUserId, ws);
-        console.log(`[WS] User ${authenticatedUserId} added to clients map during handleRegister (should have been on connection).`);
+        logger.info(`[WS] User ${authenticatedUserId} added to clients map during handleRegister (should have been on connection).`, { userId: authenticatedUserId });
     }
     
     // Update user activity timestamp
@@ -236,14 +236,14 @@ export class CommunicationService {
     // This might be redundant if already sent on 'connection' but ensures client gets it if 'register' is their trigger.
     await this.broadcastUserList();
 
-    console.log(`User ${authenticatedUserId} 'register' message processed.`);
+    logger.info(`User ${authenticatedUserId} 'register' message processed.`, { userId: authenticatedUserId });
   }
 
   private async handleMessage(data: any) {
     try {
       const { message } = data;
       if (!message || !message.senderId || !message.receiverId || !message.content) {
-        console.error('Invalid message format:', message);
+        logger.error('Invalid message format received in handleMessage', { messageData: message });
         return;
       }
 
@@ -269,14 +269,14 @@ export class CommunicationService {
         message: savedMessage
       });
     } catch (error) {
-      console.error('Error handling and saving message:', error);
+      logger.error('Error handling and saving message in handleMessage', { error: error instanceof Error ? error : new Error(String(error)), messageData: data.message });
     }
   }
 
   private handleCallOffer(data: any) {
     const { callerId, receiverId, offer, callType } = data;
     if (!callerId || !receiverId || !offer) {
-      console.error('Invalid call offer:', data);
+      logger.error('Invalid call offer received', { data });
       return;
     }
 
@@ -293,7 +293,7 @@ export class CommunicationService {
   private handleCallAnswer(data: any) {
     const { callerId, receiverId, answer } = data;
     if (!callerId || !receiverId || !answer) {
-      console.error('Invalid call answer:', data);
+      logger.error('Invalid call answer received', { data });
       return;
     }
 
@@ -309,7 +309,7 @@ export class CommunicationService {
   private handleCallCandidate(data: any) {
     const { callerId, receiverId, candidate } = data;
     if (!callerId || !receiverId || !candidate) {
-      console.error('Invalid ICE candidate:', data);
+      logger.error('Invalid ICE candidate received', { data });
       return;
     }
 
@@ -325,7 +325,7 @@ export class CommunicationService {
   private handleCallEnd(data: any) {
     const { callerId, receiverId } = data;
     if (!callerId || !receiverId) {
-      console.error('Invalid call end:', data);
+      logger.error('Invalid call end received', { data });
       return;
     }
 
@@ -413,7 +413,7 @@ export class CommunicationService {
           });
         }
       } catch (error) {
-        console.error(`Error fetching user ${userId}:`, error);
+        logger.error(`Error fetching user details for broadcastUserList`, { userId, error: error instanceof Error ? error : new Error(String(error)) });
       }
     }));
 

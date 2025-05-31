@@ -1,6 +1,7 @@
 import { TrainingSystemConfig } from '../../shared/moodle-types';
 import { MoodleService, createMoodleService } from './moodle-service';
 import { ZoomService, createZoomService } from './zoom-service';
+import logger from '../utils/logger';
 
 // Type for training content from various sources (Moodle, Zoom, etc.)
 export interface TrainingContent {
@@ -78,7 +79,7 @@ export class TrainingIntegrationService {
             try {
               progress = await this.moodleService!.calculateCourseProgress(Number(userId), course.id);
             } catch (error) {
-              console.error(`Error calculating progress for course ${course.id}:`, error);
+              logger.error(`Error calculating Moodle progress for course in TrainingIntegrationService`, { userId, courseId: course.id, error: error instanceof Error ? error : new Error(String(error)) });
             }
             
             return {
@@ -103,7 +104,7 @@ export class TrainingIntegrationService {
         
         allContent.push(...courseContent);
       } catch (error) {
-        console.error('Error fetching Moodle courses:', error);
+        logger.error('Error fetching Moodle courses in TrainingIntegrationService', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       }
     }
     
@@ -139,7 +140,7 @@ export class TrainingIntegrationService {
         
         allContent.push(...zoomContent);
       } catch (error) {
-        console.error('Error fetching Zoom training sessions:', error);
+        logger.error('Error fetching Zoom training sessions in TrainingIntegrationService', { userId, error: error instanceof Error ? error : new Error(String(error)) });
       }
     }
     
@@ -248,7 +249,7 @@ export class TrainingIntegrationService {
         await this.moodleService.enrollUserInCourse(Number(userId), Number(id));
         return true;
       } catch (error) {
-        console.error(`Error enrolling user ${userId} in Moodle course ${id}:`, error);
+        logger.error(`Error enrolling user in Moodle course via TrainingIntegrationService`, { userId, courseId: id, error: error instanceof Error ? error : new Error(String(error)) });
         throw error;
       }
     } else if (source === 'zoom' && this.zoomService) {
@@ -266,7 +267,7 @@ export class TrainingIntegrationService {
   async syncUserCompletionStatus(userId: number | string): Promise<void> {
     // Implementation depends on specific requirements for syncing between systems
     // For example, completion status from Moodle could be synchronized to internal system
-    console.log(`Syncing completion status for user ${userId}`);
+    logger.info(`Syncing completion status for user ${userId} in TrainingIntegrationService`);
   }
   
   /**
