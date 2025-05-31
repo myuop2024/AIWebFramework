@@ -1121,4 +1121,18 @@ export class DatabaseStorage implements IStorage {
       throw err;
     }
   }
+
+  // Communication operations
+  async getRecentConversations(userId: number): Promise<any[]> {
+    try {
+      // For now, return an empty array since conversations aren't fully implemented
+      // This can be expanded when the full messaging system is implemented
+      logger.info(`Getting recent conversations for user: ${userId}`);
+      return [];
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting recent conversations for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
 }

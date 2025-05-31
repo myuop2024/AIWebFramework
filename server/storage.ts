@@ -108,6 +108,9 @@ export interface IStorage {
   createUserImportLog(logData: InsertUserImportLog): Promise<UserImportLog>;
   updateUserImportLog(importId: number, data: Partial<UserImportLog>): Promise<void>;
   bulkCreateUsers(users: InsertUser[], options: { defaultRole?: string; verificationStatus?: string; passwordHash?: (pwd: string) => string }): Promise<{ success: User[]; failures: { data: InsertUser; error: string }[] }>;
+
+  // Communication operations
+  getRecentConversations(userId: number): Promise<any[]>;
 }
 
 // Import database storage
