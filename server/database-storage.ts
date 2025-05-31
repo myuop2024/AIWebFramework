@@ -73,7 +73,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // Clean up expired cache entries every 10 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [key, value] of userCache.entries()) {
+  for (const [key, value] of Array.from(userCache.entries())) {
     if (now - value.timestamp > CACHE_TTL) {
       userCache.delete(key);
     }
@@ -199,7 +199,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
-      const [user] = await db
+      const result = await db
         .select({
           id: usersTable.id,
           username: usersTable.username,
@@ -209,20 +209,39 @@ export class DatabaseStorage implements IStorage {
           lastName: usersTable.lastName,
           observerId: usersTable.observerId,
           role: usersTable.role,
+          roleId: usersTable.roleId,
           verificationStatus: usersTable.verificationStatus,
           deviceId: usersTable.deviceId,
           createdAt: usersTable.createdAt,
           updatedAt: usersTable.updatedAt,
           trainingStatus: usersTable.trainingStatus,
-          phoneNumber: usersTable.phoneNumber
-          // Explicitly selecting fields instead of selecting all to avoid non-existent columns
+          phoneNumber: usersTable.phoneNumber,
+          twoFactorEnabled: usersTable.twoFactorEnabled,
+          twoFactorVerified: usersTable.twoFactorVerified,
+          profileImageUrl: usersTable.profileImageUrl,
+          twoFactorSecret: usersTable.twoFactorSecret,
+          recoveryCodes: usersTable.recoveryCodes,
+          rolePermissions: roles.permissions,
         })
         .from(usersTable)
+        .leftJoin(roles, eq(usersTable.roleId, roles.id))
         .where(eq(usersTable.username, username));
+
+      const [userWithRole] = result;
+      if (!userWithRole) return undefined;
+
+      // Create user object with permissions from role
+      const user = {
+        ...userWithRole,
+        permissions: (userWithRole.rolePermissions as string[]) || []
+      };
+
+      // Remove the rolePermissions field as it's now in permissions
+      delete (user as any).rolePermissions;
 
       return user;
     } catch (error) {
-      logger.error(`Error getting user by username: ${username}`, error);
+      logger.error(`Error getting user by username: ${username}`, error as Error);
       throw error;
     }
   }
