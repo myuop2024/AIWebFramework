@@ -76,6 +76,7 @@ export const users = pgTable("users", {
   observerId: text("observer_id").unique(),
   phoneNumber: text("phone_number"),
   role: text("role").default("observer"),
+  roleId: integer("role_id").references(() => roles.id),
   verificationStatus: text("verification_status").default("pending"),
   deviceId: text("device_id"),
   trainingStatus: text("training_status").default("pending"),
@@ -705,7 +706,7 @@ export const loginUserSchema = z.object({
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type InsertSystemSetting = typeof insertSystemSettingSchema._type;
 
-export type User = typeof users.$inferSelect;
+export type User = typeof users.$inferSelect & { permissions?: string[] };
 export type InsertUser = typeof insertUserSchema._type;
 export type UpsertUser = typeof upsertUserSchema._type;
 export type IdCardTemplate = typeof idCardTemplates.$inferSelect;
@@ -816,6 +817,14 @@ export const userRelations = relations(users, ({ many, one }) => ({
   eventParticipations: many(eventParticipation),
   sentMessages: many(messages, { relationName: "sender" }),
   receivedMessages: many(messages, { relationName: "receiver" }),
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+}));
+
+export const roleRelations = relations(roles, ({ many }) => ({
+  users: many(users),
 }));
 
 export const userProfileRelations = relations(userProfiles, ({ one }) => ({

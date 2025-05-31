@@ -145,7 +145,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       logger.info(`Getting user by ID: ${id}`);
-      const [user] = await db
+      const result = await db
         .select({
           id: usersTable.id,
           username: usersTable.username,
@@ -155,15 +155,35 @@ export class DatabaseStorage implements IStorage {
           lastName: usersTable.lastName,
           observerId: usersTable.observerId,
           role: usersTable.role,
+          roleId: usersTable.roleId,
           verificationStatus: usersTable.verificationStatus,
           deviceId: usersTable.deviceId,
           createdAt: usersTable.createdAt,
           updatedAt: usersTable.updatedAt,
           trainingStatus: usersTable.trainingStatus,
-          phoneNumber: usersTable.phoneNumber
+          phoneNumber: usersTable.phoneNumber,
+          twoFactorEnabled: usersTable.twoFactorEnabled,
+          twoFactorVerified: usersTable.twoFactorVerified,
+          profileImageUrl: usersTable.profileImageUrl,
+          twoFactorSecret: usersTable.twoFactorSecret,
+          recoveryCodes: usersTable.recoveryCodes,
+          rolePermissions: roles.permissions,
         })
         .from(usersTable)
+        .leftJoin(roles, eq(usersTable.roleId, roles.id))
         .where(eq(usersTable.id, id));
+
+      const [userWithRole] = result;
+      if (!userWithRole) return undefined;
+
+      // Create user object with permissions from role
+      const user = {
+        ...userWithRole,
+        permissions: (userWithRole.rolePermissions as string[]) || []
+      };
+
+      // Remove the rolePermissions field as it's now in permissions
+      delete (user as any).rolePermissions;
 
       if (user) {
         // Cache the user data
