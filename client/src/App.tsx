@@ -44,6 +44,7 @@ import ProjectDashboard from "@/pages/project-management/dashboard";
 import ProjectDetail from "@/pages/project-management/detail";
 import ProjectEdit from "@/pages/project-management/edit";
 import ProjectNew from "@/pages/project-management/new";
+import GamificationPage from "@/pages/gamification";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -83,6 +84,7 @@ function Router() {
       <ProtectedRoute path="/chat" component={Chat} />
       {/* Redirect communications route to /chat to avoid duplicate routes */}
       <Route path="/communications" component={() => <Redirect to="/chat" />} />
+      <ProtectedRoute path="/gamification" component={GamificationPage} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       {/* Project Management Routes - specific routes must come before dynamic routes */}

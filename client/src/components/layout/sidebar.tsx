@@ -9,7 +9,7 @@ import {
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
-  Kanban, Trello, X, Sparkles, Upload
+  Kanban, Trello, X, Sparkles, Upload, Trophy
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -69,6 +69,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5" />, requiredPermission: "reports:submit" }, // Users submit their own
     { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> }, // Common, no specific permission
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> }, // Common, no specific permission
+    { path: "/gamification", label: "Achievements", icon: <Trophy className="h-5 w-5" /> }, // Common, no specific permission
     { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" />, requiredPermission: "projects:view" },
     { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" />, requiredPermission: "system:access-advanced-features" },
 
