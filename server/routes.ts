@@ -44,11 +44,8 @@ import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
 import projectManagementRoutes from './routes/project-management-routes';
 import regionsRoutes from './routes/regions-routes';
-<<<<<<< HEAD
 import achievementRoutes from './routes/achievement-routes';
-=======
 import gamificationRoutes from './routes/gamification-routes';
->>>>>>> 85caaf340e9263bcd06f72c66b5cb36dffddae7d
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
