@@ -1084,6 +1084,91 @@ export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ i
 export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true });
 export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true });
 
+// Achievement system tables
+export const achievements = pgTable("achievements", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  iconName: text("icon_name").notNull(),
+  iconColor: text("icon_color").notNull(),
+  points: integer("points").notNull().default(0),
+  rarity: text("rarity").notNull().default("common"),
+  requirements: jsonb("requirements"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id, { onDelete: 'cascade' }),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+export const userGameProfile = pgTable("user_game_profile", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  totalPoints: integer("total_points").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  currentLevelPoints: integer("current_level_points").notNull().default(0),
+  pointsToNextLevel: integer("points_to_next_level").notNull().default(100),
+  streak: integer("streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastActiveDate: date("last_active_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leaderboards = pgTable("leaderboards", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // points, streak, achievements
+  timeframe: text("timeframe").notNull(), // weekly, monthly, all-time
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leaderboardEntries = pgTable("leaderboard_entries", {
+  id: serial("id").primaryKey(),
+  leaderboardId: integer("leaderboard_id").notNull().references(() => leaderboards.id, { onDelete: 'cascade' }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  rank: integer("rank").notNull(),
+  score: integer("score").notNull(),
+  metadata: jsonb("metadata"),
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+});
+
+export const achievementProgress = pgTable("achievement_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  achievementId: integer("achievement_id").notNull().references(() => achievements.id, { onDelete: 'cascade' }),
+  currentProgress: integer("current_progress").notNull().default(0),
+  targetProgress: integer("target_progress").notNull().default(1),
+  progressData: jsonb("progress_data"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
+// Insert schemas for achievement system
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
+export const insertUserGameProfileSchema = createInsertSchema(userGameProfile).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertLeaderboardSchema = createInsertSchema(leaderboards).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertLeaderboardEntrySchema = createInsertSchema(leaderboardEntries).omit({ id: true, calculatedAt: true });
+export const insertAchievementProgressSchema = createInsertSchema(achievementProgress).omit({ id: true, lastUpdated: true });
+
+// Types for achievement system
+export type Achievement = typeof achievements.$inferSelect;
+export type InsertAchievement = typeof insertAchievementSchema._type;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+export type InsertUserAchievement = typeof insertUserAchievementSchema._type;
+export type UserGameProfile = typeof userGameProfile.$inferSelect;
+export type InsertUserGameProfile = typeof insertUserGameProfileSchema._type;
+export type Leaderboard = typeof leaderboards.$inferSelect;
+export type InsertLeaderboard = typeof insertLeaderboardSchema._type;
 export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
 export type InsertLeaderboardEntry = typeof insertLeaderboardEntrySchema._type;
 export type AchievementProgress = typeof achievementProgress.$inferSelect;
