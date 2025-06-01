@@ -38,5 +38,29 @@
     "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
     "referrer": "",
     "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-01T21:48:33.952Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-06-01T21:48:34.002Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-01T21:53:44.287Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
   }
 ]

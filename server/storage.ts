@@ -37,7 +37,19 @@ import {
   type Role,
   type InsertRole,
   type IdCardTemplate,
-  type InsertIdCardTemplate
+  type InsertIdCardTemplate,
+  type Achievement,
+  type InsertAchievement,
+  type UserAchievement,
+  type InsertUserAchievement,
+  type UserGameProfile,
+  type InsertUserGameProfile,
+  type Leaderboard,
+  type InsertLeaderboard,
+  type LeaderboardEntry,
+  type InsertLeaderboardEntry,
+  type AchievementProgress,
+  type InsertAchievementProgress
 } from "@shared/schema";
 
 // Interface for storage operations
@@ -111,6 +123,39 @@ export interface IStorage {
 
   // Communication operations
   getRecentConversations(userId: number): Promise<any[]>;
+
+  // Achievement system operations
+  getAllAchievements(): Promise<Achievement[]>;
+  getAchievement(id: number): Promise<Achievement | undefined>;
+  createAchievement(achievement: InsertAchievement): Promise<Achievement>;
+  updateAchievement(id: number, data: Partial<Achievement>): Promise<Achievement | undefined>;
+  deleteAchievement(id: number): Promise<boolean>;
+
+  // User achievement operations
+  getUserAchievements(userId: number): Promise<UserAchievement[]>;
+  awardAchievement(userId: number, achievementId: number): Promise<UserAchievement>;
+  checkAchievementEarned(userId: number, achievementId: number): Promise<boolean>;
+
+  // User game profile operations
+  getUserGameProfile(userId: number): Promise<UserGameProfile | undefined>;
+  createUserGameProfile(profile: InsertUserGameProfile): Promise<UserGameProfile>;
+  updateUserGameProfile(userId: number, data: Partial<UserGameProfile>): Promise<UserGameProfile | undefined>;
+  updateUserPoints(userId: number, points: number): Promise<UserGameProfile | undefined>;
+  updateUserStreak(userId: number): Promise<UserGameProfile | undefined>;
+
+  // Leaderboard operations
+  getAllLeaderboards(): Promise<Leaderboard[]>;
+  getActiveLeaderboards(): Promise<Leaderboard[]>;
+  getLeaderboard(id: number): Promise<Leaderboard | undefined>;
+  createLeaderboard(leaderboard: InsertLeaderboard): Promise<Leaderboard>;
+  updateLeaderboard(id: number, data: Partial<Leaderboard>): Promise<Leaderboard | undefined>;
+  getLeaderboardEntries(leaderboardId: number, limit?: number): Promise<LeaderboardEntry[]>;
+  updateLeaderboardEntry(entry: InsertLeaderboardEntry): Promise<LeaderboardEntry>;
+
+  // Achievement progress operations
+  getAchievementProgress(userId: number, achievementId: number): Promise<AchievementProgress | undefined>;
+  updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress>;
+  getUserAchievementProgress(userId: number): Promise<AchievementProgress[]>;
 }
 
 // Import database storage
