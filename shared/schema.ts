@@ -89,6 +89,9 @@ export const users = pgTable("users", {
   twoFactorVerified: boolean("two_factor_verified").default(false),
   // Recovery codes for 2FA (stored as JSON array)
   recoveryCodes: jsonb("recovery_codes"),
+  // Gamification fields
+  totalGamificationPoints: integer("total_gamification_points").default(0),
+  lastLoginForGamification: date("last_login_for_gamification"),
 });
 
 // User profile table for KYC
@@ -374,6 +377,61 @@ export const roles = pgTable("roles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Gamification Tables
+
+export const userPoints = pgTable("user_points", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  pointsEarned: integer("points_earned").notNull(),
+  actionType: varchar("action_type", { length: 255 }).notNull(), // e.g., 'TRAINING_COMPLETED', 'REPORT_SUBMITTED'
+  actionDetailsId: integer("action_details_id"), // Optional: ID of the related entity (report, training module)
+  createdAt: timestamp("created_at").defaultNow(),
+},
+(table) => ({
+  userIdx: index("user_points_user_id_idx").on(table.userId),
+}));
+
+export const badges = pgTable("badges", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull().unique(),
+  description: text("description"),
+  iconUrl: varchar("icon_url", { length: 255 }),
+  criteria: jsonb("criteria"), // e.g., { "reports_verified": 100 }
+});
+
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  badgeId: integer("badge_id").notNull().references(() => badges.id, { onDelete: 'cascade' }),
+  earnedAt: timestamp("earned_at").defaultNow(),
+},
+(table) => ({
+  userBadgeUniqueIdx: index("user_badges_user_id_badge_id_idx").on(table.userId, table.badgeId), // Index for unique constraint, Drizzle handles actual UNIQUE in migration
+}));
+
+// Leaderboard tables (consider if these should be materialized views or managed by application logic)
+// For simplicity in schema, defining as tables first.
+export const leaderboardWeekly = pgTable("leaderboard_weekly", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }).primaryKey(),
+  totalPointsThisWeek: integer("total_points_this_week").notNull().default(0),
+  rank: integer("rank"),
+  weekStartDate: date("week_start_date").notNull(), // To identify the week
+  updatedAt: timestamp("updated_at").defaultNow(),
+},
+(table) => ({
+  pointsIdx: index("leaderboard_weekly_points_idx").on(table.totalPointsThisWeek),
+}));
+
+export const leaderboardOverall = pgTable("leaderboard_overall", {
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }).primaryKey(),
+  totalPointsAllTime: integer("total_points_all_time").notNull().default(0),
+  rank: integer("rank"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+},
+(table) => ({
+  pointsIdx: index("leaderboard_overall_points_idx").on(table.totalPointsAllTime),
+}));
+
 // Define insert schema for roles
 export const insertRoleSchema = createInsertSchema(roles)
   .omit({
@@ -385,6 +443,7 @@ export const insertRoleSchema = createInsertSchema(roles)
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof insertRoleSchema._type;
 
+<<<<<<< HEAD
 // Achievement system tables for gamification
 
 // Achievement definitions
@@ -517,6 +576,14 @@ export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
 export type InsertLeaderboardEntry = typeof insertLeaderboardEntrySchema._type;
 export type AchievementProgress = typeof achievementProgress.$inferSelect;
 export type InsertAchievementProgress = typeof insertAchievementProgressSchema._type;
+=======
+// Insert Schemas for Gamification
+export const insertUserPointSchema = createInsertSchema(userPoints).omit({ id: true, createdAt: true });
+export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true });
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
+export const insertLeaderboardWeeklySchema = createInsertSchema(leaderboardWeekly).omit({ updatedAt: true });
+export const insertLeaderboardOverallSchema = createInsertSchema(leaderboardOverall).omit({ updatedAt: true });
+>>>>>>> 85caaf340e9263bcd06f72c66b5cb36dffddae7d
 
 // Verification settings schema for the application
 export const verificationSettingsSchema = z.object({
@@ -901,6 +968,18 @@ export type InsertPhotoApproval = typeof insertPhotoApprovalSchema._type;
 
 export type Session = typeof sessions.$inferSelect;
 
+// Gamification Types
+export type UserPoint = typeof userPoints.$inferSelect;
+export type InsertUserPoint = typeof insertUserPointSchema._type;
+export type Badge = typeof badges.$inferSelect;
+export type InsertBadge = typeof insertBadgeSchema._type;
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = typeof insertUserBadgeSchema._type;
+export type LeaderboardWeekly = typeof leaderboardWeekly.$inferSelect;
+export type InsertLeaderboardWeekly = typeof insertLeaderboardWeeklySchema._type;
+export type LeaderboardOverall = typeof leaderboardOverall.$inferSelect;
+export type InsertLeaderboardOverall = typeof insertLeaderboardOverallSchema._type;
+
 // Form template extended schema
 export const formFieldSchema = z.object({
   id: z.string(),
@@ -953,6 +1032,44 @@ export const userRelations = relations(users, ({ many, one }) => ({
   role: one(roles, {
     fields: [users.roleId],
     references: [roles.id],
+  }),
+  userBadges: many(userBadges),
+  userPoints: many(userPoints),
+}));
+
+export const userPointsRelations = relations(userPoints, ({ one }) => ({
+  user: one(users, {
+    fields: [userPoints.userId],
+    references: [users.id],
+  }),
+}));
+
+export const badgeRelations = relations(badges, ({ many }) => ({
+  userBadges: many(userBadges),
+}));
+
+export const userBadgeRelations = relations(userBadges, ({ one }) => ({
+  user: one(users, {
+    fields: [userBadges.userId],
+    references: [users.id],
+  }),
+  badge: one(badges, {
+    fields: [userBadges.badgeId],
+    references: [badges.id],
+  }),
+}));
+
+export const leaderboardWeeklyRelations = relations(leaderboardWeekly, ({ one }) => ({
+  user: one(users, {
+    fields: [leaderboardWeekly.userId],
+    references: [users.id],
+  }),
+}));
+
+export const leaderboardOverallRelations = relations(leaderboardOverall, ({ one }) => ({
+  user: one(users, {
+    fields: [leaderboardOverall.userId],
+    references: [users.id],
   }),
 }));
 
@@ -1101,3 +1218,8 @@ export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit
 export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true });
 export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true });
+
+export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
+export type InsertLeaderboardEntry = typeof insertLeaderboardEntrySchema._type;
+export type AchievementProgress = typeof achievementProgress.$inferSelect;
+export type InsertAchievementProgress = typeof insertAchievementProgressSchema._type;

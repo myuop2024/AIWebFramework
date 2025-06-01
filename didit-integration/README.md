@@ -41,7 +41,7 @@ You need to register your application with Didit.me to get the required OAuth2 c
 
 1. Create a developer account at Didit.me
 2. Register a new OAuth2 application
-3. Set the redirect URI to `http://localhost:3000/verification-callback` (or your custom URL)
+3. Set the redirect URI to `http://localhost:3001/verification-callback` (or your custom URL)
 4. Copy the Client ID and Client Secret to your `.env` file (or configure them via the admin UI).
 
 ### **CRITICAL SECURITY NOTE: Encryption Key**

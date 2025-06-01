@@ -13,15 +13,7 @@ const DEFAULT_CONFIG = {
   didit: {
     clientId: '',
     clientSecret: '',
-    redirectUri: 'http://localhost:3000/verification-callback',
-    authUrl: 'https://auth.didit.me/oauth/authorize',
-    tokenUrl: 'https://auth.didit.me/oauth/token',
-    meUrl: 'https://api.didit.me/v1/me'
-  },
-  didit: { // didit config remains the same
-    clientId: '',
-    clientSecret: '',
-    redirectUri: 'http://localhost:3000/verification-callback',
+    redirectUri: 'http://localhost:3001/verification-callback',
     authUrl: 'https://auth.didit.me/oauth/authorize',
     tokenUrl: 'https://auth.didit.me/oauth/token',
     meUrl: 'https://api.didit.me/v1/me'

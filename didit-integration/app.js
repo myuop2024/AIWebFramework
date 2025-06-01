@@ -16,7 +16,7 @@ const verificationRoutes = require('./routes/verification');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Ensure data directory exists
 fs.ensureDirSync(path.join(__dirname, 'data'));

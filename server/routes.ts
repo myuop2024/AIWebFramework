@@ -44,11 +44,16 @@ import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
 import projectManagementRoutes from './routes/project-management-routes';
 import regionsRoutes from './routes/regions-routes';
+<<<<<<< HEAD
 import achievementRoutes from './routes/achievement-routes';
+=======
+import gamificationRoutes from './routes/gamification-routes';
+>>>>>>> 85caaf340e9263bcd06f72c66b5cb36dffddae7d
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
 import { createRequire } from 'module';
+import achievementRoutes from './routes/achievement-routes';
 
 const require = createRequire(import.meta.url);
 
@@ -2378,6 +2383,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());
+
+  // Gamification routes
+  app.use('/api/gamification', gamificationRoutes);
+  logger.info('Gamification routes registered at /api/gamification');
   
   // Final error handler that sends response to client
   app.use((err: any, req: any, res: any, next: any) => {
