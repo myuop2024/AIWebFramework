@@ -44,6 +44,7 @@ import errorLogRoutes from './routes/error-logs';
 import adminErrorLogRoutes from './routes/admin-error-logs';
 import projectManagementRoutes from './routes/project-management-routes';
 import regionsRoutes from './routes/regions-routes';
+import gamificationRoutes from './routes/gamification-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
@@ -2374,6 +2375,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());
+
+  // Gamification routes
+  app.use('/api/gamification', gamificationRoutes);
+  logger.info('Gamification routes registered at /api/gamification');
   
   // Final error handler that sends response to client
   app.use((err: any, req: any, res: any, next: any) => {
