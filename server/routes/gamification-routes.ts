@@ -1,13 +1,14 @@
 import express, { Router, Request, Response } from 'express';
 import { gamificationService, GamificationAction } from '../services/gamification-service';
-import { authMiddleware, AuthenticatedRequest } from '../middleware/auth'; // Assuming auth middleware exists
+import { ensureAuthenticated } from '../middleware/auth';
+import { Request } from 'express';
 
 const router = Router();
 
 // Endpoint to record an action (internal or specific triggers)
 // This might be called by other services rather than directly by client in some cases
-router.post('/actions', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.id; // Assuming userId is available from auth middleware
+router.post('/actions', ensureAuthenticated, async (req: Request, res: Response) => {
+  const userId = req.session?.userId; // Get userId from session
   const { action, actionDetailsId } = req.body as { action: GamificationAction, actionDetailsId?: number };
 
   if (!userId) {
@@ -27,8 +28,8 @@ router.post('/actions', authMiddleware, async (req: AuthenticatedRequest, res: R
 });
 
 // Endpoint to get a user's gamification profile (points, badges, rank)
-router.get('/profile', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.id;
+router.get('/profile', ensureAuthenticated, async (req: Request, res: Response) => {
+  const userId = req.session?.userId;
   if (!userId) {
     return res.status(401).json({ message: 'User not authenticated' });
   }
