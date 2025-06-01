@@ -1153,4 +1153,390 @@ export class DatabaseStorage implements IStorage {
       throw err;
     }
   }
+
+  // Achievement system operations
+  async getAllAchievements(): Promise<Achievement[]> {
+    try {
+      return await db.select().from(achievements).where(eq(achievements.isActive, true)).orderBy(asc(achievements.category), asc(achievements.title));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all achievements: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getAchievement(id: number): Promise<Achievement | undefined> {
+    try {
+      const [achievement] = await db.select().from(achievements).where(eq(achievements.id, id));
+      return achievement;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting achievement ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async createAchievement(achievement: InsertAchievement): Promise<Achievement> {
+    try {
+      const [created] = await db.insert(achievements).values(achievement).returning();
+      logger.info(`Created achievement: ${created.title}`);
+      return created;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating achievement: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateAchievement(id: number, data: Partial<Achievement>): Promise<Achievement | undefined> {
+    try {
+      const [updated] = await db.update(achievements).set({ ...data, updatedAt: new Date() }).where(eq(achievements.id, id)).returning();
+      if (updated) {
+        logger.info(`Updated achievement ${id}: ${updated.title}`);
+      }
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating achievement ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async deleteAchievement(id: number): Promise<boolean> {
+    try {
+      await db.update(achievements).set({ isActive: false }).where(eq(achievements.id, id));
+      logger.info(`Deactivated achievement ${id}`);
+      return true;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error deleting achievement ${id}: ${err.message}`, err);
+      return false;
+    }
+  }
+
+  // User achievement operations
+  async getUserAchievements(userId: number): Promise<UserAchievement[]> {
+    try {
+      return await db.select().from(userAchievements).where(eq(userAchievements.userId, userId)).orderBy(desc(userAchievements.earnedAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting user achievements for ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async awardAchievement(userId: number, achievementId: number): Promise<UserAchievement> {
+    try {
+      // Check if user already has this achievement
+      const existing = await this.checkAchievementEarned(userId, achievementId);
+      if (existing) {
+        throw new Error(`User ${userId} already has achievement ${achievementId}`);
+      }
+
+      const [awarded] = await db.insert(userAchievements).values({
+        userId,
+        achievementId
+      }).returning();
+      
+      // Update user points
+      const achievement = await this.getAchievement(achievementId);
+      if (achievement) {
+        await this.updateUserPoints(userId, achievement.points);
+      }
+      
+      logger.info(`Awarded achievement ${achievementId} to user ${userId}`);
+      return awarded;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error awarding achievement ${achievementId} to user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async checkAchievementEarned(userId: number, achievementId: number): Promise<boolean> {
+    try {
+      const [earned] = await db.select().from(userAchievements).where(
+        and(eq(userAchievements.userId, userId), eq(userAchievements.achievementId, achievementId))
+      );
+      return !!earned;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error checking achievement ${achievementId} for user ${userId}: ${err.message}`, err);
+      return false;
+    }
+  }
+
+  // User game profile operations
+  async getUserGameProfile(userId: number): Promise<UserGameProfile | undefined> {
+    try {
+      const [profile] = await db.select().from(userGameProfile).where(eq(userGameProfile.userId, userId));
+      return profile;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting game profile for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async createUserGameProfile(profile: InsertUserGameProfile): Promise<UserGameProfile> {
+    try {
+      const [created] = await db.insert(userGameProfile).values(profile).returning();
+      logger.info(`Created game profile for user ${profile.userId}`);
+      return created;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating game profile: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateUserGameProfile(userId: number, data: Partial<UserGameProfile>): Promise<UserGameProfile | undefined> {
+    try {
+      const [updated] = await db.update(userGameProfile).set({ ...data, updatedAt: new Date() }).where(eq(userGameProfile.userId, userId)).returning();
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating game profile for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateUserPoints(userId: number, points: number): Promise<UserGameProfile | undefined> {
+    try {
+      let profile = await this.getUserGameProfile(userId);
+      
+      if (!profile) {
+        // Create initial profile if it doesn't exist
+        profile = await this.createUserGameProfile({ userId });
+      }
+
+      const newTotalPoints = profile.totalPoints + points;
+      const newCurrentLevelPoints = profile.currentLevelPoints + points;
+      
+      // Calculate level progression (100 points per level)
+      const pointsPerLevel = 100;
+      let newLevel = profile.level;
+      let remainingPoints = newCurrentLevelPoints;
+      
+      while (remainingPoints >= pointsPerLevel) {
+        remainingPoints -= pointsPerLevel;
+        newLevel++;
+      }
+      
+      const pointsToNextLevel = pointsPerLevel - remainingPoints;
+
+      const [updated] = await db.update(userGameProfile).set({
+        totalPoints: newTotalPoints,
+        level: newLevel,
+        currentLevelPoints: remainingPoints,
+        pointsToNextLevel,
+        updatedAt: new Date()
+      }).where(eq(userGameProfile.userId, userId)).returning();
+
+      if (newLevel > profile.level) {
+        logger.info(`User ${userId} leveled up to level ${newLevel}!`);
+      }
+
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating points for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateUserStreak(userId: number): Promise<UserGameProfile | undefined> {
+    try {
+      let profile = await this.getUserGameProfile(userId);
+      
+      if (!profile) {
+        profile = await this.createUserGameProfile({ userId });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const lastActiveDate = profile.lastActiveDate?.toString();
+      
+      let newStreak = profile.streak;
+      
+      if (!lastActiveDate || lastActiveDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        if (lastActiveDate === yesterdayStr) {
+          // Consecutive day, increase streak
+          newStreak++;
+        } else if (lastActiveDate !== today) {
+          // Streak broken, reset to 1
+          newStreak = 1;
+        }
+        
+        const newLongestStreak = Math.max(profile.longestStreak, newStreak);
+        
+        const [updated] = await db.update(userGameProfile).set({
+          streak: newStreak,
+          longestStreak: newLongestStreak,
+          lastActiveDate: today,
+          updatedAt: new Date()
+        }).where(eq(userGameProfile.userId, userId)).returning();
+
+        return updated;
+      }
+      
+      return profile;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating streak for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  // Leaderboard operations
+  async getAllLeaderboards(): Promise<Leaderboard[]> {
+    try {
+      return await db.select().from(leaderboards).orderBy(desc(leaderboards.createdAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all leaderboards: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getActiveLeaderboards(): Promise<Leaderboard[]> {
+    try {
+      return await db.select().from(leaderboards).where(eq(leaderboards.isActive, true)).orderBy(desc(leaderboards.createdAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting active leaderboards: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getLeaderboard(id: number): Promise<Leaderboard | undefined> {
+    try {
+      const [leaderboard] = await db.select().from(leaderboards).where(eq(leaderboards.id, id));
+      return leaderboard;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting leaderboard ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async createLeaderboard(leaderboard: InsertLeaderboard): Promise<Leaderboard> {
+    try {
+      const [created] = await db.insert(leaderboards).values(leaderboard).returning();
+      logger.info(`Created leaderboard: ${created.name}`);
+      return created;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating leaderboard: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateLeaderboard(id: number, data: Partial<Leaderboard>): Promise<Leaderboard | undefined> {
+    try {
+      const [updated] = await db.update(leaderboards).set(data).where(eq(leaderboards.id, id)).returning();
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating leaderboard ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getLeaderboardEntries(leaderboardId: number, limit: number = 10): Promise<LeaderboardEntry[]> {
+    try {
+      return await db.select().from(leaderboardEntries)
+        .where(eq(leaderboardEntries.leaderboardId, leaderboardId))
+        .orderBy(asc(leaderboardEntries.rank))
+        .limit(limit);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting leaderboard entries for ${leaderboardId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateLeaderboardEntry(entry: InsertLeaderboardEntry): Promise<LeaderboardEntry> {
+    try {
+      // Check if entry exists
+      const [existing] = await db.select().from(leaderboardEntries).where(
+        and(eq(leaderboardEntries.leaderboardId, entry.leaderboardId), eq(leaderboardEntries.userId, entry.userId))
+      );
+
+      if (existing) {
+        const [updated] = await db.update(leaderboardEntries).set({
+          score: entry.score,
+          metadata: entry.metadata,
+          calculatedAt: new Date()
+        }).where(eq(leaderboardEntries.id, existing.id)).returning();
+        return updated;
+      } else {
+        const [created] = await db.insert(leaderboardEntries).values(entry).returning();
+        return created;
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating leaderboard entry: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  // Achievement progress operations
+  async getAchievementProgress(userId: number, achievementId: number): Promise<AchievementProgress | undefined> {
+    try {
+      const [progress] = await db.select().from(achievementProgress).where(
+        and(eq(achievementProgress.userId, userId), eq(achievementProgress.achievementId, achievementId))
+      );
+      return progress;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting achievement progress for user ${userId}, achievement ${achievementId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress> {
+    try {
+      const existing = await this.getAchievementProgress(userId, achievementId);
+      
+      if (existing) {
+        const [updated] = await db.update(achievementProgress).set({
+          currentProgress: progress,
+          progressData,
+          lastUpdated: new Date()
+        }).where(eq(achievementProgress.id, existing.id)).returning();
+        return updated;
+      } else {
+        // Get achievement to set target progress
+        const achievement = await this.getAchievement(achievementId);
+        const targetProgress = achievement?.requirements?.target || 1;
+        
+        const [created] = await db.insert(achievementProgress).values({
+          userId,
+          achievementId,
+          currentProgress: progress,
+          targetProgress,
+          progressData
+        }).returning();
+        return created;
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating achievement progress: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getUserAchievementProgress(userId: number): Promise<AchievementProgress[]> {
+    try {
+      return await db.select().from(achievementProgress).where(eq(achievementProgress.userId, userId)).orderBy(desc(achievementProgress.lastUpdated));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting achievement progress for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
 }
