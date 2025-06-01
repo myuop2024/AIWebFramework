@@ -1083,3 +1083,8 @@ export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit
 export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true });
 export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true });
+
+export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
+export type InsertLeaderboardEntry = typeof insertLeaderboardEntrySchema._type;
+export type AchievementProgress = typeof achievementProgress.$inferSelect;
+export type InsertAchievementProgress = typeof insertAchievementProgressSchema._type;

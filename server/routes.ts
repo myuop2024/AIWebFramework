@@ -49,6 +49,7 @@ import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import { ErrorLogger } from './services/error-logger';
 import { createRequire } from 'module';
+import achievementRoutes from './routes/achievement-routes';
 
 const require = createRequire(import.meta.url);
 
@@ -2356,6 +2357,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Add regions routes for parish/polling station regions
   app.use('/api/regions', regionsRoutes);
+
+  // Add achievement system routes for gamification
+  app.use('/api/gamification', achievementRoutes);
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
