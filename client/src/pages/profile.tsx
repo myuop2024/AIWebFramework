@@ -11,7 +11,9 @@ import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
 import VerificationTab from "@/components/profile/verification-tab";
 import PasswordChangeForm from "@/components/profile/password-change-form";
 import { TwoFactorAuth } from "@/components/profile/two-factor-auth";
-import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint, KeyRound } from "lucide-react";
+import UserPointsDisplay from "@/components/gamification/UserPointsDisplay";
+import UserBadgesList, { Badge } from "@/components/gamification/UserBadgesList";
+import { User, FileText, ShieldCheck, MapPin, CreditCard, Download, Fingerprint, KeyRound, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +35,13 @@ interface UserProfile {
     language?: string;
     region?: string;
   };
+}
+
+interface GamificationProfileData {
+  totalPoints: number;
+  badges: Badge[]; // Badge interface from UserBadgesList.tsx
+  rankOverall?: number | null;
+  rankWeekly?: number | null;
 }
 
 const LANGUAGES = [
@@ -160,6 +169,20 @@ function SettingsForm({ user }: { user: any }) {
 export default function Profile() {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
+
+  // Fetch gamification data
+  const { data: gamificationData, isLoading: isGamificationLoading, error: gamificationError } = useQuery<GamificationProfileData>({
+    queryKey: ['/api/gamification/profile'],
+    enabled: !!user, // Only fetch if user is authenticated
+    queryFn: async () => {
+      const response = await fetch('/api/gamification/profile'); // Ensure this uses authenticated requests if needed by backend
+      if (!response.ok) {
+        throw new Error('Failed to fetch gamification profile');
+      }
+      return response.json();
+    },
+    staleTime: 60000, // Cache for 1 minute
+  });
   
   // Function to download the ID card
   const downloadIdCard = async () => {
@@ -254,7 +277,7 @@ export default function Profile() {
     },
   });
 
-  if (isLoading || isProfileLoading) {
+  if (isLoading || isProfileLoading || isGamificationLoading) {
     return (
       <div className="animate-pulse space-y-6">
         <div className="h-40 bg-gray-200 rounded-md"></div>
@@ -395,7 +418,7 @@ export default function Profile() {
       
       {/* Profile Tabs */}
       <Tabs defaultValue="personal-info" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 w-full">
           <TabsTrigger value="personal-info">Personal Info</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="verification">
@@ -406,6 +429,10 @@ export default function Profile() {
           </TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="gamification">
+            <Star className="mr-2 h-4 w-4" />
+            Activity
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="personal-info">
@@ -520,6 +547,33 @@ export default function Profile() {
             </CardHeader>
             <CardContent>
               <SettingsForm user={user} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="gamification">
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Activity & Achievements</CardTitle>
+              <CardDescription>Track your points, badges, and leaderboard standings.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isGamificationLoading ? (
+                <p>Loading activity data...</p>
+              ) : gamificationError ? (
+                <p className="text-red-500">Could not load activity data. {(gamificationError as Error).message}</p>
+              ) : gamificationData ? (
+                <>
+                  <UserPointsDisplay points={gamificationData.totalPoints} />
+                  <Separator />
+                  <UserBadgesList badges={gamificationData.badges} />
+                  {/* Placeholder for future leaderboard summary if needed here */}
+                  {/* <p>Overall Rank: {gamificationData.rankOverall ?? 'N/A'}</p> */}
+                  {/* <p>Weekly Rank: {gamificationData.rankWeekly ?? 'N/A'}</p> */}
+                </>
+              ) : (
+                <p>No activity data available.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

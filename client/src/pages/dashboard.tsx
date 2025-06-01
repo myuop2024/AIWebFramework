@@ -12,6 +12,7 @@ import LatestNews from "@/components/dashboard/latest-news";
 import { PageWrapper } from "@/components/ui/page-wrapper";
 import { ModernCard } from "@/components/ui/modern-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import LeaderboardTable, { LeaderboardEntry } from "@/components/gamification/LeaderboardTable";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -22,6 +23,26 @@ export default function Dashboard() {
   useQuery({ queryKey: ['/api/reports'] });
   useQuery({ queryKey: ['/api/users/assignments'] });
   useQuery({ queryKey: ['/api/news/latest'] });
+
+  const { data: overallLeaderboardData, isLoading: isOverallLeaderboardLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ['/api/gamification/leaderboard/overall'],
+    queryFn: async () => {
+      const response = await fetch('/api/gamification/leaderboard/overall?limit=5'); // Fetch top 5 for dashboard
+      if (!response.ok) throw new Error('Failed to fetch overall leaderboard');
+      return response.json();
+    },
+    staleTime: 300000, // Cache for 5 minutes
+  });
+
+  const { data: weeklyLeaderboardData, isLoading: isWeeklyLeaderboardLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ['/api/gamification/leaderboard/weekly'],
+    queryFn: async () => {
+      const response = await fetch('/api/gamification/leaderboard/weekly?limit=5'); // Fetch top 5 for dashboard
+      if (!response.ok) throw new Error('Failed to fetch weekly leaderboard');
+      return response.json();
+    },
+    staleTime: 60000, // Cache for 1 minute, as it's more dynamic
+  });
 
   if (isLoading) {
     return (
@@ -80,6 +101,42 @@ export default function Dashboard() {
           {/* Recent Reports */}
           <ModernCard variant="glass">
             <RecentReports />
+          </ModernCard>
+
+          {/* Leaderboards Section */}
+          <ModernCard variant="outline"> {/* Or other suitable variant */}
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Activity Leaderboards</h2>
+              {(isOverallLeaderboardLoading || isWeeklyLeaderboardLoading) ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-8 w-1/3" />
+                  <Skeleton className="h-32 w-full" />
+                  <Skeleton className="h-8 w-1/3 mt-4" />
+                  <Skeleton className="h-32 w-full" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {overallLeaderboardData && overallLeaderboardData.length > 0 ? (
+                    <LeaderboardTable
+                      title="Overall Top Observers"
+                      entries={overallLeaderboardData}
+                      currentUserId={user?.id} // Assuming user object has id
+                    />
+                  ) : (
+                    <p>Overall leaderboard data is not available.</p>
+                  )}
+                  {weeklyLeaderboardData && weeklyLeaderboardData.length > 0 ? (
+                    <LeaderboardTable
+                      title="This Week's Top Observers"
+                      entries={weeklyLeaderboardData}
+                      currentUserId={user?.id} // Assuming user object has id
+                    />
+                  ) : (
+                    <p>Weekly leaderboard data is not available.</p>
+                  )}
+                </div>
+              )}
+            </div>
           </ModernCard>
         </div>
 
