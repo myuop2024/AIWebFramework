@@ -1,0 +1,73 @@
+
+New client connected to database
+New client connected to database
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+Client removed from pool
+[ERROR LOGGER] Failed to save error to database: error: null value in column "source" of relation "error_logs" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Function.logError (/home/runner/workspace/server/services/error-logger.ts:99:9)
+    at async <anonymous> (/home/runner/workspace/server/services/error-logger.ts:115:7) {
+  length: 557,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (133, null, null, error, terminating connection due to administrator command, null, error: terminating connection due to administrator command\n' +
+    '    a..., null, Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH..., /src/components/ui/page-wrapper.tsx, null, null, 2025-06-02 05:32:34.685002, f, null, null, null, null, 2025-06-02 05:32:34.685002).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'error_logs',
+  column: 'source',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
