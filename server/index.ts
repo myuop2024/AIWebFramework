@@ -28,6 +28,7 @@ import {
   securityLogger,
   sessionSecurity
 } from "./middleware/security";
+import { WAFEngine } from "./middleware/waf";
 
 /**
  * Initialize default data in the database
@@ -56,13 +57,32 @@ const app = express();
 // Trust proxy for proper IP handling in cloud environments
 app.set('trust proxy', true);
 
+// Initialize WAF (Web Application Firewall)
+const wafEngine = new WAFEngine({
+  enableRateLimit: process.env.NODE_ENV === 'production',
+  enableSQLInjectionProtection: true,
+  enableXSSProtection: true,
+  enableCSRFProtection: true,
+  enableIPWhitelist: false,
+  enableGeoblocking: false,
+  allowedCountries: ['US', 'CA', 'GB', 'JM'],
+  blockedIPs: [],
+  allowedIPs: [],
+  maxRequestsPerWindow: 100,
+  windowMs: 15 * 60 * 1000,
+});
+
 // Security middleware - apply early
-app.use(securityHeaders);
+app.use(wafEngine.securityHeaders());
 app.use(corsConfig);
 app.use(securityLogger);
 
+// WAF protection
+app.use(wafEngine.middleware());
+
 // Rate limiting - disabled in development to avoid proxy conflicts
 if (process.env.NODE_ENV === 'production') {
+  app.use(wafEngine.rateLimitMiddleware());
   app.use('/api/auth', authRateLimit);
   app.use('/api', apiRateLimit);
   app.use(generalRateLimit);

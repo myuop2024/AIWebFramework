@@ -48,6 +48,7 @@ import achievementRoutes from './routes/achievement-routes';
 import gamificationRoutes from './routes/gamification-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
+import wafRoutes, { setWAFEngine } from './routes/waf-routes';
 import { ErrorLogger } from './services/error-logger';
 import { createRequire } from 'module';
 import achievementRoutes from './routes/achievement-routes';
