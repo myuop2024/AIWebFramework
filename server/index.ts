@@ -39,7 +39,7 @@ async function initializeDefaultData() {
     // Initialize default ID card template
     const idCardService = new IdCardService();
     const templates = await storage.getAllIdCardTemplates();
-    
+
     if (templates.length === 0) {
       console.log('Creating default ID card template...');
       await idCardService.createDefaultTemplate();
@@ -134,7 +134,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    
+
     // Only log if duration is significant or status indicates error
     if (duration > 100 || res.statusCode >= 400) {
       logger.info('HTTP Request', {
@@ -203,7 +203,7 @@ const BUFFER_SIZE = 50;
 
 function savePageLog(entry: any) {
   logBuffer.push(entry);
-  
+
   // Flush if buffer is full or enough time has passed
   if (logBuffer.length >= BUFFER_SIZE || Date.now() - lastFlush > FLUSH_INTERVAL) {
     flushLogs();
@@ -212,21 +212,21 @@ function savePageLog(entry: any) {
 
 function flushLogs() {
   if (logBuffer.length === 0) return;
-  
+
   try {
     let logs: any[] = [];
     if (fs.existsSync(PAGE_LOG_PATH)) {
       logs = JSON.parse(fs.readFileSync(PAGE_LOG_PATH, 'utf-8'));
     }
-    
+
     logs.push(...logBuffer);
     logBuffer = [];
     lastFlush = Date.now();
-    
+
     // Prune logs older than 1 day
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     logs = logs.filter(l => new Date(l.timestamp).getTime() > oneDayAgo);
-    
+
     fs.mkdirSync(path.dirname(PAGE_LOG_PATH), { recursive: true });
     fs.writeFileSync(PAGE_LOG_PATH, JSON.stringify(logs, null, 2));
   } catch (error) {
@@ -265,19 +265,19 @@ app.get('/api/logs', (req, res) => {
 (async () => {
   let dbConnected = false;
   let server: Server;
-  
+
   try {
     // Check database connection
     dbConnected = await checkDbConnection();
     console.log('Database connection successful');
-    
+
     // Initialize default data
     await initializeDefaultData();
   } catch (error) {
     console.error('Database initialization error:', error);
     console.log('Continuing with server startup despite database issues...');
   }
-  
+
   try {
     // Set up traditional authentication with session management
     const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
@@ -287,7 +287,7 @@ app.get('/api/logs', (req, res) => {
       createTableIfMissing: true,
       tableName: 'session' // Using the existing session table in the database
     });
-    
+
     app.use(session({
       store: sessionStore,
       secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production-' + Math.random().toString(36),
@@ -301,20 +301,20 @@ app.get('/api/logs', (req, res) => {
         sameSite: 'strict' // CSRF protection
       }
     }));
-    
+
     // Session security middleware
     app.use(sessionSecurity);
-    
+
     // Setup passport for authentication
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(attachUser);
-    
+
     // Serialize/deserialize user for session management
     passport.serializeUser((user: any, done) => {
       done(null, user.id);
     });
-    
+
     passport.deserializeUser(async (id: any, done) => {
       try {
         // Convert id to number if it's a string
@@ -324,13 +324,13 @@ app.get('/api/logs', (req, res) => {
           logger.error(`Invalid user ID during deserialize: ${id} (type: ${typeof id})`);
           return done(new Error('Invalid user ID'), null);
         }
-        
+
         const user = await storage.getUser(userId);
         if (!user) {
           logger.warn(`User not found during deserialize: ${userId}`);
           return done(null, null);
         }
-        
+
         logger.debug(`Deserialized user ${userId} successfully`);
         done(null, user);
       } catch (err) {
@@ -338,9 +338,9 @@ app.get('/api/logs', (req, res) => {
         done(err, null);
       }
     });
-    
+
     logger.info('Traditional authentication system configured successfully');
-    
+
     // Add health check endpoint
     app.get('/api/health', async (req, res) => {
       const dbStatus = await checkDbConnection().catch(() => false);
@@ -352,16 +352,16 @@ app.get('/api/logs', (req, res) => {
         auth: 'traditional'
       });
     });
-    
+
     // Setup uploads directory and log
     // Modified to serve from 'public/uploads' to align with communication file uploads
     const publicUploadsDir = path.join(process.cwd(), 'public/uploads');
     app.use('/uploads', express.static(publicUploadsDir));
     console.log(`Serving static files from /uploads mapped to ${publicUploadsDir}`);
-    
+
     // Setup routes
     server = await registerRoutes(app); // This initializes communicationService
-    
+
     // Connect WAF engine to management routes
     const { setWAFEngine } = await import('./routes/waf-routes');
     setWAFEngine(wafEngine);
@@ -425,7 +425,7 @@ app.get('/api/logs', (req, res) => {
     }
 
     // --- Error Handling Pipeline (MUST be registered after all routes) ---
-    
+
     // 1. Log errors to database
     // This middleware should call next(err) to pass the error to the next handler.
     app.use(ErrorLogger.createErrorMiddleware());
@@ -446,7 +446,7 @@ app.get('/api/logs', (req, res) => {
     const maxPortAttempts = 15;
     let port = startPort;
     let serverStarted = false;
-    
+
     // Try multiple ports in sequence
     for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
       const portToTry = startPort + attempt;
@@ -462,30 +462,30 @@ app.get('/api/logs', (req, res) => {
               reject(err); // Propagate other errors
             }
           };
-          
+
           const listeningHandler = () => {
             server.removeListener('error', errorHandler);
             port = portToTry;
             serverStarted = true;
             resolve();
           };
-          
+
           server.once('error', errorHandler);
           server.once('listening', listeningHandler);
-          
+
           // Try binding to the port
           server.listen({
             port: portToTry,
             host: "0.0.0.0",
           });
         });
-        
+
         if (serverStarted) break;
       } catch (err) {
         console.error(`Error starting server on port ${portToTry}:`, err);
       }
     }
-    
+
     if (serverStarted) {
       console.log(`Server is running on port ${port}`);
     } else {

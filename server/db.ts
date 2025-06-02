@@ -43,13 +43,16 @@ pool.on('remove', () => {
 });
 
 // Initialize Drizzle ORM with the schema
-export const db = drizzle(pool, { schema });
+export const db = drizzle(pool, { 
+  schema,
+  logger: process.env.NODE_ENV === 'development' ? console : false 
+});
 
 // Export a function to check db connectivity
 export async function checkDbConnection() {
   let client;
   let retries = 3;
-  
+
   while (retries > 0) {
     try {
       client = await pool.connect();

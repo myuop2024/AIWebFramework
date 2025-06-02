@@ -63,11 +63,12 @@ const pathTraversalPatterns = [
   /\.\.\\/g,
 ];
 
-// Command injection patterns
+// Check for command injection patterns (excluding development patterns)
 const commandInjectionPatterns = [
-  /(\||&|;|\$\(|\`)/g,
-  /(wget|curl|nc|netcat|bash|sh|cmd|powershell)/gi,
-  /(\${.*})/g,
+  /[;&|`$(){}[\]]/,  // Command separators and substitution
+  /\b(exec|eval|system|shell_exec|passthru|wget|curl|nc|netcat|bash|sh|cmd|powershell)\b/i,
+  // Exclude common development patterns
+  /^(?!.*(@react-refresh|\.tsx?|\.jsx?|src\/)).*@[a-zA-Z-]+/,  // Potential at-rules or decorators that could be misused
 ];
 
 class WAFEngine {
@@ -80,7 +81,7 @@ class WAFEngine {
     this.config = { ...defaultWAFConfig, ...config };
     this.suspiciousActivity = new Map();
     this.blockedIPs = new Set(this.config.blockedIPs);
-    
+
     // Initialize rate limiter
     if (this.config.enableRateLimit) {
       this.rateLimiter = rateLimit({
@@ -115,7 +116,7 @@ class WAFEngine {
     const forwarded = req.headers['x-forwarded-for'] as string;
     const realIP = req.headers['x-real-ip'] as string;
     const remoteAddr = req.connection?.remoteAddress;
-    
+
     return forwarded?.split(',')[0]?.trim() || 
            realIP || 
            remoteAddr || 
@@ -198,11 +199,11 @@ class WAFEngine {
         .replace(/on\w+\s*=/gi, '') // Remove event handlers
         .trim();
     }
-    
+
     if (Array.isArray(input)) {
       return input.map(item => this.sanitizeInput(item));
     }
-    
+
     if (input && typeof input === 'object') {
       const sanitized: any = {};
       for (const [key, value] of Object.entries(input)) {
@@ -210,7 +211,7 @@ class WAFEngine {
       }
       return sanitized;
     }
-    
+
     return input;
   }
 

@@ -12,6 +12,18 @@ import { queryClient } from "@/lib/queryClient";
 
 // Import HERE Maps diagnostics for debugging
 import { logHereDiagnostics } from "./lib/here-maps-diagnostics";
+import ErrorBoundary from './components/error/error-boundary';
+
+// Suppress specific React warnings in development
+if (process.env.NODE_ENV === 'development') {
+  const originalError = console.error;
+  console.error = (...args) => {
+    if (typeof args[0] === 'string' && args[0].includes('UNSAFE_componentWillMount')) {
+      return; // Suppress this specific warning
+    }
+    originalError.call(console, ...args);
+  };
+}
 
 // Make diagnostics available in browser console
 if (typeof window !== 'undefined') {
@@ -24,7 +36,9 @@ createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light">
-        <App />
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
