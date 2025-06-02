@@ -116,6 +116,17 @@ function generateObserverId(): string {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Set user context for RLS
+  async setUserContext(userId: number, userRole: string): Promise<void> {
+    await db.execute(sql`SELECT auth.set_user_context(${userId}, ${userRole})`);
+  }
+
+  // Clear user context
+  async clearUserContext(): Promise<void> {
+    await db.execute(sql`SELECT set_config('app.current_user_id', '', true)`);
+    await db.execute(sql`SELECT set_config('app.current_user_role', '', true)`);
+  }
+
   async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
     const [setting] = await db
       .select()
