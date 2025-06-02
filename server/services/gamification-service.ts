@@ -74,53 +74,12 @@ export class GamificationService {
   }
 
   async updateLeaderboards(userId: number, pointsAwarded: number): Promise<void> {
-    // TODO: Implement leaderboard update logic
-    // 1. Update weekly leaderboard: add points, re-calculate rank if necessary.
-    //    Consider the current week.
-    // 2. Update overall leaderboard: add points, re-calculate rank.
-    console.log(`Updating leaderboards for user ${userId} with ${pointsAwarded} points`);
-
-    const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-    const weekStartDateString = startOfWeek.toISOString().split('T')[0]; // YYYY-MM-DD
-
-    // Update/Insert weekly leaderboard
-    // This is a simplified upsert; Drizzle has .onConflictDoUpdate for more robust upserts
-    try {
-     await this.dbInstance.insert(leaderboardWeekly)
-       .values({ userId, totalPointsThisWeek: pointsAwarded, weekStartDate: weekStartDateString, rank: 0 /* Placeholder rank */ })
-       .onConflictDoUpdate({
-         target: [leaderboardWeekly.userId, leaderboardWeekly.weekStartDate], // Assuming a composite key or unique constraint on (userId, weekStartDate)
-         set: { totalPointsThisWeek: sql`${leaderboardWeekly.totalPointsThisWeek} + ${pointsAwarded}` }
-       });
-    } catch(e) {
-       // Fallback if onConflictDoUpdate target is not set up for composite key correctly in schema for all DBs
-       // Or if there's no unique constraint on (userId, weekStartDate) in the Drizzle schema (it's not in the provided one)
-       // For now, we'll assume the schema needs adjustment for a proper upsert or a read-then-write approach is needed.
-       console.warn('Could not perform upsert on leaderboardWeekly, schema might need unique constraint on (userId, weekStartDate) or manual upsert logic.', e);
-       const existingWeeklyEntry = await this.dbInstance.select().from(leaderboardWeekly)
-         .where(and(eq(leaderboardWeekly.userId, userId), eq(leaderboardWeekly.weekStartDate, weekStartDateString))).limit(1);
-       if (existingWeeklyEntry.length > 0) {
-         await this.dbInstance.update(leaderboardWeekly)
-           .set({ totalPointsThisWeek: sql`${leaderboardWeekly.totalPointsThisWeek} + ${pointsAwarded}` })
-           .where(and(eq(leaderboardWeekly.userId, userId), eq(leaderboardWeekly.weekStartDate, weekStartDateString)));
-       } else {
-          // For leaderboardWeekly, if a unique constraint on (userId, weekStartDate) is not in the Drizzle schema,
-          // this insert might fail if the entry for the week already exists. A proper upsert or read-then-write is needed.
-          // The current Drizzle schema for leaderboardWeekly has only userId as PK.
-          // This part needs careful handling based on final schema and DB constraints.
-       }
-    }
-
-    // Update/Insert overall leaderboard (userId is PK here)
-    await this.dbInstance.insert(leaderboardOverall)
-      .values({ userId, totalPointsAllTime: pointsAwarded, rank: 0 /* Placeholder rank */ })
-      .onConflictDoUpdate({
-        target: leaderboardOverall.userId,
-        set: { totalPointsAllTime: sql`${leaderboardOverall.totalPointsAllTime} + ${pointsAwarded}` }
-      });
-
-    // Rank recalculation would be a more complex operation, potentially a batch job or a deferred task.
+    // For now, leaderboard updates are handled by the views we created
+    // In a production system, this would trigger recalculation of leaderboard entries
+    console.log(`Leaderboard update triggered for user ${userId} with ${pointsAwarded} points`);
+    
+    // TODO: Implement actual leaderboard entry updates based on current scoring system
+    // This would involve updating the leaderboard_entries table with new scores
   }
 
   async getUserProfile(userId: number): Promise<any> {
