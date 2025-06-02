@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import Spinner from '../ui/Spinner';
 
 const fetchContacts = async () => {
   const res = await fetch('/crm/contacts');
@@ -34,9 +36,11 @@ const CRMObserverForm: React.FC = () => {
       setForm({ crmContactId: '', parish: '', role: '', status: '' });
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['crm-observers'] });
+      toast.success('Observer added!');
     },
     onError: (err: any) => {
       setError(err.message || 'Error adding observer');
+      toast.error('Failed to add observer');
     },
   });
 
@@ -98,10 +102,10 @@ const CRMObserverForm: React.FC = () => {
       </div>
       <button
         type="submit"
-        className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+        className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark flex items-center gap-2"
         disabled={mutation.isLoading}
       >
-        {mutation.isLoading ? 'Adding...' : 'Add Observer'}
+        {mutation.isLoading ? <Spinner /> : 'Add Observer'}
       </button>
     </form>
   );

@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import CRMContactForm from '@/components/admin/crm-contact-form';
 import CRMContactList from '@/components/admin/crm-contact-list';
 import CRMObserverForm from '@/components/admin/crm-observer-form';
 import CRMObserverList from '@/components/admin/crm-observer-list';
+import CRMAuditLogs from '@/components/admin/crm-audit-logs';
 
 const AdminCRMPage = () => {
+  const { data: userData } = useQuery({ queryKey: ['/api/users/profile'] });
+  const userRole = userData?.user?.role;
+  const isAdmin = userRole === 'admin' || userRole === 'director';
+
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sheetId, setSheetId] = useState('');
@@ -51,31 +57,35 @@ const AdminCRMPage = () => {
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">CRM System</h1>
       <p className="mb-4">Manage contacts, observers, and interactions. (Feature-rich UI coming soon!)</p>
-      <div className="flex gap-4 mb-4">
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={() => exportCSV('contacts')}
-        >
-          Export Contacts (CSV)
-        </button>
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={() => exportCSV('observers')}
-        >
-          Export Observers (CSV)
-        </button>
-      </div>
+      {isAdmin && (
+        <div className="flex gap-4 mb-4">
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={() => exportCSV('contacts')}
+          >
+            Export Contacts (CSV)
+          </button>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={() => exportCSV('observers')}
+          >
+            Export Observers (CSV)
+          </button>
+        </div>
+      )}
       <CRMContactForm />
-      <CRMContactList />
+      <CRMContactList isAdmin={isAdmin} />
       <CRMObserverForm />
-      <CRMObserverList />
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded mb-4 mt-8"
-        onClick={findProfileLinks}
-        disabled={loading}
-      >
-        {loading ? 'Finding Profile Links...' : 'Find AI Profile Links'}
-      </button>
+      <CRMObserverList isAdmin={isAdmin} />
+      {isAdmin && (
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded mb-4 mt-8"
+          onClick={findProfileLinks}
+          disabled={loading}
+        >
+          {loading ? 'Finding Profile Links...' : 'Find AI Profile Links'}
+        </button>
+      )}
       {suggestions.length > 0 && (
         <div className="bg-yellow-50 p-4 rounded mb-4">
           <h3 className="font-bold mb-2">AI-Suggested Profile Links</h3>
@@ -132,7 +142,7 @@ const AdminCRMPage = () => {
           </table>
         </div>
       )}
-      {/* TODO: Add CRM contact list, observer management, AI-powered linking, import/export, etc. */}
+      {isAdmin && <CRMAuditLogs />}
     </div>
   );
 };

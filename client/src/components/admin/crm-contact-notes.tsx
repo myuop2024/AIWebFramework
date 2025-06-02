@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface CRMContactNotesProps {
   contactId: number;
+  isAdmin: boolean;
 }
 
 const fetchNotes = async (contactId: number) => {
@@ -21,7 +22,7 @@ const addNote = async ({ contactId, content }: { contactId: number; content: str
   return res.json();
 };
 
-const CRMContactNotes: React.FC<CRMContactNotesProps> = ({ contactId }) => {
+const CRMContactNotes: React.FC<CRMContactNotesProps> = ({ contactId, isAdmin }) => {
   const queryClient = useQueryClient();
   const { data: notes, isLoading } = useQuery({
     queryKey: ['crm-contact-notes', contactId],
@@ -43,6 +44,14 @@ const CRMContactNotes: React.FC<CRMContactNotesProps> = ({ contactId }) => {
     }
   };
 
+  if (!isAdmin) {
+    return (
+      <div className="bg-gray-50 rounded p-4 mt-4">
+        <h3 className="font-semibold mb-2">Notes & Interactions</h3>
+        <div className="text-gray-400 italic">Notes are restricted to administrators.</div>
+      </div>
+    );
+  }
   return (
     <div className="bg-gray-50 rounded p-4 mt-4">
       <h3 className="font-semibold mb-2">Notes & Interactions</h3>

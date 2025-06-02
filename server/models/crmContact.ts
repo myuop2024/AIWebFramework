@@ -1,5 +1,9 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../utils/database';
+import encrypted from 'sequelize-encrypted';
+
+const encryptionKey = process.env.ENCRYPTION_KEY || 'default_secret_key';
+const encFields = encrypted(sequelize, encryptionKey);
 
 const CRMContact = sequelize.define('CRMContact', {
   id: {
@@ -11,25 +15,13 @@ const CRMContact = sequelize.define('CRMContact', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    unique: true,
-  },
-  phone: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  address: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
+  encrypted: encFields.vault('encrypted'),
+  email: encFields.field('email'),
+  phone: encFields.field('phone'),
+  address: encFields.field('address'),
+  notes: encFields.field('notes'),
   linkedUserId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-  },
-  notes: {
-    type: DataTypes.TEXT,
     allowNull: true,
   },
 }, {

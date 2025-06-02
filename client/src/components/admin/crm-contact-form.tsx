@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import Spinner from '../ui/Spinner';
 
 const CRMContactForm: React.FC = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' });
@@ -20,9 +22,11 @@ const CRMContactForm: React.FC = () => {
       setForm({ name: '', email: '', phone: '', address: '' });
       setError(null);
       queryClient.invalidateQueries({ queryKey: ['crm-contacts'] });
+      toast.success('Contact added!');
     },
     onError: (err: any) => {
       setError(err.message || 'Error adding contact');
+      toast.error('Failed to add contact');
     },
   });
 
@@ -77,10 +81,10 @@ const CRMContactForm: React.FC = () => {
       </div>
       <button
         type="submit"
-        className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark"
+        className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark flex items-center gap-2"
         disabled={mutation.isLoading}
       >
-        {mutation.isLoading ? 'Adding...' : 'Add Contact'}
+        {mutation.isLoading ? <Spinner /> : 'Add Contact'}
       </button>
     </form>
   );

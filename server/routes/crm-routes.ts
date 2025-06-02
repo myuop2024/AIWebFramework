@@ -8,33 +8,58 @@ import { google } from 'googleapis'; // For Google Sheets API
 // import User from '../models/user'; // If you have a User model
 import { hasRoleMiddleware } from '../middleware/auth'; // Use the generic role middleware
 import { Parser as Json2csvParser } from 'json2csv'; // For CSV export
+import { apiRateLimit } from '../middleware/security'; // Import rate limiting middleware
 
 const router = express.Router();
 
 // Middleware: Only allow admin and Parish Coordinator
 router.use(hasRoleMiddleware(['admin', 'parish_coordinator']));
 
+// Helper: Check if user is admin
+function isAdmin(req) {
+  return req.user && req.user.role === 'admin';
+}
+
 // CRMContact CRUD
-router.get('/contacts', async (req, res) => {
-  const contacts = await CRMContact.findAll();
+router.get('/contacts', apiRateLimit, async (req, res) => {
+  let contacts = await CRMContact.findAll();
+  // If not admin, remove sensitive fields
+  if (!isAdmin(req)) {
+    contacts = contacts.map(contact => {
+      const { ssn, notes, ...safe } = contact.toJSON();
+      return safe;
+    });
+  }
   res.json(contacts);
 });
 
-router.post('/contacts', async (req, res) => {
-  const contact = await CRMContact.create(req.body);
+router.post('/contacts', apiRateLimit, async (req, res) => {
+  // Only admin can set sensitive fields
+  const data = { ...req.body };
+  if (!isAdmin(req)) {
+    delete data.ssn;
+    delete data.notes;
+  }
+  const contact = await CRMContact.create(data);
   await AuditLog.create({ action: 'create_contact', userId: req.user.id, targetId: contact.id });
   res.status(201).json(contact);
 });
 
-router.put('/contacts/:id', async (req, res) => {
+router.put('/contacts/:id', apiRateLimit, async (req, res) => {
   const contact = await CRMContact.findByPk(req.params.id);
   if (!contact) return res.status(404).json({ error: 'Not found' });
-  await contact.update(req.body);
+  // Only admin can update sensitive fields
+  const data = { ...req.body };
+  if (!isAdmin(req)) {
+    delete data.ssn;
+    delete data.notes;
+  }
+  await contact.update(data);
   await AuditLog.create({ action: 'update_contact', userId: req.user.id, targetId: contact.id });
   res.json(contact);
 });
 
-router.delete('/contacts/:id', async (req, res) => {
+router.delete('/contacts/:id', apiRateLimit, async (req, res) => {
   const contact = await CRMContact.findByPk(req.params.id);
   if (!contact) return res.status(404).json({ error: 'Not found' });
   await contact.destroy();
@@ -43,18 +68,18 @@ router.delete('/contacts/:id', async (req, res) => {
 });
 
 // Observer CRUD
-router.get('/observers', async (req, res) => {
+router.get('/observers', apiRateLimit, async (req, res) => {
   const observers = await Observer.findAll({ include: [CRMContact] });
   res.json(observers);
 });
 
-router.post('/observers', async (req, res) => {
+router.post('/observers', apiRateLimit, async (req, res) => {
   const observer = await Observer.create(req.body);
   await AuditLog.create({ action: 'create_observer', userId: req.user.id, targetId: observer.id });
   res.status(201).json(observer);
 });
 
-router.put('/observers/:id', async (req, res) => {
+router.put('/observers/:id', apiRateLimit, async (req, res) => {
   const observer = await Observer.findByPk(req.params.id);
   if (!observer) return res.status(404).json({ error: 'Not found' });
   await observer.update(req.body);
@@ -62,7 +87,7 @@ router.put('/observers/:id', async (req, res) => {
   res.json(observer);
 });
 
-router.delete('/observers/:id', async (req, res) => {
+router.delete('/observers/:id', apiRateLimit, async (req, res) => {
   const observer = await Observer.findByPk(req.params.id);
   if (!observer) return res.status(404).json({ error: 'Not found' });
   await observer.destroy();
@@ -71,7 +96,7 @@ router.delete('/observers/:id', async (req, res) => {
 });
 
 // Link observer to user profile
-router.put('/observers/:id/link-user', async (req, res) => {
+router.put('/observers/:id/link-user', apiRateLimit, async (req, res) => {
   const { id } = req.params;
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ error: 'Missing userId' });
@@ -82,19 +107,19 @@ router.put('/observers/:id/link-user', async (req, res) => {
 });
 
 // InteractionNote CRUD
-router.get('/contacts/:contactId/notes', async (req, res) => {
+router.get('/contacts/:contactId/notes', apiRateLimit, async (req, res) => {
   const notes = await InteractionNote.findAll({ where: { crmContactId: req.params.contactId } });
   res.json(notes);
 });
 
-router.post('/contacts/:contactId/notes', async (req, res) => {
+router.post('/contacts/:contactId/notes', apiRateLimit, async (req, res) => {
   const note = await InteractionNote.create({ ...req.body, crmContactId: req.params.contactId, createdBy: req.user.id });
   await AuditLog.create({ action: 'create_note', userId: req.user.id, targetId: note.id });
   res.status(201).json(note);
 });
 
 // AI-powered profile linking suggestions
-router.post('/contacts/suggestions', async (req, res) => {
+router.post('/contacts/suggestions', apiRateLimit, async (req, res) => {
   const { contacts, users } = req.body;
   if (!contacts || !users) return res.status(400).json({ error: 'Missing contacts or users' });
 
@@ -136,8 +161,50 @@ router.post('/contacts/suggestions', async (req, res) => {
   res.json({ suggestions });
 });
 
+// AI-powered observer-to-user profile linking suggestions
+router.post('/observers/suggestions', apiRateLimit, async (req, res) => {
+  const { observers, users } = req.body;
+  if (!observers || !users) return res.status(400).json({ error: 'Missing observers or users' });
+
+  const HF_API_KEY = process.env.HF_API_KEY || 'YOUR_HF_API_KEY';
+  const modelUrl = 'https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2';
+
+  const suggestions = [];
+
+  for (const observer of observers) {
+    let bestMatch = null;
+    let bestScore = 0;
+    for (const user of users) {
+      const observerStr = `${observer.CRMContact?.name || ''} ${observer.CRMContact?.email || ''} ${observer.CRMContact?.phone || ''}`;
+      const userStr = `${user.firstName || ''} ${user.lastName || ''} ${user.email || ''} ${user.phoneNumber || ''}`;
+      try {
+        const response = await axios.post(
+          modelUrl,
+          { inputs: { source_sentence: observerStr, sentences: [userStr] } },
+          { headers: { Authorization: `Bearer ${HF_API_KEY}` } }
+        );
+        const score = Array.isArray(response.data) ? response.data[0]?.score || 0 : 0;
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = user;
+        }
+      } catch (err) {
+        // Ignore errors for individual calls
+      }
+    }
+    if (bestScore > 0.8 && bestMatch) {
+      suggestions.push({
+        observerId: observer.id,
+        suggestedUserId: bestMatch.id,
+        score: bestScore
+      });
+    }
+  }
+  res.json({ suggestions });
+});
+
 // Import data from Google Sheets
-router.post('/import-google-sheet', async (req, res) => {
+router.post('/import-google-sheet', apiRateLimit, async (req, res) => {
   const { sheetId, range } = req.body;
   if (!sheetId) return res.status(400).json({ error: 'Missing sheetId' });
 
@@ -164,7 +231,7 @@ router.post('/import-google-sheet', async (req, res) => {
 });
 
 // Export contacts as CSV
-router.get('/contacts/export/csv', async (req, res) => {
+router.get('/contacts/export/csv', apiRateLimit, async (req, res) => {
   const contacts = await CRMContact.findAll();
   const fields = ['id', 'name', 'email', 'phone', 'address', 'linkedUserId', 'notes', 'createdAt', 'updatedAt'];
   const parser = new Json2csvParser({ fields });
@@ -175,7 +242,7 @@ router.get('/contacts/export/csv', async (req, res) => {
 });
 
 // Export observers as CSV
-router.get('/observers/export/csv', async (req, res) => {
+router.get('/observers/export/csv', apiRateLimit, async (req, res) => {
   const observers = await Observer.findAll({ include: [CRMContact] });
   const fields = ['id', 'crmContactId', 'parish', 'role', 'status', 'createdAt', 'updatedAt', 'contactName'];
   const data = observers.map(o => ({
@@ -186,6 +253,25 @@ router.get('/observers/export/csv', async (req, res) => {
   const csv = parser.parse(data);
   res.header('Content-Type', 'text/csv');
   res.attachment('crm_observers.csv');
+  res.send(csv);
+});
+
+// Get audit logs
+router.get('/audit-logs', apiRateLimit, async (req, res) => {
+  const logs = await AuditLog.findAll({ order: [['createdAt', 'DESC']], limit: 100 });
+  res.json(logs);
+});
+
+// Audit Log Export (admin only)
+router.get('/audit-logs/export', apiRateLimit, (req, res, next) => {
+  if (!isAdmin(req)) return res.status(403).json({ error: 'Forbidden' });
+  next();
+}, async (req, res) => {
+  const logs = await AuditLog.findAll();
+  const parser = new Json2csvParser();
+  const csv = parser.parse(logs.map(log => log.toJSON()));
+  res.header('Content-Type', 'text/csv');
+  res.attachment('audit-logs.csv');
   res.send(csv);
 });
 
