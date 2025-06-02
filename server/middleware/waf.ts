@@ -34,12 +34,10 @@ const defaultWAFConfig: WAFConfig = {
 
 // SQL Injection patterns
 const sqlInjectionPatterns = [
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|SCRIPT)\b)/gi,
-  /(\b(OR|AND)\s+\d+\s*=\s*\d+)/gi,
-  /(--|\#|\/\*|\*\/)/g,
-  /(\bUNION\b.*\bSELECT\b)/gi,
-  /(\'\s*(OR|AND)\s*\'\w*\'\s*=\s*\'\w*)/gi,
-  /(\'\s*;\s*(DROP|DELETE|INSERT|UPDATE)\s*)/gi,
+  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION)\b.*\b(FROM|INTO|SET|WHERE|TABLE)\b)/i,
+  /(\'.*\bOR\b.*\'|\".*\bOR\b.*\")/i,
+  /(\bUNION\b.*\bSELECT\b|\bDROP\b.*\bTABLE\b)/i,
+  /(--.*\w|\/\*.*\*\/.*\w)/i
 ];
 
 // XSS patterns
@@ -67,6 +65,22 @@ const pathTraversalPatterns = [
 const commandInjectionPatterns = [
   /[;&|`$(){}[\]]/,  // Command separators and substitution
   /\b(exec|eval|system|shell_exec|passthru|wget|curl|nc|netcat|bash|sh|cmd|powershell)\b/i,
+];
+
+// Whitelist for legitimate paths that might trigger false positives
+const WHITELIST_PATTERNS = [
+  /^\/api\/health$/,
+  /^\/api\/status$/,
+  /^\/favicon\.ico$/,
+  /^\/static\//,
+  /^\/assets\//,
+  /^\/uploads\//,
+  /^\/public\//,
+  /^\/src\/components\//,
+  /^\/src\/.*\.tsx?$/,
+  /^\/src\/.*\.jsx?$/,
+  /^\/node_modules\//,
+  /\.map$/
 ];
 
 class WAFEngine {
@@ -194,12 +208,12 @@ class WAFEngine {
       /node_modules/,
       /__vite/
     ];
-    
+
     // If this looks like a development file, skip command injection check
     if (devPatterns.some(pattern => pattern.test(input))) {
       return false;
     }
-    
+
     return commandInjectionPatterns.some(pattern => pattern.test(input));
   }
 
@@ -229,6 +243,10 @@ class WAFEngine {
   }
 
   private inspectRequest(req: Request): { threat: boolean; type: string; details: string } {
+      if (WHITELIST_PATTERNS.some(pattern => pattern.test(req.originalUrl))) {
+          return { threat: false, type: '', details: 'Whitelisted URL' };
+      }
+
     const allInputs = [
       ...Object.values(req.query || {}),
       ...Object.values(req.body || {}),

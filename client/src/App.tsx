@@ -216,3 +216,18 @@ function App() {
 }
 
 export default App;
+
+// Add a global error handler to log unhandled promise rejections
+window.addEventListener('unhandledrejection', event => {
+  console.warn('Unhandled promise rejection: ', event.promise, event.reason);
+  // Log error to backend
+  fetch('/api/log', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'unhandled_rejection',
+      reason: event.reason ? event.reason.toString() : 'No reason provided',
+      promise: event.promise ? event.promise.toString() : 'No promise provided',
+    }),
+  }).catch(() => {});
+});

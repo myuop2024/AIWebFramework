@@ -402,9 +402,22 @@ export class AIAnalyticsService {
     }
   }
   
+  // Cache for AI insights to prevent repeated calculations
+  private static insightsCache = new Map<string, { data: AnalyticsInsight[], timestamp: number }>();
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   // Generate AI insights from report data
   private async generateAIInsights(dateFilter?: any): Promise<AnalyticsInsight[]> {
     try {
+      // Create cache key based on date filter
+      const cacheKey = dateFilter ? JSON.stringify(dateFilter) : 'all';
+      const cached = AIAnalyticsService.insightsCache.get(cacheKey);
+      
+      // Return cached data if still valid
+      if (cached && Date.now() - cached.timestamp < AIAnalyticsService.CACHE_DURATION) {
+        return cached.data;
+      }
+
       // Get reports for analysis
       const reportData = await db
         .select({
@@ -493,6 +506,19 @@ export class AIAnalyticsService {
         logger.error('Error generating time-based insights', { error: err instanceof Error ? err : new Error(String(err)) });
       }
       
+      // Cache the results
+      AIAnalyticsService.insightsCache.set(cacheKey, {
+        data: insights,
+        timestamp: Date.now()
+      });
+
+      // Clean up old cache entries (keep only last 10)
+      if (AIAnalyticsService.insightsCache.size > 10) {
+        const entries = Array.from(AIAnalyticsService.insightsCache.entries());
+        const oldestKey = entries.sort((a, b) => a[1].timestamp - b[1].timestamp)[0][0];
+        AIAnalyticsService.insightsCache.delete(oldestKey);
+      }
+
       return insights;
     } catch (error) {
       logger.error('Error generating AI insights', { error: error instanceof Error ? error : new Error(String(error)), dateFilter });

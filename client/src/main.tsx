@@ -33,7 +33,6 @@ if (typeof window !== 'undefined') {
 
 // Use the optimized and configured query client from lib/queryClient.ts
 createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light">
         <ErrorBoundary>
@@ -42,5 +41,4 @@ createRoot(document.getElementById("root")!).render(
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
-  </React.StrictMode>
 );

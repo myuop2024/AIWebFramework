@@ -33,7 +33,7 @@ try {
   // Continue without custom fonts - the service will use system defaults
 }
 try {
-  registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
+  registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'italic' });
   registerFont('./assets/fonts/Roboto-Italic.ttf', { family: 'Roboto', style: 'italic' });
 } catch (error) {
   logger.warn('Could not register custom fonts, using system defaults.', { error: error instanceof Error ? error : new Error(String(error)) });

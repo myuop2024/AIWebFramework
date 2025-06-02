@@ -25,6 +25,28 @@ import {
 } from '@shared/schema';
 import { eq, and, isNull, or, not, desc, asc, sql, inArray } from 'drizzle-orm';
 
+// Simple in-memory cache for user data to reduce database calls
+const userCache = new Map<number, any>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getCachedUser = async (userId: number) => {
+  const cached = userCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+
+  // If not cached or expired, fetch from database
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user[0]) {
+    userCache.set(userId, {
+      data: user[0],
+      timestamp: Date.now()
+    });
+    return user[0];
+  }
+  return null;
+};
+
 export const projectManagementRouter = Router();
 
 // We're using the global ensureAuthenticated middleware instead of a local one

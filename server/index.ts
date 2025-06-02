@@ -308,16 +308,17 @@ app.get('/api/logs', (req, res) => {
     // Setup passport for authentication
     app.use(passport.initialize());
     app.use(passport.session());
-    
+
     // Clear request cache between requests
     app.use((req, res, next) => {
       // Clear the request cache to prevent memory leaks and ensure fresh lookups
+      const { storage } = require('./storage');
       if (storage.clearRequestCache) {
         storage.clearRequestCache();
       }
       next();
     });
-    
+
     app.use(attachUser);
 
     // Serialize/deserialize user for session management
@@ -449,6 +450,18 @@ app.get('/api/logs', (req, res) => {
     } else {
       serveStatic(app);
     }
+
+// Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process, just log the error
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // For uncaught exceptions, we should exit gracefully
+  process.exit(1);
+});
 
     // Start the server with port fallback mechanism
     // Use port 5000 as recommended for Replit web applications
