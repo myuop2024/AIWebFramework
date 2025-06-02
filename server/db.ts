@@ -45,7 +45,11 @@ pool.on('remove', () => {
 // Initialize Drizzle ORM with the schema
 export const db = drizzle(pool, { 
   schema,
-  logger: process.env.NODE_ENV === 'development' ? console : false 
+  logger: process.env.NODE_ENV === 'development' ? {
+    logQuery: (query: string, params?: unknown[]) => {
+      console.log('[DB Query]', query, params ? `Params: ${JSON.stringify(params)}` : '');
+    }
+  } : false 
 });
 
 // Export a function to check db connectivity

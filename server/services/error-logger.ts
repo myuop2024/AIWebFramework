@@ -102,9 +102,9 @@ export class ErrorLogger {
         console.error('[ERROR LOGGER] Failed to save error to database:', dbError);
         // Log to file as fallback if database fails
         try {
-          const fs = require('fs');
+          const { appendFileSync } = await import('fs');
           const logEntry = JSON.stringify({ ...logData, dbError: dbError.message }) + '\n';
-          fs.appendFileSync('error-fallback.log', logEntry);
+          appendFileSync('error-fallback.log', logEntry);
         } catch (fileError) {
           console.error('[ERROR LOGGER] Also failed to write to fallback log:', fileError);
         }
