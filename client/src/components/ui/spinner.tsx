@@ -23,3 +23,6 @@ export function Spinner({ className, size = "md" }: SpinnerProps) {
     />
   );
 }
+
+// Default export for backward compatibility
+export default Spinner;
