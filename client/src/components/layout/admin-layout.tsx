@@ -17,6 +17,7 @@ import {
   LucideIcon,
   LogOut,
   Home,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       href: '/admin/settings',
       icon: Settings,
       highlight: true
+    },
+    {
+      name: 'CRM System',
+      href: '/admin/crm',
+      icon: Database
     },
   ];
 
