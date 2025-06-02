@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import logger from "../utils/logger";
+import { setUserContext, clearUserContext } from "./rls-middleware";
 
 // Add type declaration to modify the Request type
 declare global {
@@ -29,10 +30,18 @@ export const attachUser = async (req: Request, res: Response, next: NextFunction
         // Store user directly in request for easy access
         req.locals = req.locals || {};
         req.locals.user = user;
-        logger.debug(`Attached user ${userId} to request`);
+        
+        // Set RLS context for database operations
+        await setUserContext(user.id, user.role || 'observer');
+        
+        logger.debug(`Attached user ${userId} to request and set RLS context`);
       } else {
         logger.warn(`User ${userId} found in session but not in database`);
+        await clearUserContext();
       }
+    } else {
+      // No authenticated user, clear any existing context
+      await clearUserContext();
     }
     next();
   } catch (error) {
