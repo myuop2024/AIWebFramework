@@ -312,7 +312,6 @@ app.get('/api/logs', (req, res) => {
     // Clear request cache between requests
     app.use((req, res, next) => {
       // Clear the request cache to prevent memory leaks and ensure fresh lookups
-      const { storage } = require('./storage');
       if (storage.clearRequestCache) {
         storage.clearRequestCache();
       }
