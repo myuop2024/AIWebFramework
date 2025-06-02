@@ -4,7 +4,7 @@ import CRMObserverEditModal from './crm-observer-edit-modal';
 import { Link as LinkIcon, UserX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../ui/Modal';
-import Spinner from '../ui/Spinner';
+import { Spinner } from '../ui/spinner';
 
 const fetchObservers = async () => {
   const res = await fetch('/crm/observers');

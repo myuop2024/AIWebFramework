@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../ui/Modal';
-import Spinner from '../ui/Spinner';
+import { Spinner } from '../ui/spinner';
 
 interface CRMObserverEditModalProps {
   observer: any;

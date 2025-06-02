@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import Spinner from '../ui/Spinner';
+import { Spinner } from '../ui/spinner';
 
 const CRMContactForm: React.FC = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '' });
