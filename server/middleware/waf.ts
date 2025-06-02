@@ -67,8 +67,6 @@ const pathTraversalPatterns = [
 const commandInjectionPatterns = [
   /[;&|`$(){}[\]]/,  // Command separators and substitution
   /\b(exec|eval|system|shell_exec|passthru|wget|curl|nc|netcat|bash|sh|cmd|powershell)\b/i,
-  // Exclude common development patterns
-  /^(?!.*(@react-refresh|\.tsx?|\.jsx?|src\/)).*@[a-zA-Z-]+/,  // Potential at-rules or decorators that could be misused
 ];
 
 class WAFEngine {
@@ -187,6 +185,21 @@ class WAFEngine {
   }
 
   private checkCommandInjection(input: string): boolean {
+    // Skip command injection checks for development-related URLs
+    const devPatterns = [
+      /@vite\/client/,
+      /\.tsx?$/,
+      /\.jsx?$/,
+      /src\/pages/,
+      /node_modules/,
+      /__vite/
+    ];
+    
+    // If this looks like a development file, skip command injection check
+    if (devPatterns.some(pattern => pattern.test(input))) {
+      return false;
+    }
+    
     return commandInjectionPatterns.some(pattern => pattern.test(input));
   }
 

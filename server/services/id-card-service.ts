@@ -12,7 +12,27 @@ import logger from '../utils/logger';
 
 // Register custom fonts for better typography
 try {
-  registerFont('./assets/fonts/Roboto-Regular.ttf', { family: 'Roboto' });
+  const fs = require('fs');
+  const path = require('path');
+  const fontPath = path.resolve('./assets/fonts/Roboto-Regular.ttf');
+
+  // Check if font file exists and is readable
+  if (fs.existsSync(fontPath)) {
+    const stats = fs.statSync(fontPath);
+    if (stats.size > 0) {
+      registerFont(fontPath, { family: 'Roboto' });
+      logger.info('Custom font registered successfully');
+    } else {
+      throw new Error('Font file is empty');
+    }
+  } else {
+    throw new Error('Font file not found');
+  }
+} catch (error) {
+  logger.warn('Could not register custom fonts, using system defaults.', { error: error.message });
+  // Continue without custom fonts - the service will use system defaults
+}
+try {
   registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'bold' });
   registerFont('./assets/fonts/Roboto-Italic.ttf', { family: 'Roboto', style: 'italic' });
 } catch (error) {
