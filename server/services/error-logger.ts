@@ -84,7 +84,7 @@ export class ErrorLogger {
       try {
         const errorData: InsertErrorLog = {
           userId: userId || null,
-          source,
+          source: source || 'unknown', // Ensure source is never null
           level,
           message,
           code: error?.name || null,
@@ -93,7 +93,7 @@ export class ErrorLogger {
           userAgent: requestInfo.userAgent || null,
           path: requestInfo.path || null,
           method: requestInfo.method || null,
-          context: sanitizedContext ? sanitizedContext : null // Use sanitized context
+          context: sanitizedContext || null // Use sanitized context
         };
 
         await db.insert(errorLogs).values(errorData);
