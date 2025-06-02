@@ -1,5 +1,5 @@
 import { db } from "../db"; // Assuming db export from drizzle connection setup
-import { users, userPoints, badges, userBadges, leaderboardWeekly, leaderboardOverall } from "../../shared/schema";
+import { users, userPoints, badges, userBadges } from "../../shared/schema";
 import { eq, sql, desc, and } from "drizzle-orm";
 
 // Define types for actions and badge criteria (can be expanded)
