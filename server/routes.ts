@@ -49,6 +49,7 @@ import gamificationRoutes from './routes/gamification-routes';
 import { diditConnector } from './services/didit-connector';
 import logger from './utils/logger';
 import wafRoutes, { setWAFEngine } from './routes/waf-routes';
+import adminRlsRoutes from './routes/admin-rls-routes';
 import { ErrorLogger } from './services/error-logger';
 import { createRequire } from 'module';
 import achievementRoutes from './routes/achievement-routes';
@@ -2366,6 +2367,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Add WAF (Web Application Firewall) management routes
   app.use('/api/waf', wafRoutes);
   logger.info('WAF management routes registered at /api/waf');
+
+  // Add RLS (Row-Level Security) management routes
+  app.use('/api/admin/rls', adminRlsRoutes);
+  logger.info('RLS management routes registered at /api/admin/rls');
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
