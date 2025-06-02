@@ -79,6 +79,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
 
   const navigationItems = [
     {
+      name: 'CRM System',
+      href: '/admin/crm',
+      icon: Database
+    },
+    {
       name: 'Dashboard',
       href: '/admin-dashboard',
       icon: BarChart
@@ -123,11 +128,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
       href: '/admin/settings',
       icon: Settings,
       highlight: true
-    },
-    {
-      name: 'CRM System',
-      href: '/admin/crm',
-      icon: Database
     },
   ];
 
