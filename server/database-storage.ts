@@ -119,6 +119,11 @@ function generateObserverId(): string {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Clear request-level cache to prevent memory leaks and repeated lookups
+  clearRequestCache(): void {
+    requestCache.clear();
+  }
+
   // Set user context for RLS
   async setUserContext(userId: number, userRole: string): Promise<void> {
     await db.execute(sql`SELECT auth.set_user_context(${userId}, ${userRole})`);
@@ -178,12 +183,13 @@ export class DatabaseStorage implements IStorage {
       // Check persistent cache
       const cached = userCache.get(String(id));
       if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-        // Store in request cache and return without logging
+        // Store in request cache and return without any logging
         requestCache.set(requestKey, cached.user);
         return cached.user;
       }
 
-      logger.info(`Getting user by ID: ${id}`);
+      // Only log actual database queries, not cache hits
+      logger.info(`Fetching user from database by ID: ${id}`);
       const result = await db
         .select({
           id: usersTable.id,
