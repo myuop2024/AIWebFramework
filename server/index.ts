@@ -308,6 +308,17 @@ app.get('/api/logs', (req, res) => {
     // Setup passport for authentication
     app.use(passport.initialize());
     app.use(passport.session());
+    
+    // Clear request cache between requests
+    app.use((req, res, next) => {
+      // Clear the request cache to prevent memory leaks and ensure fresh lookups
+      const { storage } = require('./storage');
+      if (storage.clearRequestCache) {
+        storage.clearRequestCache();
+      }
+      next();
+    });
+    
     app.use(attachUser);
 
     // Serialize/deserialize user for session management

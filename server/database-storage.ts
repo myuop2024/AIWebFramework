@@ -88,6 +88,9 @@ import logger from "./utils/logger";
 const userCache = new Map<string, { user: User; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Request-level cache to prevent multiple lookups within the same request
+const requestCache = new Map<string, User>();
+
 // Clean up expired cache entries every 10 minutes
 setInterval(() => {
   const now = Date.now();
@@ -166,11 +169,17 @@ export class DatabaseStorage implements IStorage {
   // User methods for traditional auth integration
   async getUser(id: number): Promise<User | undefined> {
     try {
-      // Check cache first
+      // Check request-level cache first to prevent multiple lookups in same request
+      const requestKey = `user_${id}`;
+      if (requestCache.has(requestKey)) {
+        return requestCache.get(requestKey);
+      }
+
+      // Check persistent cache
       const cached = userCache.get(String(id));
       if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-        // Use debug level for cache hits to reduce log noise
-        logger.debug(`Getting user from cache by ID: ${id}`);
+        // Store in request cache and return without logging
+        requestCache.set(requestKey, cached.user);
         return cached.user;
       }
 
@@ -216,8 +225,9 @@ export class DatabaseStorage implements IStorage {
       delete (user as any).rolePermissions;
 
       if (user) {
-        // Cache the user data
+        // Cache the user data in both caches
         userCache.set(String(id), { user, timestamp: Date.now() });
+        requestCache.set(`user_${id}`, user);
       }
 
       return user;
