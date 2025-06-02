@@ -42,7 +42,13 @@ export const setRLSContext = async (
  * Utility function to manually set user context for specific operations
  */
 export const setUserContext = async (userId: number, userRole: string) => {
-  await db.execute(sql`SELECT auth.set_user_context(${userId}, ${userRole})`);
+  try {
+    await db.execute(sql`SELECT auth.set_user_context(${userId}, ${userRole})`);
+  } catch (error) {
+    // If auth.set_user_context doesn't exist, fall back to direct config setting
+    await db.execute(sql`SELECT set_config('app.current_user_id', ${userId.toString()}, true)`);
+    await db.execute(sql`SELECT set_config('app.current_user_role', ${userRole}, true)`);
+  }
 };
 
 /**
