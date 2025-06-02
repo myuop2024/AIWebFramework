@@ -169,7 +169,8 @@ export class DatabaseStorage implements IStorage {
       // Check cache first
       const cached = userCache.get(String(id));
       if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-        logger.info(`Getting user from cache by ID: ${id}`);
+        // Use debug level for cache hits to reduce log noise
+        logger.debug(`Getting user from cache by ID: ${id}`);
         return cached.user;
       }
 

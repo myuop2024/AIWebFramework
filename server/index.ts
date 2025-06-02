@@ -331,7 +331,7 @@ app.get('/api/logs', (req, res) => {
           return done(null, null);
         }
 
-        logger.debug(`Deserialized user ${userId} successfully`);
+        // Removed excessive logging for normal passport deserialization
         done(null, user);
       } catch (err) {
         logger.error(`Error during user deserialization: ${err instanceof Error ? err.message : String(err)}`);
