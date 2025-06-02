@@ -151,35 +151,28 @@ export class GamificationService {
   }
 
   async getLeaderboard(type: 'weekly' | 'overall', limit: number = 10): Promise<any[]> {
-     // TODO: Fetch leaderboard data with user details
-     if (type === 'weekly') {
-         // This needs to filter by current week_start_date
-         return this.dbInstance.select({
-             userId: leaderboardWeekly.userId,
-             points: leaderboardWeekly.totalPointsThisWeek,
-             rank: leaderboardWeekly.rank, // Rank needs to be calculated and stored
-             username: users.username, // Assuming you want to show username
-             firstName: users.firstName,
-             lastName: users.lastName
-         })
-         .from(leaderboardWeekly)
-         .innerJoin(users, eq(leaderboardWeekly.userId, users.id))
-         // .where(eq(leaderboardWeekly.weekStartDate, currentWeekStartDate)) // Add this filter
-         .orderBy(desc(leaderboardWeekly.totalPointsThisWeek))
-         .limit(limit);
-     } else {
-         return this.dbInstance.select({
-             userId: leaderboardOverall.userId,
-             points: leaderboardOverall.totalPointsAllTime,
-             rank: leaderboardOverall.rank, // Rank needs to be calculated and stored
-             username: users.username,
-             firstName: users.firstName,
-             lastName: users.lastName
-         })
-         .from(leaderboardOverall)
-         .innerJoin(users, eq(leaderboardOverall.userId, users.id))
-         .orderBy(desc(leaderboardOverall.totalPointsAllTime))
-         .limit(limit);
+     // Use raw SQL to query the views we created
+     try {
+       if (type === 'weekly') {
+         const result = await this.dbInstance.execute(sql`
+           SELECT user_id as "userId", score as points, rank, first_name as "firstName", last_name as "lastName", calculated_at as "calculatedAt"
+           FROM leaderboard_weekly
+           ORDER BY rank
+           LIMIT ${limit}
+         `);
+         return result.rows;
+       } else {
+         const result = await this.dbInstance.execute(sql`
+           SELECT user_id as "userId", score as points, rank, first_name as "firstName", last_name as "lastName", calculated_at as "calculatedAt"
+           FROM leaderboard_overall
+           ORDER BY rank
+           LIMIT ${limit}
+         `);
+         return result.rows;
+       }
+     } catch (error) {
+       console.error(`Error fetching ${type} leaderboard:`, error);
+       return [];
      }
   }
 }
