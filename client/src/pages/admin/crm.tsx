@@ -54,95 +54,120 @@ const AdminCRMPage = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-8">
       <h1 className="text-3xl font-bold mb-4">CRM System</h1>
-      <p className="mb-4">Manage contacts, observers, and interactions. (Feature-rich UI coming soon!)</p>
+      {/* Contacts Section */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-2">Contacts</h2>
+        {isAdmin && (
+          <div className="flex gap-4 mb-4 flex-wrap">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={() => exportCSV('contacts')}
+            >
+              Export Contacts (CSV)
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={() => exportCSV('observers')}
+            >
+              Export Observers (CSV)
+            </button>
+          </div>
+        )}
+        <CRMContactForm />
+        <CRMContactList isAdmin={isAdmin} />
+      </section>
+
+      {/* Observers Section */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-2 mt-8">Observers</h2>
+        <CRMObserverForm />
+        <CRMObserverList isAdmin={isAdmin} />
+      </section>
+
+      {/* AI Profile Linking */}
       {isAdmin && (
-        <div className="flex gap-4 mb-4">
+        <section>
+          <h2 className="text-2xl font-semibold mb-2 mt-8">AI Profile Linking</h2>
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={() => exportCSV('contacts')}
+            className="bg-purple-600 text-white px-4 py-2 rounded mb-4"
+            onClick={findProfileLinks}
+            disabled={loading}
           >
-            Export Contacts (CSV)
+            {loading ? 'Finding Profile Links...' : 'Find AI Profile Links'}
           </button>
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={() => exportCSV('observers')}
-          >
-            Export Observers (CSV)
-          </button>
-        </div>
+          {suggestions.length > 0 && (
+            <div className="bg-yellow-50 p-4 rounded mb-4">
+              <h3 className="font-bold mb-2">AI-Suggested Profile Links</h3>
+              <ul>
+                {suggestions.map((s: any, i: number) => (
+                  <li key={i}>
+                    Contact #{s.contactId} → User #{s.suggestedUserId} (Score: {s.score.toFixed(2)})
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
       )}
-      <CRMContactForm />
-      <CRMContactList isAdmin={isAdmin} />
-      <CRMObserverForm />
-      <CRMObserverList isAdmin={isAdmin} />
+
+      {/* Import/Export Section */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-2 mt-8">Import/Export</h2>
+        <form onSubmit={importGoogleSheet} className="mb-4 flex gap-2 items-end flex-wrap">
+          <div>
+            <label className="block text-sm font-medium">Google Sheet ID</label>
+            <input
+              className="border p-2 rounded"
+              value={sheetId}
+              onChange={e => setSheetId(e.target.value)}
+              placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Range</label>
+            <input
+              className="border p-2 rounded"
+              value={sheetRange}
+              onChange={e => setSheetRange(e.target.value)}
+              placeholder="Sheet1"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            disabled={importLoading}
+          >
+            {importLoading ? 'Importing...' : 'Import Google Sheet'}
+          </button>
+        </form>
+        {importedRows.length > 0 && (
+          <div className="bg-white rounded shadow p-4 mb-4 overflow-x-auto">
+            <h3 className="font-bold mb-2">Imported Data</h3>
+            <table className="min-w-full text-sm">
+              <tbody>
+                {importedRows.map((row, i) => (
+                  <tr key={i}>
+                    {row.map((cell: string, j: number) => (
+                      <td key={j} className="p-2 border">{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* Audit Logs Section */}
       {isAdmin && (
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded mb-4 mt-8"
-          onClick={findProfileLinks}
-          disabled={loading}
-        >
-          {loading ? 'Finding Profile Links...' : 'Find AI Profile Links'}
-        </button>
+        <section>
+          <h2 className="text-2xl font-semibold mb-2 mt-8">Audit Logs</h2>
+          <CRMAuditLogs />
+        </section>
       )}
-      {suggestions.length > 0 && (
-        <div className="bg-yellow-50 p-4 rounded mb-4">
-          <h3 className="font-bold mb-2">AI-Suggested Profile Links</h3>
-          <ul>
-            {suggestions.map((s: any, i: number) => (
-              <li key={i}>
-                Contact #{s.contactId} → User #{s.suggestedUserId} (Score: {s.score.toFixed(2)})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <form onSubmit={importGoogleSheet} className="mb-4 mt-8 flex gap-2 items-end">
-        <div>
-          <label className="block text-sm font-medium">Google Sheet ID</label>
-          <input
-            className="border p-2 rounded"
-            value={sheetId}
-            onChange={e => setSheetId(e.target.value)}
-            placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Range</label>
-          <input
-            className="border p-2 rounded"
-            value={sheetRange}
-            onChange={e => setSheetRange(e.target.value)}
-            placeholder="Sheet1"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded"
-          disabled={importLoading}
-        >
-          {importLoading ? 'Importing...' : 'Import Google Sheet'}
-        </button>
-      </form>
-      {importedRows.length > 0 && (
-        <div className="bg-white rounded shadow p-4 mb-4">
-          <h3 className="font-bold mb-2">Imported Data</h3>
-          <table className="min-w-full text-sm">
-            <tbody>
-              {importedRows.map((row, i) => (
-                <tr key={i}>
-                  {row.map((cell: string, j: number) => (
-                    <td key={j} className="p-2 border">{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {isAdmin && <CRMAuditLogs />}
     </div>
   );
 };
