@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import Spinner from '../ui/Spinner';
+import { Spinner } from '../ui/spinner';
 
 const fetchContacts = async () => {
   const res = await fetch('/crm/contacts');
