@@ -1,0 +1,598 @@
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[WARN] Could not register custom fonts, using system defaults. {
+  error: Error: Could not parse font file
+      at registerFont (/home/runner/workspace/node_modules/canvas/index.js:49:17)
+      at <anonymous> (/home/runner/workspace/server/services/id-card-service.ts:15:3)
+      at ModuleJob.run (node:internal/modules/esm/module_job:234:25)
+      at async ModuleLoader.import (node:internal/modules/esm/loader:473:24)
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:122:5)
+}
+New client connected to database
+Database connection successful
+PostgreSQL version: PostgreSQL 16.9 on x86_64-pc-linux-gnu, compiled by gcc (Debian 10.2.1-6) 10.2.1 20210110, 64-bit
+Client removed from pool
+Database connection successful
+[DB Query] select "id", "name", "description", "template_data", "is_active", "security_features", "created_at", "updated_at" from "id_card_templates" Params: []
+New client connected to database
+Found 1 existing ID card templates
+[INFO] Traditional authentication system configured successfully {}
+Serving static files from /uploads mapped to /home/runner/workspace/public/uploads
+[INFO] Serving static files from: /home/runner/workspace/uploads {}
+[INFO] CommunicationService: WebSocketServer configured with noServer: true. Waiting for external upgrade handling. {}
+[INFO] Communication service initialized with WebSocket support {}
+[INFO] Project management routes registered at /api/project-management {}
+[INFO] WAF management routes registered at /api/waf {}
+[INFO] RLS management routes registered at /api/admin/rls {}
+[INFO] Gamification routes registered at /api/gamification {}
+[INFO] WAF engine connected to management routes {}
+[ERROR] CommunicationService instance not found. WebSocket upgrade handling will not work. {}
+Re-optimizing dependencies because lockfile has changed
+Server is running on port 5000
+[INFO] Getting user by ID: 2 {}
+[DB Query] select "users"."id", "users"."username", "users"."email", "users"."password", "users"."first_name", "users"."last_name", "users"."observer_id", "users"."role", "users"."role_id", "users"."verification_status", "users"."device_id", "users"."created_at", "users"."updated_at", "users"."training_status", "users"."phone_number", "users"."two_factor_enabled", "users"."two_factor_verified", "users"."profile_image_url", "users"."two_factor_secret", "users"."recovery_codes", "roles"."permissions" from "users" left join "roles" on "users"."role_id" = "roles"."id" where "users"."id" = $1 Params: [2]
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[WARN] WAF Security Event [HIGH]: COMMAND_INJECTION {
+  eventType: 'COMMAND_INJECTION',
+  severity: 'HIGH',
+  clientIP: '69.160.125.206',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  url: '/@vite/client',
+  method: 'GET',
+  details: 'Detected command injection pattern in: /@vite/client',
+  timestamp: '2025-06-02T20:54:25.905Z',
+  userId: 'anonymous'
+}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[WARN] WAF Security Event [HIGH]: COMMAND_INJECTION {
+  eventType: 'COMMAND_INJECTION',
+  severity: 'HIGH',
+  clientIP: '69.160.125.206',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  url: '/src/pages/reports/[id].tsx',
+  method: 'GET',
+  details: 'Detected command injection pattern in: /src/pages/reports/[id].tsx',
+  timestamp: '2025-06-02T20:54:37.549Z',
+  userId: 'anonymous'
+}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+Client removed from pool
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+Client removed from pool
+New client connected to database
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+Client removed from pool
+Client removed from pool
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[WARN] WAF Security Event [HIGH]: COMMAND_INJECTION {
+  eventType: 'COMMAND_INJECTION',
+  severity: 'HIGH',
+  clientIP: '69.160.125.206',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  url: '/@vite/client',
+  method: 'GET',
+  details: 'Detected command injection pattern in: /@vite/client',
+  timestamp: '2025-06-02T20:56:07.993Z',
+  userId: 'anonymous'
+}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+New client connected to database
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+New client connected to database
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+New client connected to database
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[WARN] WAF Security Event [HIGH]: COMMAND_INJECTION {
+  eventType: 'COMMAND_INJECTION',
+  severity: 'HIGH',
+  clientIP: '69.160.125.206',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
+  url: '/src/pages/reports/[id].tsx',
+  method: 'GET',
+  details: 'Detected command injection pattern in: /src/pages/reports/[id].tsx',
+  timestamp: '2025-06-02T20:56:09.979Z',
+  userId: 'anonymous'
+}
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
+[INFO] Getting user from cache by ID: 2 {}
+[DEBUG] Deserialized user 2 successfully {}
+[DB Query] SELECT set_config('app.current_user_id', '', true) Params: []
+[DB Query] SELECT set_config('app.current_user_role', '', true) Params: []
