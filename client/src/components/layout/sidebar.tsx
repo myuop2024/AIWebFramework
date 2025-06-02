@@ -75,6 +75,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
     // Admin Section Links
     { category: "Administration", path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" />, requiredPermission: "admin:access-panel" },
+    { category: "Administration", path: "/admin/crm", label: "CRM System", icon: <Phone className="h-5 w-5" />, requiredPermission: "admin:access-panel" },
     { category: "Administration", path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5" />, requiredPermission: "analytics:view-dashboard" },
     { category: "Administration", path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5" />, requiredPermission: "forms:manage-templates" },
     { category: "Administration", path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" />, requiredPermission: "users:verify" },
