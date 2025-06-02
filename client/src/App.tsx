@@ -45,6 +45,7 @@ import ProjectDetail from "@/pages/project-management/detail";
 import ProjectEdit from "@/pages/project-management/edit";
 import ProjectNew from "@/pages/project-management/new";
 import GamificationPage from "@/pages/gamification";
+import SecurityDashboard from "@/pages/security-dashboard";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -112,6 +113,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/security" component={SecurityDashboard} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/crm" component={React.lazy(() => import("@/pages/admin/crm"))} allowedRoles={["admin", "director"]} />
 
       {/* Supervisor Routes */}

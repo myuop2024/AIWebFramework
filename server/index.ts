@@ -361,6 +361,11 @@ app.get('/api/logs', (req, res) => {
     
     // Setup routes
     server = await registerRoutes(app); // This initializes communicationService
+    
+    // Connect WAF engine to management routes
+    const { setWAFEngine } = await import('./routes/waf-routes');
+    setWAFEngine(wafEngine);
+    logger.info('WAF engine connected to management routes');
 
     // --- WebSocket Upgrade Handling with Session Authentication ---
     // Retrieve the session middleware. It's configured above with app.use(session(...))

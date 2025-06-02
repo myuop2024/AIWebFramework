@@ -2363,6 +2363,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Add achievement system routes for gamification
   app.use('/api/gamification', achievementRoutes);
 
+  // Add WAF (Web Application Firewall) management routes
+  app.use('/api/waf', wafRoutes);
+  logger.info('WAF management routes registered at /api/waf');
+
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
 
