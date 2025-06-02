@@ -37,12 +37,11 @@ export const attachUser = async (req: Request, res: Response, next: NextFunction
         logger.debug(`Attached user ${userId} to request and set RLS context`);
       } else {
         logger.warn(`User ${userId} found in session but not in database`);
+        // Only clear context if we had a session but no user in DB
         await clearUserContext();
       }
-    } else {
-      // No authenticated user, clear any existing context
-      await clearUserContext();
     }
+    // Don't clear context for every unauthenticated request - this was causing the loop
     next();
   } catch (error) {
     logger.error("Error attaching user to request", error);
