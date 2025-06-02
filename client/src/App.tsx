@@ -112,6 +112,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/crm" component={React.lazy(() => import("@/pages/admin/crm"))} allowedRoles={["admin", "director"]} />
 
       {/* Supervisor Routes */}
       <RoleProtectedRoute 
