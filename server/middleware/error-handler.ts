@@ -1,4 +1,3 @@
-
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
 
@@ -15,7 +14,7 @@ export function finalErrorHandler(err: any, req: Request, res: Response, _next: 
   // console.error('User ID:', req.session?.userId || 'Not authenticated'); // Covered by logger
   // console.error('Error message:', err.message); // Covered by logger
   // console.error('Stack trace:', err.stack); // Covered by logger
-  
+
   const statusCode = err.statusCode || err.status || 500;
 
   // Construct consistent log object
@@ -38,7 +37,7 @@ export function finalErrorHandler(err: any, req: Request, res: Response, _next: 
   } else { // 4xx errors
     logger.warn('Final Error Handler: Client Error', logObject);
   }
-  
+
   // Send response if headers not sent already
   if (res.headersSent) {
     // If headers already sent, delegate to the default Express error handler
@@ -64,17 +63,17 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   if (!req.originalUrl.startsWith('/api')) {
     return next();
   }
-  
+
   // Record request start time
   const startTime = Date.now();
-  
+
   // Add response listener instead of wrapping the end method
   res.on('finish', () => {
     const responseTime = Date.now() - startTime;
-    
+
     // Log request with timing
     logger.logApiRequest(req, res.statusCode, responseTime);
-    
+
     // Log slow requests
     if (responseTime > 500) {
       logger.warn('Slow API request', {
@@ -84,7 +83,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
       });
     }
   });
-  
+
   next();
 }
 

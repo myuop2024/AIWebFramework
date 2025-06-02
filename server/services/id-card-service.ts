@@ -61,7 +61,7 @@ export class IdCardService {
 
       // Fetch user profile data
       const profile = await storage.getUserProfile(userId);
-      
+
       // Fetch active template
       const template = await storage.getActiveIdCardTemplate();
       if (!template) {
@@ -70,10 +70,10 @@ export class IdCardService {
 
       // Generate the ID card image
       const cardImage = await this.renderIdCard(user, profile, template);
-      
+
       // Convert to PDF
       const pdfBuffer = await this.generatePDF(cardImage, template);
-      
+
       return pdfBuffer;
     } catch (error) {
       logger.error('Error generating ID card', { userId, error: error instanceof Error ? error : new Error(String(error)) });
@@ -86,7 +86,7 @@ export class IdCardService {
    */
   async createDefaultTemplate(): Promise<IdCardTemplate> {
     const existingTemplates = await storage.getAllIdCardTemplates();
-    
+
     if (existingTemplates.length > 0) {
       return existingTemplates[0];
     }
@@ -566,7 +566,7 @@ export class IdCardService {
             element.width || 200, 
             element.height || 80
           );
-          
+
           // Generate barcode
           JsBarcode(barcodeCanvas, value || 'N/A', {
             format: 'CODE128',
@@ -646,7 +646,7 @@ export class IdCardService {
     return new Promise((resolve, reject) => {
       try {
         const templateData = template.templateData as unknown as CardTemplate;
-        
+
         // Create a PDF document
         const doc = new PDFDocument({
           size: [templateData.dimensions.width, templateData.dimensions.height],
@@ -670,7 +670,7 @@ export class IdCardService {
         // Add metadata
         doc.info.Title = `Observer ID Card - ${template.name}`;
         doc.info.Author = 'CAFFE Election Observer Platform';
-        
+
         // Add security features
         const securityFeatures = template.securityFeatures as unknown as SecurityFeatures;
         if (securityFeatures.otherFeatures && securityFeatures.otherFeatures.length > 0) {
@@ -704,3 +704,22 @@ export class IdCardService {
 }
 
 export const idCardService = new IdCardService();
+// Register fonts for PDF generation
+try {
+  const fontsDir = path.join(process.cwd(), 'assets', 'fonts');
+  if (fs.existsSync(fontsDir)) {
+    const arialPath = path.join(fontsDir, 'Arial.ttf');
+    const arialBoldPath = path.join(fontsDir, 'Arial-Bold.ttf');
+
+    if (fs.existsSync(arialPath)) {
+      registerFont(arialPath, { family: 'Arial' });
+    }
+    if (fs.existsSync(arialBoldPath)) {
+      registerFont(arialBoldPath, { family: 'Arial-Bold' });
+    }
+  } else {
+    console.info('[INFO] Fonts directory not found, using system default fonts');
+  }
+} catch (error) {
+  console.warn('[WARN] Could not register custom fonts, using system defaults.', { error });
+}

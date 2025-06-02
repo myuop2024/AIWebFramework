@@ -83,7 +83,7 @@ export async function logClientError(error: ClientErrorLog): Promise<void> {
 
     // Send error to server
     await apiRequest('POST', '/api/log-error', errorData);
-    
+
     // Local console logging for development
     if (import.meta.env.DEV) {
       console.error('[Error logged]', errorData);
@@ -104,14 +104,14 @@ export function initGlobalErrorHandlers(): void {
   window.addEventListener('unhandledrejection', (event) => {
     // Prevent default browser behavior
     event.preventDefault();
-    
+
     logClientError({
       message: `Unhandled Promise Rejection: ${event.reason?.message || 'Unknown error'}`,
       source: 'unhandled-rejection',
       stack: event.reason?.stack,
       context: { reason: event.reason }
     });
-    
+
     // Show a user-friendly toast for unhandled rejections
     if (import.meta.env.PROD) {
       import('../hooks/use-toast').then(({ toast }) => {
@@ -215,3 +215,32 @@ export function logApiError(
     }
   });
 }
+
+export const logError = async (error: string | Error, context: ErrorContext = {}) => {
+  try {
+    const errorData = {
+      message: typeof error === 'string' ? error : error.message,
+      stack: typeof error === 'string' ? undefined : error.stack,
+      level: context.level || 'error',
+      source: context.source || 'client',
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      context
+    };
+
+    // Log to console for development
+    console.log('[Error logged]', errorData);
+
+    // Send to server
+    await fetch('/api/error-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(errorData),
+    });
+  } catch (logError) {
+    console.error('Failed to log error:', logError);
+  }
+};

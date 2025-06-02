@@ -54,133 +54,62 @@ export function resetHereMapsState(): void {
   isHereMapsLoaded = false;
   hereMapsLoadError = null;
   hereMapsLoadPromise = null;
-  
+
   // Remove existing scripts
   const existingScripts = document.querySelectorAll('script[src*="here.com"]');
   existingScripts.forEach(script => script.remove());
-  
+
   const existingLinks = document.querySelectorAll('link[href*="here.com"]');
   existingLinks.forEach(link => link.remove());
-  
+
   console.log('HERE Maps state reset - ready for retry');
 }
 
 // Function to load HERE Maps script
-function loadHereMapsScript(): Promise<void> {
-  if (hereMapsLoadPromise) {
-    return hereMapsLoadPromise;
-  }
-
-  hereMapsLoadPromise = new Promise((resolve, reject) => {
-    // Skip if already loaded
-    if (isHereMapsLoaded && window.H) {
+export const loadHereMapsScript = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // Check if HERE Maps is already loaded
+    if (window.H && window.H.Map) {
       resolve();
       return;
     }
 
-    // Skip if already errored
-    if (hereMapsLoadError) {
-      reject(hereMapsLoadError);
+    // Check if API key is available
+    const apiKey = import.meta.env.VITE_HERE_API_KEY;
+    if (!apiKey) {
+      console.error('HERE Maps API key not found');
+      reject(new Error('HERE Maps API key not configured'));
       return;
     }
 
-    try {
-      // Check for API key using centralized configuration
-      let apiKey: string;
-      try {
-        apiKey = getHereApiKey();
-      } catch (error) {
-        hereMapsLoadError = error as Error;
-        reject(error);
-        return;
-      }
+    // Create script element
+    const script = document.createElement('script');
+    script.src = 'https://js.api.here.com/v3/3.1/mapsjs-core.js';
+    script.async = true;
 
-      // Check if scripts already exist and window.H is available
-      const existingScript = document.getElementById("here-maps-script");
-      if (existingScript && window.H) {
-        isHereMapsLoaded = true;
+    script.onload = () => {
+      // Load additional HERE Maps modules
+      Promise.all([
+        loadScript('https://js.api.here.com/v3/3.1/mapsjs-service.js'),
+        loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js'),
+        loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js')
+      ]).then(() => {
+        console.log('HERE Maps API loaded successfully');
         resolve();
-        return;
-      }
-
-      // Remove existing scripts if they exist but window.H is not available
-      const existingScripts = document.querySelectorAll('script[src*="here.com"]');
-      existingScripts.forEach(script => script.remove());
-      
-      const existingLinks = document.querySelectorAll('link[href*="here.com"]');
-      existingLinks.forEach(link => link.remove());
-
-      // Load scripts using a more reliable approach
-      const scriptsToLoad = [
-        "https://js.api.here.com/v3/3.1/mapsjs-core.js",
-        "https://js.api.here.com/v3/3.1/mapsjs-service.js",
-        "https://js.api.here.com/v3/3.1/mapsjs-ui.js",
-        "https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"
-      ];
-      
-      let loadedCount = 0;
-      const totalScripts = scriptsToLoad.length;
-      
-      const onScriptError = (e: Event) => {
-        const target = e.target as HTMLScriptElement;
-        const errorMessage = `Failed to load HERE Maps script: ${target?.src || 'unknown'}`;
-        console.error('Script loading error:', errorMessage, e);
-        const error = new Error(errorMessage);
-        hereMapsLoadError = error;
+      }).catch((error) => {
+        console.error('Failed to load HERE Maps modules:', error);
         reject(error);
-      };
-
-      const onScriptLoad = () => {
-        loadedCount++;
-        if (loadedCount === totalScripts) {
-          // Wait for window.H to be available
-          let attempts = 0;
-          const maxAttempts = 50; // 5 seconds
-          
-          const checkForH = () => {
-            attempts++;
-            if (window.H) {
-              // Load CSS after scripts are loaded
-              const link = document.createElement("link");
-              link.rel = "stylesheet";
-              link.type = "text/css";
-              link.href = "https://js.api.here.com/v3/3.1/mapsjs-ui.css";
-              document.head.appendChild(link);
-              
-              isHereMapsLoaded = true;
-              resolve();
-            } else if (attempts < maxAttempts) {
-              setTimeout(checkForH, 100);
-            } else {
-              const error = new Error("HERE Maps API loaded but window.H not available after timeout");
-              hereMapsLoadError = error;
-              reject(error);
-            }
-          };
-          
-          checkForH();
-        }
-      };
-
-      // Load all scripts
-      scriptsToLoad.forEach((src, index) => {
-        const script = document.createElement("script");
-        if (index === 0) script.id = "here-maps-script";
-        script.type = "text/javascript";
-        script.src = src;
-        script.addEventListener("load", onScriptLoad);
-        script.addEventListener("error", onScriptError);
-        document.head.appendChild(script);
       });
-      
-    } catch (error) {
-      hereMapsLoadError = error as Error;
-      reject(error);
-    }
-  });
+    };
 
-  return hereMapsLoadPromise;
-}
+    script.onerror = () => {
+      console.error('Failed to load HERE Maps API');
+      reject(new Error('Failed to load HERE Maps API'));
+    };
+
+    document.head.appendChild(script);
+  });
+};
 
 // React hook to use HERE Maps
 export function useHereMaps(): UseHereMapsResult {
@@ -254,7 +183,7 @@ export function useHereMaps(): UseHereMapsResult {
 export function formatDecimalCoordinates(lat: number, lng: number): string {
   const latDirection = lat >= 0 ? "N" : "S";
   const lngDirection = lng >= 0 ? "E" : "W";
-  
+
   const formatCoordinate = (value: number, isLat: boolean) => {
     const absValue = Math.abs(value);
     const degrees = Math.floor(absValue);
@@ -262,10 +191,10 @@ export function formatDecimalCoordinates(lat: number, lng: number): string {
     const minutes = Math.floor(minutesDecimal);
     const secondsDecimal = (minutesDecimal - minutes) * 60;
     const seconds = Math.round(secondsDecimal * 100) / 100;
-    
+
     return `${degrees}° ${minutes}' ${seconds}" ${isLat ? latDirection : lngDirection}`;
   };
-  
+
   return `${formatCoordinate(lat, true)}, ${formatCoordinate(lng, false)}`;
 }
 
@@ -295,20 +224,20 @@ export const hereMapsService = {
       const response = await fetch(
         `https://revgeocode.search.hereapi.com/v1/revgeocode?at=${lat},${lng}&apiKey=${apiKey}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.items && data.items.length > 0) {
         return {
           position: { lat, lng },
           address: { label: data.items[0].address.label }
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error("Reverse geocoding error:", error);
@@ -324,13 +253,13 @@ export const hereMapsService = {
       const response = await fetch(
         `https://geocode.search.hereapi.com/v1/geocode?q=${encodeURIComponent(address)}&apiKey=${apiKey}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.items && data.items.length > 0) {
         const item = data.items[0];
         return {
@@ -341,7 +270,7 @@ export const hereMapsService = {
           address: { label: item.address.label }
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error("Geocoding error:", error);
@@ -363,11 +292,11 @@ export const hereMapsService = {
       const response = await fetch(
         `https://router.hereapi.com/v8/routes?transportMode=${transportMode}&origin=${originLat},${originLng}&destination=${destLat},${destLng}&return=summary,polyline&apiKey=${apiKey}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -382,17 +311,17 @@ export const hereMapsService = {
 
     try {
       let url = `https://discover.search.hereapi.com/v1/discover?q=${encodeURIComponent(query)}&apiKey=${apiKey}`;
-      
+
       if (lat && lng) {
         url += `&at=${lat},${lng}`;
       }
 
       const response = await fetch(url);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data;
     } catch (error) {
@@ -419,12 +348,12 @@ export function formatDuration(seconds: number): string {
 if (typeof window !== 'undefined') {
   (window as any).testHereMaps = async () => {
     console.log('🔍 Running HERE Maps diagnostics...');
-    
+
     try {
       // Import and run diagnostics
       const { logHereDiagnostics } = await import('./here-maps-diagnostics');
       const result = await logHereDiagnostics();
-      
+
       if (result.overallStatus === 'working') {
         console.log('✅ HERE Maps is working correctly');
       } else if (result.overallStatus === 'partial') {
@@ -433,7 +362,7 @@ if (typeof window !== 'undefined') {
         console.log('❌ HERE Maps is not working');
         console.log('💡 Try running window.resetHereMaps() to reset and reload');
       }
-      
+
       return result;
     } catch (error) {
       console.error('❌ Failed to run diagnostics:', error);
