@@ -1007,8 +1007,7 @@ export default function IdCardManagement() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </```text
-Table>
+                </Table>
               )}
             </CardContent>
           </Card>
