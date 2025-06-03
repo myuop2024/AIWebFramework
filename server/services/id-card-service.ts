@@ -10,34 +10,7 @@ import type { User, UserProfile, IdCardTemplate } from '@shared/schema';
 import { Readable } from 'stream';
 import logger from '../utils/logger';
 
-// Register custom fonts for better typography
-try {
-  const fs = require('fs');
-  const path = require('path');
-  const fontPath = path.resolve('./assets/fonts/Roboto-Regular.ttf');
-
-  // Check if font file exists and is readable
-  if (fs.existsSync(fontPath)) {
-    const stats = fs.statSync(fontPath);
-    if (stats.size > 0) {
-      registerFont(fontPath, { family: 'Roboto' });
-      logger.info('Custom font registered successfully');
-    } else {
-      throw new Error('Font file is empty');
-    }
-  } else {
-    throw new Error('Font file not found');
-  }
-} catch (error) {
-  logger.warn('Could not register custom fonts, using system defaults.', { error: error.message });
-  // Continue without custom fonts - the service will use system defaults
-}
-try {
-  registerFont('./assets/fonts/Roboto-Bold.ttf', { family: 'Roboto', weight: 'italic' });
-  registerFont('./assets/fonts/Roboto-Italic.ttf', { family: 'Roboto', style: 'italic' });
-} catch (error) {
-  logger.warn('Could not register custom fonts, using system defaults.', { error: error instanceof Error ? error : new Error(String(error)) });
-}
+  
 
 interface CardElement {
   type: 'text' | 'image' | 'qrcode' | 'barcode';
@@ -68,6 +41,10 @@ interface SecurityFeatures {
 }
 
 export class IdCardService {
+  constructor() {
+    // Initialize fonts when service is created
+    this.registerFonts();
+  }
   /**
    * Generate an ID card for a user
    */
@@ -730,16 +707,12 @@ export class IdCardService {
       const regularFontPath = path.join(fontPath, 'Roboto-Regular.ttf');
       const boldFontPath = path.join(fontPath, 'Roboto-Bold.ttf');
 
-      const fs = await import('fs');
-
       if (fs.existsSync(regularFontPath)) {
-        const { registerFont } = await import('canvas');
         registerFont(regularFontPath, { family: 'Roboto' });
         logger.debug('Roboto-Regular font registered');
       }
 
       if (fs.existsSync(boldFontPath)) {
-        const { registerFont } = await import('canvas');
         registerFont(boldFontPath, { family: 'Roboto', weight: 'bold' });
         logger.debug('Roboto-Bold font registered');
       }
@@ -755,25 +728,11 @@ export class IdCardService {
       });
     }
   }
-}
+      }
+
+      }
 
 export const idCardService = new IdCardService();
-// Register fonts for PDF generation
-try {
-  const fontsDir = path.join(process.cwd(), 'assets', 'fonts');
-  if (fs.existsSync(fontsDir)) {
-    const arialPath = path.join(fontsDir, 'Arial.ttf');
-    const arialBoldPath = path.join(fontsDir, 'Arial-Bold.ttf');
 
-    if (fs.existsSync(arialPath)) {
-      registerFont(arialPath, { family: 'Arial' });
-    }
-    if (fs.existsSync(arialBoldPath)) {
-      registerFont(arialBoldPath, { family: 'Arial-Bold' });
-    }
-  } else {
-    console.info('[INFO] Fonts directory not found, using system default fonts');
-  }
-} catch (error) {
-  console.warn('[WARN] Could not register custom fonts, using system defaults.', { error });
+
 }
