@@ -62,38 +62,135 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   // Navigation links
   const allNavLinks = [
     // Main Navigation (potentially for all authenticated users)
-    { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> }, // Common, no specific permission
-    { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> }, // Common, no specific permission
-    { path: "/analytics", label: "Analytics Dashboard", icon: <Activity className="h-5 w-5" /> }, // Enhanced analytics
-    { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5" />, requiredPermission: "polling-stations:view" },
-    { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5" />, requiredPermission: "routes:plan" },
-    { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5" />, requiredPermission: "routes:view-observer-geolocation" },
-    { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5" />, requiredPermission: "reports:submit" }, // Users submit their own
-    { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> }, // Common, no specific permission
-    { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> }, // Common, no specific permission
-    { path: "/gamification", label: "Achievements", icon: <Trophy className="h-5 w-5" /> }, // Common, no specific permission
-    { path: "/smart-operations", label: "Smart Operations", icon: <Brain className="h-5 w-5" /> }, // New smart features
-    { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" />, requiredPermission: "projects:view" },
-    { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" />, requiredPermission: "system:access-advanced-features" },
-    { path: "/accessibility", label: "Accessibility", icon: <Accessibility className="h-5 w-5" /> }, // Common, no specific permission
+    { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> },
+    { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> },
+    
+    // Analytics & Insights (with dropdown)
+    { 
+      path: "/analytics", 
+      label: "Analytics & Insights", 
+      icon: <Activity className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/analytics", label: "Analytics Dashboard", icon: <BarChart className="h-4 w-4" /> },
+        { path: "/reports", label: "Reports", icon: <FileText className="h-4 w-4" />, requiredPermission: "reports:submit" },
+        { path: "/smart-operations", label: "Smart Operations", icon: <Brain className="h-4 w-4" />, requiredPermission: "operations:view-smart" },
+      ]
+    },
+    
+    // Field Operations (with dropdown)
+    {
+      path: "/polling-stations",
+      label: "Field Operations",
+      icon: <MapPin className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/polling-stations", label: "Polling Stations", requiredPermission: "polling-stations:view" },
+        { path: "/polling-stations/create", label: "Create Station", requiredPermission: "polling-stations:create" },
+        { path: "/polling-stations/import", label: "Import Stations", requiredPermission: "polling-stations:import" },
+        { path: "/polling-stations/map", label: "Station Map", requiredPermission: "polling-stations:view" },
+        { path: "/polling-stations/export", label: "Export Stations", requiredPermission: "polling-stations:export" },
+        { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-4 w-4" />, requiredPermission: "routes:plan" },
+        { path: "/observer-route-planning", label: "Observer Routing", icon: <MapIcon className="h-4 w-4" />, requiredPermission: "routes:view-observer-geolocation" },
+      ]
+    },
+    
+    // Communication & Collaboration
+    { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> },
+    
+    // Learning & Development (with dropdown)
+    {
+      path: "/training",
+      label: "Learning & Development",
+      icon: <GraduationCap className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/training", label: "Training Portal" },
+        { path: "/gamification", label: "Achievements & Rewards", icon: <Trophy className="h-4 w-4" /> },
+      ]
+    },
+    
+    // Project Management (with existing dropdown)
+    { 
+      path: "/project-management", 
+      label: "Project Management", 
+      icon: <Kanban className="h-5 w-5" />, 
+      requiredPermission: "projects:view",
+      dropdown: true,
+      dropdownItems: [
+        { path: "/project-management/dashboard", label: "Dashboard", requiredPermission: "projects:view-dashboard" },
+        { path: "/project-management/new", label: "New Project", requiredPermission: "projects:create" },
+        { path: "/project-management/kanban", label: "Kanban Board", requiredPermission: "projects:view-kanban" },
+        { path: "/project-management/calendar", label: "Calendar", requiredPermission: "projects:view-calendar" },
+        { path: "/project-management/analytics", label: "Analytics", requiredPermission: "projects:view-analytics" },
+        { path: "/project-management/tasks", label: "Tasks", requiredPermission: "projects:view-tasks" },
+        { path: "/project-management/milestones", label: "Milestones", requiredPermission: "projects:view-milestones" },
+      ]
+    },
+    
+    // Settings & Preferences (with dropdown)
+    {
+      path: "/settings",
+      label: "Settings",
+      icon: <Settings className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/accessibility", label: "Accessibility", icon: <Accessibility className="h-4 w-4" /> },
+        { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-4 w-4" />, requiredPermission: "system:access-advanced-features" },
+      ]
+    },
 
     // Admin Section Links
-    { category: "Administration", path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" />, requiredPermission: "admin:access-panel" },
-    { category: "Administration", path: "/admin/crm", label: "CRM System", icon: <Phone className="h-5 w-5" />, requiredPermission: "admin:access-panel" },
-    { category: "Administration", path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5" />, requiredPermission: "analytics:view-dashboard" },
-    { category: "Administration", path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5" />, requiredPermission: "forms:manage-templates" },
-    { category: "Administration", path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" />, requiredPermission: "users:verify" },
-    { category: "Administration", path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" />, requiredPermission: "system:manage-training-integrations" },
-    { category: "Administration", path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" />, requiredPermission: "roles:view" }, // Assuming view roles implies permission management access
-    { category: "Administration", path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-5 w-5" />, requiredPermission: "users:import" },
+    { 
+      category: "Administration", 
+      path: "/admin", 
+      label: "Admin Dashboard", 
+      icon: <PanelTop className="h-5 w-5" />, 
+      requiredPermission: "admin:access-panel",
+      dropdown: true,
+      dropdownItems: [
+        { path: "/admin", label: "Overview", icon: <BarChart className="h-4 w-4" /> },
+        { path: "/admin-dashboard", label: "Statistics", icon: <Activity className="h-4 w-4" /> },
+        { path: "/admin/crm", label: "CRM System", icon: <Phone className="h-4 w-4" /> },
+        { path: "/admin/analytics", label: "Advanced Analytics", icon: <Zap className="h-4 w-4" /> },
+      ]
+    },
+    
+    { 
+      category: "Administration", 
+      path: "/admin/users", 
+      label: "User Management", 
+      icon: <Users className="h-5 w-5" />, 
+      requiredPermission: "users:view",
+      dropdown: true,
+      dropdownItems: [
+        { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-4 w-4" />, requiredPermission: "users:verify" },
+        { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-4 w-4" />, requiredPermission: "users:import" },
+        { path: "/admin/permissions", label: "Permissions", icon: <Shield className="h-4 w-4" />, requiredPermission: "roles:view" },
+      ]
+    },
+    
+    { 
+      category: "Administration", 
+      path: "/admin/content", 
+      label: "Content Management", 
+      icon: <FileEdit className="h-5 w-5" />, 
+      requiredPermission: "content:manage",
+      dropdown: true,
+      dropdownItems: [
+        { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-4 w-4" />, requiredPermission: "forms:manage-templates" },
+        { path: "/admin/training-integrations", label: "Training Content", icon: <BookOpen className="h-4 w-4" />, requiredPermission: "system:manage-training-integrations" },
+        { path: "/admin/news", label: "News Management", icon: <FileText className="h-4 w-4" />, requiredPermission: "news:manage" },
+      ]
+    },
 
     // Supervisor Section Links
     { category: "Supervision", path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5" />, requiredPermission: "supervisor-tasks:view-team" },
     { category: "Supervision", path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5" />, requiredPermission: "supervisor-tasks:view-assignments" },
     { category: "Supervision", path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5" />, requiredPermission: "supervisor-tasks:approve-report" },
-    { category: "Supervision", path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "supervisor-tasks:schedule-meetings" },
+    { category: "Supervision", path: "/supervisor/schedule-meeting", label: "Schedule Meeting", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "supervisor-tasks:schedule-meetings" },
 
-    // Roving Observer Section Links (Example - these permissions might need to be created)
+    // Roving Observer Section Links
     { category: "Roving Observer", path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "roving-observer:view-schedule" },
     { category: "Roving Observer", path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5" />, requiredPermission: "roving-observer:view-area-reports" },
 
@@ -110,21 +207,37 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     }
   };
 
-  const renderNavLink = (link: any, isActive: boolean) => (
-    <Link 
-      key={link.path}
-      href={link.path}
-      className={cn(
-        "flex items-center py-3 px-4 mb-1 rounded-lg transition-all duration-200 touch-target",
-        isActive
-          ? 'bg-primary/10 text-primary border-r-2 border-primary' 
-          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-      )}
-    >
-      <span className="mr-3">{link.icon}</span>
-      <span className="font-medium">{link.label}</span>
-    </Link>
-  );
+  const renderNavLink = (link: any, isActive: boolean) => {
+    // Check if this link has a dropdown
+    if (link.dropdown && link.dropdownItems) {
+      const visibleDropdownItems = link.dropdownItems.filter((item: any) => 
+        !item.requiredPermission || hasPermission(item.requiredPermission)
+      );
+      
+      // Only show the dropdown if there are visible items or if the main link doesn't require permission
+      if (visibleDropdownItems.length > 0 || !link.requiredPermission || hasPermission(link.requiredPermission)) {
+        return renderDropdownNavLink(link, isActive, visibleDropdownItems);
+      }
+      return null;
+    }
+    
+    // Regular link without dropdown
+    return (
+      <Link 
+        key={link.path}
+        href={link.path}
+        className={cn(
+          "flex items-center py-3 px-4 mb-1 rounded-lg transition-all duration-200 touch-target",
+          isActive
+            ? 'bg-primary/10 text-primary border-r-2 border-primary' 
+            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+        )}
+      >
+        <span className="mr-3">{link.icon}</span>
+        <span className="font-medium">{link.label}</span>
+      </Link>
+    );
+  };
 
   const renderDropdownNavLink = (link: any, isActive: boolean, dropdownItems: any[]) => (
     <div key={link.path}>
@@ -219,34 +332,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-4">Main</p>
             {allNavLinks.filter(link => !link.category && (!link.requiredPermission || hasPermission(link.requiredPermission))).map((link) => {
               const isActive = location === link.path || location.startsWith(link.path + '/');
-              // Placeholder for dropdown logic - adapt as needed or simplify for non-dropdown links
-              if (link.path === "/polling-stations") { // Example dropdown
-                const dropdownItems = [
-                  { path: "/polling-stations/create", label: "Create New Station", requiredPermission: "polling-stations:create" },
-                  { path: "/polling-stations/import", label: "Import Stations", requiredPermission: "polling-stations:import" },
-                  { path: "/polling-stations/map", label: "Station Map" }, // Assuming view is covered by main link
-                  { path: "/polling-stations/export", label: "Export Stations", requiredPermission: "polling-stations:export" },
-                ].filter(item => !item.requiredPermission || hasPermission(item.requiredPermission));
-                if (dropdownItems.length > 0 || !link.requiredPermission || hasPermission(link.requiredPermission) ) { // Show main link if it has permission OR if it has visible dropdown items
-                   return renderDropdownNavLink(link, isActive, dropdownItems);
-                }
-                return null;
-              }
-               if (link.path === "/project-management") {
-                const dropdownItems = [
-                  { path: "/project-management/dashboard", label: "Dashboard", requiredPermission: "projects:view-dashboard" },
-                  { path: "/project-management/new", label: "New Project", requiredPermission: "projects:create" },
-                  { path: "/project-management/kanban", label: "Kanban Board", requiredPermission: "projects:view-kanban" },
-                  { path: "/project-management/calendar", label: "Calendar", requiredPermission: "projects:view-calendar" },
-                  { path: "/project-management/analytics", label: "Analytics", requiredPermission: "projects:view-analytics" },
-                  { path: "/project-management/tasks", label: "Tasks", requiredPermission: "projects:view-tasks" },
-                  { path: "/project-management/milestones", label: "Milestones", requiredPermission: "projects:view-milestones" },
-                ].filter(item => !item.requiredPermission || hasPermission(item.requiredPermission));
-                 if (dropdownItems.length > 0 || !link.requiredPermission || hasPermission(link.requiredPermission) ) {
-                    return renderDropdownNavLink(link, isActive, dropdownItems);
-                 }
-                 return null;
-              }
               return renderNavLink(link, isActive);
             })}
 
@@ -259,7 +344,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
                     <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">{categoryName}</p>
                     {categoryLinks.map((link) => {
                       const isActive = location === link.path || location.startsWith(link.path + '/');
-                      // Add dropdown logic here if any categorized links are dropdowns
                       return renderNavLink(link, isActive);
                     })}
                   </div>
@@ -270,7 +354,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             
             {/* Support Section (Common) */}
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Support</p>
-            {allNavLinks.filter(link => link.path === "/faq").map((link) => { // Assuming FAQ is always visible
+            {allNavLinks.filter(link => link.path === "/faq").map((link) => {
               const isActive = location === link.path || location.startsWith(link.path + '/');
               return renderNavLink(link, isActive);
             })}

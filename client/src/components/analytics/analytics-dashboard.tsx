@@ -51,11 +51,9 @@ import {
   MapPin
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { LineChart, Line, HeatMapGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { Cloud, CloudRain, Sun, Wifi, WifiOff } from 'lucide-react';
-import { ResponsiveContainer } from 'recharts';
-import { Tooltip, Legend } from 'recharts';
 
 type TabValue = 'overview' | 'locations' | 'trends' | 'insights' | 'predictions' | 'sentiment' | 'turnout-maps';
 
