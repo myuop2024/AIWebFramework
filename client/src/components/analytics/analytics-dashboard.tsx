@@ -54,6 +54,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import { Cloud, CloudRain, Sun, Wifi, WifiOff } from 'lucide-react';
+import EnhancedSentimentAnalysis from './sentiment-analysis-enhanced';
 
 type TabValue = 'overview' | 'locations' | 'trends' | 'insights' | 'predictions' | 'sentiment' | 'turnout-maps';
 
@@ -902,29 +903,9 @@ export function AnalyticsDashboard() {
 
             {/* Sentiment Analysis Tab */}
             {activeTab === 'sentiment' && (
-              <div className="max-w-xl mx-auto mt-8">
-                <h2 className="text-2xl font-bold mb-2">Sentiment Analysis</h2>
-                <p className="mb-4 text-gray-500">Paste social media, news, or any text to analyze election-related sentiment.</p>
-                <Textarea
-                  value={sentimentInput}
-                  onChange={e => setSentimentInput(e.target.value)}
-                  placeholder="Paste text here..."
-                  rows={5}
-                  className="mb-2"
-                />
-                <Button onClick={handleAnalyzeSentiment} disabled={!sentimentInput.trim() || sentimentLoading}>
-                  {sentimentLoading ? 'Analyzing...' : 'Analyze Sentiment'}
-                </Button>
-                {sentimentResult && (
-                  <div className="mt-4 p-4 rounded bg-gray-50 border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`font-bold text-lg ${sentimentResult.label === 'Positive' ? 'text-green-600' : sentimentResult.label === 'Negative' ? 'text-red-600' : 'text-gray-600'}`}>{sentimentResult.label}</span>
-                      <span className="text-sm text-gray-400">(Score: {sentimentResult.score})</span>
-                    </div>
-                    <div className="text-sm text-gray-700">{sentimentResult.explanation}</div>
-                  </div>
-                )}
-              </div>
+              <TabsContent value="sentiment" className="space-y-6">
+                <EnhancedSentimentAnalysis />
+              </TabsContent>
             )}
 
             {/* Turnout & Maps Tab */}
