@@ -19,6 +19,7 @@ const fetcher = (url: string) => fetch(url).then(res => {
 
 export default function AdminGroupPermissionsPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch permissions (real API)
   const { data: permissionsData, isLoading: loadingPerms } = useQuery({
