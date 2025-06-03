@@ -113,10 +113,13 @@ export class ImageProcessingService {
         const endTime = Date.now();
         logger.debug(`YOLOv8 face detection completed in ${endTime - startTime}ms`);
         
+        // Convert response to expected format - HF returns array directly
+        const formattedResponse = { labels: Array.isArray(response) ? response : [] };
+        
         // Log response information
-        if (response && response.labels) {
-          logger.debug(`Face detection results: Found ${response.labels.length} potential faces/objects`);
-          response.labels.forEach((label: any, index: number) => {
+        if (formattedResponse.labels && formattedResponse.labels.length > 0) {
+          logger.debug(`Face detection results: Found ${formattedResponse.labels.length} potential faces/objects`);
+          formattedResponse.labels.forEach((label: any, index: number) => {
             logger.debug(`Face/Object ${index + 1}: Label=${label.label}, Score=${label.score}`);
           });
         } else {
@@ -124,7 +127,7 @@ export class ImageProcessingService {
         }
         
         // If no faces found with YOLOv8 model, fall back to general person detection
-        if (!response.labels || response.labels.length === 0) {
+        if (!formattedResponse.labels || formattedResponse.labels.length === 0) {
           logger.info('No faces detected with YOLOv8, trying general person detection...');
           const fallbackStartTime = Date.now();
           const generalResponse = await hf.objectDetection({
@@ -138,14 +141,17 @@ export class ImageProcessingService {
           const fallbackEndTime = Date.now();
           logger.debug(`General person detection completed in ${fallbackEndTime - fallbackStartTime}ms`);
           
-          if (generalResponse && generalResponse.labels) {
-            logger.debug(`Person detection results: Found ${generalResponse.labels.length} potential persons`);
+          // Convert fallback response to expected format
+          const formattedFallbackResponse = { labels: Array.isArray(generalResponse) ? generalResponse : [] };
+          
+          if (formattedFallbackResponse.labels && formattedFallbackResponse.labels.length > 0) {
+            logger.debug(`Person detection results: Found ${formattedFallbackResponse.labels.length} potential persons`);
           }
           
-          return generalResponse;
+          return formattedFallbackResponse;
         }
         
-        return response;
+        return formattedResponse;
       } catch (hfError) {
         logger.error('Hugging Face face detection error', { error: hfError instanceof Error ? hfError : new Error(String(hfError)), model: 'keremberke/yolov8n-face-detection or facebook/detr-resnet-50' });
         logger.debug('Hugging Face error details', { errorDetails: JSON.stringify(hfError) });
@@ -355,7 +361,7 @@ export class ImageProcessingService {
         const startTime = Date.now();
         const response = await hf.imageToImage({
           model: "zhenhuan-chen/AK-Image-Optimizer-64p-v1.0",
-          data: Buffer.from(base64Image, 'base64'),
+          inputs: new Blob([Buffer.from(base64Image, 'base64')], { type: 'image/jpeg' }),
           parameters: {
             prompt: "A high quality, professional ID photograph, clear facial features, sharp details, neutral background",
             negative_prompt: "blurry, distorted, low quality, noisy, pixelated, artifacts",
@@ -385,7 +391,7 @@ export class ImageProcessingService {
         const fallbackStartTime = Date.now();
         const fallbackResponse = await hf.imageToImage({
           model: "stabilityai/stable-diffusion-img2img",
-          data: Buffer.from(base64Image, 'base64'),
+          inputs: new Blob([Buffer.from(base64Image, 'base64')], { type: 'image/jpeg' }),
           parameters: {
             prompt: "A high quality, professional portrait photograph, clear facial features, sharp details",
             negative_prompt: "blurry, distorted, low quality, pixelated",
