@@ -277,8 +277,25 @@ router.put('/admin/settings', ensureAdmin, async (req: Request, res: Response) =
       await storage.updateSystemSetting('didit_enabled', enabled, userId);
     }
 
-    // Apply new configuration
-    diditConnector.initializeConfig();
+    // Gather the latest Didit settings so the connector uses fresh values
+    const [apiKeySetting, apiSecretSetting, baseUrlSetting, enabledSetting] =
+      await Promise.all([
+        storage.getSystemSetting('didit_api_key'),
+        storage.getSystemSetting('didit_api_secret'),
+        storage.getSystemSetting('didit_base_url'),
+        storage.getSystemSetting('didit_enabled')
+      ]);
+
+    // Apply new configuration immediately
+    diditConnector.updateConfig({
+      apiKey: apiKeySetting?.settingValue,
+      apiSecret: apiSecretSetting?.settingValue,
+      baseUrl:
+        baseUrlSetting?.settingValue ||
+        process.env.DIDIT_API_URL ||
+        'https://api.didit.me/v1',
+      enabled: enabledSetting?.settingValue || false
+    });
 
     return res.json({ success: true });
   } catch (error) {
