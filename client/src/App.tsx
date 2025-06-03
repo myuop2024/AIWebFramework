@@ -65,6 +65,7 @@ import AdminAccessibilityPage from '@/pages/advanced-features/accessibility';
 import AdminRolesPage from '@/pages/admin/roles';
 import AdminGroupsPage from '@/pages/admin/groups';
 import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
+import { useMobileOptimizations } from './hooks/use-ios-optimizations';
 
 function Router() {
   return (
@@ -222,6 +223,8 @@ function App() {
       body: JSON.stringify(logEntry),
     }).catch(() => {});
   }, [location]);
+
+  useMobileOptimizations();
 
   return (
     <>

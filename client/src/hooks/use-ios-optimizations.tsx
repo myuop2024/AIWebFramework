@@ -1,13 +1,15 @@
 
 import { useEffect } from 'react';
 
-export function useIOSOptimizations() {
+export function useMobileOptimizations() {
   useEffect(() => {
-    // Detect iOS
+    // Detect mobile platforms
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid || /Mobile|Tablet/.test(navigator.userAgent);
     
-    if (isIOS) {
+    if (isMobile) {
       // Prevent elastic scrolling on body
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
@@ -45,10 +47,39 @@ export function useIOSOptimizations() {
         );
       }
       
-      // Handle orientation changes
+      // Android-specific keyboard handling
+      if (isAndroid) {
+        const handleResize = () => {
+          // Handle Android keyboard appearance
+          const vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+        
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial call
+        
+        // Android back button handling
+        const handlePopState = (e: PopStateEvent) => {
+          // Prevent default Android back behavior if needed
+          if (document.activeElement?.tagName === 'INPUT' || 
+              document.activeElement?.tagName === 'TEXTAREA') {
+            document.activeElement.blur();
+            e.preventDefault();
+          }
+        };
+        
+        window.addEventListener('popstate', handlePopState);
+      }
+      
+      // Handle orientation changes (both iOS and Android)
       const handleOrientationChange = () => {
         setTimeout(() => {
           window.scrollTo(0, 0);
+          // Recalculate viewport height for Android
+          if (isAndroid) {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+          }
         }, 100);
       };
       
