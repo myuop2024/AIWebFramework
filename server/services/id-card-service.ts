@@ -721,6 +721,40 @@ export class IdCardService {
   generateVerificationHash(data: string): string {
     return crypto.createHash('sha256').update(data).digest('hex');
   }
+  
+  private async registerFonts() {
+    try {
+      const fontPath = path.join(process.cwd(), 'assets', 'fonts');
+
+      // Check if font files exist before registering
+      const regularFontPath = path.join(fontPath, 'Roboto-Regular.ttf');
+      const boldFontPath = path.join(fontPath, 'Roboto-Bold.ttf');
+
+      const fs = await import('fs');
+
+      if (fs.existsSync(regularFontPath)) {
+        const { registerFont } = await import('canvas');
+        registerFont(regularFontPath, { family: 'Roboto' });
+        logger.debug('Roboto-Regular font registered');
+      }
+
+      if (fs.existsSync(boldFontPath)) {
+        const { registerFont } = await import('canvas');
+        registerFont(boldFontPath, { family: 'Roboto', weight: 'bold' });
+        logger.debug('Roboto-Bold font registered');
+      }
+
+      if (fs.existsSync(regularFontPath) || fs.existsSync(boldFontPath)) {
+        logger.info('Custom fonts registered successfully');
+      } else {
+        logger.info('No custom fonts found, using system defaults');
+      }
+    } catch (error) {
+      logger.warn('Could not register custom fonts, using system defaults.', { 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  }
 }
 
 export const idCardService = new IdCardService();

@@ -101,7 +101,7 @@ export interface IStorage {
 
   // Form template operations
   getAllFormTemplates(): Promise<FormTemplate[]>;
-  
+
   // Registration form operations
   getAllRegistrationForms(): Promise<RegistrationForm[]>;
 
@@ -156,6 +156,30 @@ export interface IStorage {
   getAchievementProgress(userId: number, achievementId: number): Promise<AchievementProgress | undefined>;
   updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress>;
   getUserAchievementProgress(userId: number): Promise<AchievementProgress[]>;
+
+  async getAllNews(): Promise<any[]> {
+    // This would typically query a news table
+    // For now, return empty array
+    return [];
+  }
+
+  async getLatestNews(limit: number = 5): Promise<any[]> {
+    // This would typically query a news table with limit and order by date
+    // For now, return empty array
+    return [];
+  }
+
+  async getAllEvents(): Promise<any[]> {
+    // This would typically query an events table
+    // For now, return empty array
+    return [];
+  }
+
+  async getUpcomingEvents(): Promise<any[]> {
+    // This would typically query events table with date filter
+    // For now, return empty array
+    return [];
+  }
 }
 
 // Import database storage
