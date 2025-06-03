@@ -385,7 +385,7 @@ function TemplatePreview({ template, isOpen, onClose }: TemplatePreviewProps) {
             Preview of how the ID card will appear for observers
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="p-4">
           <div 
             className="w-full aspect-[85/54] rounded-lg overflow-hidden shadow-lg"
@@ -412,40 +412,40 @@ function TemplatePreview({ template, isOpen, onClose }: TemplatePreviewProps) {
                 </div>
               )}
             </div>
-            
+
             <div className="p-6 flex flex-col md:flex-row gap-4">
               {template.template.showPhoto && (
                 <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2" style={{ borderColor: template.template.accentColor }}>
                   <FileImage className="h-10 w-10 text-gray-400" />
                 </div>
               )}
-              
+
               <div className="flex-1">
                 <div style={{ color: template.template.textColor }}>
                   <p className="text-sm font-medium">Observer ID</p>
                   <p className="text-xl font-bold mb-2">CAF123456</p>
-                  
+
                   <p className="text-sm font-medium">Name</p>
                   <p className="text-lg mb-2">John Doe</p>
-                  
+
                   <p className="text-sm font-medium">Status</p>
                   <Badge style={{ backgroundColor: template.template.accentColor }}>VERIFIED</Badge>
                 </div>
-                
+
                 {template.template.customText && (
                   <p className="mt-2 text-sm opacity-75" style={{ color: template.template.textColor }}>
                     {template.template.customText}
                   </p>
                 )}
               </div>
-              
+
               {template.template.showQrCode && (
                 <div className="flex-none w-24 h-24 bg-white p-1 rounded-lg">
                   <QrCode className="w-full h-full text-gray-800" />
                 </div>
               )}
             </div>
-            
+
             {template.template.footerText && (
               <div className="p-2 text-center text-sm" style={{ color: template.template.textColor }}>
                 {template.template.footerText}
@@ -453,7 +453,7 @@ function TemplatePreview({ template, isOpen, onClose }: TemplatePreviewProps) {
             )}
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>
@@ -472,6 +472,7 @@ export default function IdCardManagement() {
   const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch templates
   const { data: templates, isLoading } = useQuery<IdCardTemplate[]>({
@@ -589,55 +590,55 @@ export default function IdCardManagement() {
       customText: "GENERAL ELECTION DECEMBER 2025",
       footerText: "Citizens Action for Free and Fair Elections"
     };
-    
+
     // Try to extract values from the database template if they exist
     if (template.templateData) {
       // Background color
       if (template.templateData.background) {
         uiTemplate.backgroundColor = template.templateData.background;
       }
-      
+
       // Logo
       if (template.templateData.logo) {
         uiTemplate.logo = template.templateData.logo;
       }
-      
+
       // Extract colors and text from elements if available
       template.templateData.elements?.forEach(element => {
         if (element.type === 'header' && element.style?.backgroundColor) {
           uiTemplate.headerColor = element.style.backgroundColor as string;
         }
-        
+
         if (element.type === 'text' && element.style?.color) {
           uiTemplate.textColor = element.style.color as string;
         }
-        
+
         if (element.type === 'badge' && element.style?.backgroundColor) {
           uiTemplate.accentColor = element.style.backgroundColor as string;
         }
-        
+
         if (element.type === 'customText' && element.value) {
           uiTemplate.customText = element.value;
         }
-        
+
         if (element.type === 'footer' && element.value) {
           uiTemplate.footerText = element.value;
         }
       });
     }
-    
+
     // Security features
     if (template.securityFeatures) {
       uiTemplate.showWatermark = !!template.securityFeatures.watermark;
       uiTemplate.showQrCode = !!template.securityFeatures.qrEncryption;
     }
-    
+
     const formattedTemplate: TemplateFormValues = {
       name: template.name,
       description: template.description,
       template: uiTemplate
     };
-    
+
     setSelectedTemplate(template);
     setIsEditing(true);
     setPreviewTemplate(formattedTemplate);
@@ -713,7 +714,7 @@ export default function IdCardManagement() {
           otherFeatures: ['holographic seal', 'microprint']
         }
       };
-      
+
       // Add optional elements
       if (templateUI.customText) {
         dbTemplate.templateData.elements.push({
@@ -728,7 +729,7 @@ export default function IdCardManagement() {
           }
         });
       }
-      
+
       if (templateUI.footerText) {
         dbTemplate.templateData.elements.push({
           type: 'footer',
@@ -743,7 +744,7 @@ export default function IdCardManagement() {
           }
         });
       }
-      
+
       if (templateUI.showPhoto) {
         dbTemplate.templateData.elements.push({
           type: 'photo',
@@ -757,7 +758,7 @@ export default function IdCardManagement() {
           }
         });
       }
-      
+
       if (templateUI.showQrCode) {
         dbTemplate.templateData.elements.push({
           type: 'qrCode',
@@ -772,10 +773,10 @@ export default function IdCardManagement() {
           }
         });
       }
-      
+
       return dbTemplate;
     };
-    
+
     // Create the data to send to the API
     const apiData: ApiPayloadData = { // Explicitly type apiData
       name: data.name,
@@ -783,7 +784,7 @@ export default function IdCardManagement() {
       ...(convertTemplateForDB(data.template)),
       isActive: selectedTemplate ? selectedTemplate.isActive : false // Example: preserve isActive or default
     };
-    
+
     if (selectedTemplate) {
       updateTemplateMutation.mutate({ id: selectedTemplate.id, data: apiData });
     } else {
@@ -846,7 +847,7 @@ export default function IdCardManagement() {
               {selectedTemplate ? "Edit Template" : "Create Template"}
             </TabsTrigger>
           </TabsList>
-          
+
           {!isEditing && (
             <Button onClick={() => {
               setSelectedTemplate(null);
@@ -856,7 +857,7 @@ export default function IdCardManagement() {
             </Button>
           )}
         </div>
-        
+
         <TabsContent value="templates">
           <Card>
             <CardHeader>
@@ -927,45 +928,45 @@ export default function IdCardManagement() {
                                   customText: "GENERAL ELECTION DECEMBER 2025",
                                   footerText: "Citizens Action for Free and Fair Elections"
                                 };
-                                
+
                                 // Try to extract values from the database template if they exist
                                 if (template.templateData) {
                                   if (template.templateData.background) {
                                     uiTemplate.backgroundColor = template.templateData.background;
                                   }
-                                  
+
                                   if (template.templateData.logo) {
                                     uiTemplate.logo = template.templateData.logo;
                                   }
-                                  
+
                                   template.templateData.elements?.forEach(element => {
                                     if (element.type === 'header' && element.style?.backgroundColor) {
                                       uiTemplate.headerColor = element.style.backgroundColor as string;
                                     }
-                                    
+
                                     if (element.type === 'text' && element.style?.color) {
                                       uiTemplate.textColor = element.style.color as string;
                                     }
-                                    
+
                                     if (element.type === 'badge' && element.style?.backgroundColor) {
                                       uiTemplate.accentColor = element.style.backgroundColor as string;
                                     }
-                                    
+
                                     if (element.type === 'customText' && element.value) {
                                       uiTemplate.customText = element.value;
                                     }
-                                    
+
                                     if (element.type === 'footer' && element.value) {
                                       uiTemplate.footerText = element.value;
                                     }
                                   });
                                 }
-                                
+
                                 if (template.securityFeatures) {
                                   uiTemplate.showWatermark = !!template.securityFeatures.watermark;
                                   uiTemplate.showQrCode = !!template.securityFeatures.qrEncryption;
                                 }
-                                
+
                                 setPreviewTemplate({
                                   name: template.name,
                                   description: template.description,
@@ -1006,12 +1007,13 @@ export default function IdCardManagement() {
                       </TableRow>
                     ))}
                   </TableBody>
-                </Table>
+                </```text
+Table>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="edit">
           <Card>
             <CardHeader>
@@ -1041,45 +1043,45 @@ export default function IdCardManagement() {
                       customText: "GENERAL ELECTION DECEMBER 2025",
                       footerText: "Citizens Action for Free and Fair Elections"
                     };
-                    
+
                     // Try to extract values from the database template if they exist
                     if (selectedTemplate.templateData) {
                       if (selectedTemplate.templateData.background) {
                         uiTemplate.backgroundColor = selectedTemplate.templateData.background;
                       }
-                      
+
                       if (selectedTemplate.templateData.logo) {
                         uiTemplate.logo = selectedTemplate.templateData.logo;
                       }
-                      
+
                       selectedTemplate.templateData.elements?.forEach(element => {
                         if (element.type === 'header' && element.style?.backgroundColor) {
                           uiTemplate.headerColor = element.style.backgroundColor as string;
                         }
-                        
+
                         if (element.type === 'text' && element.style?.color) {
                           uiTemplate.textColor = element.style.color as string;
                         }
-                        
+
                         if (element.type === 'badge' && element.style?.backgroundColor) {
                           uiTemplate.accentColor = element.style.backgroundColor as string;
                         }
-                        
+
                         if (element.type === 'customText' && element.value) {
                           uiTemplate.customText = element.value;
                         }
-                        
+
                         if (element.type === 'footer' && element.value) {
                           uiTemplate.footerText = element.value;
                         }
                       });
                     }
-                    
+
                     if (selectedTemplate.securityFeatures) {
                       uiTemplate.showWatermark = !!selectedTemplate.securityFeatures.watermark;
                       uiTemplate.showQrCode = !!selectedTemplate.securityFeatures.qrEncryption;
                     }
-                    
+
                     return uiTemplate;
                   })()
                 } : undefined}
@@ -1090,14 +1092,14 @@ export default function IdCardManagement() {
           </Card>
         </TabsContent>
       </Tabs>
-      
+
       {/* Preview Dialog */}
       <TemplatePreview 
         template={previewTemplate}
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
       />
-      
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

@@ -18,6 +18,7 @@ const fetcher = (url: string) => fetch(url).then(res => {
 
 export default function AdminRolesPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   // Fetch roles
   const { data: roles, isLoading: loadingRoles, error: errorRoles } = useQuery({
     queryKey: ['roles'],
@@ -304,4 +305,4 @@ export default function AdminRolesPage() {
       </Dialog>
     </Card>
   );
-} 
+}
