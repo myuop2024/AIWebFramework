@@ -1,5 +1,5 @@
 import { useState, useRef, ChangeEvent } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../../lib/queryClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, AlertCircle, Check, Upload, X, Info, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { type User } from '@shared/schema';
+import { Input as ShadInput } from '@/components/ui/input';
+import { GoogleDrivePicker } from '@/components/ui/google-drive-picker';
+import Papa from 'papaparse';
 
 interface ProcessedUserData {
   firstName: string;
@@ -61,6 +64,17 @@ export default function UserImportCSV() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const [aiMode, setAiMode] = useState<string>('tabpfn');
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [isSheetLoading, setIsSheetLoading] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<{ headers: string[]; rows: string[][] } | null>(null);
+
+  // Fetch Google API credentials from system settings
+  const { data: settings } = useQuery<any[]>({
+    queryKey: ['/api/system-settings'],
+    refetchOnWindowFocus: false,
+  });
+  const googleClientId = settings?.find((s: any) => s.settingKey === 'google_client_id')?.settingValue || '';
+  const googleApiKey = settings?.find((s: any) => s.settingKey === 'google_api_key')?.settingValue || '';
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -168,17 +182,140 @@ export default function UserImportCSV() {
     },
   });
 
+  // Helper to fetch CSV from Google Sheets public link
+  const handleImportFromSheet = async () => {
+    if (!sheetUrl) return;
+    setIsSheetLoading(true);
+    try {
+      // Convert Google Sheets URL to CSV export URL if needed
+      let csvUrl = sheetUrl;
+      if (sheetUrl.includes('/edit')) {
+        csvUrl = sheetUrl.replace(/\/edit.*$/, '/export?format=csv');
+      }
+      const response = await fetch(csvUrl);
+      if (!response.ok) throw new Error('Failed to fetch Google Sheet');
+      const csvText = await response.text();
+      // Convert CSV text to File object
+      const csvFile = new File([csvText], 'import.csv', { type: 'text/csv' });
+      setFile(csvFile);
+      setProcessedData(null);
+      toast({ title: 'Sheet loaded', description: 'Google Sheet loaded as CSV. You can now process with AI.' });
+    } catch (e) {
+      toast({ title: 'Failed to load sheet', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setIsSheetLoading(false);
+    }
+  };
+
+  // Handler for Google Drive Picker (OAuth)
+  const handleDrivePick = async (csvContent: string) => {
+    // csvContent: CSV string from Google Drive Picker
+    const csvFile = new File([csvContent], 'import.csv', { type: 'text/csv' });
+    setFile(csvFile);
+    setProcessedData(null);
+    toast({ title: 'Sheet loaded', description: 'Google Drive Sheet loaded as CSV. You can now process with AI.' });
+  };
+
+  // Helper to parse and preview CSV
+  const previewCsv = (file: File) => {
+    Papa.parse(file, {
+      complete: (result) => {
+        if (result.data && result.data.length > 0) {
+          const rows = result.data as string[][];
+          const headers = rows[0];
+          const previewRows = rows.slice(1, 6); // up to 5 rows
+          setCsvPreview({ headers, rows: previewRows });
+        } else {
+          setCsvPreview(null);
+        }
+      },
+      error: () => setCsvPreview(null),
+    });
+  };
+
+  // When file changes, update preview
+  React.useEffect(() => {
+    if (file) {
+      previewCsv(file);
+    } else {
+      setCsvPreview(null);
+    }
+  }, [file]);
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Import Users from CSV</CardTitle>
+          <CardTitle>Import Users from CSV or Google Sheets</CardTitle>
           <CardDescription>
-            Upload a CSV or Excel file with user data. Our AI will enhance and validate the data before import.
+            Upload a CSV/Excel file, paste a Google Sheets link, or use Google Drive picker. Our AI will enhance and validate the data before import.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            {/* Google Sheets Import UI */}
+            <div className="space-y-2">
+              <Label htmlFor="sheet-url">Google Sheets Public Link</Label>
+              <div className="flex gap-2">
+                <ShadInput
+                  id="sheet-url"
+                  type="url"
+                  placeholder="Paste Google Sheets public link here..."
+                  value={sheetUrl}
+                  onChange={e => setSheetUrl(e.target.value)}
+                  disabled={isSheetLoading || uploadMutation.isPending}
+                />
+                <Button onClick={handleImportFromSheet} disabled={!sheetUrl || isSheetLoading || uploadMutation.isPending}>
+                  {isSheetLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load Sheet'}
+                </Button>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                The sheet must be published or shared as public. Only the first sheet will be imported.
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Or use Google Drive Picker (OAuth)</Label>
+              {googleClientId && googleApiKey ? (
+                <GoogleDrivePicker
+                  onPick={handleDrivePick}
+                  disabled={uploadMutation.isPending}
+                  clientId={googleClientId}
+                  apiKey={googleApiKey}
+                />
+              ) : (
+                <div className="text-xs text-red-600">Google API credentials are not set. Please configure them in Admin Settings.</div>
+              )}
+              <div className="text-xs text-muted-foreground">
+                Sign in with Google to pick a sheet from your Drive. Only the first sheet/tab will be imported.
+              </div>
+            </div>
+            {/* CSV Preview */}
+            {csvPreview && (
+              <div className="my-4">
+                <div className="font-medium mb-2">CSV Preview (first 5 rows)</div>
+                <div className="overflow-x-auto border rounded-md">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-muted">
+                      <tr>
+                        {csvPreview.headers.map((header, i) => (
+                          <th key={i} className="px-2 py-1 text-left font-semibold">{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvPreview.rows.map((row, i) => (
+                        <tr key={i} className="border-t">
+                          {csvPreview.headers.map((_, j) => (
+                            <td key={j} className="px-2 py-1">{row[j]}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {/* End CSV Preview */}
             <div className="space-y-2">
               <Label htmlFor="ai-mode">AI Mode</Label>
               <Select

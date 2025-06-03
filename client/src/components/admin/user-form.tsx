@@ -47,6 +47,14 @@ const userSchema = z.object({
   verificationStatus: z.string().default("pending"),
   notes: z.string().optional(),
   password: z.string().min(8, { message: "Password must be at least 8 characters" }).optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  region: z.string().optional(),
+  emergencyContact: z.string().optional(),
+  birthDate: z.string().optional(),
+  gender: z.string().optional(),
+  preferredLanguage: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof userSchema>;
@@ -80,6 +88,14 @@ export function UserForm({
     verificationStatus: user?.verificationStatus || "pending",
     notes: (user as any)?.notes || "",
     password: "",
+    phone: (user as any)?.phone || (user as any)?.profile?.phone || "",
+    address: (user as any)?.address || (user as any)?.profile?.address || "",
+    city: (user as any)?.city || (user as any)?.profile?.city || "",
+    region: (user as any)?.region || (user as any)?.profile?.region || "",
+    emergencyContact: (user as any)?.emergencyContact || (user as any)?.profile?.emergencyContact || "",
+    birthDate: (user as any)?.birthDate || (user as any)?.profile?.birthDate || "",
+    gender: (user as any)?.gender || (user as any)?.profile?.gender || "",
+    preferredLanguage: (user as any)?.preferredLanguage || (user as any)?.profile?.preferredLanguage || "",
   };
 
   const form = useForm<UserFormValues>({
@@ -395,6 +411,130 @@ export function UserForm({
                             {...field}
                             value={field.value || ""}
                           />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1234567890" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123 Main St" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input placeholder="City" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="region"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Region</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Region" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="emergencyContact"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Emergency Contact" {...field} value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="birthDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Birth Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} value={field.value || ""} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="gender"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Gender</FormLabel>
+                          <FormControl>
+                            <Select value={field.value || ""} onValueChange={field.onChange}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select gender" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="prefer_not_to_say">Prefer not to say</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="preferredLanguage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Preferred Language</FormLabel>
+                        <FormControl>
+                          <Input placeholder="English" {...field} value={field.value || ""} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -95,6 +95,21 @@ export default function SystemSettings() {
     });
   };
 
+  // Google API settings state
+  const googleClientIdSetting = findSetting('google_client_id');
+  const googleApiKeySetting = findSetting('google_api_key');
+  const [googleClientId, setGoogleClientId] = useState(googleClientIdSetting?.settingValue || '');
+  const [googleApiKey, setGoogleApiKey] = useState(googleApiKeySetting?.settingValue || '');
+  useEffect(() => {
+    setGoogleClientId(googleClientIdSetting?.settingValue || '');
+    setGoogleApiKey(googleApiKeySetting?.settingValue || '');
+  }, [googleClientIdSetting, googleApiKeySetting]);
+
+  const saveGoogleApiSettings = () => {
+    updateSettingMutation.mutate({ key: 'google_client_id', value: googleClientId });
+    updateSettingMutation.mutate({ key: 'google_api_key', value: googleApiKey });
+  };
+
   const isLoading = settingsLoading;
   const isError = settingsError;
 
@@ -147,6 +162,10 @@ export default function SystemSettings() {
           <TabsTrigger value="didit-integration">
             <Fingerprint className="mr-2 h-4 w-4" />
             Didit.me Integration
+          </TabsTrigger>
+          <TabsTrigger value="google-api">
+            <SettingsIcon className="mr-2 h-4 w-4" />
+            Google API
           </TabsTrigger>
         </TabsList>
 
@@ -240,6 +259,48 @@ export default function SystemSettings() {
         
         <TabsContent value="didit-integration" className="space-y-4">
           <DiditSettingsPanel />
+        </TabsContent>
+
+        <TabsContent value="google-api" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Google API Integration</CardTitle>
+              <CardDescription>
+                Configure your Google API credentials for Google Sheets and Drive integration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="google-client-id">Google Client ID</Label>
+                <Input
+                  id="google-client-id"
+                  value={googleClientId}
+                  onChange={e => setGoogleClientId(e.target.value)}
+                  placeholder="xxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                  autoComplete="off"
+                />
+              </div>
+              <div>
+                <Label htmlFor="google-api-key">Google API Key</Label>
+                <Input
+                  id="google-api-key"
+                  value={googleApiKey}
+                  onChange={e => setGoogleApiKey(e.target.value)}
+                  placeholder="AIza..."
+                  autoComplete="off"
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button onClick={saveGoogleApiSettings} disabled={updateSettingMutation.isPending}>
+                {updateSettingMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                ) : (
+                  <><Save className="mr-2 h-4 w-4" /> Save Changes</>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
         </TabsContent>
       </Tabs>
     </AdminLayout>
