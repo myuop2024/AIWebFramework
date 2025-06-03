@@ -564,9 +564,11 @@ export class ImageProcessingService {
         
         const startTime = Date.now();
         const response = await hf.imageSegmentation({
-          model: "briaai/RMBG-2.0",  // Using the newer, better model
+          model: "briaai/RMBG-2.0", // Using the newer, better model
           data: Buffer.from(base64Image, 'base64'),
         });
+        const primarySeg = Array.isArray(response) ? response[0] : response;
+        let mask = primarySeg?.mask;
         const endTime = Date.now();
         logger.debug(`RMBG 2.0 background removal completed in ${endTime - startTime}ms`);
         
@@ -576,7 +578,7 @@ export class ImageProcessingService {
         }
         
         // Extract the mask
-        if (!response || !response.mask) {
+        if (!mask) {
           logger.info('No valid mask from RMBG 2.0, trying fallback to RMBG 1.4...');
           
           // Try the original model as fallback
@@ -593,14 +595,16 @@ export class ImageProcessingService {
             logger.debug('RMBG 1.4 response received.', { structure: Object.keys(fallbackResponse).join(', ') });
           }
           
-          if (!fallbackResponse || !fallbackResponse.mask) {
+          const fallbackSeg = Array.isArray(fallbackResponse) ? fallbackResponse[0] : fallbackResponse;
+          const fallbackMask = fallbackSeg?.mask;
+          if (!fallbackMask) {
             logger.error('Both RMBG 2.0 and 1.4 failed to return valid masks for background removal');
             throw new Error('No valid segmentation mask returned from any API model');
           }
-          
+
           // Use the fallback response instead
           logger.info('Using mask from RMBG 1.4 fallback for background removal');
-          response.mask = fallbackResponse.mask;
+          mask = fallbackMask;
         } else {
           logger.debug('Successfully obtained mask from RMBG 2.0');
         }
@@ -611,7 +615,9 @@ export class ImageProcessingService {
         logger.debug(`Original image dimensions for background removal: ${originalImage.width}x${originalImage.height}`);
         
         logger.debug('Converting mask to image');
-        const maskBuffer = Buffer.from(await response.mask.arrayBuffer());
+        const maskBuffer = typeof mask === 'string'
+          ? Buffer.from(mask.split(',').pop()!, 'base64')
+          : Buffer.from(await (mask as Blob).arrayBuffer());
         logger.debug(`Mask buffer size: ${maskBuffer.length} bytes`);
         
         const maskImage = await this.loadImage(maskBuffer);
@@ -660,7 +666,7 @@ export class ImageProcessingService {
         
         return resultBuffer;
       } catch (hfError) {
-        logger.error('Hugging Face background removal error', { error: hfError instanceof Error ? hfError : new Error(String(hfError)) });
+        logger.error('Hugging Face background removal error', hfError instanceof Error ? hfError : new Error(String(hfError)));
         logger.debug('Hugging Face error details for background removal', { errorDetails: JSON.stringify(hfError) });
         
         // If GitHub fallback is enabled, try that instead
@@ -672,7 +678,7 @@ export class ImageProcessingService {
         }
       }
     } catch (error) {
-      logger.error('Background removal error', { error: error instanceof Error ? error : new Error(String(error)) });
+      logger.error('Background removal error', error instanceof Error ? error : new Error(String(error)));
       logger.info('Returning original image without background removal due to error');
       // Return the original image buffer if background removal fails
       return imageBuffer;
@@ -729,7 +735,7 @@ export class ImageProcessingService {
       // Convert to PNG with transparency
       return this.canvasToBuffer(canvas, 'image/png', 1.0);
     } catch (error) {
-      logger.error('GitHub background removal fallback error', { error: error instanceof Error ? error : new Error(String(error)) });
+      logger.error('GitHub background removal fallback error', error instanceof Error ? error : new Error(String(error)));
       return imageBuffer;
     }
   }
