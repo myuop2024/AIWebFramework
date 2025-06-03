@@ -181,7 +181,7 @@ process.on('unhandledRejection', async (reason: any, promise: Promise<any>) => {
       message: `Unhandled Promise Rejection: ${errorMessage}`,
       error: errorObject,
       source: 'unhandledRejection',
-      level: 'critical', // Or 'error' as per original snippet, critical if exiting
+      level: 'error', // Or 'error' as per original snippet, critical if exiting
       // context: { promiseDetails: util.inspect(promise) } // Example, be careful with promise object size
     });
     logger.info('Unhandled rejection successfully logged to database.');

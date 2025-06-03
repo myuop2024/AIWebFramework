@@ -68,7 +68,7 @@ import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
 import AdminRoleGroupManagementPage from '@/pages/admin/role-group-management';
 import AdminLogsPage from '@/pages/admin/logs';
 import { useMobileOptimizations } from './hooks/use-ios-optimizations';
-import { PermissionsProvider } from '@/hooks/usePermissions.tsx';
+import { PermissionsProvider } from '@/hooks/usePermissions';
 
 function Router() {
   return (
@@ -219,7 +219,7 @@ function App() {
     logs.push(logEntry);
     // Remove logs older than 1 day
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    logs = logs.filter(l => new Date(l.timestamp) > oneDayAgo);
+    logs = logs.filter((l: any) => new Date(l.timestamp) > oneDayAgo);
     // Save back
     localStorage.setItem('pageLogs', JSON.stringify(logs));
     // Send to backend
