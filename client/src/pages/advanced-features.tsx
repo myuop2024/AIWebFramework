@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/button';
 import { PageWrapper } from '@/components/ui/page-wrapper';
 import { ModernCard } from '@/components/ui/modern-card';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { Sparkles, Brain, Users, Smartphone, BarChart, Zap, Globe, Shield } from 'lucide-react';
+import { Sparkles, Brain, Users, Smartphone, BarChart, Zap, Globe, Shield, Mic } from 'lucide-react';
 import { AIAssistant } from '@/components/advanced/ai-assistant';
 import { RealTimeCollaboration } from '@/components/advanced/real-time-collaboration';
 import { SmartAnalytics } from '@/components/advanced/smart-analytics';
 import { ProgressiveWebApp } from '@/components/advanced/progressive-web-app';
+import { VoiceMemos } from '@/components/offline/voice-memos';
 
 export default function AdvancedFeatures() {
   const [activeTab, setActiveTab] = useState('ai-assistant');
@@ -51,6 +52,15 @@ export default function AdvancedFeatures() {
       badge: 'Offline Ready',
       color: 'text-orange-600',
       component: <ProgressiveWebApp />
+    },
+    {
+      id: 'voice-memos',
+      title: 'Offline Voice Memos',
+      description: 'Record audio reports that sync when connection returns',
+      icon: <Mic className="h-5 w-5" />,
+      badge: 'Offline',
+      color: 'text-teal-600',
+      component: <VoiceMemos />
     }
   ];
 

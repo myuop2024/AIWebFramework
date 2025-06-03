@@ -16,6 +16,8 @@ import {
   type InsertReport,
   type ReportAttachment,
   type InsertReportAttachment,
+  type VoiceMemo,
+  type InsertVoiceMemo,
   type FormTemplate,
   type InsertFormTemplate,
   type Event,
@@ -156,6 +158,11 @@ export interface IStorage {
   getAchievementProgress(userId: number, achievementId: number): Promise<AchievementProgress | undefined>;
   updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress>;
   getUserAchievementProgress(userId: number): Promise<AchievementProgress[]>;
+
+  // Voice memo operations
+  createVoiceMemo(memo: InsertVoiceMemo): Promise<VoiceMemo>;
+  getVoiceMemo(id: number): Promise<VoiceMemo | undefined>;
+  getVoiceMemosByUserId(userId: number): Promise<VoiceMemo[]>;
 }
 
 // Import database storage
