@@ -228,6 +228,21 @@ export const reportAttachments = pgTable("report_attachments", {
   encryptionIv: text("encryption_iv"), // Initialization vector for encryption
 });
 
+// Voice memos recorded by observers
+export const voiceMemos = pgTable("voice_memos", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  fileType: text("file_type").notNull(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size").notNull(),
+  duration: real("duration"),
+  transcript: text("transcript"),
+  recordedAt: timestamp("recorded_at").defaultNow(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  encryptionIv: text("encryption_iv"),
+});
+
 // Events and training
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
@@ -670,6 +685,14 @@ export const insertReportAttachmentSchema = createInsertSchema(reportAttachments
     ocrText: true,
   });
 
+export const insertVoiceMemoSchema = createInsertSchema(voiceMemos)
+  .omit({
+    id: true,
+    uploadedAt: true,
+    recordedAt: true,
+    transcript: true,
+  });
+
 export const insertEventSchema = createInsertSchema(events)
   .omit({
     id: true,
@@ -797,6 +820,9 @@ export type InsertReport = typeof insertReportSchema._type;
 
 export type ReportAttachment = typeof reportAttachments.$inferSelect;
 export type InsertReportAttachment = typeof insertReportAttachmentSchema._type;
+
+export type VoiceMemo = typeof voiceMemos.$inferSelect;
+export type InsertVoiceMemo = typeof insertVoiceMemoSchema._type;
 
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = typeof insertEventSchema._type;

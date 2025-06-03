@@ -10,6 +10,7 @@ import {
   userProfiles,
   reports,
   reportAttachments,
+  voiceMemos,
   formTemplates,
   events,
   eventParticipation,
@@ -38,6 +39,8 @@ import {
   type InsertReport,
   type ReportAttachment,
   type InsertReportAttachment,
+  type VoiceMemo,
+  type InsertVoiceMemo,
   type FormTemplate,
   type InsertFormTemplate,
   type RegistrationForm,
@@ -1585,6 +1588,40 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       logger.error(`Error getting achievement progress for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  // Voice memo operations
+  async createVoiceMemo(memo: InsertVoiceMemo): Promise<VoiceMemo> {
+    try {
+      const [created] = await db.insert(voiceMemos).values(memo).returning();
+      logger.info(`Created voice memo ${created.id} for user ${created.userId}`);
+      return created;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating voice memo: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getVoiceMemo(id: number): Promise<VoiceMemo | undefined> {
+    try {
+      const [memo] = await db.select().from(voiceMemos).where(eq(voiceMemos.id, id));
+      return memo;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error fetching voice memo ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getVoiceMemosByUserId(userId: number): Promise<VoiceMemo[]> {
+    try {
+      return await db.select().from(voiceMemos).where(eq(voiceMemos.userId, userId)).orderBy(desc(voiceMemos.uploadedAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error fetching voice memos for user ${userId}: ${err.message}`, err);
       throw err;
     }
   }

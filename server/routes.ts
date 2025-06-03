@@ -30,6 +30,7 @@ import communicationRoutes, { setCommunicationService } from './routes/communica
 import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
+import voiceMemoRoutes from './routes/voice-memos';
 import newsEnhancedPredictionsRoutes from './routes/news-enhanced-predictions';
 // New comprehensive CRUD routes
 import newsRoutes from './routes/news-routes';
@@ -2336,6 +2337,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
   // AI-powered image processing routes
   app.use('/api/images', imageProcessingRoutes);
+
+  // Offline voice memo uploads
+  app.use('/api/voice-memos', voiceMemoRoutes);
 
   // Add Didit.me verification routes
   app.use('/api/verification', diditVerificationRoutes);
