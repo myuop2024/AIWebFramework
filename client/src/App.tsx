@@ -137,6 +137,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/roles" component={AdminRolesPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/groups" component={AdminGroupsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/group-permissions" component={AdminGroupPermissionsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/role-group-management" component={AdminRoleGroupManagementPage} allowedRoles={["admin", "director"]} />
 
       {/* Supervisor Routes */}
       <RoleProtectedRoute 
