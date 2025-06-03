@@ -728,11 +728,6 @@ export class IdCardService {
       });
     }
   }
-      }
-
-      }
+}
 
 export const idCardService = new IdCardService();
-
-
-}
