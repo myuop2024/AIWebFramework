@@ -72,7 +72,14 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     const responseTime = Date.now() - startTime;
 
     // Log request with timing
-    logger.logApiRequest(req, res.statusCode, responseTime);
+    logger.info(`API Request: ${req.method} ${req.originalUrl}`, {
+      method: req.method,
+      url: req.originalUrl,
+      statusCode: res.statusCode,
+      responseTime: `${responseTime}ms`,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']
+    });
 
     // Log slow requests
     if (responseTime > 500) {
