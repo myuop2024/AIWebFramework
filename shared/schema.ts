@@ -513,13 +513,17 @@ export type VerificationSettings = z.infer<typeof verificationSettingsSchema>;
 // Error logs for application monitoring
 export const errorLogs = pgTable("error_logs", {
   id: serial("id").primaryKey(),
-  level: text("level").notNull(), // error, warning, info
-  message: text("message").notNull(),
-  stack: text("stack"),
-  metadata: jsonb("metadata"),
   userId: integer("user_id").references(() => users.id),
+  source: text("source").notNull().default("unknown"), // express, websocket, webrtc, client, etc.
+  level: text("level").notNull().default("error"), // error, warning, info
+  message: text("message").notNull(),
+  code: text("code"), // error code or error name
+  stack: text("stack"),
+  url: text("url"), // full URL where error occurred
   userAgent: text("user_agent"),
-  path: text("path"),
+  path: text("path"), // request path
+  method: text("method"), // HTTP method
+  context: jsonb("context"), // additional context data
   timestamp: timestamp("timestamp").defaultNow(),
   resolved: boolean("resolved").default(false),
   resolvedAt: timestamp("resolved_at"),

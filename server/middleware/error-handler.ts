@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import logger from '../utils/logger';
+import logger, { getRequestInfo } from '../utils/logger';
 
 /**
  * Global final error handler middleware
@@ -84,7 +84,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     // Log slow requests
     if (responseTime > 500) {
       logger.warn('Slow API request', {
-        ...logger.getRequestInfo(req),
+        ...getRequestInfo(req),
         responseTime: `${responseTime}ms`,
         threshold: '500ms'
       });
