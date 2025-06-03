@@ -7,7 +7,7 @@ import { pool, checkDbConnection } from "./db";
 import { IdCardService } from "./services/id-card-service";
 import { storage } from "./storage";
 import path from "path";
-import logger from "./utils/logger";
+import logger, { critical } from "./utils/logger";
 import { attachUser } from "./middleware/auth";
 import {
   finalErrorHandler,
@@ -152,14 +152,14 @@ app.use((req, res, next) => {
 
 // Global error handlers for all uncaught exceptions and unhandled promise rejections
 process.on('uncaughtException', async (error: Error, origin: string) => {
-  logger.critical(`UNCAUGHT EXCEPTION --- Origin: ${origin}`, error);
+  critical(`UNCAUGHT EXCEPTION --- Origin: ${origin}`, error);
 
   try {
     await ErrorLogger.logError({
       message: `Uncaught Exception: ${error.message}`,
       error: error,
       source: origin || 'uncaughtException',
-      level: 'critical',
+      level: 'error',
     });
     logger.info('Uncaught exception successfully logged to database.');
   } catch (dbLogError) {
