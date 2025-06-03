@@ -151,6 +151,14 @@ export default function DocumentViewerModal({
     }
   };
 
+  // Mock chain of custody and watermark logic
+  const getChainOfCustody = (doc: Document) => [
+    { step: 'Uploaded', at: doc.uploadedAt },
+    { step: 'Verified', at: doc.verificationStatus === 'approved' ? doc.uploadedAt : null },
+    { step: 'Downloaded', at: null }
+  ];
+  const hasWatermark = (doc: Document) => Boolean(doc.documentUrl && doc.documentUrl.includes('upload_'));
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -298,11 +306,24 @@ export default function DocumentViewerModal({
                   <h3 className="text-lg font-medium">{formatDocumentType(selectedDocument.documentType)}</h3>
                   <p className="text-sm text-gray-500">Uploaded: {formatDate(selectedDocument.uploadedAt)}</p>
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                   {getStatusBadge(selectedDocument.verificationStatus)}
+                  <Badge variant={hasWatermark(selectedDocument) ? 'default' : 'outline'} className="ml-2">
+                    {hasWatermark(selectedDocument) ? 'Watermarked' : 'No Watermark'}
+                  </Badge>
                 </div>
               </div>
-              
+              {/* Chain of Custody Timeline */}
+              <div className="mb-2">
+                <h4 className="text-xs font-semibold text-gray-500 mb-1">Chain of Custody</h4>
+                <div className="flex items-center gap-2">
+                  {getChainOfCustody(selectedDocument).map((step, idx, arr) => (
+                    <span key={step.step} className={`px-2 py-1 rounded text-xs font-semibold ${step.at ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                      {step.step}
+                    </span>
+                  )).reduce((prev, curr, idx, arr) => idx < arr.length - 1 ? [prev, <span key={idx} className="text-gray-400">→</span>, curr] : [prev, curr])}
+                </div>
+              </div>
               <div className="border rounded-lg overflow-hidden">
                 {selectedDocument.documentType.includes('image') || 
                  documentViewUrl?.match(/\.(jpeg|jpg|gif|png)$/i) ? (

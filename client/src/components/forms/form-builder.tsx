@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -76,6 +76,8 @@ interface FormBuilderProps {
 
 export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilderProps) {
   const [formData, setFormData] = useState<Record<string, string | number | boolean | string[] | null>>({});
+  const [showSuggestions, setShowSuggestions] = useState<string | null>(null);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
   // Generate a dynamic schema based on the form fields
   const generateSchema = () => {
@@ -186,6 +188,9 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
       onSubmit(data);
     }
     setFormData(data as Record<string, string | number | boolean | string[] | null>); // Added type assertion
+    Object.entries(data).forEach(([field, value]) => {
+      if (typeof value === 'string') saveFieldHistory(field, value);
+    });
   };
   
   // Get sections from template fields
@@ -203,26 +208,64 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
     );
   }
   
+  // Smart auto-completion logic
+  function getFieldHistory(fieldName: string): string[] {
+    try {
+      const data = localStorage.getItem('formFieldHistory_' + fieldName);
+      if (data) return JSON.parse(data);
+    } catch {}
+    return [];
+  }
+  function saveFieldHistory(fieldName: string, value: string) {
+    if (!value) return;
+    let history = getFieldHistory(fieldName);
+    if (!history.includes(value)) {
+      history = [value, ...history].slice(0, 5);
+      localStorage.setItem('formFieldHistory_' + fieldName, JSON.stringify(history));
+    }
+  }
+  
   // Render a field based on its type
   const renderField = (field: SchemaFormField, fieldName: string) => {
     const { type, label, placeholder, required, helpText, options } = field;
     
     switch (type) {
       case 'text':
+        const textHistory = getFieldHistory(fieldName);
         return (
           <FormField
             control={form.control}
             name={fieldName}
             render={({ field }) => (
-              <FormItem>
+              <FormItem style={{ position: 'relative' }}>
                 <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder={placeholder} 
-                    {...field} 
+                  <Input
+                    placeholder={placeholder}
+                    {...field}
                     disabled={readOnly}
+                    ref={el => inputRefs.current[fieldName] = el}
+                    autoComplete="off"
+                    onFocus={() => setShowSuggestions(fieldName)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(null), 200)}
                   />
                 </FormControl>
+                {showSuggestions === fieldName && textHistory.length > 0 && (
+                  <div className="absolute z-10 bg-white border rounded shadow w-full mt-1">
+                    {textHistory.map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm"
+                        onMouseDown={() => {
+                          form.setValue(fieldName, suggestion);
+                          setShowSuggestions(null);
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {helpText && <FormDescription>{helpText}</FormDescription>}
                 <FormMessage />
               </FormItem>
@@ -254,22 +297,43 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
         );
       
       case 'number':
+        const numberHistory = getFieldHistory(fieldName);
         return (
           <FormField
             control={form.control}
             name={fieldName}
             render={({ field }) => (
-              <FormItem>
+              <FormItem style={{ position: 'relative' }}>
                 <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder={placeholder} 
-                    {...field} 
+                  <Input
+                    type="number"
+                    placeholder={placeholder}
+                    {...field}
                     disabled={readOnly}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    ref={el => inputRefs.current[fieldName] = el}
+                    autoComplete="off"
+                    onFocus={() => setShowSuggestions(fieldName)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(null), 200)}
+                    onChange={e => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
+                {showSuggestions === fieldName && numberHistory.length > 0 && (
+                  <div className="absolute z-10 bg-white border rounded shadow w-full mt-1">
+                    {numberHistory.map((suggestion, idx) => (
+                      <div
+                        key={idx}
+                        className="px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm"
+                        onMouseDown={() => {
+                          form.setValue(fieldName, suggestion);
+                          setShowSuggestions(null);
+                        }}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {helpText && <FormDescription>{helpText}</FormDescription>}
                 <FormMessage />
               </FormItem>

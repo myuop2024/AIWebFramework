@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Message {
   id: string;
@@ -18,6 +19,9 @@ interface Message {
     action: string;
     icon?: React.ReactNode;
   }>;
+  originalContent?: string;
+  translated?: boolean;
+  language?: string;
 }
 
 interface AIAssistantProps {
@@ -46,6 +50,16 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
   const [speechSupported, setSpeechSupported] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [availableLanguages] = useState([
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Spanish' },
+    { code: 'fr', label: 'French' },
+    { code: 'ar', label: 'Arabic' },
+    { code: 'ru', label: 'Russian' },
+    { code: 'zh', label: 'Chinese' },
+    { code: 'sw', label: 'Swahili' },
+  ]);
 
   useEffect(() => {
     // Check for speech recognition support
@@ -163,14 +177,30 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
     };
   };
 
+  // Translation utility (mocked for now, replace with real API call)
+  async function translateText(text: string, from: string, to: string): Promise<string> {
+    if (from === to) return text;
+    // TODO: Integrate with Google Translate API or open-source alternative
+    // For now, just return the text with a [translated] tag for demo
+    return `[${to}] ` + text;
+  }
+
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Translate user input to English if needed
+    let translatedInput = input;
+    if (selectedLanguage !== 'en') {
+      translatedInput = await translateText(input, selectedLanguage, 'en');
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      suggestions: undefined,
+      actions: undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -178,12 +208,22 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
     setIsLoading(true);
 
     try {
-      const aiResponse = await generateAIResponse(userMessage.content);
-      setMessages(prev => [...prev, aiResponse]);
-      
+      // Pass translated input to AI
+      const aiResponse = await generateAIResponse(translatedInput);
+      let translatedContent = aiResponse.content;
+      if (selectedLanguage !== 'en') {
+        translatedContent = await translateText(aiResponse.content, 'en', selectedLanguage);
+      }
+      setMessages(prev => [...prev, {
+        ...aiResponse,
+        content: translatedContent,
+        originalContent: aiResponse.content,
+        translated: selectedLanguage !== 'en',
+        language: selectedLanguage
+      }]);
       // Optional: Speak the response
-      if (aiResponse.content.length < 200) {
-        speakText(aiResponse.content);
+      if (translatedContent.length < 200) {
+        speakText(translatedContent);
       }
     } catch (error) {
       console.error('AI Assistant error:', error);
@@ -219,6 +259,18 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
           <Badge variant="secondary" className="ml-auto">
             Smart Help
           </Badge>
+          <div className="ml-4">
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableLanguages.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>{lang.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -250,6 +302,9 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
                       : 'bg-muted'
                   )}>
                     <p className="text-sm">{message.content}</p>
+                    {message.translated && message.originalContent && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">(Original: {message.originalContent})</p>
+                    )}
                   </div>
                   
                   {/* Suggestions */}

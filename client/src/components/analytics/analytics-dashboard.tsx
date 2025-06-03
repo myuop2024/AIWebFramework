@@ -47,10 +47,17 @@ import {
   FileText,
   Newspaper,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { LineChart, Line, HeatMapGrid } from 'recharts';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { Cloud, CloudRain, Sun, Wifi, WifiOff } from 'lucide-react';
+import { ResponsiveContainer } from 'recharts';
+import { Tooltip, Legend } from 'recharts';
 
-type TabValue = 'overview' | 'locations' | 'trends' | 'insights' | 'predictions';
+type TabValue = 'overview' | 'locations' | 'trends' | 'insights' | 'predictions' | 'sentiment' | 'turnout-maps';
 
 type TimeRange = {
   startDate: Date;
@@ -117,6 +124,31 @@ type NewsEnhancedPredictionResponse = {
   message?: string;
 };
 
+// Mock turnout data
+const mockTurnoutData = [
+  { time: '8:00', predicted: 15, actual: 12 },
+  { time: '10:00', predicted: 35, actual: 38 },
+  { time: '12:00', predicted: 55, actual: 52 },
+  { time: '14:00', predicted: 70, actual: 68 },
+  { time: '16:00', predicted: 85, actual: null },
+  { time: '18:00', predicted: 95, actual: null },
+];
+
+// Mock heatmap data
+const mockHeatmapData = [
+  { lat: 18.0179, lng: -76.8099, intensity: 8, region: 'Kingston' },
+  { lat: 18.4762, lng: -77.8939, intensity: 5, region: 'Montego Bay' },
+  { lat: 18.1825, lng: -77.3218, intensity: 3, region: 'Ocho Rios' },
+  { lat: 17.9927, lng: -76.7920, intensity: 6, region: 'Spanish Town' },
+];
+
+// Mock weather data
+const mockWeatherImpact = {
+  current: 'sunny',
+  impact: 'positive',
+  message: 'Clear weather is expected to increase turnout by 5-10%'
+};
+
 export function AnalyticsDashboard() {
   const [activeTab, setActiveTab] = useState<TabValue>('overview');
   const [timeRange, setTimeRange] = useState<TimeRange | null>(null);
@@ -126,6 +158,10 @@ export function AnalyticsDashboard() {
   const [stationId, setStationId] = useState<number | null>(null);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [reportContent, setReportContent] = useState<string | null>(null);
+  const [sentimentInput, setSentimentInput] = useState('');
+  const [sentimentResult, setSentimentResult] = useState<null | { score: number; label: string; explanation: string }>(null);
+  const [sentimentLoading, setSentimentLoading] = useState(false);
+  const [isRealTimeConnected, setIsRealTimeConnected] = useState(true);
 
   // Fetch analytics data
   const { data, isLoading, error, refetch } = useQuery({
@@ -218,6 +254,14 @@ export function AnalyticsDashboard() {
     });
   }, []);
 
+  // Simulate real-time connection
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsRealTimeConnected(prev => !prev);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Generate a comprehensive report
   const generateReport = async () => {
     if (!dateFrom || !dateTo) return;
@@ -271,6 +315,36 @@ export function AnalyticsDashboard() {
         return <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Medium</Badge>;
       case 'high':
         return <Badge variant="outline" className="bg-red-50 text-red-700">High</Badge>;
+    }
+  };
+
+  // Simple sentiment analysis (mocked, replace with real model/API)
+  function analyzeSentiment(text: string): { score: number; label: string; explanation: string } {
+    // Very basic: positive if contains 'good', negative if 'bad', else neutral
+    const lower = text.toLowerCase();
+    if (lower.includes('good') || lower.includes('success') || lower.includes('win')) {
+      return { score: 0.8, label: 'Positive', explanation: 'Detected positive keywords.' };
+    }
+    if (lower.includes('bad') || lower.includes('fail') || lower.includes('problem')) {
+      return { score: 0.2, label: 'Negative', explanation: 'Detected negative keywords.' };
+    }
+    return { score: 0.5, label: 'Neutral', explanation: 'No strong sentiment detected.' };
+  }
+
+  const handleAnalyzeSentiment = () => {
+    setSentimentLoading(true);
+    setTimeout(() => {
+      setSentimentResult(analyzeSentiment(sentimentInput));
+      setSentimentLoading(false);
+    }, 500);
+  };
+
+  // Add weather icon helper
+  const getWeatherIcon = (weather: string) => {
+    switch (weather) {
+      case 'sunny': return <Sun className="h-5 w-5 text-yellow-500" />;
+      case 'rainy': return <CloudRain className="h-5 w-5 text-blue-500" />;
+      default: return <Cloud className="h-5 w-5 text-gray-500" />;
     }
   };
 
@@ -382,6 +456,21 @@ export function AnalyticsDashboard() {
         </div>
       </div>
 
+      {/* Real-time Status Indicator */}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {isRealTimeConnected ? (
+          <>
+            <Wifi className="h-4 w-4 text-green-500" />
+            <span className="text-sm text-green-600">Real-time Connected</span>
+          </>
+        ) : (
+          <>
+            <WifiOff className="h-4 w-4 text-red-500" />
+            <span className="text-sm text-red-600">Reconnecting...</span>
+          </>
+        )}
+      </div>
+
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)}>
         <TabsList className="mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -389,6 +478,8 @@ export function AnalyticsDashboard() {
           <TabsTrigger value="trends">Trends</TabsTrigger>
           <TabsTrigger value="insights">AI Insights</TabsTrigger>
           <TabsTrigger value="predictions">Predictions</TabsTrigger>
+          <TabsTrigger value="sentiment">Sentiment Analysis</TabsTrigger>
+          <TabsTrigger value="turnout-maps">Turnout & Maps</TabsTrigger>
         </TabsList>
 
         {isLoading ? (
@@ -809,6 +900,130 @@ export function AnalyticsDashboard() {
                   </Card>
                 </div>
               </div>
+            </TabsContent>
+
+            {/* Sentiment Analysis Tab */}
+            {activeTab === 'sentiment' && (
+              <div className="max-w-xl mx-auto mt-8">
+                <h2 className="text-2xl font-bold mb-2">Sentiment Analysis</h2>
+                <p className="mb-4 text-gray-500">Paste social media, news, or any text to analyze election-related sentiment.</p>
+                <Textarea
+                  value={sentimentInput}
+                  onChange={e => setSentimentInput(e.target.value)}
+                  placeholder="Paste text here..."
+                  rows={5}
+                  className="mb-2"
+                />
+                <Button onClick={handleAnalyzeSentiment} disabled={!sentimentInput.trim() || sentimentLoading}>
+                  {sentimentLoading ? 'Analyzing...' : 'Analyze Sentiment'}
+                </Button>
+                {sentimentResult && (
+                  <div className="mt-4 p-4 rounded bg-gray-50 border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`font-bold text-lg ${sentimentResult.label === 'Positive' ? 'text-green-600' : sentimentResult.label === 'Negative' ? 'text-red-600' : 'text-gray-600'}`}>{sentimentResult.label}</span>
+                      <span className="text-sm text-gray-400">(Score: {sentimentResult.score})</span>
+                    </div>
+                    <div className="text-sm text-gray-700">{sentimentResult.explanation}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Turnout & Maps Tab */}
+            <TabsContent value="turnout-maps" className="space-y-6">
+              {/* Turnout Forecasting */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Turnout Forecasting</CardTitle>
+                  <CardDescription>Predicted vs Actual Voter Turnout</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={mockTurnoutData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="time" />
+                        <YAxis label={{ value: 'Turnout %', angle: -90, position: 'insideLeft' }} />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="predicted" stroke="#8884d8" name="Predicted" strokeDasharray="5 5" />
+                        <Line type="monotone" dataKey="actual" stroke="#82ca9d" name="Actual" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      {getWeatherIcon(mockWeatherImpact.current)}
+                      <span className="text-sm">{mockWeatherImpact.message}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Interactive Heatmap */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Incident Density Heatmap</CardTitle>
+                  <CardDescription>Click on markers for details</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-96 rounded-lg overflow-hidden border">
+                    <div className="h-full relative bg-gray-100">
+                      {/* Mock heatmap visualization */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                          <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-gray-600">Interactive Map View</p>
+                          <div className="mt-4 grid grid-cols-2 gap-4">
+                            {mockHeatmapData.map((point, idx) => (
+                              <div key={idx} className="bg-white p-3 rounded shadow">
+                                <p className="font-semibold">{point.region}</p>
+                                <p className="text-sm text-gray-600">Intensity: {point.intensity}/10</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Resource Optimization */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resource Optimization</CardTitle>
+                  <CardDescription>AI-suggested resource allocation</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Recommendation</AlertTitle>
+                      <AlertDescription>
+                        Based on current turnout patterns, consider reallocating 2 observers from Ocho Rios to Kingston Central.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded">
+                        <p className="text-sm text-gray-600">Observers Needed</p>
+                        <p className="text-2xl font-bold">+5</p>
+                        <p className="text-xs text-gray-500">Kingston Central</p>
+                      </div>
+                      <div className="p-4 border rounded">
+                        <p className="text-sm text-gray-600">Surplus Observers</p>
+                        <p className="text-2xl font-bold">3</p>
+                        <p className="text-xs text-gray-500">Ocho Rios</p>
+                      </div>
+                      <div className="p-4 border rounded">
+                        <p className="text-sm text-gray-600">Optimal Coverage</p>
+                        <p className="text-2xl font-bold">92%</p>
+                        <p className="text-xs text-gray-500">After reallocation</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </>
         )}

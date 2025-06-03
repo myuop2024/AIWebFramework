@@ -48,6 +48,9 @@ import ProjectNew from "@/pages/project-management/new";
 import GamificationPage from "@/pages/gamification";
 import SecurityDashboard from "@/pages/security-dashboard";
 import AdminNewsPage from "@/pages/admin/news";
+import AnalyticsPage from "@/pages/analytics";
+import SmartOperationsPage from "@/pages/smart-operations";
+import AccessibilityPage from "@/pages/accessibility";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -71,6 +74,7 @@ function Router() {
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/documents" component={Documents} />
+      <ProtectedRoute path="/analytics" component={AnalyticsPage} />
       <ProtectedRoute path="/polling-stations" component={PollingStations} />
       <ProtectedRoute path="/polling-stations/create" component={lazy(() => import("@/pages/polling-stations/create"))} />
       <ProtectedRoute path="/polling-stations/import" component={lazy(() => import("@/pages/polling-stations/import"))} />
@@ -89,6 +93,8 @@ function Router() {
       {/* Redirect communications route to /chat to avoid duplicate routes */}
       <Route path="/communications" component={() => <Redirect to="/chat" />} />
       <ProtectedRoute path="/gamification" component={GamificationPage} />
+      <ProtectedRoute path="/smart-operations" component={SmartOperationsPage} />
+      <ProtectedRoute path="/accessibility" component={AccessibilityPage} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
       {/* Project Management Routes - specific routes must come before dynamic routes */}

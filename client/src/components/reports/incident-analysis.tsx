@@ -277,6 +277,14 @@ export default function IncidentAnalysis() {
     window.print();
   };
 
+  // Add escalation matrix mock logic
+  const getEscalationStatus = (report: IncidentReport) => {
+    if (report.status === 'resolved') return { status: 'Resolved', color: 'green', path: ['Observer', 'Supervisor', 'Admin', 'Resolved'] };
+    if (report.severity === 'critical') return { status: 'Escalated to Admin', color: 'red', path: ['Observer', 'Supervisor', 'Admin'] };
+    if (report.severity === 'high') return { status: 'Escalated to Supervisor', color: 'orange', path: ['Observer', 'Supervisor'] };
+    return { status: 'Not Escalated', color: 'gray', path: ['Observer'] };
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -664,39 +672,62 @@ export default function IncidentAnalysis() {
                 </thead>
                 <tbody>
                   {filteredReports.slice(0, 10).map((report) => (
-                    <tr key={report.id} className="border-b">
-                      <td className="px-4 py-3 text-sm">{report.id}</td>
-                      <td className="px-4 py-3 text-sm">{report.stationName || `Station ${report.stationId}`}</td>
-                      <td className="px-4 py-3 text-sm">{report.category || 'Uncategorized'}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <Badge
-                          className="font-normal"
-                          variant={
-                            report.severity === 'critical' ? 'destructive' :
-                            report.severity === 'high' ? 'default' :
-                            report.severity === 'medium' ? 'secondary' :
-                            'outline'
-                          }
-                        >
-                          {report.severity || 'Unspecified'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <Badge 
-                          variant="outline" 
-                          className={
-                            report.status === 'resolved' ? 'text-green-600 border-green-300 bg-green-50' :
-                            report.status === 'in_progress' ? 'text-blue-600 border-blue-300 bg-blue-50' :
-                            'text-amber-600 border-amber-300 bg-amber-50'
-                          }
-                        >
-                          {report.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {new Date(report.submittedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
+                    <React.Fragment key={report.id}>
+                      <tr className="border-b">
+                        <td className="px-4 py-3 text-sm">{report.id}</td>
+                        <td className="px-4 py-3 text-sm">{report.stationName || `Station ${report.stationId}`}</td>
+                        <td className="px-4 py-3 text-sm">{report.category || 'Uncategorized'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <Badge
+                            className="font-normal"
+                            variant={
+                              report.severity === 'critical' ? 'destructive' :
+                              report.severity === 'high' ? 'default' :
+                              report.severity === 'medium' ? 'secondary' :
+                              'outline'
+                            }
+                          >
+                            {report.severity || 'Unspecified'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <Badge 
+                            variant="outline" 
+                            className={
+                              report.status === 'resolved' ? 'text-green-600 border-green-300 bg-green-50' :
+                              report.status === 'in_progress' ? 'text-blue-600 border-blue-300 bg-blue-50' :
+                              'text-amber-600 border-amber-300 bg-amber-50'
+                            }
+                          >
+                            {report.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(report.submittedAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                      {/* Escalation Matrix Row */}
+                      <tr className="border-b bg-gray-50">
+                        <td colSpan={6} className="px-4 py-2">
+                          <div className="flex items-center gap-4">
+                            <span className="font-medium text-xs text-gray-500">Escalation Path:</span>
+                            <div className="flex items-center gap-2">
+                              {getEscalationStatus(report).path.map((role, idx, arr) => (
+                                <React.Fragment key={role}>
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold bg-${getEscalationStatus(report).color}-100 text-${getEscalationStatus(report).color}-700`}>
+                                    {role}
+                                  </span>
+                                  {idx < arr.length - 1 && <span className="text-gray-400">→</span>}
+                                </React.Fragment>
+                              ))}
+                            </div>
+                            <span className={`ml-4 px-2 py-1 rounded text-xs font-semibold bg-${getEscalationStatus(report).color}-200 text-${getEscalationStatus(report).color}-800`}>
+                              {getEscalationStatus(report).status}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
                   ))}
                   
                   {filteredReports.length === 0 && (

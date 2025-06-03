@@ -9,7 +9,8 @@ import {
   UserCheck, GraduationCap, Navigation, ChevronDown,
   Users, Shield, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
-  Kanban, Trello, X, Sparkles, Upload, Trophy
+  Kanban, Trello, X, Sparkles, Upload, Trophy,
+  Brain, Accessibility, Activity, Zap
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,6 +64,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     // Main Navigation (potentially for all authenticated users)
     { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> }, // Common, no specific permission
     { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> }, // Common, no specific permission
+    { path: "/analytics", label: "Analytics Dashboard", icon: <Activity className="h-5 w-5" /> }, // Enhanced analytics
     { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5" />, requiredPermission: "polling-stations:view" },
     { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5" />, requiredPermission: "routes:plan" },
     { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5" />, requiredPermission: "routes:view-observer-geolocation" },
@@ -70,8 +72,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> }, // Common, no specific permission
     { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> }, // Common, no specific permission
     { path: "/gamification", label: "Achievements", icon: <Trophy className="h-5 w-5" /> }, // Common, no specific permission
+    { path: "/smart-operations", label: "Smart Operations", icon: <Brain className="h-5 w-5" /> }, // New smart features
     { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" />, requiredPermission: "projects:view" },
     { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" />, requiredPermission: "system:access-advanced-features" },
+    { path: "/accessibility", label: "Accessibility", icon: <Accessibility className="h-5 w-5" /> }, // Common, no specific permission
 
     // Admin Section Links
     { category: "Administration", path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" />, requiredPermission: "admin:access-panel" },
