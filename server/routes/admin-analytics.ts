@@ -11,7 +11,7 @@ import {
 } from '@shared/schema';
 import { analyzeIncidentPatternsWithGemini } from '../services/google-ai-service';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
-import * as logger from '../utils/logger';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -110,7 +110,7 @@ router.get('/summary', ensureAuthenticated, hasPermission('analytics:view-summar
     
     res.json(summary);
   } catch (error) {
-    console.error('Error fetching analytics summary:', error);
+    logger.error('Error fetching analytics summary:', error);
     res.status(500).json({ error: 'Failed to fetch analytics data' });
   }
 });
@@ -168,7 +168,7 @@ router.get('/users', ensureAuthenticated, hasPermission('analytics:view-users'),
     
     res.json(userStats);
   } catch (error) {
-    console.error('Error fetching user statistics:', error);
+    logger.error('Error fetching user statistics:', error);
     res.status(500).json({ error: 'Failed to fetch user statistics' });
   }
 });
@@ -226,7 +226,7 @@ router.get('/reports/types', ensureAuthenticated, hasPermission('analytics:view-
     
     res.json(reportTypeStats);
   } catch (error) {
-    console.error('Error fetching report type statistics:', error);
+    logger.error('Error fetching report type statistics:', error);
     res.status(500).json({ error: 'Failed to fetch report type statistics' });
   }
 });
@@ -283,7 +283,7 @@ router.get('/reports/status', ensureAuthenticated, hasPermission('analytics:view
     
     res.json(reportStatusStats);
   } catch (error) {
-    console.error('Error fetching report status statistics:', error);
+    logger.error('Error fetching report status statistics:', error);
     res.status(500).json({ error: 'Failed to fetch report status statistics' });
   }
 });
@@ -367,7 +367,7 @@ router.get('/stations/issues', ensureAuthenticated, hasPermission('analytics:vie
     
     res.json(enhancedStationData);
   } catch (error) {
-    console.error('Error fetching stations with issues:', error);
+    logger.error('Error fetching stations with issues:', error);
     res.status(500).json({ error: 'Failed to fetch stations with issues' });
   }
 });
@@ -478,7 +478,7 @@ router.get('/daily-activity', ensureAuthenticated, hasPermission('analytics:view
     
     res.json(dailyActivity);
   } catch (error) {
-    console.error('Error fetching daily activity data:', error);
+    logger.error('Error fetching daily activity data:', error);
     res.status(500).json({ error: 'Failed to fetch daily activity data' });
   }
 });

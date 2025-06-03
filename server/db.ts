@@ -2,6 +2,7 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
+import logger from './utils/logger';
 
 // Configure neon to use WebSockets
 neonConfig.webSocketConstructor = ws;
@@ -25,21 +26,21 @@ export const pool = new Pool({
 
 // Handle connection errors
 pool.on('error', (err: Error) => {
-  console.error('Unexpected error on database client', err);
+  logger.error('Unexpected error on database client', err);
   // Log only standard error properties to avoid TypeScript errors
-  console.error('Error message:', err.message);
-  console.error('Error stack:', err.stack);
+  logger.error('Error message:', err.message);
+  logger.error('Error stack:', err.stack);
   // Don't crash the server, just log the error
   // process.exit(1);
 });
 
 // Monitor pool events
 pool.on('connect', () => {
-  console.log('New client connected to database');
+  logger.info('New client connected to database');
 });
 
 pool.on('remove', () => {
-  console.log('Client removed from pool');
+  logger.info('Client removed from pool');
 });
 
 // Initialize Drizzle ORM with the schema
@@ -47,7 +48,7 @@ export const db = drizzle(pool, {
   schema,
   logger: process.env.NODE_ENV === 'development' ? {
     logQuery: (query: string, params?: unknown[]) => {
-      console.log('[DB Query]', query, params ? `Params: ${JSON.stringify(params)}` : '');
+      logger.info('[DB Query]', query, params ? `Params: ${JSON.stringify(params)}` : '');
     }
   } : false 
 });
@@ -61,14 +62,14 @@ export async function checkDbConnection() {
     try {
       client = await pool.connect();
       const result = await client.query('SELECT version()');
-      console.log('Database connection successful');
-      console.log('PostgreSQL version:', result.rows[0].version);
+      logger.info('Database connection successful');
+      logger.info('PostgreSQL version:', result.rows[0].version);
       return true;
     } catch (err) {
-      console.error(`Database connection attempt ${4 - retries} failed:`, err);
+      logger.error(`Database connection attempt ${4 - retries} failed:`, err);
       retries--;
       if (retries === 0) {
-        console.error('All database connection attempts failed');
+        logger.error('All database connection attempts failed');
         return false;
       }
       // Wait before retrying

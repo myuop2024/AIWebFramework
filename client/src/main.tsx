@@ -28,7 +28,6 @@ if (process.env.NODE_ENV === 'development') {
 // Make diagnostics available in browser console
 if (typeof window !== 'undefined') {
   (window as any).testHereMaps = logHereDiagnostics;
-  console.log('💡 HERE Maps diagnostics available: Run window.testHereMaps() in console to test');
 }
 
 // Use the optimized and configured query client from lib/queryClient.ts

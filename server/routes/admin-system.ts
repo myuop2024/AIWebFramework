@@ -4,6 +4,7 @@ import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/a
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -85,7 +86,7 @@ router.get('/api/admin/system-stats', ensureAuthenticated, hasPermission('system
         mediaStorageUsage = Math.min(100, Math.round((totalSize / (100 * 1024 * 1024)) * 100));
       }
     } catch (err) {
-      console.error('Error calculating storage usage:', err);
+      logger.error('Error calculating storage usage:', err);
     }
     
     // Determine session count from the database if possible
@@ -95,7 +96,7 @@ router.get('/api/admin/system-stats', ensureAuthenticated, hasPermission('system
       // For now, we'll use a default
       activeSessions = 8;
     } catch (err) {
-      console.error('Error determining active sessions:', err);
+      logger.error('Error determining active sessions:', err);
     }
     
     // API request count in the last 24 hours
@@ -136,7 +137,7 @@ router.get('/api/admin/system-stats', ensureAuthenticated, hasPermission('system
     
     res.json(stats);
   } catch (error) {
-    console.error('Error fetching system statistics:', error);
+    logger.error('Error fetching system statistics:', error);
     res.status(500).json({ error: 'Failed to fetch system statistics' });
   }
 });
@@ -159,7 +160,7 @@ router.get('/api/admin/system-info', ensureAuthenticated, hasPermission('system:
     
     res.json(systemInfo);
   } catch (error) {
-    console.error('Error fetching system info:', error);
+    logger.error('Error fetching system info:', error);
     res.status(500).json({ error: 'Failed to fetch system information' });
   }
 });

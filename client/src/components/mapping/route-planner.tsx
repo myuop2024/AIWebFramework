@@ -84,7 +84,7 @@ export default function RoutePlanner({
           }
         },
         (error) => {
-          console.warn("Error getting user location:", error.message);
+          console.error("Error getting user location:", error.message);
         }
       );
     }

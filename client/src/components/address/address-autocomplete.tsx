@@ -93,8 +93,6 @@ export default function AddressAutocomplete({
   disabled = false
 }: AddressAutocompleteProps) {
   const { H, isLoaded, loadError } = useHereMaps();
-  // Debug the incoming initialValue
-  console.log("Address Autocomplete initialValue:", initialValue);
   
   const [inputValue, setInputValue] = useState(initialValue);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -143,7 +141,6 @@ export default function AddressAutocomplete({
   // Fetch address suggestions from HERE Geocoding API
   const fetchAddressSuggestions = async (query: string) => {
     if (!isLoaded || !H) {
-      console.error("HERE Maps not loaded");
       setIsSearching(false);
       return;
     }
@@ -153,7 +150,6 @@ export default function AddressAutocomplete({
       try {
         apiKey = getHereApiKey();
       } catch (error) {
-        console.error("HERE Maps API key error:", error);
         setIsSearching(false);
         return;
       }
@@ -199,7 +195,6 @@ export default function AddressAutocomplete({
             }
           },
           (error: Error) => {
-            console.error("Error fetching suggestions:", error);
             reject(error);
           }
         );
@@ -209,7 +204,6 @@ export default function AddressAutocomplete({
       setSuggestions(results);
       setShowSuggestions(results.length > 0);
     } catch (error) {
-      console.error("Error in autosuggest:", error);
       setSuggestions([]);
     } finally {
       setIsSearching(false);
@@ -222,8 +216,6 @@ export default function AddressAutocomplete({
     setSuggestions([]);
     setShowSuggestions(false);
     
-    console.log("Selected address suggestion:", suggestion);
-    
     // Get detailed information about the selected address
     getAddressDetails(suggestion);
   };
@@ -231,7 +223,6 @@ export default function AddressAutocomplete({
   // Get detailed address information using geocoding
   const getAddressDetails = async (suggestion: AddressSuggestion) => {
     if (!isLoaded || !H) {
-      console.error("HERE Maps not loaded");
       return;
     }
     
@@ -240,7 +231,6 @@ export default function AddressAutocomplete({
       try {
         apiKey = getHereApiKey();
       } catch (error) {
-        console.error("HERE Maps API key error:", error);
         return;
       }
       
@@ -274,7 +264,6 @@ export default function AddressAutocomplete({
             }
           },
           (error: unknown) => {
-            console.error("Error in geocode:", error);
             reject(error);
           }
         );
@@ -286,19 +275,6 @@ export default function AddressAutocomplete({
       let streetWithNumber = '';
       let streetName = addressDetails.address?.street || '';
       let houseNumber = addressDetails.address?.houseNumber || '';
-      
-      // Log the full response for debugging
-      console.log('HERE Maps address details:', addressDetails);
-      console.log('HERE Maps address components:', {
-        houseNumber: addressDetails.address?.houseNumber,
-        street: addressDetails.address?.street,
-        district: addressDetails.address?.district,
-        city: addressDetails.address?.city,
-        county: addressDetails.address?.county,
-        state: addressDetails.address?.state,
-        postalCode: addressDetails.address?.postalCode,
-        country: addressDetails.address?.countryName
-      });
       
       // Combine house number and street name if available
       if (houseNumber && streetName) {
@@ -351,7 +327,6 @@ export default function AddressAutocomplete({
       // Call callback with the address data
       onAddressSelect(formattedAddress);
     } catch (error) {
-      console.error("Error getting address details:", error);
     }
   };
   

@@ -90,13 +90,7 @@ export default function TrainingModule() {
           action: 'TRAINING_MODULE_COMPLETED', // Ensure this string matches GamificationAction on backend
           actionDetailsId: courseId, // Pass the ID of the completed course
         });
-        console.log('Gamification action TRAININ_MODULE_COMPLETED recorded for course:', courseId);
-        // Optionally, show a non-intrusive toast or update UI if points are immediately displayed
-        // queryClient.invalidateQueries({ queryKey: ['/api/gamification/profile'] }); // If user profile on current page shows points
       } catch (gamificationError) {
-        console.error('Failed to record gamification action for course completion:', gamificationError);
-        // Do not re-throw or show a major error to user here, as primary action (course completion) succeeded.
-        // A silent log or a very subtle notification might be okay.
       }
     },
     onError: () => {

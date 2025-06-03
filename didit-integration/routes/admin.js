@@ -6,6 +6,7 @@ const router = express.Router();
 const configModel = require('../models/config');
 const authUtils = require('../utils/auth');
 const diditService = require('../services/diditService');
+const logger = require('../utils/logger');
 
 /**
  * Get Didit.me configuration settings
@@ -21,7 +22,7 @@ router.get('/settings/didit', authUtils.ensureAdmin, async (req, res) => {
       isValid
     });
   } catch (error) {
-    console.error('Error getting Didit.me settings:', error);
+    logger.error('Error getting Didit.me settings:', error);
     res.status(500).json({ error: 'Failed to get settings' });
   }
 });
@@ -50,7 +51,7 @@ router.put('/settings/didit', authUtils.ensureAdmin, async (req, res) => {
       isValid
     });
   } catch (error) {
-    console.error('Error updating Didit.me settings:', error);
+    logger.error('Error updating Didit.me settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });
@@ -69,7 +70,7 @@ router.post('/settings/didit/reset', authUtils.ensureAdmin, async (req, res) => 
       isValid
     });
   } catch (error) {
-    console.error('Error resetting Didit.me settings:', error);
+    logger.error('Error resetting Didit.me settings:', error);
     res.status(500).json({ error: 'Failed to reset settings' });
   }
 });
@@ -108,7 +109,7 @@ router.post('/settings/didit/test', authUtils.ensureAdmin, async (req, res) => {
       testUrl: authUrl
     });
   } catch (error) {
-    console.error('Error testing Didit.me configuration:', error);
+    logger.error('Error testing Didit.me configuration:', error);
     res.status(500).json({
       success: false,
       error: 'Configuration test failed: ' + error.message

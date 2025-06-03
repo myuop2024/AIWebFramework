@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import { parse } from 'csv-parse';
 import { ensureAuthenticated } from "../middleware/auth";
+import logger from '../utils/logger';
 
 const router = express.Router();
 
@@ -52,7 +53,7 @@ router.get("/", hasRole(["observer", "admin", "supervisor", "roving"]), async (r
     const stations = await storage.getAllPollingStations();
     res.json(stations);
   } catch (error) {
-    console.error("Error fetching polling stations:", error);
+    logger.error("Error fetching polling stations:", error);
     res.status(500).json({ error: "Failed to fetch polling stations" });
   }
 });
@@ -72,7 +73,7 @@ router.get("/:id", hasRole(["observer", "admin", "supervisor", "roving"]), async
 
     res.json(station);
   } catch (error) {
-    console.error("Error fetching polling station:", error);
+    logger.error("Error fetching polling station:", error);
     res.status(500).json({ error: "Failed to fetch polling station" });
   }
 });
@@ -106,7 +107,7 @@ router.post("/", hasRole(["admin", "supervisor"]), async (req, res) => {
 
     res.status(201).json(newStation);
   } catch (error) {
-    console.error("Error creating polling station:", error);
+    logger.error("Error creating polling station:", error);
     res.status(500).json({ error: "Failed to create polling station" });
   }
 });
@@ -157,7 +158,7 @@ router.patch("/:id", hasRole(["admin", "supervisor"]), async (req, res) => {
 
     res.json(updatedStation);
   } catch (error) {
-    console.error("Error updating polling station:", error);
+    logger.error("Error updating polling station:", error);
     res.status(500).json({ error: "Failed to update polling station" });
   }
 });
@@ -184,7 +185,7 @@ router.delete("/:id", hasRole(["admin"]), async (req, res) => {
       res.status(500).json({ error: "Failed to delete polling station" });
     }
   } catch (error) {
-    console.error("Error deleting polling station:", error);
+    logger.error("Error deleting polling station:", error);
     res.status(500).json({ error: "Failed to delete polling station" });
   }
 });
@@ -206,7 +207,7 @@ router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), 
       skip_empty_lines: true
     }, async (err, records) => {
       if (err) {
-        console.error("Error parsing CSV:", err);
+        logger.error("Error parsing CSV:", err);
         return res.status(400).json({ error: "Invalid CSV format" });
       }
 
@@ -247,7 +248,7 @@ router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), 
           const newStation = await storage.createPollingStation(stationData);
           createdStations.push(newStation);
         } catch (error) {
-          console.error(`Error processing row ${i + 2}:`, error);
+          logger.error(`Error processing row ${i + 2}:`, error);
           errors.push({
             row: i + 2,
             stationCode: record.stationCode || record.code,
@@ -268,7 +269,7 @@ router.post("/import", hasRole(["admin", "supervisor"]), upload.single("file"), 
       });
     });
   } catch (error) {
-    console.error("Error importing polling stations:", error);
+    logger.error("Error importing polling stations:", error);
     res.status(500).json({ error: "Failed to import polling stations" });
   }
 });
@@ -305,7 +306,7 @@ router.get("/export", hasRole(["admin", "supervisor"]), async (req, res) => {
 
     res.send(csv);
   } catch (error) {
-    console.error("Error exporting polling stations:", error);
+    logger.error("Error exporting polling stations:", error);
     res.status(500).json({ error: "Failed to export polling stations" });
   }
 });
@@ -407,7 +408,7 @@ router.post('/:stationId/check-in', ensureAuthenticated, async (req, res) => {
       checkInTime: checkInData.checkInTime
     });
   } catch (error) {
-    console.error('Error during check-in:', error);
+    logger.error('Error during check-in:', error);
     res.status(500).json({ message: 'Failed to check in' });
   }
 });

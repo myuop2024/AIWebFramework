@@ -3,6 +3,7 @@ import { db } from '../db';
 import { errorLogs } from '@shared/schema';
 import { eq, and, desc, asc, like, gte, lte, or, isNull, isNotNull, inArray as in_, sql } from 'drizzle-orm';
 import { ensureAdmin, ensureAuthenticated, hasPermission } from '../middleware/auth';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -99,7 +100,7 @@ router.get('/error-logs', ensureAuthenticated, hasPermission('error-logs:view'),
       }
     });
   } catch (error) {
-    console.error('Error fetching error logs:', error);
+    logger.error('Error fetching error logs:', error);
     res.status(500).json({ message: 'Failed to retrieve error logs' });
   }
 });
@@ -125,7 +126,7 @@ router.get('/error-logs/:id', ensureAuthenticated, hasPermission('error-logs:vie
 
     res.json(log);
   } catch (error) {
-    console.error('Error fetching error log:', error);
+    logger.error('Error fetching error log:', error);
     res.status(500).json({ message: 'Failed to retrieve error log' });
   }
 });
@@ -162,7 +163,7 @@ router.post('/error-logs/:id/resolve', ensureAuthenticated, hasPermission('error
 
     res.json({ message: 'Error log marked as resolved' });
   } catch (error) {
-    console.error('Error resolving error log:', error);
+    logger.error('Error resolving error log:', error);
     res.status(500).json({ message: 'Failed to resolve error log' });
   }
 });
@@ -183,7 +184,7 @@ router.delete('/error-logs/:id', ensureAuthenticated, hasPermission('error-logs:
 
     res.json({ message: 'Error log deleted successfully' });
   } catch (error) {
-    console.error('Error deleting error log:', error);
+    logger.error('Error deleting error log:', error);
     res.status(500).json({ message: 'Failed to delete error log' });
   }
 });
@@ -235,7 +236,7 @@ router.delete('/error-logs', ensureAuthenticated, hasPermission('error-logs:dele
 
     res.json({ message: 'Error logs deleted successfully' });
   } catch (error) {
-    console.error('Error bulk deleting error logs:', error);
+    logger.error('Error bulk deleting error logs:', error);
     res.status(500).json({ message: 'Failed to delete error logs' });
   }
 });

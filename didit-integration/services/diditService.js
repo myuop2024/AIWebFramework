@@ -4,6 +4,7 @@
 const axios = require('axios');
 const configModel = require('../models/config');
 const crypto = require('crypto');
+const logger = require('../utils/logger');
 
 /**
  * DiditService handles all interactions with the Didit.me API
@@ -17,7 +18,7 @@ class DiditService {
     try {
       return await configModel.getDiditConfig();
     } catch (error) {
-      console.error('Error retrieving Didit config:', error);
+      logger.error('Error retrieving Didit config:', error);
       throw new Error('Failed to retrieve Didit.me configuration');
     }
   }
@@ -31,7 +32,7 @@ class DiditService {
       const config = await this.getConfig();
       return !!(config.clientId && config.clientSecret);
     } catch (error) {
-      console.error('Error checking Didit config validity:', error);
+      logger.error('Error checking Didit config validity:', error);
       return false;
     }
   }
@@ -63,7 +64,7 @@ class DiditService {
 
       return url.toString();
     } catch (error) {
-      console.error('Error generating authorization URL:', error);
+      logger.error('Error generating authorization URL:', error);
       throw new Error('Failed to generate authorization URL: ' + error.message);
     }
   }
@@ -110,7 +111,7 @@ class DiditService {
         return response.data;
       } catch (error) {
         lastError = error;
-        console.error(`Token exchange attempt ${attempt} failed:`, error.response?.data || error.message);
+        logger.error(`Token exchange attempt ${attempt} failed:`, error.response?.data || error.message);
         
         if (attempt < retries) {
           // Wait before retrying with exponential backoff
@@ -158,7 +159,7 @@ class DiditService {
         raw_data: userData
       };
     } catch (error) {
-      console.error('Error getting user verification data:', error.response?.data || error.message);
+      logger.error('Error getting user verification data:', error.response?.data || error.message);
       throw new Error('Failed to retrieve user verification data');
     }
   }

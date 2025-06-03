@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const userModel = require('../models/user');
 const authUtils = require('../utils/auth');
+const logger = require('../utils/logger');
 
 /**
  * User login/registration endpoint
@@ -30,7 +31,7 @@ router.post('/login', async (req, res) => {
       user: authUtils.sanitizeUser(user)
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
@@ -59,7 +60,7 @@ router.post('/admin/login', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('Admin login error:', error);
+    logger.error('Admin login error:', error);
     res.status(500).json({ error: 'Admin login failed' });
   }
 });
@@ -75,7 +76,7 @@ router.get('/admin/users', authUtils.ensureAdmin, async (req, res) => {
     // Return sanitized users data
     res.json(users.map(user => authUtils.sanitizeUser(user)));
   } catch (error) {
-    console.error('Get users error:', error);
+    logger.error('Get users error:', error);
     res.status(500).json({ error: 'Failed to get users' });
   }
 });

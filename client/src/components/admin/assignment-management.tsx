@@ -91,12 +91,9 @@ export function AssignmentManagement() {
     },
     onError: (error: Error) => {
       console.error('Error cancelling assignment:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to cancel assignment",
-        description: isStubError 
-          ? "This feature (Cancel Assignment) is not yet fully implemented. Our team has been notified." 
-          : "There was an error cancelling the assignment.",
+        title: "Failed to cancel assignment",
+        description: error.message || "There was an error cancelling the assignment.",
         variant: "destructive",
       });
     }
@@ -120,12 +117,9 @@ export function AssignmentManagement() {
     },
     onError: (error: Error) => {
       console.error('Error checking in observer:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to check in",
-        description: isStubError
-          ? "This feature (Check-In Observer) is not yet fully implemented. Our team has been notified."
-          : "There was an error checking in the observer.",
+        title: "Failed to check in",
+        description: error.message || "There was an error checking in the observer.",
         variant: "destructive",
       });
     }
@@ -149,12 +143,9 @@ export function AssignmentManagement() {
     },
     onError: (error: Error) => {
       console.error('Error checking out observer:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to check out",
-        description: isStubError
-          ? "This feature (Check-Out Observer) is not yet fully implemented. Our team has been notified."
-          : "There was an error checking out the observer.",
+        title: "Failed to check out",
+        description: error.message || "There was an error checking out the observer.",
         variant: "destructive",
       });
     }
@@ -197,12 +188,9 @@ export function AssignmentManagement() {
     },
     onError: (error: Error) => {
       console.error('Error creating assignment:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to create assignment",
-        description: isStubError
-          ? "This feature (Create Assignment) is not yet fully implemented. Our team has been notified."
-          : "There was an error creating the assignment. Please check for scheduling conflicts.",
+        title: "Failed to create assignment",
+        description: error.message || "There was an error creating the assignment. Please check for scheduling conflicts.",
         variant: "destructive",
       });
     }
@@ -228,12 +216,9 @@ export function AssignmentManagement() {
     },
     onError: (error: Error) => {
       console.error('Error updating assignment:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to update assignment",
-        description: isStubError
-          ? "This feature (Update Assignment) is not yet fully implemented. Our team has been notified."
-          : "There was an error updating the assignment. Please check for scheduling conflicts.",
+        title: "Failed to update assignment",
+        description: error.message || "There was an error updating the assignment. Please check for scheduling conflicts.",
         variant: "destructive",
       });
     }

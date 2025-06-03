@@ -41,14 +41,14 @@ async function initializeDefaultData() {
     const templates = await storage.getAllIdCardTemplates();
 
     if (templates.length === 0) {
-      console.log('Creating default ID card template...');
+      logger.info('Creating default ID card template...');
       await idCardService.createDefaultTemplate();
-      console.log('Default ID card template created successfully');
+      logger.info('Default ID card template created successfully');
     } else {
-      console.log(`Found ${templates.length} existing ID card templates`);
+      logger.info(`Found ${templates.length} existing ID card templates`);
     }
   } catch (error) {
-    console.error('Error initializing default data:', error);
+    logger.error('Error initializing default data:', error);
   }
 }
 
@@ -230,7 +230,7 @@ function flushLogs() {
     fs.mkdirSync(path.dirname(PAGE_LOG_PATH), { recursive: true });
     fs.writeFileSync(PAGE_LOG_PATH, JSON.stringify(logs, null, 2));
   } catch (error) {
-    console.error('Error flushing logs:', error);
+    logger.error('Error flushing logs:', error);
   }
 }
 
@@ -269,13 +269,13 @@ app.get('/api/logs', (req, res) => {
   try {
     // Check database connection
     dbConnected = await checkDbConnection();
-    console.log('Database connection successful');
+    logger.info('Database connection successful');
 
     // Initialize default data
     await initializeDefaultData();
   } catch (error) {
-    console.error('Database initialization error:', error);
-    console.log('Continuing with server startup despite database issues...');
+    logger.error('Database initialization error:', error);
+    logger.info('Continuing with server startup despite database issues...');
   }
 
   try {
@@ -367,7 +367,7 @@ app.get('/api/logs', (req, res) => {
     // Modified to serve from 'public/uploads' to align with communication file uploads
     const publicUploadsDir = path.join(process.cwd(), 'public/uploads');
     app.use('/uploads', express.static(publicUploadsDir));
-    console.log(`Serving static files from /uploads mapped to ${publicUploadsDir}`);
+    logger.info(`Serving static files from /uploads mapped to ${publicUploadsDir}`);
 
     // Setup routes
     server = await registerRoutes(app); // This initializes communicationService
@@ -450,18 +450,6 @@ app.get('/api/logs', (req, res) => {
       serveStatic(app);
     }
 
-// Global error handlers
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Don't exit the process, just log the error
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // For uncaught exceptions, we should exit gracefully
-  process.exit(1);
-});
-
     // Start the server with port fallback mechanism
     // Use port 5000 as recommended for Replit web applications
     const startPort = parseInt(process.env.PORT || "5000");
@@ -478,7 +466,7 @@ process.on('uncaughtException', (error) => {
           const errorHandler = (err: any) => {
             server.removeListener('listening', listeningHandler);
             if (err.code === 'EADDRINUSE') {
-              console.log(`Port ${portToTry} is in use, trying next port...`);
+              logger.info(`Port ${portToTry} is in use, trying next port...`);
               resolve(); // Continue to next port
             } else {
               reject(err); // Propagate other errors
@@ -504,18 +492,18 @@ process.on('uncaughtException', (error) => {
 
         if (serverStarted) break;
       } catch (err) {
-        console.error(`Error starting server on port ${portToTry}:`, err);
+        logger.error(`Error starting server on port ${portToTry}:`, err);
       }
     }
 
     if (serverStarted) {
-      console.log(`Server is running on port ${port}`);
+      logger.info(`Server is running on port ${port}`);
     } else {
-      console.error(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
+      logger.error(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
       process.exit(1); // Exit with error code
     }
   } catch (error) {
-    console.error('Fatal server error:', error);
+    logger.error('Fatal server error:', error);
     process.exit(1);
   }
 })();

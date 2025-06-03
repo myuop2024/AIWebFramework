@@ -8,6 +8,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const logger = require('./utils/logger');
 
 // Import routes
 const apiRoutes = require('./routes/api');
@@ -36,10 +37,10 @@ const defaultSessionSecret = 'your-session-secret-change-me-in-production';
 
 if (sessionSecret === defaultSessionSecret && process.env.NODE_ENV === 'production') {
   const errorMessage = 'CRITICAL: Default SESSION_SECRET is being used in a production environment for Didit.me integration. This is insecure. Please set a strong, unique SESSION_SECRET environment variable.';
-  console.error(errorMessage); // Use console.error as logger might not be set up yet or is basic
+  logger.error(errorMessage);
   throw new Error(errorMessage); // Halt startup
 } else if (sessionSecret === defaultSessionSecret) {
-  console.warn('WARNING: Using default SESSION_SECRET for Didit.me integration. This is insecure and should ONLY be used for development/testing. Set a proper SESSION_SECRET environment variable for production.');
+  logger.warn('WARNING: Using default SESSION_SECRET for Didit.me integration. This is insecure and should ONLY be used for development/testing. Set a proper SESSION_SECRET environment variable for production.');
 }
 
 app.use(session({
@@ -62,7 +63,7 @@ app.set('view engine', 'ejs');
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  logger.info(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
@@ -100,7 +101,7 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Application error:', err);
+  logger.error('Application error:', err);
   res.status(500).render('error', { 
     title: 'Server Error',
     error: 'Server error',
@@ -111,9 +112,9 @@ app.use((err, req, res, next) => {
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`- Admin panel: http://localhost:${PORT}/admin/settings`);
-    console.log(`- Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`Server running on http://localhost:${PORT}`);
+    logger.info(`- Admin panel: http://localhost:${PORT}/admin/settings`);
+    logger.info(`- Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 

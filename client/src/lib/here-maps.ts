@@ -73,8 +73,6 @@ export function resetHereMapsState(): void {
 
   const existingLinks = document.querySelectorAll('link[href*="here.com"]');
   existingLinks.forEach(link => link.remove());
-
-  console.log('HERE Maps state reset - ready for retry');
 }
 
 // Function to load HERE Maps script
@@ -89,7 +87,6 @@ export const loadHereMapsScript = (): Promise<void> => {
     // Check if API key is available
     const apiKey = import.meta.env.VITE_HERE_API_KEY;
     if (!apiKey) {
-      console.error('HERE Maps API key not found');
       reject(new Error('HERE Maps API key not configured'));
       return;
     }
@@ -106,16 +103,13 @@ export const loadHereMapsScript = (): Promise<void> => {
         loadScript('https://js.api.here.com/v3/3.1/mapsjs-ui.js'),
         loadScript('https://js.api.here.com/v3/3.1/mapsjs-mapevents.js')
       ]).then(() => {
-        console.log('HERE Maps API loaded successfully');
         resolve();
       }).catch((error) => {
-        console.error('Failed to load HERE Maps modules:', error);
         reject(error);
       });
     };
 
     script.onerror = () => {
-      console.error('Failed to load HERE Maps API');
       reject(new Error('Failed to load HERE Maps API'));
     };
 
@@ -150,11 +144,9 @@ export function useHereMaps(): UseHereMapsResult {
     // Check if API key is configured before loading
     try {
       const apiKey = getHereApiKey();
-      console.log('HERE Maps API key configured, length:', apiKey.length);
     } catch (error) {
       if (isMounted) {
         const configError = error instanceof Error ? error : new Error("HERE Maps API key not configured. Please check your environment variables.");
-        console.error('HERE Maps configuration error:', configError.message);
         setLoadError(configError);
         hereMapsLoadError = configError;
       }
@@ -177,7 +169,6 @@ export function useHereMaps(): UseHereMapsResult {
       })
       .catch((error) => {
         if (isMounted) {
-          console.error("HERE Maps loading error:", error);
           setLoadError(error);
           setIsLoaded(false);
         }
@@ -252,7 +243,6 @@ export const hereMapsService = {
 
       return null;
     } catch (error) {
-      console.error("Reverse geocoding error:", error);
       throw error;
     }
   },
@@ -285,7 +275,6 @@ export const hereMapsService = {
 
       return null;
     } catch (error) {
-      console.error("Geocoding error:", error);
       throw error;
     }
   },
@@ -312,7 +301,6 @@ export const hereMapsService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Route calculation error:", error);
       throw error;
     }
   },
@@ -337,7 +325,6 @@ export const hereMapsService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error("Place search error:", error);
       throw error;
     }
   }
@@ -359,36 +346,26 @@ export function formatDuration(seconds: number): string {
 // Global diagnostics and utility functions
 if (typeof window !== 'undefined') {
   (window as any).testHereMaps = async () => {
-    console.log('🔍 Running HERE Maps diagnostics...');
-
     try {
       // Import and run diagnostics
       const { logHereDiagnostics } = await import('./here-maps-diagnostics');
       const result = await logHereDiagnostics();
 
       if (result.overallStatus === 'working') {
-        console.log('✅ HERE Maps is working correctly');
+        return result;
       } else if (result.overallStatus === 'partial') {
-        console.log('⚠️ HERE Maps has some issues but partially working');
+        return result;
       } else {
-        console.log('❌ HERE Maps is not working');
-        console.log('💡 Try running window.resetHereMaps() to reset and reload');
+        return null;
       }
-
-      return result;
     } catch (error) {
-      console.error('❌ Failed to run diagnostics:', error);
-      console.log('💡 Try running window.resetHereMaps() to reset and reload');
       return null;
     }
   };
 
   (window as any).resetHereMaps = () => {
     resetHereMapsState();
-    console.log('HERE Maps reset complete. Refresh the page to reload.');
   };
-
-  console.log('💡 HERE Maps diagnostics available: Run window.testHereMaps() in console to test');
 }
 
 // Augment window interface to include HERE Maps

@@ -58,12 +58,9 @@ export function PollingStationManagement() {
     },
     onError: (error: Error) => {
       console.error('Error creating polling station:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to create station",
-        description: isStubError
-          ? "This feature (Create Polling Station) is not yet fully implemented. Our team has been notified."
-          : "There was an error creating the polling station.",
+        title: "Failed to create station",
+        description: error.message || "There was an error creating the polling station.",
         variant: "destructive",
       });
     }
@@ -89,12 +86,9 @@ export function PollingStationManagement() {
     },
     onError: (error: Error) => {
       console.error('Error updating polling station:', error);
-      const isStubError = error.message && error.message.includes('STUB:');
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to update station",
-        description: isStubError
-          ? "This feature (Update Polling Station) is not yet fully implemented. Our team has been notified."
-          : "There was an error updating the polling station.",
+        title: "Failed to update station",
+        description: error.message || "There was an error updating the polling station.",
         variant: "destructive",
       });
     }
@@ -103,32 +97,24 @@ export function PollingStationManagement() {
   // Delete a polling station
   const deleteStation = useMutation({
     mutationFn: async (stationId: number) => {
-      // Note: deletePollingStation stub returns Promise.resolve(false), 
-      // apiRequest might need to be adjusted or this needs to check response status if not 2xx
       return apiRequest(
         'DELETE',
         `/api/admin/polling-stations/${stationId}`
       );
     },
-    onSuccess: (response: any) => { // Assuming apiRequest forwards the actual response or response.ok
-      // If apiRequest throws for non-2xx, this onSuccess might not be hit for a failed (false) delete.
-      // If it *does* hit onSuccess, we might need to check response content.
-      // For now, let's assume a successful HTTP response means it *would* have deleted.
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/polling-stations'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/system-stats'] });
       toast({
-        title: "Station Deletion Attempted", // Changed title for stub
-        description: "The polling station deletion was attempted. If the feature were complete, it would be deleted.", // Changed for stub
+        title: "Station Deleted",
+        description: "The polling station has been deleted successfully.",
       });
     },
     onError: (error: Error) => {
       console.error('Error deleting polling station:', error);
-      const isStubError = error.message && (error.message.includes('STUB:') || error.message.includes('deletion failed')); // Broaden for delete stub
       toast({
-        title: isStubError ? "Feature Incomplete" : "Failed to delete station",
-        description: isStubError 
-          ? "This feature (Delete Polling Station) is not yet fully implemented or the station could not be deleted (e.g. in use). Our team has been notified."
-          : "The polling station could not be deleted. It may be in use by assignments.",
+        title: "Failed to delete station",
+        description: error.message || "The polling station could not be deleted. It may be in use by assignments.",
         variant: "destructive",
       });
     }

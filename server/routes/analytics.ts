@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { aiAnalyticsService } from '../services/ai-analytics-service';
 import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ router.get('/dashboard', ensureAuthenticated, hasPermission('analytics:view-dash
     const data = await aiAnalyticsService.getDashboardData(startDate, endDate);
     return res.json(data);
   } catch (error) {
-    console.error('Error fetching analytics dashboard data:', error);
+    logger.error('Error fetching analytics dashboard data:', error);
     return res.status(500).json({ message: 'Failed to fetch analytics data' });
   }
 });
@@ -25,7 +26,7 @@ router.post('/predict-issues', ensureAuthenticated, hasPermission('analytics:pre
     const predictions = await aiAnalyticsService.predictIssues(stationId);
     return res.json(predictions);
   } catch (error) {
-    console.error('Error predicting issues:', error);
+    logger.error('Error predicting issues:', error);
     return res.status(500).json({ message: 'Failed to predict issues' });
   }
 });
@@ -46,7 +47,7 @@ router.post('/generate-report', ensureAuthenticated, hasPermission('analytics:ge
     
     return res.json({ report });
   } catch (error) {
-    console.error('Error generating report:', error);
+    logger.error('Error generating report:', error);
     return res.status(500).json({ message: 'Failed to generate report' });
   }
 });

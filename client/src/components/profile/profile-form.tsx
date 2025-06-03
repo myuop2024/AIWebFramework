@@ -377,7 +377,6 @@ export default function ProfileForm() {
                         onAddressSelect={(addressData: any) => {
                           // Update the address field with the selected address
                           field.onChange(addressData.title);
-                          console.log('Address selected:', addressData);
                           
                           // Process the parish field first
                           let detectedParish = null;
@@ -420,7 +419,6 @@ export default function ProfileForm() {
                           
                           // Set the parish (state) field if we found it
                           if (detectedParish) {
-                            console.log("Setting parish to:", detectedParish);
                             form.setValue("state", detectedParish);
                           }
                           
@@ -468,7 +466,6 @@ export default function ProfileForm() {
                     <Select 
                       onValueChange={value => {
                         field.onChange(value);
-                        console.log("Parish select changed to:", value);
                       }}
                       value={field.value || ""}
                     >

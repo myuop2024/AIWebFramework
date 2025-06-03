@@ -83,11 +83,6 @@ export async function logClientError(error: ClientErrorLog): Promise<void> {
 
     // Send error to server
     await apiRequest('POST', '/api/log-error', errorData);
-
-    // Local console logging for development
-    if (import.meta.env.DEV) {
-      console.error('[Error logged]', errorData);
-    }
   } catch (loggingError) {
     // If error logging fails, at least log to console
     console.error('[Error logger failed]', loggingError);

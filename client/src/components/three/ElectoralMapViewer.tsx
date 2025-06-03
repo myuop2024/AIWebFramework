@@ -97,8 +97,6 @@ export function ElectoralMapViewer({
         controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent seeing below ground
         controls.target.set(0, 0, 0);
         controlsRef.current = controls;
-      } else {
-        console.warn("OrbitControls not found on THREE object. Ensure it is loaded.");
       }
 
       // Add lights

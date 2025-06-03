@@ -58,19 +58,7 @@ export function useHereMapsDebug() {
   }, [isLoaded, loadError]);
 
   const logDebugInfo = () => {
-    console.group('🗺️ HERE Maps Debug Information');
-    console.log('API Key Configured:', debugInfo.apiKeyConfigured);
-    console.log('API Key Source:', debugInfo.apiKeySource || 'Not found');
-    console.log('HERE Maps Loaded:', debugInfo.hereMapsLoaded);
-    console.log('Load Error:', debugInfo.loadError?.message || 'None');
-    console.log('Script Tags Found:', debugInfo.scriptTags);
-    console.log('window.H Available:', debugInfo.windowHAvailable);
-    console.log('Environment:', {
-      isDevelopment: import.meta.env.DEV,
-      isProduction: import.meta.env.PROD,
-      mode: import.meta.env.MODE
-    });
-    console.groupEnd();
+    // Intentionally left blank: no console.log or console.warn
   };
 
   return {

@@ -192,36 +192,11 @@ export async function runHereDiagnostics(): Promise<HereDiagnostics> {
 
 // Log diagnostics to console
 export async function logHereDiagnostics() {
-  console.log('🔍 Running HERE Maps Diagnostics...');
-  
   try {
     const diagnostics = await runHereDiagnostics();
     
-    console.group('HERE Maps Diagnostic Results');
-    
-    Object.entries(diagnostics).forEach(([key, value]) => {
-      if (key === 'overallStatus') {
-        console.log(`\n📊 Overall Status: ${value}`);
-        return;
-      }
-      
-      const result = value as DiagnosticResult;
-      const icon = result.status === 'success' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
-      
-      console.group(`${icon} ${key}`);
-      console.log(`Status: ${result.status}`);
-      console.log(`Message: ${result.message}`);
-      if (result.details) {
-        console.log('Details:', result.details);
-      }
-      console.groupEnd();
-    });
-    
-    console.groupEnd();
-    
     return diagnostics;
   } catch (error) {
-    console.error('Failed to run diagnostics:', error);
     throw error;
   }
 } 

@@ -128,19 +128,6 @@ const ProjectCreationForm: React.FC = () => {
         // Ensure dates are properly formatted for the server
         // The server expects Date objects, but they get serialized to strings during JSON.stringify
         // Our validation approach uses a schema that expects Date objects on the server side
-        console.log('Original data:', data);
-        
-        // Log the date types for debugging
-        if (processedData.startDate) {
-          console.log('Start date type:', typeof processedData.startDate, processedData.startDate);
-        }
-        
-        if (processedData.endDate) {
-          console.log('End date type:', typeof processedData.endDate, processedData.endDate);
-        }
-        
-        // Make sure we log the data being sent
-        console.log('Creating project with data:', JSON.stringify(processedData, null, 2));
         
         // Make a POST request to the project creation endpoint
         const response = await fetch('/api/project-management/projects', {
@@ -192,9 +179,6 @@ const ProjectCreationForm: React.FC = () => {
       }
     },
     onSuccess: (data: any) => {
-      // Log success for debugging
-      console.log('Project created successfully:', data);
-      
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/project-management/projects'] });

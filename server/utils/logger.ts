@@ -3,20 +3,46 @@
  * Provides consistent logging and error tracking functionality
  */
 
-import fs from 'fs';
-import path from 'path';
+import { createLogger, format, transports } from 'winston';
 import { Request } from 'express';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
+const logger = createLogger({
+  level: isProduction ? 'info' : 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.errors({ stack: true }),
+    format.splat(),
+    format.json()
+  ),
+  transports: [
+    new transports.Console({
+      format: isProduction
+        ? format.combine(format.timestamp(), format.json())
+        : format.combine(format.colorize(), format.simple())
+    }),
+    ...(isProduction
+      ? [
+          new transports.File({ filename: 'logs/error.log', level: 'error' }),
+          new transports.File({ filename: 'logs/combined.log' })
+        ]
+      : [])
+  ],
+  exitOnError: false,
+});
+
 // Configure log directories
-const LOG_DIR = path.join(process.cwd(), 'logs');
-const ERROR_LOG_PATH = path.join(LOG_DIR, 'error.log');
-const ACCESS_LOG_PATH = path.join(LOG_DIR, 'access.log');
-const SYSTEM_LOG_PATH = path.join(LOG_DIR, 'system.log');
+const LOG_DIR = 'logs';
+const ERROR_LOG_PATH = 'logs/error.log';
+const ACCESS_LOG_PATH = 'logs/access.log';
+const SYSTEM_LOG_PATH = 'logs/system.log';
 
 // Ensure log directory exists
-if (!fs.existsSync(LOG_DIR)) {
-  fs.mkdirSync(LOG_DIR, { recursive: true });
-  console.log(`Created log directory at ${LOG_DIR}`);
+if (!isProduction) {
+  logger.add(new transports.Console({
+    format: format.combine(format.colorize(), format.simple())
+  }));
 }
 
 // Log severity levels
@@ -42,7 +68,7 @@ function formatLogEntry(level: LogLevel, message: string, metadata: Record<strin
 function logToFile(filePath: string, level: LogLevel, message: string, metadata: Record<string, any> = {}): void {
   try {
     const logEntry = formatLogEntry(level, message, metadata);
-    fs.appendFileSync(filePath, logEntry);
+    logger.info(logEntry);
   } catch (err) {
     console.error('Failed to write to log file:', err);
   }
@@ -66,7 +92,7 @@ export function getRequestInfo(req: Request): Record<string, any> {
  * Log debug message
  */
 export function debug(message: string, metadata: Record<string, any> = {}): void {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProduction) {
     console.debug(`[DEBUG] ${message}`, metadata);
   }
   logToFile(SYSTEM_LOG_PATH, LogLevel.DEBUG, message, metadata);
@@ -136,12 +162,4 @@ export function logApiRequest(req: Request, statusCode: number, responseTime: nu
   });
 }
 
-export default {
-  debug,
-  info,
-  warn,
-  error,
-  critical,
-  logApiRequest,
-  getRequestInfo
-};
+export default logger;

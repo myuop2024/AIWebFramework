@@ -156,7 +156,6 @@ export function useCommunication(userId: number) {
         cleanupPeerConnection();
         setActiveCall(null);
         setIncomingCall(null); // Clear incoming call as well
-        console.log('Call ended and resources cleaned up.');
     }
   }, [localStream, remoteStream]); // Dependencies for streams if they are directly used in cleanup
 

@@ -495,25 +495,46 @@ export class DatabaseStorage implements IStorage {
   // These should be expanded as needed for the application
 
   async getDocument(id: number): Promise<Document | undefined> {
-    logger.warn('STUB: getDocument called, but it is not fully implemented.');
-    return Promise.resolve(undefined);
+    try {
+      const [doc] = await db.select().from(documents).where(eq(documents.id, id));
+      return doc;
+    } catch (error) {
+      logger.error(`Error getting document by ID ${id}: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
   }
 
   async getDocumentsByUserId(userId: number): Promise<Document[]> {
-    logger.warn('STUB: getDocumentsByUserId called, but it is not fully implemented.');
-    return Promise.resolve([]);
+    try {
+      return await db.select().from(documents).where(eq(documents.userId, userId));
+    } catch (error) {
+      logger.error(`Error getting documents for user ID ${userId}: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
   }
 
   async createDocument(document: InsertDocument): Promise<Document> {
-    logger.warn('STUB: createDocument called, but it is not fully implemented.');
-    // To prevent downstream issues from a fake success, reject promise clearly.
-    return Promise.reject(new Error('STUB: createDocument - This method is a stub and requires full implementation.'));
+    try {
+      const [newDoc] = await db.insert(documents).values(document).returning();
+      if (!newDoc) throw new Error('Document creation failed, no data returned.');
+      logger.info(`Document created: ${newDoc.name} (ID: ${newDoc.id})`);
+      return newDoc;
+    } catch (error) {
+      logger.error(`Error creating document: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
   }
 
   async updateDocument(id: number, data: Partial<Document>): Promise<Document | undefined> {
-    logger.warn('STUB: updateDocument called, but it is not fully implemented.');
-    // To prevent downstream issues from a fake success, reject promise clearly.
-    return Promise.reject(new Error('STUB: updateDocument - This method is a stub and requires full implementation.'));
+    try {
+      const { id: docId, ...updateData } = data;
+      const [updatedDoc] = await db.update(documents).set({...updateData, updatedAt: new Date()}).where(eq(documents.id, id)).returning();
+      if (updatedDoc) logger.info(`Document updated: ID ${updatedDoc.id}`);
+      return updatedDoc;
+    } catch (error) {
+      logger.error(`Error updating document ID ${id}: ${error instanceof Error ? error.message : error}`);
+      throw error;
+    }
   }
 
   // Polling Station Methods

@@ -36,7 +36,7 @@ export function LoginButton({
     <Button 
       variant={variant} 
       onClick={() => {
-        console.log("Login button clicked, implement login flow.");
+        // Remove all console.log and console.warn statements
       }}
       className={className}
       disabled={loginMutation.isPending}

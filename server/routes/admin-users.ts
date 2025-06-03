@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -37,7 +38,7 @@ router.get('/api/admin/users', ensureAuthenticated, hasPermission('users:view'),
     
     res.json(safeUsers);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logger.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -77,7 +78,7 @@ router.get('/api/admin/users/:id', ensureAuthenticated, hasPermission('users:vie
     
     res.json(safeUser);
   } catch (error) {
-    console.error('Error fetching user:', error);
+    logger.error('Error fetching user:', error);
     res.status(500).json({ error: 'Failed to fetch user details' });
   }
 });
@@ -126,7 +127,7 @@ router.patch('/api/admin/users/:id', ensureAuthenticated, hasPermission('users:e
       verificationStatus: updatedUser.verificationStatus || 'pending'
     });
   } catch (error) {
-    console.error('Error updating user:', error);
+    logger.error('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -164,7 +165,7 @@ router.get('/api/admin/users/:id/documents', ensureAuthenticated, hasPermission(
       profile
     });
   } catch (error) {
-    console.error('Error fetching user documents:', error);
+    logger.error('Error fetching user documents:', error);
     res.status(500).json({ error: 'Failed to fetch user documents' });
   }
 });
@@ -207,7 +208,7 @@ router.post('/api/admin/users/:id/verify', ensureAuthenticated, hasPermission('u
       message: `User verification status updated to ${verificationStatus}`
     });
   } catch (error) {
-    console.error('Error updating verification status:', error);
+    logger.error('Error updating verification status:', error);
     res.status(500).json({ error: 'Failed to update verification status' });
   }
 });
@@ -248,7 +249,7 @@ router.patch('/api/admin/users/:id/toggle-status', ensureAuthenticated, hasPermi
       message: isActive ? 'User account activated' : 'User account deactivated'
     });
   } catch (error) {
-    console.error('Error toggling user status:', error);
+    logger.error('Error toggling user status:', error);
     res.status(500).json({ error: 'Failed to update user status' });
   }
 });

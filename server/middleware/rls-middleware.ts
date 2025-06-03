@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
+import logger from '../utils/logger';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -32,7 +33,7 @@ export const setRLSContext = async (
     
     next();
   } catch (error) {
-    console.error('Error setting RLS context:', error);
+    logger.error('Error setting RLS context:', error);
     // Continue even if RLS context setting fails
     next();
   }

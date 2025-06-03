@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import { gamificationService, GamificationAction } from '../services/gamification-service';
 import { ensureAuthenticated } from '../middleware/auth';
 import { Request } from 'express';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post('/actions', ensureAuthenticated, async (req: Request, res: Response)
     await gamificationService.recordAction(userId, action, actionDetailsId);
     res.status(200).json({ message: 'Action recorded successfully' });
   } catch (error) {
-    console.error('Error recording gamification action:', error);
+    logger.error('Error recording gamification action:', error);
     res.status(500).json({ message: 'Failed to record action' });
   }
 });
@@ -38,7 +39,7 @@ router.get('/profile', ensureAuthenticated, async (req: Request, res: Response) 
     const profile = await gamificationService.getUserProfile(userId);
     res.status(200).json(profile);
   } catch (error) {
-    console.error('Error fetching gamification profile:', error);
+    logger.error('Error fetching gamification profile:', error);
     res.status(500).json({ message: 'Failed to fetch profile' });
   }
 });
@@ -56,7 +57,7 @@ router.get('/leaderboard/:type', async (req: Request, res: Response) => {
     const leaderboard = await gamificationService.getLeaderboard(type, limit);
     res.status(200).json(leaderboard);
   } catch (error) {
-    console.error('Error fetching leaderboard:', error);
+    logger.error('Error fetching leaderboard:', error);
     res.status(500).json({ message: 'Failed to fetch leaderboard' });
   }
 });

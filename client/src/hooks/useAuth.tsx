@@ -85,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return await res.json();
       } catch (error) {
         // If the standard endpoint fails, try the alternative endpoint
-        console.log('Trying alternative login endpoint');
         const res = await fetch('/api/login', {
           method: 'POST',
           headers: {
@@ -140,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return await res.json();
       } catch (error) {
         // If the standard endpoint fails, try the alternative endpoint
-        console.log('Trying alternative register endpoint');
         const res = await fetch('/api/register', {
           method: 'POST',
           headers: {
@@ -188,7 +186,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         // If the standard endpoint fails, try the alternative endpoint
-        console.log('Trying alternative logout endpoint');
         const res = await fetch('/api/logout', {
           method: 'POST',
           credentials: 'include',

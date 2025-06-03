@@ -22,7 +22,6 @@ export function usePermissions() {
       return false;
     }
     if (!typedUser.permissions || !Array.isArray(typedUser.permissions)) {
-      console.warn("usePermissions: user.permissions is missing or not an array.", typedUser);
       return false;
     }
     return typedUser.permissions.includes(requiredPermission);
@@ -36,7 +35,6 @@ export function usePermissions() {
       return false;
     }
     if (!typedUser.permissions || !Array.isArray(typedUser.permissions)) {
-      console.warn("usePermissions: user.permissions is missing or not an array.", typedUser);
       return false;
     }
     if (!requiredPermissions || requiredPermissions.length === 0) {
@@ -53,7 +51,6 @@ export function usePermissions() {
       return false;
     }
     if (!typedUser.permissions || !Array.isArray(typedUser.permissions)) {
-      console.warn("usePermissions: user.permissions is missing or not an array.", typedUser);
       return false;
     }
     if (!requiredPermissions || requiredPermissions.length === 0) {

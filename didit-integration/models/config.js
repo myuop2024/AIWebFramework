@@ -4,6 +4,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const crypto = require('crypto-js');
+const logger = require('../utils/logger');
 
 // Configuration file path
 const CONFIG_FILE = path.join(__dirname, '../data/config.json');
@@ -33,17 +34,17 @@ const ensureConfigFile = async () => {
       // Only write default didit settings, not the security key
       const initialConfig = { didit: DEFAULT_CONFIG.didit };
       await fs.writeJson(CONFIG_FILE, initialConfig, { spaces: 2 });
-      console.log('Created default configuration file with Didit settings.');
+      logger.info('Created default configuration file with Didit settings.');
     }
   } catch (error) {
-    console.error('Error ensuring config file exists:', error);
+    logger.error('Error ensuring config file exists:', error);
     throw error;
   }
 };
 
 // Make sure the config file exists
 ensureConfigFile().catch(err => {
-  console.error('Failed to initialize configuration:', err);
+  logger.error('Failed to initialize configuration:', err);
 });
 
 /**
@@ -60,13 +61,13 @@ const getEncryptionKey = () => {
       // Fallback to a hardcoded key ONLY in non-production environments and log a very loud warning.
       // This is still insecure but prevents complete breakage in a local dev setup if the env var is forgotten.
       // A truly secure approach would be to require it always, or use a dev-specific fixed key known not to be secure.
-      console.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY is not set. Using a default, insecure key for development. DO NOT USE THIS IN PRODUCTION.');
+      logger.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY is not set. Using a default, insecure key for development. DO NOT USE THIS IN PRODUCTION.');
       return 'default_insecure_dev_key_32bytes!'; // Ensure this is 32 bytes for AES-256 if used directly, though CryptoJS handles various lengths.
     }
   }
   if (key.length < 32 && process.env.NODE_ENV === 'production') {
      // Basic check, though CryptoJS might derive a key. For production, enforce strong key practices.
-     console.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY should ideally be a 32-byte (256-bit) string for maximum security.');
+     logger.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY should ideally be a 32-byte (256-bit) string for maximum security.');
   }
   return key;
 };
@@ -81,7 +82,7 @@ const encryptValue = async (value) => {
       encryptionKey
     ).toString();
   } catch (error) {
-    console.error('Encryption error:', error);
+    logger.error('Encryption error:', error);
     return '';
   }
 };
@@ -102,7 +103,7 @@ const decryptValue = async (encryptedValue) => {
     );
     return bytes.toString(crypto.enc.Utf8);
   } catch (error) {
-    console.error('Decryption error:', error);
+    logger.error('Decryption error:', error);
     return '';
   }
 };
@@ -116,7 +117,7 @@ const getConfig = async () => {
     await ensureConfigFile();
     return await fs.readJson(CONFIG_FILE);
   } catch (error) {
-    console.error('Error reading config file:', error);
+    logger.error('Error reading config file:', error);
     return DEFAULT_CONFIG;
   }
 };
@@ -135,13 +136,13 @@ const getDiditConfig = async () => {
         config.didit.clientSecret = await decryptValue(config.didit.clientSecret);
       } catch (e) {
         // If decryption fails, it might not be encrypted yet
-        console.warn('Could not decrypt client secret, it might not be encrypted');
+        logger.warn('Could not decrypt client secret, it might not be encrypted');
       }
     }
     
     return config.didit;
   } catch (error) {
-    console.error('Error reading Didit.me config:', error);
+    logger.error('Error reading Didit.me config:', error);
     return DEFAULT_CONFIG.didit;
   }
 };
@@ -174,13 +175,13 @@ const updateDiditConfig = async (diditConfig) => {
       try {
         config.didit.clientSecret = await decryptValue(config.didit.clientSecret);
       } catch (e) {
-        console.warn('Could not decrypt client secret for response');
+        logger.warn('Could not decrypt client secret for response');
       }
     }
     
     return config.didit;
   } catch (error) {
-    console.error('Error updating Didit.me config:', error);
+    logger.error('Error updating Didit.me config:', error);
     throw new Error('Failed to update configuration');
   }
 };
@@ -201,7 +202,7 @@ const resetDiditConfig = async () => {
     
     return config.didit;
   } catch (error) {
-    console.error('Error resetting Didit.me config:', error);
+    logger.error('Error resetting Didit.me config:', error);
     throw new Error('Failed to reset configuration');
   }
 };

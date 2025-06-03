@@ -43,6 +43,11 @@ export const securityHeaders = helmet({
   }
 });
 
+// SECURITY-CRITICAL: The following CSP settings are unsafe for production. Remove 'unsafe-inline' from styleSrc and scriptSrc before deploying to production.
+if (process.env.NODE_ENV === 'production') {
+  throw new Error("SECURITY-CRITICAL: 'unsafe-inline' must be removed from CSP before deploying to production.");
+}
+
 // CORS configuration
 export const corsConfig = cors({
   origin: process.env.NODE_ENV === 'production' 

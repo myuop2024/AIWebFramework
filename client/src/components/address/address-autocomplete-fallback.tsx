@@ -259,7 +259,6 @@ export default function AddressAutocompleteFallback({
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
-          console.log('Current location:', latitude, longitude);
 
           // Reverse geocode the coordinates
           const apiKey = getHereApiKey();

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { diditConnector } from '../services/didit-connector';
 import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/auth';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.get('/status', ensureAuthenticated, async (req: Request, res: Response) =
     
     return res.json(status);
   } catch (error) {
-    console.error('Error checking verification status:', error);
+    logger.error('Error checking verification status:', error);
     return res.status(500).json({ error: 'Failed to check verification status' });
   }
 });
@@ -60,7 +61,7 @@ router.get('/initiate', ensureAuthenticated, async (req: Request, res: Response)
 
     return res.json({ redirectUrl });
   } catch (error) {
-    console.error('Error starting verification process:', error);
+    logger.error('Error starting verification process:', error);
     return res.status(500).json({ error: 'Failed to start verification process' });
   }
 });
@@ -81,7 +82,7 @@ router.get('/mockverify', async (req: Request, res: Response) => {
       message: 'Your identity has been verified successfully! This is a mock verification for testing purposes.'
     });
   } catch (error) {
-    console.error('Error with mock verification:', error);
+    logger.error('Error with mock verification:', error);
     return res.status(500).render('error', { 
       message: 'Failed during mock verification process' 
     });
@@ -102,7 +103,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      console.error('Invalid webhook data:', result.error);
+      logger.error('Invalid webhook data:', result.error);
       return res.status(400).json({ error: 'Invalid webhook data' });
     }
 
@@ -138,7 +139,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error processing verification webhook:', error);
+    logger.error('Error processing verification webhook:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -161,7 +162,7 @@ router.get('/result', async (req: Request, res: Response) => {
       message: success ? 'Your identity has been successfully verified.' : 'Identity verification failed.'
     });
   } catch (error) {
-    console.error('Error rendering verification result:', error);
+    logger.error('Error rendering verification result:', error);
     return res.status(500).render('error', { 
       message: 'Failed to display verification result' 
     });
@@ -190,7 +191,7 @@ router.get('/admin/test-connection', ensureAuthenticated, hasPermission('system:
     
     return res.json(result);
   } catch (error) {
-    console.error('Error testing Didit connection:', error);
+    logger.error('Error testing Didit connection:', error);
     return res.status(500).json({ 
       success: false, 
       message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -226,7 +227,7 @@ router.get('/admin/settings', ensureAuthenticated, hasPermission('system:view-di
       enabled: enabledSetting?.settingValue || false,
     });
   } catch (error) {
-    console.error('Error retrieving Didit admin settings:', error);
+    logger.error('Error retrieving Didit admin settings:', error);
     return res.status(500).json({ error: 'Failed to retrieve Didit settings' });
   }
 });
@@ -282,7 +283,7 @@ router.put('/admin/settings', ensureAuthenticated, hasPermission('system:edit-di
 
     return res.json({ success: true });
   } catch (error) {
-    console.error('Error updating Didit admin settings:', error);
+    logger.error('Error updating Didit admin settings:', error);
     return res.status(500).json({ error: 'Failed to update Didit settings' });
   }
 });

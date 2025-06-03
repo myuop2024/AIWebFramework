@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { ErrorLogger } from '../services/error-logger';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.post('/log-error', async (req, res) => {
     
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('Error in log-error endpoint:', error);
+    logger.error('Error in log-error endpoint:', error);
     return res.status(500).json({ message: 'Failed to log error' });
   }
 });

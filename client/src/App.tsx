@@ -163,7 +163,6 @@ function App() {
   // Initialize global error handlers on app mount
   useEffect(() => {
     initGlobalErrorHandlers();
-    console.log('Global error handlers initialized');
   }, []);
 
   const [location] = useLocation();
@@ -188,8 +187,6 @@ function App() {
     logs = logs.filter(l => new Date(l.timestamp) > oneDayAgo);
     // Save back
     localStorage.setItem('pageLogs', JSON.stringify(logs));
-    // Log to console
-    console.log(`[PAGE LOAD] ${logEntry.path} at ${logEntry.timestamp}`);
     // Send to backend
     fetch('/api/log', {
       method: 'POST',
@@ -219,7 +216,6 @@ export default App;
 
 // Add a global error handler to log unhandled promise rejections
 window.addEventListener('unhandledrejection', event => {
-  console.warn('Unhandled promise rejection: ', event.promise, event.reason);
   // Log error to backend
   fetch('/api/log', {
     method: 'POST',

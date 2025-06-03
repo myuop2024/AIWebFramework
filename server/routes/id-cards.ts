@@ -5,6 +5,7 @@ import { ensureAuthenticated, ensureAdmin, hasPermission } from '../middleware/a
 import { idCardTemplateSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.get('/templates', ensureAuthenticated, hasPermission('id-cards:view-templ
     const templates = await storage.getAllIdCardTemplates();
     res.status(200).json(templates);
   } catch (error) {
-    console.error('Error fetching ID card templates:', error);
+    logger.error('Error fetching ID card templates:', error);
     res.status(500).json({ message: 'Failed to fetch ID card templates' });
   }
 });
@@ -34,7 +35,7 @@ router.get('/templates/:id', ensureAuthenticated, hasPermission('id-cards:view-t
     
     res.status(200).json(template);
   } catch (error) {
-    console.error('Error fetching ID card template:', error);
+    logger.error('Error fetching ID card template:', error);
     res.status(500).json({ message: 'Failed to fetch ID card template' });
   }
 });
@@ -51,7 +52,7 @@ router.get('/templates/active', ensureAuthenticated, async (req, res) => {
     
     res.status(200).json(template);
   } catch (error) {
-    console.error('Error fetching active ID card template:', error);
+    logger.error('Error fetching active ID card template:', error);
     res.status(500).json({ message: 'Failed to fetch active ID card template' });
   }
 });
@@ -70,7 +71,7 @@ router.post('/templates', ensureAuthenticated, hasPermission('id-cards:create-te
     const template = await storage.createIdCardTemplate(req.body);
     res.status(201).json(template);
   } catch (error) {
-    console.error('Error creating ID card template:', error);
+    logger.error('Error creating ID card template:', error);
     res.status(500).json({ message: 'Failed to create ID card template' });
   }
 });
@@ -98,7 +99,7 @@ router.put('/templates/:id', ensureAuthenticated, hasPermission('id-cards:edit-t
     
     res.status(200).json(template);
   } catch (error) {
-    console.error('Error updating ID card template:', error);
+    logger.error('Error updating ID card template:', error);
     res.status(500).json({ message: 'Failed to update ID card template' });
   }
 });
@@ -118,7 +119,7 @@ router.delete('/templates/:id', ensureAuthenticated, hasPermission('id-cards:del
     
     res.status(200).json({ message: 'ID card template deleted successfully' });
   } catch (error) {
-    console.error('Error deleting ID card template:', error);
+    logger.error('Error deleting ID card template:', error);
     res.status(500).json({ message: 'Failed to delete ID card template' });
   }
 });
@@ -146,7 +147,7 @@ router.get('/generate/:userId', ensureAuthenticated, async (req, res) => {
     // Send the PDF buffer
     res.send(pdfBuffer);
   } catch (error) {
-    console.error('Error generating ID card:', error);
+    logger.error('Error generating ID card:', error);
     res.status(500).json({ message: 'Failed to generate ID card' });
   }
 });
@@ -175,7 +176,7 @@ router.get('/download', ensureAuthenticated, async (req, res) => {
     // Send the PDF buffer
     res.send(pdfBuffer);
   } catch (error) {
-    console.error('Error downloading ID card:', error);
+    logger.error('Error downloading ID card:', error);
     res.status(500).json({ message: 'Failed to download ID card' });
   }
 });
@@ -216,7 +217,7 @@ router.post('/preview-template', ensureAuthenticated, hasPermission('id-cards:pr
     // Send the PDF buffer
     res.send(pdfBuffer);
   } catch (error) {
-    console.error('Error previewing ID card template:', error);
+    logger.error('Error previewing ID card template:', error);
     res.status(500).json({ message: 'Failed to preview ID card template' });
   }
 });

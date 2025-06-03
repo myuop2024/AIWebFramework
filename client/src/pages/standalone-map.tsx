@@ -145,7 +145,6 @@ export default function StandaloneMap() {
             type: 'fallback-map',
             updateRegion: (region: string | null) => {
               // This would update the fallback visualization
-              console.log('Would update region to:', region);
             }
           });
           setMapLoaded(true);

@@ -5,6 +5,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
+const logger = require('../utils/logger');
 
 // User data file path
 const USERS_FILE = path.join(__dirname, '../data/users.json');
@@ -30,23 +31,23 @@ const ensureUserFiles = async () => {
     // Create the users file if it doesn't exist
     if (!await fs.pathExists(USERS_FILE)) {
       await fs.writeJson(USERS_FILE, [], { spaces: 2 });
-      console.log('Created empty users file');
+      logger.info('Created empty users file');
     }
     
     // Create the admin file if it doesn't exist
     if (!await fs.pathExists(ADMIN_FILE)) {
       await fs.writeJson(ADMIN_FILE, DEFAULT_ADMIN, { spaces: 2 });
-      console.log('Created default admin credentials');
+      logger.info('Created default admin credentials');
     }
   } catch (error) {
-    console.error('Error ensuring user files exist:', error);
+    logger.error('Error ensuring user files exist:', error);
     throw error;
   }
 };
 
 // Make sure the user files exist
 ensureUserFiles().catch(err => {
-  console.error('Failed to initialize user data:', err);
+  logger.error('Failed to initialize user data:', err);
 });
 
 /**
@@ -58,7 +59,7 @@ const getAllUsers = async () => {
     await ensureUserFiles();
     return await fs.readJson(USERS_FILE);
   } catch (error) {
-    console.error('Error reading users file:', error);
+    logger.error('Error reading users file:', error);
     return [];
   }
 };
@@ -73,7 +74,7 @@ const getById = async (id) => {
     const users = await getAllUsers();
     return users.find(user => user.id === id) || null;
   } catch (error) {
-    console.error('Error getting user by ID:', error);
+    logger.error('Error getting user by ID:', error);
     return null;
   }
 };
@@ -88,7 +89,7 @@ const getByEmail = async (email) => {
     const users = await getAllUsers();
     return users.find(user => user.email.toLowerCase() === email.toLowerCase()) || null;
   } catch (error) {
-    console.error('Error getting user by email:', error);
+    logger.error('Error getting user by email:', error);
     return null;
   }
 };
@@ -127,7 +128,7 @@ const createUser = async (userData) => {
     
     return newUser;
   } catch (error) {
-    console.error('Error creating user:', error);
+    logger.error('Error creating user:', error);
     throw new Error('Failed to create user');
   }
 };
@@ -157,7 +158,7 @@ const updateVerification = async (userId, verificationData) => {
     
     return users[userIndex];
   } catch (error) {
-    console.error('Error updating user verification:', error);
+    logger.error('Error updating user verification:', error);
     throw new Error('Failed to update user verification');
   }
 };
@@ -179,7 +180,7 @@ const verifyAdminCredentials = async (username, password) => {
     
     return await bcrypt.compare(password, adminData.passwordHash);
   } catch (error) {
-    console.error('Error verifying admin credentials:', error);
+    logger.error('Error verifying admin credentials:', error);
     return false;
   }
 };
@@ -210,7 +211,7 @@ const updateAdminCredentials = async (adminData) => {
     
     return true;
   } catch (error) {
-    console.error('Error updating admin credentials:', error);
+    logger.error('Error updating admin credentials:', error);
     return false;
   }
 };

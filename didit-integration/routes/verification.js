@@ -6,6 +6,7 @@ const router = express.Router();
 const authUtils = require('../utils/auth');
 const diditService = require('../services/diditService');
 const userModel = require('../models/user');
+const logger = require('../utils/logger');
 
 /**
  * Start verification process
@@ -26,7 +27,7 @@ router.get('/start-verification', authUtils.ensureAuthenticated, async (req, res
     // Redirect user to Didit.me
     res.redirect(authUrl);
   } catch (error) {
-    console.error('Error starting verification process:', error);
+    logger.error('Error starting verification process:', error);
     res.status(500).render('error', { 
       error: 'Failed to start verification process', 
       details: error.message 
@@ -43,7 +44,7 @@ router.get('/verification-callback', authUtils.ensureAuthenticated, async (req, 
   
   // Handle errors from Didit.me
   if (error) {
-    console.error('Didit.me returned an error:', error, error_description);
+    logger.error('Didit.me returned an error:', error, error_description);
     return res.status(400).render('verification-result', { 
       success: false,
       error: 'Verification failed',
@@ -53,7 +54,7 @@ router.get('/verification-callback', authUtils.ensureAuthenticated, async (req, 
   
   // Validate the state parameter to prevent CSRF
   if (!state || state !== req.session.oauthState) {
-    console.error('Invalid OAuth state parameter');
+    logger.error('Invalid OAuth state parameter');
     return res.status(400).render('verification-result', { 
       success: false,
       error: 'Invalid verification request',
@@ -64,7 +65,7 @@ router.get('/verification-callback', authUtils.ensureAuthenticated, async (req, 
   // Validate state timestamp (expire after 15 minutes)
   const stateAge = Date.now() - (req.session.oauthStateTimestamp || 0);
   if (stateAge > 15 * 60 * 1000) {
-    console.error('OAuth state parameter expired');
+    logger.error('OAuth state parameter expired');
     return res.status(400).render('verification-result', { 
       success: false,
       error: 'Verification request expired',
@@ -92,7 +93,7 @@ router.get('/verification-callback', authUtils.ensureAuthenticated, async (req, 
       user: authUtils.sanitizeUser(updatedUser)
     });
   } catch (error) {
-    console.error('Error completing verification process:', error);
+    logger.error('Error completing verification process:', error);
     res.status(500).render('verification-result', { 
       success: false,
       error: 'Verification failed',
@@ -118,7 +119,7 @@ router.get('/verification-status', authUtils.ensureAuthenticated, async (req, re
       verificationDetails: user.verificationDetails || null
     });
   } catch (error) {
-    console.error('Error getting verification status:', error);
+    logger.error('Error getting verification status:', error);
     res.status(500).json({ error: 'Failed to get verification status' });
   }
 });

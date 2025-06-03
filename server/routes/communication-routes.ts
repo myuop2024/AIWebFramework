@@ -6,6 +6,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import logger from '../utils/logger';
 
 const router = express.Router();
 
@@ -22,9 +23,9 @@ const uploadDir = path.join(__dirname, '../../../public/uploads/communication_fi
 if (!fs.existsSync(uploadDir)) {
     try {
         fs.mkdirSync(uploadDir, { recursive: true });
-        console.log(`Upload directory created: ${uploadDir}`);
+        logger.info(`Upload directory created: ${uploadDir}`);
     } catch (err) {
-        console.error(`Error creating upload directory ${uploadDir}:`, err);
+        logger.error(`Error creating upload directory ${uploadDir}:`, err);
         // Depending on the desired behavior, you might want to throw an error here
         // or ensure the application doesn't start if the directory can't be created.
     }
@@ -127,7 +128,7 @@ router.get('/conversations', ensureAuthenticated, async (req, res, next) => {
     const conversations = await storage.getRecentConversations(req.userId);
     res.json(conversations);
   } catch (error) {
-    console.error('Error getting conversations:', error);
+    logger.error('Error getting conversations:', error);
     // Pass error to centralized error handler
     next(error);
   }
@@ -146,7 +147,7 @@ router.get('/messages/:userId', ensureAuthenticated, async (req, res, next) => {
     const messages = await storage.getMessagesBetweenUsers(req.userId, otherUserId);
     res.json(messages);
   } catch (error) {
-    console.error('Error getting messages:', error);
+    logger.error('Error getting messages:', error);
     next(error);
   }
 });
@@ -170,12 +171,12 @@ router.get('/online-users', ensureAuthenticated, async (req, res, next) => {
       parish: user.parish || null,
     }));
 
-    console.log(`[API] /online-users requested by userId: ${req.userId}`);
-    console.log(`[API] /online-users response:`, usersWithStatus);
+    logger.info(`[API] /online-users requested by userId: ${req.userId}`);
+    logger.info(`[API] /online-users response:`, usersWithStatus);
 
     res.json(usersWithStatus);
   } catch (error) {
-    console.error('Error getting online users:', error);
+    logger.error('Error getting online users:', error);
     next(error);
   }
 });
@@ -215,7 +216,7 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
 
     const createdMessage = await storage.createMessage(messageData);
 
-    console.log(`[API] Message sent from ${req.userId} to ${receiverId}:`, content);
+    logger.info(`[API] Message sent from ${req.userId} to ${receiverId}:`, content);
 
     // Actively notify receiver and sender (for their other sessions) via WebSocket
     if (communicationService) {
@@ -237,7 +238,7 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
 
     res.status(201).json(createdMessage);
   } catch (error) {
-    console.error('Error sending message:', error);
+    logger.error('Error sending message:', error);
     next(error);
   }
 });
@@ -289,7 +290,7 @@ router.patch('/messages/read', ensureAuthenticated, async (req, res, next) => {
     }
     res.json(updatedMessages);
   } catch (error) {
-    console.error('Error marking messages as read:', error);
+    logger.error('Error marking messages as read:', error);
     next(error);
   }
 });
@@ -321,7 +322,7 @@ router.patch('/messages/read-all/:senderId', ensureAuthenticated, async (req, re
     }
     res.json({ count }); // Returns the number of messages marked as read
   } catch (error) {
-    console.error('Error marking all messages as read:', error);
+    logger.error('Error marking all messages as read:', error);
     next(error);
   }
 });
@@ -345,7 +346,7 @@ router.get('/user-status/:userId', ensureAuthenticated, async (req, res, next) =
     const status = communicationService ? communicationService.getUserStatus(targetUserId) : 'offline';
     res.json({ userId: targetUserId, username: user.username, status });
   } catch (error) {
-    console.error('Error getting user status:', error);
+    logger.error('Error getting user status:', error);
     next(error);
   }
 });
