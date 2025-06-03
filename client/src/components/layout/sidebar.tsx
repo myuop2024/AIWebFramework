@@ -10,7 +10,7 @@ import {
   Users, Shield, CalendarRange, PanelTop, Cog,
   Map as MapIcon, Phone, Video, Headphones,
   Kanban, Trello, X, Sparkles, Upload, Trophy,
-  Brain, Accessibility, Activity, Zap
+  Brain, Accessibility, Activity, Zap, AlertCircle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,6 +63,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const mainNavLinks = [
     { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> },
     { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> },
+    { path: "/documents", label: "Documents", icon: <FileText className="h-5 w-5" /> },
+    { path: "/news", label: "News", icon: <FileText className="h-5 w-5" /> },
   ];
 
   // --- ANALYTICS & INSIGHTS ---
@@ -92,7 +94,9 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/polling-stations/create", label: "Create Station", requiredPermission: "polling-stations:create" },
         { path: "/polling-stations/import", label: "Import Stations", requiredPermission: "polling-stations:import" },
         { path: "/polling-stations/map", label: "Station Map", requiredPermission: "polling-stations:view" },
+        { path: "/polling-stations/regions", label: "Regions", requiredPermission: "polling-stations:view" },
         { path: "/polling-stations/export", label: "Export Stations", requiredPermission: "polling-stations:export" },
+        { path: "/polling-stations/check-in", label: "Check In", requiredPermission: "polling-stations:view" },
         { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-4 w-4" />, requiredPermission: "routes:plan" },
         { path: "/observer-route-planning", label: "Observer Routing", icon: <MapIcon className="h-4 w-4" />, requiredPermission: "routes:view-observer-geolocation" },
       ]
@@ -166,6 +170,9 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/admin-dashboard", label: "Statistics", icon: <Activity className="h-4 w-4" /> },
         { path: "/admin/crm", label: "CRM System", icon: <Phone className="h-4 w-4" /> },
         { path: "/admin/analytics", label: "Advanced Analytics", icon: <Zap className="h-4 w-4" /> },
+        { path: "/admin/error-logs", label: "Error Logs", icon: <AlertCircle className="h-4 w-4" /> },
+        { path: "/admin/security", label: "Security Dashboard", icon: <Shield className="h-4 w-4" /> },
+        { path: "/admin/logs", label: "System Logs", icon: <FileText className="h-4 w-4" /> },
       ]
     },
     {
@@ -179,6 +186,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-4 w-4" />, requiredPermission: "users:verify" },
         { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-4 w-4" />, requiredPermission: "users:import" },
         { path: "/admin/permissions", label: "Permissions", icon: <Shield className="h-4 w-4" />, requiredPermission: "roles:view" },
+        { path: "/admin/registration-forms", label: "Registration Forms", icon: <FileEdit className="h-4 w-4" />, requiredPermission: "admin:access-panel" },
+        { path: "/admin/id-cards", label: "ID Cards", icon: <Shield className="h-4 w-4" />, requiredPermission: "admin:access-panel" },
       ]
     },
     {

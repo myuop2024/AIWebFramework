@@ -66,7 +66,9 @@ import AdminRolesPage from '@/pages/admin/roles';
 import AdminGroupsPage from '@/pages/admin/groups';
 import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
 import AdminRoleGroupManagementPage from '@/pages/admin/role-group-management';
+import AdminLogsPage from '@/pages/admin/logs';
 import { useMobileOptimizations } from './hooks/use-ios-optimizations';
+import { PermissionsProvider } from '@/hooks/usePermissions';
 
 function Router() {
   return (
@@ -107,6 +109,7 @@ function Router() {
       <ProtectedRoute path="/accessibility" component={AccessibilityPage} />
       <ProtectedRoute path="/route-planning" component={RoutePlanningPage} />
       <ProtectedRoute path="/observer-route-planning" component={ObserverRoutePlanningPage} />
+      <ProtectedRoute path="/settings" component={React.lazy(() => import("@/pages/settings"))} />
       {/* Project Management Routes - specific routes must come before dynamic routes */}
       <ProtectedRoute path="/project-management/dashboard" component={ProjectDashboard} />
       <ProtectedRoute path="/project-management/new" component={ProjectNew} />
@@ -139,6 +142,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/groups" component={AdminGroupsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/group-permissions" component={AdminGroupPermissionsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/role-group-management" component={AdminRoleGroupManagementPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/logs" component={AdminLogsPage} allowedRoles={["admin", "director"]} />
 
       {/* Supervisor Routes */}
       <RoleProtectedRoute 
@@ -236,9 +240,11 @@ function App() {
       </Helmet>
       <ErrorBoundary captureContext={{ location: window.location.href }}>
         <AuthProvider>
-          <TooltipProvider>
-            <Router />
-          </TooltipProvider>
+          <PermissionsProvider>
+            <TooltipProvider>
+              <Router />
+            </TooltipProvider>
+          </PermissionsProvider>
         </AuthProvider>
       </ErrorBoundary>
     </>
