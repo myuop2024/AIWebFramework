@@ -52,7 +52,6 @@ import wafRoutes, { setWAFEngine } from './routes/waf-routes';
 import adminRlsRoutes from './routes/admin-rls-routes';
 import { ErrorLogger } from './services/error-logger';
 import { createRequire } from 'module';
-import achievementRoutes from './routes/achievement-routes';
 
 const require = createRequire(import.meta.url);
 
