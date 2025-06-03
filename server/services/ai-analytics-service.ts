@@ -626,8 +626,9 @@ export class AIAnalyticsService {
         }
       });
       
-      if (classification && classification.labels && classification.labels.length > 0) {
-        return classification.labels[0];
+      // HF returns array of objects with label and score properties
+      if (classification && Array.isArray(classification) && classification.length > 0) {
+        return classification[0].label || 'general issues';
       }
       
       return 'general issues';

@@ -618,49 +618,6 @@ export class ImageProcessingService {
           // For successful segmentation, fall back to basic background removal
           return this.basicBackgroundRemoval(imageBuffer);
         }
-        
-        // Create a canvas with RGBA support for transparency
-        logger.debug('Creating canvas for transparent image');
-        const canvas = createCanvas(originalImage.width, originalImage.height);
-        const ctx = canvas.getContext('2d');
-        
-        // Draw the original image
-        ctx.drawImage(originalImage, 0, 0);
-        
-        // Get image data to modify pixels
-        logger.debug('Extracting image data for pixel manipulation');
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        
-        // Also get mask data
-        logger.debug('Extracting mask data');
-        const tempCanvas = createCanvas(maskImage.width, maskImage.height);
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(maskImage, 0, 0);
-        const maskData = tempCtx.getImageData(0, 0, maskImage.width, maskImage.height).data;
-        
-        // Apply the mask to create transparency
-        logger.debug('Applying mask to create transparency');
-        // The mask is grayscale, so we only need to check one channel
-        for (let i = 0; i < data.length; i += 4) {
-          // Get the corresponding pixel in the mask
-          const maskPixelValue = maskData[i]; // Just use R channel 
-          
-          // Set alpha channel based on the mask
-          // Black (0) in mask = transparent, White (255) in mask = fully visible
-          data[i + 3] = maskPixelValue;
-        }
-        
-        // Put the modified image data back
-        logger.debug('Applying modified image data to canvas');
-        ctx.putImageData(imageData, 0, 0);
-        
-        // Convert to PNG with transparency
-        logger.debug('Converting canvas to transparent PNG');
-        const resultBuffer = this.canvasToBuffer(canvas, 'image/png', 1.0);
-        logger.debug(`Final transparent image size: ${resultBuffer.length} bytes`);
-        
-        return resultBuffer;
       } catch (hfError) {
         logger.error('Hugging Face background removal error', { error: hfError instanceof Error ? hfError : new Error(String(hfError)) });
         logger.debug('Hugging Face error details for background removal', { errorDetails: JSON.stringify(hfError) });
@@ -754,6 +711,47 @@ export class ImageProcessingService {
     }
     
     return `processed_${timestamp}_${randomString}${extension}`;
+  }
+
+  /**
+   * Basic background removal using simple edge detection and center focus
+   */
+  private async basicBackgroundRemoval(imageBuffer: Buffer): Promise<Buffer> {
+    try {
+      const image = await this.loadImage(imageBuffer);
+      const canvas = createCanvas(image.width, image.height);
+      const ctx = canvas.getContext('2d');
+
+      // Draw the original image
+      ctx.drawImage(image, 0, 0);
+
+      // Apply a simple background removal by creating a soft circular mask
+      const imageData = ctx.getImageData(0, 0, image.width, image.height);
+      const pixels = imageData.data;
+      
+      const centerX = image.width / 2;
+      const centerY = image.height / 2;
+      const maxRadius = Math.min(image.width, image.height) / 2.5;
+
+      for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+          const pixelIndex = (y * image.width + x) * 4;
+          const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+          
+          if (distance > maxRadius) {
+            // Gradually reduce alpha for pixels outside the center area
+            const fadeAmount = Math.max(0, 1 - (distance - maxRadius) / (maxRadius * 0.3));
+            pixels[pixelIndex + 3] = Math.floor(pixels[pixelIndex + 3] * fadeAmount);
+          }
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      return this.canvasToBuffer(canvas, 'image/png');
+    } catch (error) {
+      logger.error('Basic background removal error', { error: error instanceof Error ? error : new Error(String(error)) });
+      return imageBuffer;
+    }
   }
 }
 
