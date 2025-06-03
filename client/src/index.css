@@ -2,6 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iOS Optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific styles */
+  html, body {
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  
+  /* Safe area support for notched devices */
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Enhanced touch targets for iOS */
+@media (hover: none) and (pointer: coarse) {
+  button, 
+  [role="button"], 
+  .cursor-pointer,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Improve scrolling performance */
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 :root {
   /* Ultra-modern UI color scheme with sophisticated gradients */
   --background: 0 0% 100%;

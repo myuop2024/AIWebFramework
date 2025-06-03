@@ -34,6 +34,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           "rounded-lg px-4 py-2 border border-slate-200 focus:ring-2 focus:ring-primary/60 focus:border-primary transition-all duration-150 shadow-sm font-sans placeholder:text-slate-400 text-base bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white",
           className
         )}
+        style={{ 
+          fontSize: '16px', // Prevent zoom on iOS
+          WebkitAppearance: 'none',
+          WebkitTapHighlightColor: 'transparent'
+        }}
         ref={ref}
         {...props}
         onChange={handleChange}

@@ -107,6 +107,21 @@
         z-index: 5;
       }
     </style>
+      <!-- iOS Optimizations -->
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="apple-mobile-web-app-title" content="CAFFE Observer" />
+      <meta name="format-detection" content="telephone=no" />
+
+      <!-- Touch Icons for iOS -->
+      <link rel="apple-touch-icon" sizes="180x180" href="/assets/caffe-logo.png" />
+      <link rel="apple-touch-icon" sizes="152x152" href="/assets/caffe-logo.png" />
+      <link rel="apple-touch-icon" sizes="120x120" href="/assets/caffe-logo.png" />
+
+      <!-- PWA iOS splash screens -->
+      <link rel="apple-touch-startup-image" href="/assets/caffe-logo.png" />
+
+    <title>CAFFE Observer Platform</title>
   </head>
   <body>
     <div class="map-container">
@@ -153,7 +168,7 @@
         const map = document.getElementById('map');
         const parishButtons = document.getElementById('parishButtons');
         const allParishesButton = document.getElementById('allParishes');
-        
+
         let selectedParish = null;
 
         // Add buttons for each parish
@@ -164,13 +179,13 @@
           button.textContent = parish.name;
           button.dataset.parish = parish.name;
           parishButtons.appendChild(button);
-          
+
           // Add click event
           button.addEventListener('click', () => {
             selectParish(parish.name);
           });
         });
-        
+
         // Add click event for "All Parishes" button
         allParishesButton.addEventListener('click', () => {
           selectParish(null);
@@ -185,43 +200,43 @@
           parishEl.style.left = `${parish.x}%`;
           parishEl.style.top = `${parish.y}%`;
           parishEl.dataset.parish = parish.name;
-          
+
           // Create parish label
           const labelEl = document.createElement('div');
           labelEl.className = 'parish-label';
           labelEl.textContent = parish.name;
           labelEl.style.left = `${parish.x}%`;
           labelEl.style.top = `${parish.y + 5}%`;
-          
+
           // Add click event
           parishEl.addEventListener('click', () => {
             selectParish(parish.name);
           });
-          
+
           map.appendChild(parishEl);
           map.appendChild(labelEl);
-          
+
           // Add polling stations for this parish
           const stationCount = Math.min(5, Math.floor(parish.stationCount * 0.15));
           for (let i = 0; i < stationCount; i++) {
             const stationEl = document.createElement('div');
             stationEl.className = 'station ' + (Math.random() > 0.2 ? 'active' : 'issue');
-            
+
             // Position around parish center with some random offset
             const offsetX = (Math.random() - 0.5) * 15;
             const offsetY = (Math.random() - 0.5) * 15;
             stationEl.style.left = `${parish.x + offsetX}%`;
             stationEl.style.top = `${parish.y + offsetY}%`;
             stationEl.dataset.parish = parish.name;
-            
+
             map.appendChild(stationEl);
           }
         });
-        
+
         // Select a parish
         function selectParish(parishName) {
           selectedParish = parishName;
-          
+
           // Update buttons
           const buttons = document.querySelectorAll('.parish-button');
           buttons.forEach(button => {
@@ -232,7 +247,7 @@
               button.classList.remove('active');
             }
           });
-          
+
           // Update parish markers
           const parishMarkers = document.querySelectorAll('.parish');
           parishMarkers.forEach(marker => {
@@ -242,7 +257,7 @@
               marker.classList.remove('selected');
             }
           });
-          
+
           // Show/hide stations
           const stations = document.querySelectorAll('.station');
           stations.forEach(station => {

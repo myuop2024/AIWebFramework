@@ -49,6 +49,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
+        style={{
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation'
+        }}
         ref={ref}
         {...props}
       />
