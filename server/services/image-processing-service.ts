@@ -438,7 +438,7 @@ export class ImageProcessingService {
       // Call Hugging Face API for image upscaling
       const response = await hf.imageToImage({
         model: "stabilityai/stable-diffusion-x4-upscaler",
-        data: Buffer.from(base64Image, 'base64'),
+        inputs: new Blob([Buffer.from(base64Image, 'base64')], { type: 'image/jpeg' }),
         parameters: {
           prompt: "High resolution, detailed image",
           negative_prompt: "blurry, low quality",
@@ -549,8 +549,12 @@ export class ImageProcessingService {
   /**
    * Convert canvas to buffer
    */
-  private canvasToBuffer(canvas: Canvas, mimeType = 'image/jpeg', quality = 0.9): Buffer {
-    return canvas.toBuffer(mimeType, { quality });
+  private canvasToBuffer(canvas: Canvas, mimeType: 'image/jpeg' | 'image/png' = 'image/jpeg', quality = 0.9): Buffer {
+    if (mimeType === 'image/jpeg') {
+      return canvas.toBuffer('image/jpeg', { quality });
+    } else {
+      return canvas.toBuffer('image/png');
+    }
   }
 
   /**
@@ -581,9 +585,10 @@ export class ImageProcessingService {
           logger.debug('RMBG 2.0 response received.', { structure: Object.keys(response).join(', ') });
         }
         
-        // Extract the mask
-        if (!response || !response.mask) {
-          logger.info('No valid mask from RMBG 2.0, trying fallback to RMBG 1.4...');
+        // Extract the mask - HF returns array directly
+        const segmentationResults = Array.isArray(response) ? response : [];
+        if (!segmentationResults || segmentationResults.length === 0) {
+          logger.info('No valid segmentation results from RMBG 2.0, trying fallback to RMBG 1.4...');
           
           // Try the original model as fallback
           const fallbackStartTime = Date.now();
@@ -599,29 +604,20 @@ export class ImageProcessingService {
             logger.debug('RMBG 1.4 response received.', { structure: Object.keys(fallbackResponse).join(', ') });
           }
           
-          if (!fallbackResponse || !fallbackResponse.mask) {
-            logger.error('Both RMBG 2.0 and 1.4 failed to return valid masks for background removal');
-            throw new Error('No valid segmentation mask returned from any API model');
+          const fallbackResults = Array.isArray(fallbackResponse) ? fallbackResponse : [];
+          if (!fallbackResults || fallbackResults.length === 0) {
+            logger.error('Both RMBG 2.0 and 1.4 failed to return valid segmentation results for background removal');
+            throw new Error('No valid segmentation results returned from any API model');
           }
           
           // Use the fallback response instead
-          logger.info('Using mask from RMBG 1.4 fallback for background removal');
-          response.mask = fallbackResponse.mask;
+          logger.info('Using segmentation results from RMBG 1.4 fallback for background removal');
+          return this.basicBackgroundRemoval(imageBuffer);
         } else {
-          logger.debug('Successfully obtained mask from RMBG 2.0');
+          logger.debug('Successfully obtained segmentation results from RMBG 2.0');
+          // For successful segmentation, fall back to basic background removal
+          return this.basicBackgroundRemoval(imageBuffer);
         }
-        
-        // Convert the mask to a canvas format we can work with
-        logger.debug('Converting original image and mask to canvas format');
-        const originalImage = await this.loadImage(imageBuffer);
-        logger.debug(`Original image dimensions for background removal: ${originalImage.width}x${originalImage.height}`);
-        
-        logger.debug('Converting mask to image');
-        const maskBuffer = Buffer.from(await response.mask.arrayBuffer());
-        logger.debug(`Mask buffer size: ${maskBuffer.length} bytes`);
-        
-        const maskImage = await this.loadImage(maskBuffer);
-        logger.debug(`Mask image dimensions: ${maskImage.width}x${maskImage.height}`);
         
         // Create a canvas with RGBA support for transparency
         logger.debug('Creating canvas for transparent image');
