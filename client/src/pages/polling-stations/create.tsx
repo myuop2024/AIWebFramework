@@ -61,7 +61,7 @@ export default function CreatePollingStation() {
       <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <PollingStationForm 
           onSubmit={handleSubmit} 
-          isSubmitting={isSubmitting}
+          isLoading={isSubmitting}
         />
       </div>
     </div>

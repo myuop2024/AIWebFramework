@@ -19,6 +19,46 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+// Define structure for system stats for this page, similar to AdminDashboard
+interface AdminPageSystemStats {
+  users?: {
+    total?: number;
+    byRole?: Record<string, number>;
+    pending_documents?: number;
+    pending_verification?: number;
+    rejected?: number;
+  };
+  reports?: {
+    byType?: Record<string, number>;
+    byStatus?: Record<string, number>; // Added based on usage for total reports calculation
+    pending?: number;
+    flagged?: number;
+  };
+  pollingStations?: {
+    total?: number;
+    active?: number;
+    riskAssessment?: {
+      highRisk?: number;
+      mediumRisk?: number;
+      lowRisk?: number;
+      noRisk?: number;
+    };
+  };
+  assignments?: {
+    active?: number;
+  };
+  system?: {
+    version?: string;
+    uptime?: number;
+    database?: { // Nested database object
+      status?: string;
+      size?: number;
+    };
+    lastUpdated?: string;
+    status?: string;
+  };
+}
+
 export default function Admin() {
   const [, navigate] = useLocation();
   const { user, isLoading } = useAuth();
@@ -38,11 +78,19 @@ export default function Admin() {
     enabled: !!user && user.role === 'admin',
   });
 
-  const { data: systemStats, isLoading: statsLoading } = useQuery<any>({
+  const { data: systemStats, isLoading: statsLoading } = useQuery<AdminPageSystemStats>({
     queryKey: ['/api/admin/system-stats'],
     enabled: !!user && user.role === 'admin',
-    onSuccess: (data: any) => {
-      console.log('System stats:', data);
+    // Remove onSuccess from useQuery; handle side effects in useEffect or via direct data usage
+    // onSuccess: (data: any) => {
+    //   console.log('System stats:', data);
+    // }
+    initialData: { // Provide initialData to prevent undefined access issues
+      users: { total: 0, byRole: {}, pending_documents: 0, pending_verification: 0, rejected: 0 },
+      reports: { byType: {}, byStatus: {}, pending: 0, flagged: 0 },
+      pollingStations: { total: 0, active: 0, riskAssessment: { highRisk: 0, mediumRisk: 0, lowRisk: 0, noRisk: 0 } },
+      assignments: { active: 0 },
+      system: { version: 'N/A', uptime: 0, database: { status: 'N/A', size: 0 }, lastUpdated: 'N/A', status: 'N/A' }
     }
   });
 

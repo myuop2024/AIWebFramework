@@ -216,6 +216,13 @@ export function logApiError(
   });
 }
 
+// Define ErrorContext interface
+interface ErrorContext {
+  level?: 'error' | 'warning' | 'info';
+  source?: string;
+  [key: string]: any; // To allow other arbitrary context data
+}
+
 export const logError = async (error: string | Error, context: ErrorContext = {}) => {
   try {
     const errorData = {

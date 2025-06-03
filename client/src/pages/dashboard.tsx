@@ -104,7 +104,7 @@ export default function Dashboard() {
           </ModernCard>
 
           {/* Leaderboards Section */}
-          <ModernCard variant="outline"> {/* Or other suitable variant */}
+          <ModernCard variant="elevated">
             <div className="p-6">
               <h2 className="text-xl font-semibold mb-4">Activity Leaderboards</h2>
               {(isOverallLeaderboardLoading || isWeeklyLeaderboardLoading) ? (

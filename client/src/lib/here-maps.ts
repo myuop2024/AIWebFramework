@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import { getHereApiKey, isHereMapsConfigured } from "./here-maps-config";
 
+// Define the loadScript utility function
+function loadScript(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = url;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load script: ${url}`));
+    document.head.appendChild(script);
+  });
+}
+
 // Type definitions for HERE Maps API
 interface HereMapsApi {
   Map: any;

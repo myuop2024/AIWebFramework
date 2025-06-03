@@ -79,10 +79,36 @@ import {
 } from 'lucide-react';
 import { 
   type FormTemplate,
-  type FormTemplateExtended,
   type RegistrationForm,
-  type FormField as SchemaFormField
+  formTemplateExtendedSchema,
 } from '@shared/schema';
+import { z } from 'zod';
+
+// Define FormTemplateExtended using z.infer
+type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
+
+// Define SchemaFormField and SchemaFormSection for FormTemplateEditor structure
+// (These are for the structure within FormTemplateExtended.sections)
+interface SchemaFormField {
+  id: string;
+  name: string;
+  type: string;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: Array<{ label: string; value: string }>;
+  order: number;
+  value?: any; 
+}
+
+interface SchemaFormSection {
+  id: string;
+  title: string;
+  description?: string;
+  fields: SchemaFormField[];
+  order: number;
+}
 
 export default function FormTemplatesPage() {
   const [, navigate] = useLocation();
@@ -92,13 +118,13 @@ export default function FormTemplatesPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
-  const [activeTemplate, setActiveTemplate] = useState<FormTemplate | null>(null);
+  const [activeTemplate, setActiveTemplate] = useState<FormTemplateExtended | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   
   // Registration Form States
   const [selectedForm, setSelectedForm] = useState<RegistrationForm | null>(null);
   const [showFieldEditor, setShowFieldEditor] = useState(false);
-  const [editingField, setEditingField] = useState<SchemaFormField | null>(null);
+  const [editingField, setEditingField] = useState<FormField | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -115,7 +141,7 @@ export default function FormTemplatesPage() {
   }, [user, isLoading, navigate, toast]);
 
   // Query to get all form templates
-  const { data: templates = [], isLoading: isTemplatesLoading, refetch } = useQuery<FormTemplate[]>({
+  const { data: templates = [], isLoading: isTemplatesLoading, refetch } = useQuery<FormTemplateExtended[]>({
     queryKey: ['/api/form-templates'],
     enabled: !!user && user.role === 'admin'
   });
@@ -189,7 +215,7 @@ export default function FormTemplatesPage() {
 
   // Toggle template active status
   const toggleStatusMutation = useMutation({
-    mutationFn: async (template: FormTemplate) => {
+    mutationFn: async (template: FormTemplateExtended) => {
       const res = await apiRequest('PATCH', `/api/form-templates/${template.id}/status`, {
         isActive: !template.isActive
       });
@@ -213,7 +239,7 @@ export default function FormTemplatesPage() {
 
   // Delete a template
   const deleteTemplateMutation = useMutation({
-    mutationFn: async (template: FormTemplate) => {
+    mutationFn: async (template: FormTemplateExtended) => {
       const res = await apiRequest('DELETE', `/api/form-templates/${template.id}`, {});
       return await res.json();
     },
@@ -276,20 +302,20 @@ export default function FormTemplatesPage() {
     updateTemplateMutation.mutate({ id: activeTemplate.id, data: templateData });
   };
 
-  const handleToggleStatus = (template: FormTemplate) => {
+  const handleToggleStatus = (template: FormTemplateExtended) => {
     toggleStatusMutation.mutate(template);
   };
 
-  const handleDeleteTemplate = (template: FormTemplate) => {
+  const handleDeleteTemplate = (template: FormTemplateExtended) => {
     deleteTemplateMutation.mutate(template);
   };
 
-  const handleEditTemplate = (template: FormTemplate) => {
+  const handleEditTemplate = (template: FormTemplateExtended) => {
     setActiveTemplate(template);
     setIsEditing(true);
   };
 
-  const handlePreviewTemplate = (template: FormTemplate) => {
+  const handlePreviewTemplate = (template: FormTemplateExtended) => {
     setActiveTemplate(template);
     setIsPreviewing(true);
   };
@@ -302,21 +328,23 @@ export default function FormTemplatesPage() {
   const handleAddField = () => {
     if (!selectedForm || !selectedForm.fields) return;
     
-    setEditingField({
+    const newField: FormField = {
       id: `new-${Date.now()}`,
-      name: '',
+      name: `field_${Date.now().toString().slice(-4)}`,
       type: 'text',
-      label: '',
-      placeholder: '',
+      label: 'New Field',
       order: selectedForm.fields.length + 1,
       required: false,
       isAdminOnly: false,
-      isUserEditable: true
-    } as any);
+      isUserEditable: true,
+      placeholder: '',
+    };
+    
+    setEditingField(newField);
     setShowFieldEditor(true);
   };
   
-  const handleEditField = (field: SchemaFormField) => {
+  const handleEditField = (field: FormField) => {
     setEditingField({...field});
     setShowFieldEditor(true);
   };
@@ -390,7 +418,7 @@ export default function FormTemplatesPage() {
         ...editingField,
         id: (editingField.id as string).replace('new-', '')
       };
-      fields.push(newField as SchemaFormField);
+      fields.push(newField as FormField);
     } else {
       // Update existing field
       const index = fields.findIndex(f => f.id === editingField.id);
@@ -417,12 +445,12 @@ export default function FormTemplatesPage() {
 
   // Filter templates by category
   const filteredTemplates = categoryFilter 
-    ? templates.filter((template: FormTemplate) => template.category === categoryFilter)
+    ? templates.filter((template: FormTemplateExtended) => template.category === categoryFilter)
     : templates;
 
   // Get unique categories from existing templates
   const templateCategories = Array.from(
-    new Set(templates.map((template: FormTemplate) => template.category))
+    new Set(templates.map((template: FormTemplateExtended) => template.category))
   );
   
   // Make sure we include all standard categories even if no templates exist for them yet
@@ -629,9 +657,6 @@ export default function FormTemplatesPage() {
                 </PageHeaderDescription>
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => navigate('/polling-stations/report-template')} variant="outline">
-                  Edit Polling Station Report Template
-                </Button>
                 <Button onClick={() => setIsCreating(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   New Template
@@ -666,7 +691,7 @@ export default function FormTemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTemplates.map((template: FormTemplate) => (
+            {filteredTemplates.map((template: FormTemplateExtended) => (
               <Card key={template.id} className="overflow-hidden">
                 <CardHeader className="pb-3 flex flex-row justify-between items-start">
                   <div>
@@ -1031,7 +1056,6 @@ export default function FormTemplatesPage() {
           <div className="flex-1 overflow-hidden">
             <FormTemplateEditor
               onSave={handleCreateTemplate}
-              onCancel={() => setIsCreating(false)}
             />
           </div>
         </DialogContent>
@@ -1049,12 +1073,8 @@ export default function FormTemplatesPage() {
           <div className="flex-1 overflow-hidden">
             {activeTemplate && (
               <FormTemplateEditor
-                template={activeTemplate}
-                onSave={handleUpdateTemplate}
-                onCancel={() => {
-                  setIsEditing(false);
-                  setActiveTemplate(null);
-                }}
+                initialData={activeTemplate as any}
+                onSubmit={handleUpdateTemplate}
               />
             )}
           </div>
@@ -1083,7 +1103,7 @@ export default function FormTemplatesPage() {
                   {activeTemplate && (
                     <div className="p-4">
                       <FormBuilder
-                        template={activeTemplate}
+                        template={activeTemplate as any}
                         readOnly
                       />
                     </div>
@@ -1095,7 +1115,7 @@ export default function FormTemplatesPage() {
                 <ScrollArea className="flex-1">
                   {activeTemplate && (
                     <pre className="p-4 bg-muted rounded-md text-xs overflow-auto">
-                      {JSON.stringify(activeTemplate.fields, null, 2)}
+                      {JSON.stringify(activeTemplate.sections, null, 2)}
                     </pre>
                   )}
                 </ScrollArea>

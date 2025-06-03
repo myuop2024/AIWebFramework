@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { format, isAfter, isBefore, parseISO } from 'date-fns';
 
-import { Assignment, PollingStation, User } from '@shared/schema';
+import { Assignment, PollingStation, User, InsertAssignment } from '@shared/schema';
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,12 @@ interface AssignmentSchedulerProps {
   stationId?: number; // Optional - if pre-selecting a station
   onSuccess?: () => void;
 }
+
+// Define a type for the data sent to the mutation
+type CreateAssignmentData = Pick<InsertAssignment, 'stationId' | 'startDate' | 'endDate' | 'notes' | 'role' | 'userId'> & {
+  // Add any other fields that might be part of assignmentData but not strictly in InsertAssignment if necessary
+  // For now, this matches the existing assignmentData structure closely
+};
 
 interface FormData {
   stationId: number | null;
@@ -54,7 +60,7 @@ export function AssignmentScheduler({ userId, stationId, onSuccess }: Assignment
 
   // Create assignment mutation
   const createAssignment = useMutation({
-    mutationFn: async (data: Assignment) => {
+    mutationFn: async (data: CreateAssignmentData) => {
       const res = await apiRequest('POST', '/api/assignments', data);
       return await res.json();
     },
@@ -147,7 +153,7 @@ export function AssignmentScheduler({ userId, stationId, onSuccess }: Assignment
     }
     
     // Prepare data for API
-    const assignmentData = {
+    const assignmentData: CreateAssignmentData = {
       stationId: formData.stationId,
       startDate: startDateTime.toISOString(),
       endDate: endDateTime.toISOString(),
@@ -364,13 +370,15 @@ export function AssignmentCard({ assignment, onCheckIn, onCheckOut }: Assignment
   const canCheckIn = isScheduled && hasStarted && !hasEnded;
   const canCheckOut = isActive && hasStarted;
 
+  const currentStatus = assignment.status as keyof typeof assignmentStatusColors;
+
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg">{assignment.station?.name || `Station #${assignment.stationId}`}</CardTitle>
           <div 
-            className={`px-2 py-1 rounded-full text-xs font-medium ${assignmentStatusColors[assignment.status] || 'bg-gray-100 text-gray-800'}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${assignmentStatusColors[currentStatus] || 'bg-gray-100 text-gray-800'}`}
           >
             {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
           </div>

@@ -118,17 +118,20 @@ export default function StationMap({
             <div className="h-[300px] relative">
               {stations.length > 0 && (
                 <InteractiveMap
-                  markers={stations.map((station) => ({
-                    lat: station.latitude || parseCoordinates(station.coordinates || "{}").lat || 0,
-                    lng: station.longitude || parseCoordinates(station.coordinates || "{}").lng || 0,
-                    text: station.name
+                  markers={stations.map((station: PollingStation) => ({
+                    id: station.id,
+                    position: {
+                      lat: station.latitude || parseCoordinates(station.coordinates || "{}").lat || 0,
+                      lng: station.longitude || parseCoordinates(station.coordinates || "{}").lng || 0,
+                    },
+                    title: station.name
                   }))}
-                  onMarkerClick={(index) => {
-                    if (index >= 0 && index < stations.length) {
-                      onSelectStation?.(stations[index].id);
+                  onMarkerClick={(markerId: string | number) => {
+                    const numericStationId = Number(markerId);
+                    if (!isNaN(numericStationId)) {
+                        onSelectStation?.(numericStationId);
                     }
                   }}
-                  showUserLocation={true}
                   height="300px"
                 />
               )}

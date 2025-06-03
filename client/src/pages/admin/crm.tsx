@@ -6,8 +6,17 @@ import CRMObserverForm from '@/components/admin/crm-observer-form';
 import CRMObserverList from '@/components/admin/crm-observer-list';
 import CRMAuditLogs from '@/components/admin/crm-audit-logs';
 
+// Define the expected structure for user data
+interface CrmUserData {
+  user?: {
+    role?: string | null;
+    // Add other user properties if needed by this component
+  };
+  // Add other top-level properties from /api/users/profile if any
+}
+
 const AdminCRMPage = () => {
-  const { data: userData } = useQuery({ queryKey: ['/api/users/profile'] });
+  const { data: userData } = useQuery<CrmUserData>({ queryKey: ['/api/users/profile'] });
   const userRole = userData?.user?.role;
   const isAdmin = userRole === 'admin' || userRole === 'director';
 

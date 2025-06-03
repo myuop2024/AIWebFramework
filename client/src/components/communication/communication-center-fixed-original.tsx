@@ -412,8 +412,9 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         id: conversation.userId,
         username: conversation.username, // Assuming username exists and is string from conversation type
         status: 'offline' ,// This user is from conversations, likely offline if not in onlineUsers
-           firstName: conversation.firstName,
-            lastName: conversation.lastName
+        firstName: (conversation as any).firstName, // Casting to any to bypass immediate TS error
+        lastName: (conversation as any).lastName, // Casting to any
+        profileImage: (conversation as any).profileImage // Casting to any
       };
     }
 
@@ -516,47 +517,50 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                   </div>
                 ) : filteredConversations && filteredConversations.length > 0 ? (
                   <div className="px-2">
-                    {filteredConversations.map((conversation) => (
-                      <div
-                        key={conversation.userId}
-                        className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${activeChatUserId === conversation.userId
-                            ? 'bg-secondary'
-                            : 'hover:bg-secondary/50'
-                          }`}
-                        onClick={() => setActiveChatUserId(conversation.userId)}
-                      >
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={conversation.profileImage || `/api/users/${conversation.userId}/profile-image`} />
-                          <AvatarFallback>{getInitials(conversation)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 overflow-hidden">
-                          <div className="flex justify-between items-start">
-                            <p className="font-medium truncate">{conversation.firstName && conversation.lastName ?
-                              `${conversation.firstName} ${conversation.lastName}` : conversation.username}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(conversation.lastMessageAt), {
-                                addSuffix: false,
-                                includeSeconds: true // Consider removing for brevity if too frequent
-                              })}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <p className="text-sm text-muted-foreground truncate">
-                              {conversation.lastMessageType === 'image'
-                                ? '🖼️ Image'
-                                : conversation.lastMessageType === 'file'
-                                  ? '📎 File'
-                                  : conversation.lastMessage}
-                            </p>
-                            {conversation.unreadCount > 0 && (
-                              <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                                {conversation.unreadCount}
-                              </Badge>
-                            )}
+                    {filteredConversations.map((conversation) => {
+                      const userForConversation = getUserById(conversation.userId);
+                      return (
+                        <div
+                          key={conversation.userId}
+                          className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${activeChatUserId === conversation.userId
+                              ? 'bg-secondary'
+                              : 'hover:bg-secondary/50'
+                            }`}
+                          onClick={() => setActiveChatUserId(conversation.userId)}
+                        >
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={userForConversation?.profileImage || `/api/users/${conversation.userId}/profile-image`} />
+                            <AvatarFallback>{getInitials(userForConversation)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 overflow-hidden">
+                            <div className="flex justify-between items-start">
+                              <p className="font-medium truncate">{userForConversation?.firstName && userForConversation?.lastName ?
+                                `${userForConversation.firstName} ${userForConversation.lastName}` : userForConversation?.username}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(conversation.lastMessageAt), {
+                                  addSuffix: false,
+                                  includeSeconds: true // Consider removing for brevity if too frequent
+                                })}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm text-muted-foreground truncate">
+                                {conversation.lastMessageType === 'image'
+                                  ? '🖼️ Image'
+                                  : conversation.lastMessageType === 'file'
+                                    ? '📎 File'
+                                    : conversation.lastMessage}
+                              </p>
+                              {conversation.unreadCount > 0 && (
+                                <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                                  {conversation.unreadCount}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-32 px-4">

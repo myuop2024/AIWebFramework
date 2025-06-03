@@ -77,7 +77,7 @@ export function RoleProtectedRoute({
     );
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  if (!user.role || !allowedRoles.includes(user.role)) {
     return (
       <Route path={path}>
         <Redirect to="/dashboard" />

@@ -17,6 +17,25 @@ import {
   FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { PageWrapper } from "@/components/ui/page-wrapper";
+import { ModernCard } from "@/components/ui/modern-card";
+import AdminDashboard from "@/components/admin/admin-dashboard";
+import { 
+  Users, Settings, Lock, Database, AlertTriangle, BarChart, 
+  FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminPage() {

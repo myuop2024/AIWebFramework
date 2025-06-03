@@ -39,18 +39,39 @@ import {
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type FormTemplate, type FormField as SchemaFormField, type FormSection as SchemaFormSection } from '@shared/schema';
-
-interface FormBuilderProps {
-  template: FormTemplate;
-  onSubmit?: (data: Record<string, unknown>) => void;
-  readOnly?: boolean;
-}
+import { type FormTemplate } from '@shared/schema';
 
 // Define a type for options
 export interface FieldOption {
   value: string;
   label: string;
+}
+
+// Define FormField and FormSection locally based on expected structure from template.fields
+interface SchemaFormField {
+  id: string;
+  name: string; // Added name as it's used for schemaFields key and fieldName
+  type: string;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: FieldOption[];
+  order: number; // Assuming order is present based on sort((a, b) => a.order - b.order)
+}
+
+interface SchemaFormSection {
+  id: string;
+  title: string;
+  description?: string;
+  fields: SchemaFormField[];
+  order: number; // Assuming order is present
+}
+
+interface FormBuilderProps {
+  template: FormTemplate;
+  onSubmit?: (data: Record<string, unknown>) => void;
+  readOnly?: boolean;
 }
 
 export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilderProps) {
@@ -72,50 +93,77 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
       section.fields.forEach((field: SchemaFormField) => {
         const { name, type, required, label } = field;
         
-        let fieldSchema: z.ZodTypeAny = z.string();
+        let fieldSchema: z.ZodTypeAny = z.any(); // Start with z.any() for more flexibility before specializing
         
         // Create field schema based on type
         switch (type) {
           case 'text':
           case 'textarea':
             fieldSchema = z.string();
+            if (required) {
+              fieldSchema = fieldSchema.min(1, `${label} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           case 'email':
-            fieldSchema = z.string().email();
+            fieldSchema = z.string().email({ message: "Invalid email format" });
+            if (required) {
+              fieldSchema = fieldSchema.min(1, `${label} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           case 'number':
-            fieldSchema = z.coerce.number();
+            fieldSchema = z.coerce.number({ invalid_type_error: `${label} must be a number` });
+            if (required) {
+              // For numbers, required means it must be provided. Min value can be set if needed.
+              // fieldSchema = fieldSchema; // No change needed if just required, not optional.
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           case 'tel':
-            fieldSchema = z.string().min(5);
+            fieldSchema = z.string();
+            if (required) {
+              fieldSchema = fieldSchema.min(5, `${label} must be at least 5 characters`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           case 'date':
-          case 'time':
-            fieldSchema = z.date().optional();
+          case 'time': // Assuming time might also be represented as Date or string parsable to Date
+            fieldSchema = z.date({ invalid_type_error: `${label} must be a valid date` });
+            if (!required) {
+              fieldSchema = fieldSchema.optional().nullable(); // Allow null for optional dates too
+            }
             break;
           case 'checkbox':
-            fieldSchema = z.boolean().optional();
+            fieldSchema = z.boolean();
+            if (required) {
+              fieldSchema = fieldSchema.refine((val) => val === true, {
+                message: `${label} is required`,
+              });
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           case 'radio':
           case 'select':
             fieldSchema = z.string();
+            if (required) {
+              fieldSchema = fieldSchema.min(1, `${label} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
             break;
           default:
             fieldSchema = z.string();
-        }
-        
-        // Add required validation
-        if (required) {
-          if (type === 'checkbox') {
-            fieldSchema = z.boolean().refine((val) => val === true, {
-              message: `${label} is required`,
-            });
-          } else {
-            fieldSchema = fieldSchema.min(1, `${label} is required`);
-          }
-        } else {
-          // Make optional if not required
-          fieldSchema = fieldSchema.optional();
+            if (required) {
+              fieldSchema = fieldSchema.min(1, `${label} is required`);
+            } else {
+              fieldSchema = fieldSchema.optional();
+            }
         }
         
         schemaFields[name] = fieldSchema;
@@ -137,7 +185,7 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
     if (onSubmit) {
       onSubmit(data);
     }
-    setFormData(data);
+    setFormData(data as Record<string, string | number | boolean | string[] | null>); // Added type assertion
   };
   
   // Get sections from template fields

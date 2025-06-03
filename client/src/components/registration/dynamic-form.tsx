@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, MapPin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import AddressAutocomplete from "@/components/address/address-autocomplete";
+import AddressAutocomplete, { type AddressSuggestion } from "@/components/address/address-autocomplete";
 
 // Types for form field configuration from registration form schema
 export interface FormField {
@@ -146,74 +146,68 @@ export const DynamicForm = ({
       // Base on field type, create the appropriate schema
       switch (field.type) {
         case "email":
-          fieldSchema = z.string().email(
-            field.validation?.customMessage || "Invalid email address"
-          );
+          fieldSchema = z.string();
+          if (field.required) fieldSchema = fieldSchema.min(1, { message: `${field.label} is required.` });
+          fieldSchema = fieldSchema.email(field.validation?.customMessage || "Invalid email address");
           break;
         case "tel":
           fieldSchema = z.string();
+          if (field.required) fieldSchema = fieldSchema.min(1, { message: `${field.label} is required.` });
           if (field.validation?.pattern) {
             fieldSchema = fieldSchema.regex(
               new RegExp(field.validation.pattern),
               field.validation.customMessage || "Invalid format"
             );
+          } else { // Default phone pattern if none provided
+            fieldSchema = fieldSchema.regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format");
           }
           break;
         case "number":
           fieldSchema = z.coerce.number();
+          if (field.validation?.min !== undefined) fieldSchema = fieldSchema.min(field.validation.min, field.validation.customMessage);
+          if (field.validation?.max !== undefined) fieldSchema = fieldSchema.max(field.validation.max, field.validation.customMessage);
+          // if required, it simply shouldn't be optional. Zod numbers are required by default.
           break;
         case "checkbox":
           fieldSchema = z.boolean();
+          if (field.required) {
+            fieldSchema = fieldSchema.refine((val) => val === true, {
+              message: `${field.label} is required`,
+            });
+          }
           break;
         case "select":
-          fieldSchema = z.string();
-          break;
         case "textarea":
+        case "text": // Default case includes text
+        default:
           fieldSchema = z.string();
-          break;
-        case "file":
-          // Handle file type differently - validate as File or undefined
-          fieldSchema = z.instanceof(File)
-            .refine(
-              (file) => file instanceof File || !field.required,
-              { message: "Please upload a file" }
-            )
-            .refine(
-              (file) => {
-                if (file instanceof File) {
-                  // Validate file size - default max 5MB
-                  const maxSize = 5 * 1024 * 1024; // 5MB
-                  return file.size <= maxSize;
-                }
-                return true;
-              },
-              { message: "File size should be less than 5MB" }
-            ).optional();
-          break;
-        default: // text and other inputs
-          fieldSchema = z.string();
-          if (field.validation?.pattern) {
+          if (field.required) {
+            fieldSchema = fieldSchema.min(1, `${field.label} is required`);
+          }
+          if (field.type === "text" && field.validation?.pattern) { // Only apply regex pattern to text if specified
             fieldSchema = fieldSchema.regex(
               new RegExp(field.validation.pattern),
               field.validation.customMessage || "Invalid format"
             );
           }
+          break;
+        case "file":
+          // File type schema handling (assuming it should be optional unless explicitly required in a different way)
+          fieldSchema = z.instanceof(File).optional(); 
+          if (field.required) {
+             fieldSchema = z.instanceof(File, { message: `${field.label} is required.` });
+          }
+          // Add further refinements for size/type if needed here, from field.validation
+          break;
       }
 
-      // Apply required validation
-      if (field.required) {
-        if (field.type === "checkbox") {
-          fieldSchema = fieldSchema.refine((val: boolean) => val === true, {
-            message: `${field.label} is required`,
-          });
-        } else if (field.type === "file") {
-          // File validation is already handled in the case statement
-        } else {
-          fieldSchema = fieldSchema.min(1, `${field.label} is required`);
-        }
-      } else if (field.type !== "checkbox" && field.type !== "file") {
-        // Make non-required fields optional
-        fieldSchema = fieldSchema.optional();
+      // Apply optional only if not required and not already handled (like checkbox optionality or file)
+      if (!field.required && field.type !== 'checkbox' && !(fieldSchema instanceof z.ZodOptional) && !(fieldSchema instanceof z.ZodDefault)) {
+         if (fieldSchema.safeParse(undefined).success || fieldSchema.safeParse(null).success) {
+            // It can already be optional or nullable, no need to wrap again
+         } else {
+            fieldSchema = fieldSchema.optional();
+         }
       }
 
       schemaMap[field.name] = fieldSchema;
@@ -301,11 +295,11 @@ export const DynamicForm = ({
               </FormLabel>
               <FormControl>
                 <AddressAutocomplete 
-                  initialValue={form.getValues(field.name) || ""}
+                  initialValue={form.getValues(field.name) as string || ""}
                   placeholder={field.placeholder || "Start typing to search for address..."}
-                  onAddressSelect={(addressData) => {
-                    // Set the value for this field
-                    form.setValue(field.name, addressData.fullAddress);
+                  onAddressSelect={(addressData: AddressSuggestion) => {
+                    // Set the value for this field (main address field)
+                    form.setValue(field.name, addressData.address.label || addressData.title);
                     
                     // Look for other address-related fields to auto-fill
                     // Define the Jamaican parishes
@@ -334,43 +328,39 @@ export const DynamicForm = ({
                     let detectedParish = null;
                     
                     // Check if the city field is actually a parish (common in Jamaica)
-                    if (addressData.city) {
+                    if (addressData.address.city) {
                       const cityContainsParish = JAMAICAN_PARISHES.find(parish => 
-                        addressData.city === parish || 
-                        addressData.city.includes(parish) ||
-                        (parish.startsWith("St.") && addressData.city.includes(parish.substring(4)))
+                        addressData.address.city === parish || 
+                        addressData.address.city.includes(parish) ||
+                        (parish.startsWith("St.") && addressData.address.city.includes(parish.substring(4)))
                       );
                       
                       if (cityContainsParish) {
-                        // Use the standardized parish name
                         detectedParish = cityContainsParish;
-                        // Don't set city if it's actually a parish
                       } else if (cityField) {
-                        // Only set city if it's not a parish
-                        form.setValue(cityField.name, addressData.city);
+                        form.setValue(cityField.name, addressData.address.city);
                       }
                     }
                     
                     // Try to get parish from state field if not found in city
-                    if (!detectedParish && addressData.state) {
+                    if (!detectedParish && addressData.address.state) {
                       const stateContainsParish = JAMAICAN_PARISHES.find(parish => 
-                        addressData.state === parish || 
-                        addressData.state.includes(parish) ||
-                        (parish.startsWith("St.") && addressData.state.includes(parish.substring(4)))
+                        addressData.address.state === parish || 
+                        addressData.address.state.includes(parish) ||
+                        (parish.startsWith("St.") && addressData.address.state.includes(parish.substring(4)))
                       );
                       
                       if (stateContainsParish) {
                         detectedParish = stateContainsParish;
                       } else {
-                        // Only use state as parish if we haven't found a parish yet
-                        detectedParish = addressData.state;
+                        detectedParish = addressData.address.state;
                       }
                     }
                     
                     // Special case for Kingston
                     if (!detectedParish && 
-                       (addressData.fullAddress?.includes("Kingston") || 
-                        addressData.city?.includes("Kingston"))) {
+                       (addressData.address.label?.includes("Kingston") ||
+                        addressData.address.city?.includes("Kingston"))) {
                       detectedParish = "Kingston";
                     }
                     
@@ -388,11 +378,11 @@ export const DynamicForm = ({
                     
                     // Process remaining fields (post office, country)
                     fields.forEach((otherField) => {
-                      if (otherField.mapToProfileField === "zipCode" && addressData.postalCode) {
-                        form.setValue(otherField.name, addressData.postalCode);
+                      if (otherField.mapToProfileField === "zipCode" && addressData.address.postalCode) {
+                        form.setValue(otherField.name, addressData.address.postalCode);
                       }
-                      if (otherField.mapToProfileField === "country" && addressData.country) {
-                        form.setValue(otherField.name, addressData.country);
+                      if (otherField.mapToProfileField === "country" && addressData.address.countryName) {
+                        form.setValue(otherField.name, addressData.address.countryName);
                       }
                     });
                   }}

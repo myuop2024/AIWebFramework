@@ -13,17 +13,21 @@ export function LoginButton({
   showIcon = true,
   className = ""
 }: LoginButtonProps) {
-  const { user, isAuthenticated, login, logout } = useAuth();
+  const { user, isLoading, loginMutation, logoutMutation } = useAuth();
+
+  // Determine if authenticated: user object exists and not in initial loading state
+  const isAuthenticated = !isLoading && !!user;
 
   if (isAuthenticated) {
     return (
       <Button 
         variant={variant} 
-        onClick={logout}
+        onClick={() => logoutMutation.mutate()}
         className={className}
+        disabled={logoutMutation.isPending}
       >
         {showIcon && <LogOut className="mr-2 h-4 w-4" />}
-        Logout
+        {logoutMutation.isPending ? "Logging out..." : "Logout"}
       </Button>
     );
   }
@@ -31,11 +35,14 @@ export function LoginButton({
   return (
     <Button 
       variant={variant} 
-      onClick={login}
+      onClick={() => {
+        console.log("Login button clicked, implement login flow.");
+      }}
       className={className}
+      disabled={loginMutation.isPending}
     >
       {showIcon && <LogIn className="mr-2 h-4 w-4" />}
-      Login
+      {loginMutation.isPending ? "Logging in..." : "Login"}
     </Button>
   );
 }

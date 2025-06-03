@@ -11,8 +11,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar } from '@/components/ui/calendar';
-import { Task } from '@shared/schema';
+import { tasks as tasksTableSchema } from '@shared/schema'; // Import tasks table schema
+import { InferSelectModel } from 'drizzle-orm'; // Import InferSelectModel
 import { useLocation } from 'wouter';
+
+// Define Task type from Drizzle schema
+type Task = InferSelectModel<typeof tasksTableSchema>;
 
 // Define an interface for tasks with project info
 interface TaskWithProject extends Task {

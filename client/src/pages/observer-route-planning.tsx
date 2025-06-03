@@ -234,21 +234,23 @@ export default function ObserverRoutePlanningPage() {
                   markers={[
                     // User's current location marker
                     ...(userLocation ? [{
-                      lat: userLocation.lat,
-                      lng: userLocation.lng,
-                      text: "You are here",
-                      type: 'current' as const
+                      id: 'user-location',
+                      position: { lat: userLocation.lat, lng: userLocation.lng },
+                      title: "You are here",
+                      icon: "/assets/icons/user-marker.png"
                     }] : []),
                     
                     // Polling station markers
                     ...(pollingStations?.map(station => ({
-                      lat: station.latitude || 0,
-                      lng: station.longitude || 0,
-                      text: station.name,
                       id: station.id,
-                      type: selectedStations.some(s => s.id === station.id) 
-                        ? 'selected' as const
-                        : 'default' as const
+                      position: {
+                        lat: station.latitude || 0,
+                        lng: station.longitude || 0,
+                      },
+                      title: station.name,
+                      icon: selectedStations.some(s => s.id === station.id) 
+                        ? "/assets/icons/polling-station-selected.png"
+                        : "/assets/icons/polling-station-default.png"
                     })) || [])
                   ]}
                   routes={optimizedRoute.length > 1 ? [

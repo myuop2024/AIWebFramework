@@ -64,7 +64,7 @@ const RegistrationFormsAdmin = () => {
   const [success, setSuccess] = useState<string | null>(null);
   
   // Fetch all registration forms
-  const { data: registrationForms, isLoading: isLoadingForms } = useQuery({
+  const { data: registrationForms, isLoading: isLoadingForms } = useQuery<RegistrationForm[]>({
     queryKey: ['/api/registration-forms'],
     staleTime: 60000,
   });

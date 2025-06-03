@@ -120,7 +120,8 @@ const DynamicRegister = () => {
   }
 
   if (formError) {
-    const errorMsg = formError?.response?.data?.error || formError?.data?.error || formError?.message || "Please try again later.";
+    const axiosFormError = formError as any; // Cast formError to any
+    const errorMsg = axiosFormError?.response?.data?.error || axiosFormError?.data?.error || axiosFormError?.message || "Please try again later.";
     return (
       <div className="container mx-auto px-4 py-8">
         <Alert variant="destructive" className="mb-4">

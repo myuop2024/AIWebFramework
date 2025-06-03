@@ -15,6 +15,33 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle, ArrowUpRight, Check, ExternalLink, RefreshCcw, Save, Settings, X } from 'lucide-react';
 
+// Define types for the data structures
+interface PlatformSyncInfo {
+  lastSyncTime: string;
+  status: 'success' | 'error' | 'pending';
+  itemsSynced: number;
+  errors: number;
+}
+
+interface UserMapping {
+  id: number;
+  userId: number;
+  externalId: string;
+  externalUsername: string;
+  syncStatus: 'synced' | 'pending' | 'error';
+  lastSync: string;
+}
+
+interface UserMappingsData {
+  moodle: UserMapping[];
+  zoom: UserMapping[];
+}
+
+interface SyncStatusData {
+  moodle: PlatformSyncInfo;
+  zoom: PlatformSyncInfo;
+}
+
 export default function TrainingIntegrationsAdmin() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -51,7 +78,7 @@ export default function TrainingIntegrationsAdmin() {
   });
 
   // User mapping data
-  const { data: userMappings, isLoading: userMappingsLoading } = useQuery({
+  const { data: userMappings, isLoading: userMappingsLoading } = useQuery<UserMappingsData>({
     queryKey: ['/api/training/integrations/user-mappings'],
     queryFn: async () => {
       // In a real implementation, this would fetch data from the API
@@ -76,7 +103,7 @@ export default function TrainingIntegrationsAdmin() {
   });
 
   // Sync status data
-  const { data: syncStatus, isLoading: syncStatusLoading } = useQuery({
+  const { data: syncStatus, isLoading: syncStatusLoading } = useQuery<SyncStatusData>({
     queryKey: ['/api/training/integrations/sync-status'],
     queryFn: async () => {
       // In a real implementation, this would fetch data from the API

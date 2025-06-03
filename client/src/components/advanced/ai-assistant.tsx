@@ -158,8 +158,8 @@ export function AIAssistant({ context = 'general', className }: AIAssistantProps
       type: 'assistant',
       content: response.content,
       timestamp: new Date(),
-      suggestions: response.suggestions,
-      actions: response.actions
+      suggestions: 'suggestions' in response ? response.suggestions : undefined,
+      actions: 'actions' in response ? response.actions : undefined
     };
   };
 

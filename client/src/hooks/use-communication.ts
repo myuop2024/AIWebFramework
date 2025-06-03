@@ -44,10 +44,10 @@ export interface User {
 export interface CallData {
   callerId: number;
   receiverId: number;
-  type: 'audio' | 'video';
-  offer?: RTCSessionDescriptionInit; // More specific type
-  answer?: RTCSessionDescriptionInit; // More specific type
-  candidate?: RTCIceCandidateInit | RTCIceCandidate; // More specific type
+  callMediaType: 'audio' | 'video';
+  offer?: RTCSessionDescriptionInit;
+  answer?: RTCSessionDescriptionInit;
+  candidate?: RTCIceCandidateInit | RTCIceCandidate;
 }
 
 // For WebSocket messages
@@ -82,14 +82,25 @@ interface WebSocketAllMessagesRead extends WebSocketMessageBase {
   from: number; // User ID of the person whose messages were read (sender of original messages)
 }
 
-interface WebSocketCallOfferMessage extends CallData, WebSocketMessageBase {
+interface WebSocketCallOfferMessage extends WebSocketMessageBase {
   type: typeof WS_MSG_TYPES.CALL_OFFER;
+  callerId: number;
+  receiverId: number;
+  callMediaType: 'audio' | 'video';
+  offer?: RTCSessionDescriptionInit;
 }
-interface WebSocketCallAnswerMessage extends CallData, WebSocketMessageBase {
+interface WebSocketCallAnswerMessage extends WebSocketMessageBase {
   type: typeof WS_MSG_TYPES.CALL_ANSWER;
+  callerId: number;
+  receiverId: number;
+  callMediaType: 'audio' | 'video';
+  answer?: RTCSessionDescriptionInit;
 }
-interface WebSocketCallCandidateMessage extends CallData, WebSocketMessageBase {
+interface WebSocketCallCandidateMessage extends WebSocketMessageBase {
   type: typeof WS_MSG_TYPES.CALL_CANDIDATE;
+  callerId: number;
+  receiverId: number;
+  candidate?: RTCIceCandidateInit | RTCIceCandidate;
 }
 interface WebSocketCallEndMessage extends WebSocketMessageBase {
   type: typeof WS_MSG_TYPES.CALL_END;
@@ -274,13 +285,13 @@ export function useCommunication(userId: number) {
                 }
                 break;
               case WS_MSG_TYPES.CALL_OFFER:
-                handleIncomingCall(data as CallData); // Cast to CallData
+                handleIncomingCall(data); // Pass WebSocketCallOfferMessage directly
                 break;
               case WS_MSG_TYPES.CALL_ANSWER:
-                handleCallAnswer(data as CallData); // Cast to CallData
+                handleCallAnswer(data); // Pass WebSocketCallAnswerMessage directly
                 break;
               case WS_MSG_TYPES.CALL_CANDIDATE:
-                handleIceCandidate(data as CallData); // Cast to CallData
+                handleIceCandidate(data); // Pass WebSocketCallCandidateMessage directly
                 break;
               case WS_MSG_TYPES.CALL_END:
                 handleCallEnd(data.receiverId === userId || data.callerId === userId); // Pass if current user was part of the call
@@ -324,7 +335,7 @@ export function useCommunication(userId: number) {
                 break;
               }
               default:
-                console.warn('Received unknown WebSocket message type:', data.type);
+                console.warn('Received unknown WebSocket message type:', (data as WebSocketMessageBase).type);
             }
           } catch (error) {
             console.error('Error parsing WebSocket message:', error, event.data);
@@ -512,7 +523,7 @@ export function useCommunication(userId: number) {
     }
   };
 
-  const handleIncomingCall = useCallback((data: CallData) => {
+  const handleIncomingCall = useCallback((data: WebSocketCallOfferMessage) => {
     // Prevent handling if already in a call or if it's a self-call
     if (activeCall || incomingCall || data.callerId === userId) {
         console.warn("Already in a call or duplicate incoming call ignored.");
@@ -522,28 +533,39 @@ export function useCommunication(userId: number) {
         }
         return;
     }
-    setIncomingCall(data);
+    // Construct CallData for incomingCall state
+    setIncomingCall({ 
+        callerId: data.callerId,
+        receiverId: data.receiverId,
+        callMediaType: data.callMediaType,
+        offer: data.offer
+    });
     playRingtone();
   }, [activeCall, incomingCall, userId, socket]);
 
-  const handleCallAnswer = useCallback(async (data: CallData) => {
+  const handleCallAnswer = useCallback(async (data: WebSocketCallAnswerMessage) => {
     stopRingtone();
     if (peerConnection.current && data.answer) {
       try {
         await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
         console.log('Remote description set successfully after answer');
         // The call is now established
-        setActiveCall(prev => prev ? {...prev, answer: data.answer} : null); // Update active call state
+        setActiveCall(prev => prev ? {
+             ...prev, 
+             answer: data.answer, 
+             // Ensure callMediaType from previous activeCall state (originating from offer) is preserved or correctly set
+             callMediaType: prev.callMediaType 
+            } : null); 
       } catch (error) {
         console.error('Error setting remote description after answer:', error);
         toast({ title: "Call Connection Error", description: "Failed to establish call.", variant: "destructive" });
         handleCallEnd(true); // handleCallEnd is called here
       }
     }
-  }, [toast, handleCallEnd]); // Added handleCallEnd to dependency array
+  }, [toast, handleCallEnd]);
 
 
-  const handleIceCandidate = useCallback((data: CallData) => {
+  const handleIceCandidate = useCallback((data: WebSocketCallCandidateMessage) => {
     if (peerConnection.current && data.candidate) {
       try {
         peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate))
@@ -632,11 +654,11 @@ export function useCommunication(userId: number) {
         type: WS_MSG_TYPES.CALL_OFFER,
         callerId: userId,
         receiverId,
-        callType: type,
+        callMediaType: type,
         offer,
       }));
 
-      setActiveCall({ callerId: userId, receiverId, type, offer });
+      setActiveCall({ callerId: userId, receiverId, callMediaType: type, offer });
       return { localStream: stream, remoteStream }; // Return current remoteStream state
     } catch (error) {
       console.error('Error starting call:', error);
@@ -658,9 +680,9 @@ export function useCommunication(userId: number) {
     stopRingtone();
 
     try {
-      const pc = initializePeerConnection(incomingCall.callerId, incomingCall.type, false);
+      const pc = initializePeerConnection(incomingCall.callerId, incomingCall.callMediaType, false);
 
-      const mediaConstraints = { audio: true, video: incomingCall.type === 'video' };
+      const mediaConstraints = { audio: true, video: incomingCall.callMediaType === 'video' };
       const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       setLocalStream(stream);
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -674,10 +696,10 @@ export function useCommunication(userId: number) {
         callerId: incomingCall.callerId,
         receiverId: userId,
         answer,
-        callType: incomingCall.type, // Include call type in answer message
+        callMediaType: incomingCall.callMediaType, // Include callMediaType in answer message
       }));
 
-      setActiveCall({ ...incomingCall, receiverId: userId, answer }); // Current user is receiver
+      setActiveCall({ ...incomingCall, receiverId: userId, answer }); // callMediaType is already in incomingCall
       setIncomingCall(null);
       return { localStream: stream, remoteStream }; // Return current remoteStream state
     } catch (error) {

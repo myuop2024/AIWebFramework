@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Upload, AlertCircle, CheckCircle, X, FileText } from "lucide-react";
+import { type Document } from "@shared/schema";
 
 type DocumentType = "id" | "profile" | "address" | "other";
 
@@ -35,12 +36,12 @@ export default function DocumentUpload({
   const [error, setError] = useState<string | null>(null);
 
   // Fetch user documents
-  const { data: documents, isLoading: isDocumentsLoading } = useQuery({
+  const { data: documents, isLoading: isDocumentsLoading } = useQuery<Document[]>({
     queryKey: ['/api/documents'],
   });
 
   // Find existing document of this type
-  const existingDocument = documents?.find(doc => doc.documentType === documentType);
+  const existingDocument = documents?.find((doc: Document) => doc.documentType === documentType);
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {

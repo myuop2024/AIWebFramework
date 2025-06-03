@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Clock, CheckCircle, FileText, MapPin, User } from "lucide-react";
+import { Clock, CheckCircle, FileText, MapPin, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Report, Assignment, User } from "@shared/schema";
 
 interface VerificationStatus {
   status: "pending" | "in-progress" | "completed";
@@ -26,28 +27,42 @@ interface PollingStationStatus {
   primary: string | null;
 }
 
+// Define structure for the profile data specific to this component's needs
+interface DashboardProfileData {
+  user?: Partial<User> & { // User might be partial and have specific fields for this dashboard view
+    verificationStatus?: string;
+    trainingStatus?: string;
+    observerId?: string;
+  };
+  profile?: any; // Define more specifically if UserProfile type is available and imported
+  documents?: Document[]; // Assuming Document type is defined or imported, or use any[]
+}
+
+// Assuming a basic Document type if not imported from shared/schema
+interface Document { id: number; [key: string]: any; }
+
 export default function StatusCards() {
   // Access the user data from auth context for consistent observer ID display
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   
   // Fetch user profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery({
+  const { data: profileData, isLoading: isProfileLoading } = useQuery<DashboardProfileData>({
     queryKey: ['/api/users/profile'],
   });
 
   // Fetch reports data
-  const { data: reportsData, isLoading: isReportsLoading } = useQuery({
+  const { data: reportsData, isLoading: isReportsLoading } = useQuery<Report[]>({
     queryKey: ['/api/reports'],
   });
 
   // Fetch assignments data
-  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery({
+  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery<Assignment[]>({
     queryKey: ['/api/users/assignments'],
   });
 
   // Calculate verification status
   const verificationStatus: VerificationStatus = {
-    status: profileData?.user?.verificationStatus || "pending",
+    status: (profileData?.user?.verificationStatus as "pending" | "in-progress" | "completed") || "pending",
     stepsCompleted: 0,
     totalSteps: 3
   };
@@ -66,7 +81,7 @@ export default function StatusCards() {
 
   // Calculate training status
   const trainingStatus: TrainingStatus = {
-    status: profileData?.user?.trainingStatus || "pending",
+    status: (profileData?.user?.trainingStatus as "pending" | "in-progress" | "completed") || "pending",
     modulesCompleted: 3, // Mock data - would be calculated from actual user training progress
     totalModules: 3
   };
@@ -74,18 +89,18 @@ export default function StatusCards() {
   // Calculate report status
   const reportStatus: ReportStatus = {
     count: reportsData?.length || 0,
-    lastSubmitted: reportsData?.length > 0 ? new Date(reportsData[0].submittedAt) : null,
+    lastSubmitted: (reportsData && reportsData.length > 0 && reportsData[0].submittedAt) ? new Date(reportsData[0].submittedAt) : null,
     nextDue: new Date() // Today's date as mock data
   };
 
   // Calculate polling station status
   const pollingStationStatus: PollingStationStatus = {
     count: assignmentsData?.length || 0,
-    primary: assignmentsData?.find(a => a.isPrimary)?.station?.name || null
+    primary: assignmentsData?.find((a: Assignment) => a.isPrimary)?.station?.name || null
   };
 
   // Get the observer ID from profile data or context
-  const observerId = profileData?.user?.observerId || user?.observerId || '';
+  const observerId = profileData?.user?.observerId || authUser?.observerId || '';
   
   // Loading skeleton
   if (isProfileLoading || isReportsLoading || isAssignmentsLoading) {
@@ -143,7 +158,7 @@ export default function StatusCards() {
             </p>
           </div>
           <div className="h-16 w-16 rounded-lg bg-primary flex items-center justify-center">
-            <User className="h-8 w-8 text-white" />
+            <UserIcon className="h-8 w-8 text-white" />
           </div>
         </div>
       </div>

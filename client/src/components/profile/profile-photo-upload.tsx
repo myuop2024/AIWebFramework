@@ -10,6 +10,16 @@ import { apiRequest } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 
+// Define the expected structure for the profile photo policy setting
+interface ProfilePhotoPolicySetting {
+  settingKey: string;
+  settingValue: {
+    requireApprovalAfterVerification?: boolean;
+    // Add other potential fields within settingValue if they exist
+  };
+  // Add other fields from the systemSettings table if needed
+}
+
 interface ProfilePhotoUploadProps {
   initialPhotoUrl?: string;
   onPhotoProcessed: (photoUrl: string, needsApproval?: boolean) => void;
@@ -30,7 +40,7 @@ export function ProfilePhotoUpload({
   const [requiresApproval, setRequiresApproval] = useState(false);
   
   // Fetch system settings for profile photo policy
-  const { data: settings } = useQuery({
+  const { data: settings } = useQuery<ProfilePhotoPolicySetting>({
     queryKey: ['/api/system-settings/profile_photo_policy'],
     enabled: isUserVerified, // Only fetch if the user is verified
     refetchOnWindowFocus: false,

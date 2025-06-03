@@ -23,6 +23,16 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { User as AuthUser } from "@shared/schema"; // Import User type from shared schema
+
+// Define the expected structure for the user data fetched by useQuery
+interface AdminLayoutUserData {
+  user?: Partial<AuthUser> & { // User might be partial or have specific fields needed here
+    // Ensure all accessed fields are listed here or in AuthUser
+    // role, firstName, lastName, email are accessed
+  };
+  // Add other properties if the API returns more than just the user object directly
+}
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -32,11 +42,11 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const [location] = useLocation();
   const [collapsed, setCollapsed] = useState(true);
-  const { data: userData, isFetching } = useQuery({
+  const { data: userData, isFetching } = useQuery<AdminLayoutUserData>({
     queryKey: ['/api/users/profile'],
   });
 
-  const isAdmin = ['admin', 'director'].includes(userData?.user?.role);
+  const isAdmin = ['admin', 'director'].includes(userData?.user?.role || '');
 
   // Store collapsed state in localStorage
   useEffect(() => {

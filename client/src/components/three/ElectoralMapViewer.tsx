@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'; // Keep commented if types are missing
+// For OrbitControls, if types are missing and it's loaded via script, use (THREE as any).OrbitControls or window.THREE.OrbitControls
 
 // Polling station data type
 interface PollingStation {
@@ -33,7 +34,7 @@ export function ElectoralMapViewer({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const mapRef = useRef<THREE.Mesh | null>(null);
   const markersRef = useRef<Map<number, THREE.Mesh>>(new Map());
-  const controlsRef = useRef<OrbitControls | null>(null);
+  const controlsRef = useRef<any | null>(null); // Changed OrbitControls to any
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const frameIdRef = useRef<number | null>(null);
@@ -85,13 +86,20 @@ export function ElectoralMapViewer({
       containerRef.current.appendChild(renderer.domElement);
 
       // Create orbit controls for interactive view
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.minDistance = 5;
-      controls.maxDistance = 20;
-      controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent seeing below ground
-      controls.target.set(0, 0, 0);
+      // Assuming OrbitControls is available on THREE object if imported globally or via addons
+      const OrbitControls = (THREE as any).OrbitControls || (window as any).THREE?.OrbitControls;
+      if (OrbitControls) {
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1; // Prevent seeing below ground
+        controls.target.set(0, 0, 0);
+        controlsRef.current = controls;
+      } else {
+        console.warn("OrbitControls not found on THREE object. Ensure it is loaded.");
+      }
 
       // Add lights
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -128,7 +136,7 @@ export function ElectoralMapViewer({
       };
 
       const mapGeometry = new THREE.ExtrudeGeometry(jamaicaShape, extrudeSettings);
-      const mapMaterial = new THREE.MeshPhongMaterial({
+      const mapMaterial = new THREE.MeshStandardMaterial({ // Changed to MeshStandardMaterial
         color: 0x2E7D32, // Forest green
         metalness: 0.1,
         roughness: 0.8,
@@ -159,7 +167,6 @@ export function ElectoralMapViewer({
       cameraRef.current = camera;
       rendererRef.current = renderer;
       mapRef.current = map;
-      controlsRef.current = controls;
 
       // Add mouse event listeners
       renderer.domElement.addEventListener('mousemove', handleMouseMove);
@@ -192,7 +199,9 @@ export function ElectoralMapViewer({
         marker.castShadow = true;
 
         // Add to scene and keep reference
-        sceneRef.current.add(marker);
+        if (sceneRef.current) { // Added null check
+          sceneRef.current.add(marker);
+        }
         markersRef.current.set(station.id, marker);
       });
     }

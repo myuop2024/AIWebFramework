@@ -18,7 +18,7 @@ import InteractiveMap from "@/components/mapping/interactive-map";
 import { Separator } from "@/components/ui/separator";
 import { type PollingStation } from '@shared/schema';
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import PollingStationForm from "./polling-station-form";
+import PollingStationForm, { type PollingStationFormData } from "./polling-station-form";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -74,8 +74,8 @@ export default function PollingStationsList() {
 
   // Create a new polling station
   const createMutation = useMutation({
-    mutationFn: async (newStation: PollingStation) => {
-      const res = await apiRequest("POST", "/api/polling-stations", newStation);
+    mutationFn: async (newStationData: PollingStationFormData) => {
+      const res = await apiRequest("POST", "/api/polling-stations", newStationData as any);
       return await res.json();
     },
     onSuccess: () => {
@@ -97,11 +97,12 @@ export default function PollingStationsList() {
 
   // Update a polling station
   const updateMutation = useMutation({
-    mutationFn: async (updatedStation: PollingStation) => {
+    mutationFn: async (updatedStationData: PollingStationFormData & { id: number }) => {
+      const { id, ...dataToUpdate } = updatedStationData;
       const res = await apiRequest(
         "PATCH", 
-        `/api/polling-stations/${updatedStation.id}`, 
-        updatedStation
+        `/api/polling-stations/${id}`, 
+        dataToUpdate as any
       );
       return await res.json();
     },
@@ -146,14 +147,14 @@ export default function PollingStationsList() {
   });
 
   // Handle form submission for creating a new polling station
-  const handleCreateSubmit = (data: PollingStation) => {
+  const handleCreateSubmit = (data: PollingStationFormData) => {
     createMutation.mutate(data);
   };
 
   // Handle form submission for updating a polling station
-  const handleUpdateSubmit = (data: PollingStation) => {
+  const handleUpdateSubmit = (data: PollingStationFormData) => {
     if (selectedStation) {
-      updateMutation.mutate(data);
+      updateMutation.mutate({ ...data, id: selectedStation.id });
     }
   };
 
@@ -361,7 +362,6 @@ export default function PollingStationsList() {
                           setSelectedStation(filteredStations[index]);
                           setShowEditDialog(true);
                         }}
-                        showUserLocation
                       />
                     </div>
                   </div>
@@ -395,7 +395,12 @@ export default function PollingStationsList() {
           <Separator />
           {selectedStation && (
             <PollingStationForm
-              initialData={selectedStation}
+              initialData={{
+                ...selectedStation,
+                latitude: selectedStation.latitude ?? undefined,
+                longitude: selectedStation.longitude ?? undefined,
+                capacity: selectedStation.capacity ?? undefined,
+              }}
               onSubmit={handleUpdateSubmit}
               isSubmitting={updateMutation.isPending}
             />

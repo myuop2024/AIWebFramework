@@ -30,8 +30,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
-  const markersRef = useRef<H.map.Marker[]>([]);
+  const [mapInstance, setMapInstance] = useState<any | null>(null);
+  const markersRef = useRef<any[]>([]);
 
   useEffect(() => {
     // Load map when component mounts
@@ -40,7 +40,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         if (!mapRef.current) return;
 
         // Check if H (HERE Maps) is available
-        if (window.H) {
+        const H = (window as any).H;
+        if (H) {
           const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY;
           if (!apiKey || apiKey === 'your_here_maps_api_key') {
             console.error('HERE Maps API key is missing or not configured properly');
@@ -48,14 +49,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             return;
           }
 
-          const platform = new window.H.service.Platform({
+          const platform = new H.service.Platform({
             apikey: apiKey
           });
 
           const defaultLayers = platform.createDefaultLayers();
 
           // Initialize the map
-          const map = new window.H.Map(
+          const map = new H.Map(
             mapRef.current,
             defaultLayers.vector.normal.map,
             {
@@ -66,12 +67,12 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           );
 
           // Add map interaction and controls
-          const behavior = new window.H.mapevents.Behavior(new window.H.mapevents.MapEvents(map));
-          const ui = window.H.ui.UI.createDefault(map, defaultLayers);
+          const behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+          const ui = H.ui.UI.createDefault(map, defaultLayers);
 
           // Add event listener for map clicks
           if (onMapClick) {
-            map.addEventListener('tap', (evt: H.mapevents.Event) => {
+            map.addEventListener('tap', (evt: any) => {
               const position = map.screenToGeo(
                 evt.currentPointer.viewportX,
                 evt.currentPointer.viewportY
@@ -113,7 +114,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       markersRef.current = [];
 
       // Create marker group
-      const markerGroup = new window.H.map.Group();
+      const H = (window as any).H;
+      if (!H) return;
+      const markerGroup = new H.map.Group();
 
       // Add new markers
       markers.forEach(marker => {
@@ -121,10 +124,10 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
         let markerIcon;
         if (icon) {
-          markerIcon = new window.H.map.Icon(icon, { size: { w: 32, h: 32 } });
+          markerIcon = new H.map.Icon(icon, { size: { w: 32, h: 32 } });
         }
 
-        const mapMarker = new window.H.map.Marker(
+        const mapMarker = new H.map.Marker(
           position,
           markerIcon ? { icon: markerIcon } : undefined
         );

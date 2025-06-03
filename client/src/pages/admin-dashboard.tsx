@@ -14,18 +14,62 @@ import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
 import { usePerformanceSettings } from "@/components/ui/performance-toggle";
 
+// Define the PollingStation type as expected by ElectoralMapViewer
+interface ElectoralMapPollingStation {
+  id: number;
+  name: string;
+  coordinates: { lat: number; lng: number };
+  status: 'active' | 'issue' | 'closed'; // This matches ElectoralMapViewer's internal type
+  issueCount: number;
+}
+
+// Define structure for system stats
+interface SystemStatsData {
+  reports?: {
+    byType?: Record<string, number>;
+    byStatus?: Record<string, number>;
+    pending?: number;
+  };
+  users?: {
+    total?: number;
+    activeObservers?: number;
+    byRole?: Record<string, number>;
+  };
+  pollingStations?: {
+    total?: number;
+    riskAssessment?: {
+      highRisk?: number;
+      mediumRisk?: number;
+      lowRisk?: number;
+      noRisk?: number;
+      [key: string]: number | undefined; // For other potential risk keys
+    };
+  };
+  assignments?: {
+    active?: number;
+  };
+  system?: {
+    databaseUsage?: number;
+    mediaStorageUsage?: number;
+    systemMemoryUsage?: number;
+    systemUptime?: number;
+    activeSessions?: number;
+    apiRequestsLast24h?: number;
+  };
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
   const [performanceSettings] = usePerformanceSettings();
 
   // Fetch system stats
-  const { data: stats, isLoading: isStatsLoading } = useQuery({
+  const { data: stats, isLoading: isStatsLoading } = useQuery<SystemStatsData>({
     queryKey: ['/api/admin/system-stats'],
   });
 
   // Dummy data for stations to visualize on the map
-  const sampleStations = [
+  const sampleStations: ElectoralMapPollingStation[] = [
     {
       id: 1,
       name: "Kingston Central #24",
@@ -44,7 +88,7 @@ export default function AdminDashboard() {
       id: 3,
       name: "Portmore North #8",
       coordinates: { lat: 17.9721, lng: -76.8630 },
-      status: "active",
+      status: "active", // This was "active", let's keep it as is. If ElectoralMapViewer expects 'closed', one could be added.
       issueCount: 1
     }
   ];
@@ -101,7 +145,7 @@ export default function AdminDashboard() {
   };
 
   // For demo stations on the map
-  const getStationsWithGeoData = () => {
+  const getStationsWithGeoData = (): ElectoralMapPollingStation[] => {
     // In a real app, this would come from the database with proper coordinates
     return sampleStations;
   };

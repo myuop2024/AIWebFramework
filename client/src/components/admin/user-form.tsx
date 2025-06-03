@@ -54,7 +54,7 @@ type UserFormValues = z.infer<typeof userSchema>;
 interface UserFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: User) => void;
+  onSubmit: (data: UserFormValues) => void;
   user?: User;
   title: string;
 }
@@ -76,9 +76,9 @@ export function UserForm({
     lastName: user?.lastName || "",
     role: user?.role || "observer",
     observerId: user?.observerId || "",
-    isActive: user?.isActive ?? true,
+    isActive: (user as any)?.isActive ?? true,
     verificationStatus: user?.verificationStatus || "pending",
-    notes: user?.notes || "",
+    notes: (user as any)?.notes || "",
     password: "",
   };
 
@@ -95,7 +95,7 @@ export function UserForm({
       delete values.password;
     }
 
-    onSubmit(values as User);
+    onSubmit(values);
   };
 
   return (

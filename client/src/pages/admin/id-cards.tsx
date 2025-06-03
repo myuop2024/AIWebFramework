@@ -56,6 +56,15 @@ type IdCardTemplate = {
   updatedAt: string;
 };
 
+// Define the structure for the API payload
+interface ApiPayloadData {
+  name: string;
+  description: string;
+  templateData: IdCardTemplate['templateData'];
+  securityFeatures: IdCardTemplate['securityFeatures'];
+  isActive?: boolean; // Optional: if you manage active status during create/update
+}
+
 // For backward compatibility and UI
 type TemplateUI = {
   backgroundColor: string;
@@ -465,14 +474,14 @@ export default function IdCardManagement() {
   const queryClient = useQueryClient();
 
   // Fetch templates
-  const { data: templates, isLoading } = useQuery({
+  const { data: templates, isLoading } = useQuery<IdCardTemplate[]>({
     queryKey: ['/api/id-cards/templates'],
     refetchInterval: false,
   });
 
   // Create template mutation
   const createTemplateMutation = useMutation({
-    mutationFn: (data: TemplateFormValues) => 
+    mutationFn: (data: ApiPayloadData) =>  // Changed from TemplateFormValues
       apiRequest('/api/id-cards/templates', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
@@ -494,7 +503,7 @@ export default function IdCardManagement() {
 
   // Update template mutation
   const updateTemplateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: TemplateFormValues }) => 
+    mutationFn: ({ id, data }: { id: number, data: Partial<ApiPayloadData> }) => // Changed from TemplateFormValues
       apiRequest(`/api/id-cards/templates/${id}`, 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/id-cards/templates'] });
@@ -768,10 +777,11 @@ export default function IdCardManagement() {
     };
     
     // Create the data to send to the API
-    const apiData = {
+    const apiData: ApiPayloadData = { // Explicitly type apiData
       name: data.name,
       description: data.description,
-      ...convertTemplateForDB(data.template)
+      ...(convertTemplateForDB(data.template)),
+      isActive: selectedTemplate ? selectedTemplate.isActive : false // Example: preserve isActive or default
     };
     
     if (selectedTemplate) {

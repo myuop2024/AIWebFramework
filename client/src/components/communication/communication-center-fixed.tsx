@@ -312,7 +312,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                             >
                               <p className="text-sm">{message.content}</p>
                               <p className="text-xs opacity-70 mt-1">
-                                {formatDistanceToNow(new Date(message.createdAt))} ago
+                                {formatDistanceToNow(new Date(message.sentAt))} ago
                               </p>
                             </div>
                           </div>

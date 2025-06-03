@@ -275,7 +275,8 @@ export function AnalyticsDashboard() {
   };
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Alert variant="destructive" className="my-4">
         <AlertTriangle className="h-4 w-4" />

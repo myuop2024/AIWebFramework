@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import AddressAutocomplete from "@/components/address/address-autocomplete";
+import AddressAutocomplete, { type AddressSuggestion } from "@/components/address/address-autocomplete";
 import { InteractiveMap } from "@/components/mapping/interactive-map";
 import { formatDecimalCoordinates } from "@/lib/here-maps";
 
@@ -32,20 +32,6 @@ const pollingStationFormSchema = z.object({
 });
 
 export type PollingStationFormData = z.infer<typeof pollingStationFormSchema>;
-
-interface Address {
-  fullAddress: string;
-  street: string;
-  houseNumber: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-  position: {
-    lat: number;
-    lng: number;
-  };
-}
 
 interface PollingStationFormProps {
   initialData?: Partial<PollingStationFormData>;
@@ -91,25 +77,25 @@ export default function PollingStationForm({
   }, [form.watch("latitude"), form.watch("longitude")]);
   
   // Handle address selection from autocomplete
-  const handleAddressSelect = (address: Address) => {
-    form.setValue("address", address.street || address.fullAddress);
-    form.setValue("city", address.city);
-    form.setValue("state", address.state);
-    form.setValue("zipCode", address.postalCode);
-    form.setValue("latitude", address.position.lat);
-    form.setValue("longitude", address.position.lng);
+  const handleAddressSelect = (suggestion: AddressSuggestion) => {
+    form.setValue("address", suggestion.address.street || suggestion.title);
+    form.setValue("city", suggestion.address.city);
+    form.setValue("state", suggestion.address.state);
+    form.setValue("zipCode", suggestion.address.postalCode);
+    form.setValue("latitude", suggestion.position.lat);
+    form.setValue("longitude", suggestion.position.lng);
     
     setMapMarker({
-      lat: address.position.lat,
-      lng: address.position.lng
+      lat: suggestion.position.lat,
+      lng: suggestion.position.lng
     });
   };
   
   // Handle map click to update location
-  const handleMapClick = (lat: number, lng: number) => {
-    form.setValue("latitude", lat);
-    form.setValue("longitude", lng);
-    setMapMarker({ lat, lng });
+  const handleMapClick = (position: { lat: number; lng: number }) => {
+    form.setValue("latitude", position.lat);
+    form.setValue("longitude", position.lng);
+    setMapMarker({ lat: position.lat, lng: position.lng });
   };
   
   // Submit handler
@@ -331,10 +317,9 @@ export default function PollingStationForm({
               height="300px"
               markers={mapMarker ? [
                 { 
-                  lat: mapMarker.lat, 
-                  lng: mapMarker.lng,
-                  text: "📍",
-                  type: "selected" 
+                  id: 'selected-location',
+                  position: { lat: mapMarker.lat, lng: mapMarker.lng },
+                  icon: "/assets/icons/map-marker-selected.png"
                 }
               ] : []}
               centerLat={mapMarker?.lat || 18.0179}

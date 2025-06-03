@@ -14,7 +14,7 @@ import { type Faq } from '@shared/schema';
 
 // Group FAQs by category
 const groupByCategory = (faqs: Faq[]) => {
-  const grouped = faqs.reduce((acc, faq) => {
+  const grouped = faqs.reduce((acc: Record<string, Faq[]>, faq) => {
     const category = faq.category;
     if (!acc[category]) {
       acc[category] = [];
@@ -25,7 +25,7 @@ const groupByCategory = (faqs: Faq[]) => {
 
   return Object.entries(grouped).map(([category, items]) => ({
     category,
-    items,
+    items: items as Faq[],
   }));
 };
 
@@ -33,7 +33,7 @@ export default function FaqList() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Fetch FAQs
-  const { data: faqs, isLoading, error } = useQuery({
+  const { data: faqs, isLoading, error } = useQuery<Faq[]>({
     queryKey: ['/api/faqs'],
   });
 
@@ -79,7 +79,8 @@ export default function FaqList() {
   }
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>

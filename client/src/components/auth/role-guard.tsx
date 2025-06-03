@@ -26,7 +26,7 @@ export function RoleGuard({
       }
       
       // Check if user has one of the allowed roles
-      if (!allowedRoles.includes(user.role)) {
+      if (!user.role || !allowedRoles.includes(user.role)) {
         navigate(fallbackPath);
       }
     }
@@ -53,7 +53,7 @@ export function RoleGuard({
   }
 
   // If user is not authenticated or does not have an allowed role, return null
-  if (!user || !allowedRoles.includes(user.role)) {
+  if (!user || !user.role || !allowedRoles.includes(user.role)) {
     return null; // Return null while redirecting to avoid flash of content
   }
 

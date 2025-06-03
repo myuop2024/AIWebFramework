@@ -502,11 +502,14 @@ export default function QuickIncidentForm({
                               onValueChange={(value) => setValue(field.name as keyof IncidentFormValues, value)}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                                <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
                               </SelectTrigger>
                               <SelectContent>
-                                {field.options?.map((option) => (
-                                  <SelectItem key={option.id || option.value} value={option.id || option.value}>
+                                {field.options?.map((option, index) => (
+                                  <SelectItem 
+                                    key={option.id || option.value || `option-${index}`} 
+                                    value={option.value || option.id || `fallback-value-${index}`}
+                                  >
                                     {option.name || option.label}
                                   </SelectItem>
                                 ))}

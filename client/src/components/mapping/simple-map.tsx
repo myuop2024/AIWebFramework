@@ -57,7 +57,7 @@ const sampleStations = [
 
 export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapObject, setMapObject] = useState<H.Map | null>(null);
+  const [mapObject, setMapObject] = useState<any | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +146,13 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
   const initializeMap = () => {
     try {
       // Initialize the platform with API key
-      const H = (window as typeof window & { H: typeof import('@here/maps-api-for-javascript') }).H;
+      const H = (window as any).H;
+      if (!H) {
+        console.error("HERE Maps API (H) not loaded.");
+        setError("Map service is currently unavailable.");
+        toast({ title: "Map Error", description: "HERE Maps API (H) not loaded." });
+        return;
+      }
       const apiKey = import.meta.env.VITE_HERE_API_KEY || process.env.VITE_HERE_API_KEY;
       const platform = new H.service.Platform({
         apikey: apiKey
@@ -173,14 +179,13 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
 
       setMapObject(map);
       setMapLoaded(true);
-    } catch (error) {
-      if (error) {
-        const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
-        setError(`There was a problem initializing the map: ${errorMsg}`);
-      }
+    } catch (err) {
+      const errorMessage = (err instanceof Error) ? err.message : "An unknown error occurred while initializing the map.";
+      setError(`There was a problem initializing the map: ${errorMessage}`);
       toast({
         title: "Map Error",
-        description: "There was a problem initializing the map. Please try again later."
+        description: `There was a problem initializing the map: ${errorMessage}`,
+        variant: "destructive"
       });
     }
   };
@@ -194,7 +199,9 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
       mapObject.removeObjects(mapObject.getObjects());
       
       // Create a group for all objects
-      const H = (window as typeof window & { H: typeof import('@here/maps-api-for-javascript') }).H;
+      const H = (window as any).H;
+      if (!H) return;
+
       const group = new H.map.Group();
       
       // Add parish boundaries
@@ -278,7 +285,7 @@ export default function SimpleMap({ selectedParish }: SimpleMapProps) {
         });
         
         // Add click event
-        marker.addEventListener('tap', (evt: H.mapevents.Event) => {
+        marker.addEventListener('tap', (evt: any) => {
           const data = evt.target.getData();
           const statusText = data.status === 'active' ? 'Active' : 'Issue Reported';
           

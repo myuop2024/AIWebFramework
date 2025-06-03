@@ -53,9 +53,7 @@ interface TimelineGroup {
 }
 
 // Define GanttChartData interface if not already present
-interface GanttChartData {
-  // Add any necessary properties for the GanttChartData interface
-}
+type GanttChartData = Project;
 
 // Get color for task priority
 const getPriorityColor = (priority: string): string => {
@@ -147,7 +145,7 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
   });
   
   // Fetch project data including tasks
-  const { data: project, isLoading, error } = useQuery({
+  const { data: project, isLoading, error } = useQuery<Project, Error, Project, [string, number]>({
     queryKey: ['/api/project-management/projects', projectId],
     select: (data: GanttChartData) => ({
       ...data,
@@ -193,7 +191,8 @@ export default function GanttChartView({ projectId }: { projectId: number }) {
   }
   
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Alert variant="destructive" className="my-4">
         <AlertCircle className="h-4 w-4" />

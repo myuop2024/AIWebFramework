@@ -38,7 +38,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { type Project } from '@shared/schema';
+import { projects as projectsTableSchema } from '@shared/schema';
+import { InferSelectModel } from 'drizzle-orm';
+
+// Define the Project type from the Drizzle schema
+type Project = InferSelectModel<typeof projectsTableSchema>;
 
 const ProjectsList: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -46,7 +50,7 @@ const ProjectsList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Real data fetching from the API
-  const { data: projects, isLoading, error } = useQuery({
+  const { data: projects, isLoading, error } = useQuery<Project[]>({
     queryKey: ['/api/project-management/projects', statusFilter, searchTerm],
     queryFn: async () => {
       // Build query params
@@ -145,7 +149,7 @@ const ProjectsList: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProjects.map(project => (
+                {filteredProjects.map((project: Project) => (
                   <TableRow key={project.id}>
                     <TableCell className="font-medium">{project.name}</TableCell>
                     <TableCell>

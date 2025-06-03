@@ -68,10 +68,35 @@ import {
 import { 
   formTemplateExtendedSchema,
   type FormTemplate,
-  type FormTemplateExtended,
-  type FormField as SchemaFormField,
-  type FormSection as SchemaFormSection
 } from '@shared/schema';
+import { z } from 'zod';
+
+// Define FormTemplateExtended from the Zod schema
+type FormTemplateExtended = z.infer<typeof formTemplateExtendedSchema>;
+
+// Define FormField and FormSection locally based on expected structure
+// These should align with the structure within FormTemplateExtended
+interface SchemaFormField {
+  id: string;
+  name: string;
+  type: string;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: Array<{ label: string; value: string }>;
+  order: number;
+  // Add other properties if they exist in your field structure
+  value?: any; // Added value as it seems to be used in optionsField.value
+}
+
+interface SchemaFormSection {
+  id: string;
+  title: string;
+  description?: string;
+  fields: SchemaFormField[];
+  order: number;
+}
 
 // Available field types with icons
 const FIELD_TYPES = [
@@ -244,10 +269,10 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
   // Handle form submission
   const handleFormSubmit = (data: FormTemplateExtended) => {
     // Update order values before submitting
-    const updatedSections = data.sections.map((section, index) => ({
+    const updatedSections = data.sections.map((section: SchemaFormSection, index: number) => ({
       ...section,
       order: index,
-      fields: section.fields.map((field, fieldIndex) => ({
+      fields: section.fields.map((field: SchemaFormField, fieldIndex: number) => ({
         ...field,
         order: fieldIndex
       }))
@@ -440,7 +465,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
                   <CardContent>
                     <div className="space-y-3">
                       {form.watch(`sections.${sectionIndex}.fields`)?.map(
-                        (field, fieldIndex) => (
+                        (field: SchemaFormField, fieldIndex: number) => (
                           <div
                             key={field.id}
                             className="border rounded-md p-3 bg-white"
@@ -573,7 +598,7 @@ export function FormTemplateEditor({ initialData, onSubmit }: FormTemplateEditor
                                           name={`sections.${sectionIndex}.fields.${fieldIndex}.options`}
                                           render={({ field: optionsField }) => (
                                             <div className="space-y-2">
-                                              {optionsField.value?.map((option, optionIndex) => (
+                                              {optionsField.value?.map((option: {label: string; value: string}, optionIndex: number) => (
                                                 <div key={optionIndex} className="flex gap-2">
                                                   <Input 
                                                     value={option.label}

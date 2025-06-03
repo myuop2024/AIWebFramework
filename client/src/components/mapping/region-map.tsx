@@ -7,7 +7,7 @@ import { Loader2, MapPin, Info } from "lucide-react";
 import InteractiveMap from "./interactive-map";
 import { useToast } from "@/hooks/use-toast";
 import { JAMAICA_PARISHES } from "@/data/jamaica-parishes";
-import { type PollingStation } from '@shared/schema';
+import { type PollingStation, type Assignment } from '@shared/schema';
 
 interface Region {
   id: number;
@@ -56,8 +56,9 @@ export default function RegionMap({
   });
   
   // Fetch user's assigned station if userId is provided
-  const { data: userAssignments = [], isLoading: isAssignmentsLoading } = useQuery<PollingStation[]>({
-    queryKey: ['/api/user/assignments'],
+  const { data: userAssignments = [], isLoading: isAssignmentsLoading } = useQuery<Assignment[]>({
+    queryKey: [userId ? `/api/users/${userId}/assignments` : '/api/user/assignments'],
+    enabled: !!userId,
   });
 
   // Get user's current location
@@ -83,7 +84,7 @@ export default function RegionMap({
   }, []);
   
   // Find user's assigned region based on stations
-  const userAssignedStations = userAssignments?.map((assignment: {stationId: number}) => 
+  const userAssignedStations = userAssignments?.map((assignment: Assignment) =>
     stations.find(station => station.id === assignment.stationId)
   ).filter(Boolean) as PollingStation[];
   
@@ -210,9 +211,9 @@ export default function RegionMap({
                   variant={selectedRegion === parish.id ? "default" : "outline"}
                   className="cursor-pointer"
                   style={{ 
-                    borderColor: parish.color,
-                    backgroundColor: selectedRegion === parish.id ? parish.color : 'transparent',
-                    color: selectedRegion === parish.id ? '#FFFFFF' : parish.color
+                    borderColor: parish.color || '#CCCCCC',
+                    backgroundColor: selectedRegion === parish.id ? (parish.color || '#4CAF50') : 'transparent',
+                    color: selectedRegion === parish.id ? '#FFFFFF' : (parish.color || '#4CAF50')
                   }}
                   onClick={() => handleRegionClick(parish.id)}
                 >

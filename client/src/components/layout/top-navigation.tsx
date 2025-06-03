@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth, User as AuthUser } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
+import { User as SharedUserType } from "@shared/schema";
 import { Menu, Search, Bell, MessageSquare, User, Sun, Moon, LogOut, FileText, Home } from "lucide-react";
 import { 
   DropdownMenu, 
@@ -21,12 +22,12 @@ interface TopNavigationProps {
 
 export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
   const [isDarkMode, setIsDarkMode] = useState(false);
   
   // Create a safe user object that's properly typed
-  const userData = user as AuthUser | undefined;
+  const userData = user as SharedUserType | null;
 
   // Check for dark mode preference
   useEffect(() => {
@@ -121,7 +122,7 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
 
   const handleLogout = () => {
     try {
-      logout(); // This uses Replit Auth logout
+      logoutMutation.mutate();
     } catch (error) {
       console.error("Logout failed:", error);
     }

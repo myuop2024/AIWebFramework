@@ -18,7 +18,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { type Project } from '@shared/schema';
+import { projects as projectsTableSchema } from '@shared/schema';
+import { InferSelectModel } from 'drizzle-orm';
+
+// Define the Project type from the Drizzle schema
+type Project = InferSelectModel<typeof projectsTableSchema>;
 
 const projectStatusColumns = [
   { id: 'planning', name: 'Planning', icon: <Clock className="h-4 w-4" /> },
@@ -33,7 +37,7 @@ const ProjectsKanban: React.FC = () => {
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Fetch projects data
-  const { data: projects, isLoading, error } = useQuery({
+  const { data: projects, isLoading, error } = useQuery<Project[]>({
     queryKey: ['/api/project-management/projects'],
     queryFn: async () => {
       const response = await fetch('/api/project-management/projects');
@@ -73,7 +77,7 @@ const ProjectsKanban: React.FC = () => {
   };
 
   // Group projects by status
-  const groupedProjects = (projects || []).reduce((acc, project) => {
+  const groupedProjects = (projects || []).reduce((acc: Record<string, Project[]>, project: Project) => {
     if (!acc[project.status]) {
       acc[project.status] = [];
     }
@@ -118,7 +122,7 @@ const ProjectsKanban: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : groupedProjects[column.id]?.length ? (
-                groupedProjects[column.id].map(project => (
+                groupedProjects[column.id].map((project: Project) => (
                   <Card 
                     key={project.id} 
                     className="shadow-sm hover:shadow cursor-pointer"

@@ -11,8 +11,9 @@ export default function LatestNews() {
     queryKey: ['/api/news/latest'],
   });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateInput: Date | string | undefined) => {
+    if (!dateInput) return "Unknown date";
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -61,7 +62,8 @@ export default function LatestNews() {
   }
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
@@ -102,7 +104,7 @@ export default function LatestNews() {
               <p className="text-sm text-gray-500 mt-1">{item.content || "No content available"}</p>
               <div className="flex items-center mt-3 text-xs text-gray-500">
                 <Clock className="h-4 w-4 mr-1" />
-                <span>{item.createdAt ? formatDate(item.createdAt) : "Unknown date"}</span>
+                <span>{formatDate(item.createdAt)}</span>
               </div>
             </div>
           ))

@@ -52,13 +52,13 @@ export function UserManagement() {
     let matchesStatus = true;
     if (statusFilter !== "all") {
       if (statusFilter === "active") {
-        matchesStatus = user.verificationStatus === "verified" || user.isActive === true;
+        matchesStatus = user.verificationStatus === "verified";
       } else if (statusFilter === "pending") {
         matchesStatus = user.verificationStatus === "pending";
       } else if (statusFilter === "rejected") {
         matchesStatus = user.verificationStatus === "rejected";
       } else if (statusFilter === "inactive") {
-        matchesStatus = user.verificationStatus !== "verified" && user.isActive !== true;
+        matchesStatus = user.verificationStatus !== "verified";
       }
     }
 
@@ -219,7 +219,7 @@ export function UserManagement() {
 
   // Get status badge for a user
   const getStatusBadge = (user: User) => {
-    if (user.verificationStatus === "verified" || user.isActive) {
+    if (user.verificationStatus === "verified") {
       return (
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           <CheckCircle2 className="h-3 w-3 mr-1" /> Active
@@ -397,23 +397,27 @@ export function UserManagement() {
                               <UserCheck className="h-4 w-4" />
                               <span className="sr-only">Verify</span>
                             </Button>
-                          ) : (
+                          ) : user.verificationStatus === "verified" ? (
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className={user.verificationStatus === "verified" || user.isActive ? 
-                                "border-red-600 text-red-600 hover:bg-red-50" : 
-                                "border-green-600 text-green-600 hover:bg-green-50"}
-                              onClick={() => handleToggleStatus(user.id)}
+                              className={"border-red-600 text-red-600 hover:bg-red-50"}
+                              onClick={() => updateVerification.mutate({ userId: user.id, status: "rejected" })}
                             >
-                              {user.verificationStatus === "verified" || user.isActive ? 
-                                <UserX className="h-4 w-4" /> : 
-                                <UserCheck className="h-4 w-4" />}
-                              <span className="sr-only">
-                                {user.verificationStatus === "verified" || user.isActive ? "Disable" : "Enable"}
-                              </span>
+                                <UserX className="h-4 w-4" /> 
+                              <span className="sr-only">Reject</span>
                             </Button>
-                          )}
+                          ) : user.verificationStatus === "rejected" ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className={"border-green-600 text-green-600 hover:bg-green-50"}
+                              onClick={() => updateVerification.mutate({ userId: user.id, status: "pending" })}
+                            >
+                                <UserCheck className="h-4 w-4" /> 
+                              <span className="sr-only">Set to Pending</span>
+                            </Button>
+                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>

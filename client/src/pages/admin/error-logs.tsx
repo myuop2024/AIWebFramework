@@ -460,7 +460,7 @@ function ErrorLogsPage() {
                         <TableCell className="whitespace-nowrap">
                           <span className="flex items-center">
                             <Clock className="mr-2 h-4 w-4 text-gray-400" />
-                            {formatDate(log.createdAt)}
+                            {formatDate(log.timestamp || new Date())}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -477,8 +477,8 @@ function ErrorLogsPage() {
                         <TableCell>{getLevelBadge(log.level)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            {getSourceIcon(log.source)}
-                            <span className="text-xs">{log.source}</span>
+                            {getSourceIcon((log.metadata as any)?.source || 'unknown')}
+                            <span className="text-xs">{(log.metadata as any)?.source || 'unknown'}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -602,8 +602,8 @@ function ErrorLogsPage() {
                   <div>
                     <Label className="text-xs text-muted-foreground">Source</Label>
                     <p className="flex items-center gap-1">
-                      {getSourceIcon(selectedLog.source)}
-                      {selectedLog.source}
+                      {getSourceIcon((selectedLog.metadata as any)?.source || 'unknown')}
+                      {(selectedLog.metadata as any)?.source || 'unknown'}
                     </p>
                   </div>
                 </div>
@@ -612,7 +612,7 @@ function ErrorLogsPage() {
 
                 <div>
                   <Label className="text-xs text-muted-foreground">Timestamp</Label>
-                  <p>{formatDate(selectedLog.createdAt)}</p>
+                  <p>{formatDate(selectedLog.timestamp || new Date())}</p>
                 </div>
 
                 <div>
@@ -620,10 +620,10 @@ function ErrorLogsPage() {
                   <p className="font-medium">{selectedLog.message}</p>
                 </div>
 
-                {selectedLog.code && (
+                {(selectedLog.metadata as any)?.code && (
                   <div>
                     <Label className="text-xs text-muted-foreground">Error Code</Label>
-                    <p className="font-mono">{selectedLog.code}</p>
+                    <p className="font-mono">{(selectedLog.metadata as any)?.code}</p>
                   </div>
                 )}
 
@@ -636,24 +636,17 @@ function ErrorLogsPage() {
                   </div>
                 )}
 
-                {selectedLog.url && (
-                  <div>
-                    <Label className="text-xs text-muted-foreground">URL</Label>
-                    <p className="break-all font-mono text-xs">{selectedLog.url}</p>
-                  </div>
-                )}
-
                 {selectedLog.path && (
                   <div>
-                    <Label className="text-xs text-muted-foreground">Path</Label>
-                    <p className="font-mono text-xs">{selectedLog.path}</p>
+                    <Label className="text-xs text-muted-foreground">URL/Path</Label>
+                    <p className="break-all font-mono text-xs">{selectedLog.path}</p>
                   </div>
                 )}
 
-                {selectedLog.method && (
+                {(selectedLog.metadata as any)?.method && (
                   <div>
                     <Label className="text-xs text-muted-foreground">HTTP Method</Label>
-                    <Badge variant="outline">{selectedLog.method}</Badge>
+                    <Badge variant="outline">{(selectedLog.metadata as any)?.method}</Badge>
                   </div>
                 )}
 
@@ -673,16 +666,16 @@ function ErrorLogsPage() {
                     </AccordionItem>
                   )}
 
-                  {typeof selectedLog.context !== 'undefined' && selectedLog.context !== null && (
+                  {typeof selectedLog.metadata !== 'undefined' && selectedLog.metadata !== null && Object.keys(selectedLog.metadata).length > 0 && (
                     <AccordionItem value="context">
                       <AccordionTrigger>
                         <span className="font-medium flex items-center">
-                          <FileText className="h-4 w-4 mr-2" /> Context Data
+                          <FileText className="h-4 w-4 mr-2" /> Context Data (Metadata)
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
                         <pre className="bg-slate-50 p-4 rounded-md overflow-x-auto text-xs font-mono">
-                          {JSON.stringify(selectedLog.context, null, 2)}
+                          {JSON.stringify(selectedLog.metadata, null, 2)}
                         </pre>
                       </AccordionContent>
                     </AccordionItem>
@@ -724,10 +717,10 @@ function ErrorLogsPage() {
                             </div>
                           )}
 
-                          {selectedLog.resolutionNotes && (
+                          {(selectedLog.metadata as any)?.resolutionNotes && (
                             <div>
                               <Label className="text-xs text-muted-foreground">Resolution Notes</Label>
-                              <p className="text-sm">{selectedLog.resolutionNotes}</p>
+                              <p className="text-sm">{(selectedLog.metadata as any)?.resolutionNotes}</p>
                             </div>
                           )}
                         </div>

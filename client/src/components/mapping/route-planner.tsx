@@ -192,12 +192,10 @@ export default function RoutePlanner({
       } else {
         setError("No route found. Please try different locations.");
       }
-    } catch (error) {
-      console.error("Error calculating route:", error);
-      if (error) {
-        const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
-        setError(`Failed to calculate route: ${errorMsg}`);
-      }
+    } catch (err) {
+      console.error("Error calculating route:", err);
+      const errorMessage = (err instanceof Error) ? err.message : "An unknown error occurred";
+      setError(`Failed to calculate route: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -227,16 +225,16 @@ export default function RoutePlanner({
     
     if (origin) {
       markers.push({
-        lat: origin.lat,
-        lng: origin.lng,
+        id: 'origin',
+        position: { lat: origin.lat, lng: origin.lng },
         title: "Origin",
       });
     }
     
     if (destination) {
       markers.push({
-        lat: destination.lat,
-        lng: destination.lng,
+        id: 'destination',
+        position: { lat: destination.lat, lng: destination.lng },
         title: "Destination",
       });
     }
@@ -297,7 +295,6 @@ export default function RoutePlanner({
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <AddressAutocomplete
-                  label="Starting Point"
                   value={origin?.address || ""}
                   onChange={handleOriginSelect}
                   placeholder="Enter starting location"
@@ -319,7 +316,6 @@ export default function RoutePlanner({
             
             <div>
               <AddressAutocomplete
-                label="Destination"
                 value={destination?.address || ""}
                 onChange={handleDestinationSelect}
                 placeholder="Enter destination"

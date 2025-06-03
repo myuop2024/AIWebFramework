@@ -180,7 +180,8 @@ export default function QRCode() {
   }
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any; // Cast error to any
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>

@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Report } from "@shared/schema";
 
 export default function RecentReports() {
-  const { data: reports, isLoading, error } = useQuery({
+  const { data: reports, isLoading, error } = useQuery<Report[]>({
     queryKey: ['/api/reports'],
   });
 
@@ -93,7 +94,8 @@ export default function RecentReports() {
   }
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
@@ -143,7 +145,7 @@ export default function RecentReports() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reports.slice(0, 3).map((report) => (
+              {Array.isArray(reports) && reports.slice(0, 3).map((report: Report) => (
                 <TableRow key={report.id}>
                   <TableCell className="px-6 py-4 whitespace-nowrap font-medium">
                     {generateReportId(report.id)}

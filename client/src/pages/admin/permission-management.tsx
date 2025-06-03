@@ -69,25 +69,11 @@ export default function PermissionManagementPage() {
   // Fetch all available permissions
   const { data: permissions, isLoading: permissionsLoading } = useQuery<Permission[]>({
     queryKey: ['/api/permissions'],
-    onError: (error: Error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error fetching permissions',
-        description: error.message
-      });
-    }
   });
 
   // Fetch all users with their roles
   const { data: users, isLoading: usersLoading } = useQuery<UserWithPermissions[]>({
     queryKey: ['/api/users'],
-    onError: (error: Error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Error fetching users',
-        description: error.message
-      });
-    }
   });
 
   // Update user role mutation
@@ -122,7 +108,7 @@ export default function PermissionManagementPage() {
   };
 
   // Filter users based on search term and role filter
-  const filteredUsers = users?.filter(user => {
+  const filteredUsers = users?.filter((user: UserWithPermissions) => {
     const matchesSearch = 
       user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -252,7 +238,7 @@ export default function PermissionManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {user.permissions?.slice(0, 3).map((permission, index) => (
+                          {user.permissions?.slice(0, 3).map((permission: string, index: number) => (
                             <Badge key={index} variant="outline" className="mr-1">
                               {permission.replace(/_/g, ' ')}
                             </Badge>

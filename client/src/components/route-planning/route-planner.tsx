@@ -89,7 +89,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   const { toast } = useToast();
   
   // Get current navigation point
-  const currentNavPoint = routeItinerary && routeItinerary.points[currentNavPointIndex];
+  const currentNavPoint = routeItinerary?.points?.[currentNavPointIndex];
   
   // Get user's current location when component mounts
   useEffect(() => {
@@ -221,7 +221,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
               longitude,
               currentNavPoint.lat,
               currentNavPoint.lng,
-              routeOptions.transportMode
+              routeOptions.transportMode as 'car' | 'pedestrian' | 'bicycle'
             );
             
             setEstimatedTimeToArrival(eta);
@@ -260,7 +260,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   
   // Mark a point as visited and move to the next one
   const markPointAsVisited = (index: number) => {
-    if (!routeItinerary) return;
+    if (!routeItinerary || !routeItinerary.points) return;
     
     // Add to visited points if not already there
     if (!visitedPoints.includes(index)) {
@@ -313,7 +313,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
         userLocation.lng,
         currentNavPoint.lat,
         currentNavPoint.lng,
-        routeOptions.transportMode
+        routeOptions.transportMode as 'car' | 'pedestrian' | 'bicycle'
       ).then(eta => {
         setEstimatedTimeToArrival(eta);
       }).catch(error => {
@@ -342,13 +342,11 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
   
   // Convert the route data to map markers with visual indicators for navigation state
   const getRouteMarkers = () => {
-    if (!routeItinerary) return [];
+    if (!routeItinerary?.points) return [];
     
-    return routeItinerary.points.map((point, index) => {
-      // Create the base text for the marker
-      let markerText = `${point.visitOrder}: ${point.name}`;
+    return routeItinerary.points.map((point: RoutePoint, index: number) => {
+      let markerText = `${index + 1}: ${point.name}`;
       
-      // Enhance the text based on navigation state
       if (isNavigationMode) {
         if (index === currentNavPointIndex) {
           markerText = `📍 CURRENT: ${markerText}`;
@@ -360,10 +358,9 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
       }
       
       return {
-        lat: point.lat,
-        lng: point.lng,
-        text: markerText,
-        // We could add more properties for custom styling in the future
+        id: point.id || `route-pt-${index}`,
+        position: { lat: point.lat, lng: point.lng },
+        title: markerText,
       };
     });
   };
@@ -678,18 +675,18 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                   <div>
                     <h3 className="font-medium">Route Summary</h3>
                     <div className="text-sm text-muted-foreground">
-                      {routeItinerary.points.length} stations • {formatDistance(routeItinerary.totalDistance)} • {formatDuration(routeItinerary.totalDuration)}
+                      {routeItinerary.points?.length || 0} stations • {formatDistance(routeItinerary.summary.distance)} • {formatDuration(routeItinerary.summary.duration)}
                     </div>
                   </div>
                   
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Departure: {formatTime(routeItinerary.departureTime)}
+                      Departure: {routeItinerary.waypoints[0]?.departureTime ? formatTime(new Date(routeItinerary.waypoints[0].departureTime)) : 'N/A'}
                     </Badge>
                     <Badge variant="outline" className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
-                      Return: {formatTime(routeItinerary.returnTime)}
+                      Return: {routeItinerary.waypoints[routeItinerary.waypoints.length - 1]?.arrivalTime ? formatTime(new Date(routeItinerary.waypoints[routeItinerary.waypoints.length -1].arrivalTime)) : 'N/A'}
                     </Badge>
                   </div>
                 </div>
@@ -771,8 +768,8 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                                   
                                   // Find the stations that are part of this route
                                   const stationIds = saved.itinerary.points
-                                    .filter(p => typeof p.id === 'number' || (typeof p.id === 'string' && !['start', 'end'].includes(p.id)))
-                                    .map(p => typeof p.id === 'number' ? p.id : parseInt(String(p.id)));
+                                    ?.filter(p => typeof p.id === 'number' || (typeof p.id === 'string' && !['start', 'end'].includes(p.id)))
+                                    .map(p => typeof p.id === 'number' ? p.id : parseInt(String(p.id))) || [];
                                   
                                   const stations = pollingStations.filter(s => 
                                     stationIds.includes(s.id)
@@ -789,8 +786,8 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                                 <div>
                                   <div className="font-medium">{saved.name}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    {saved.itinerary.points.length} stations • 
-                                    {formatDistance(saved.itinerary.totalDistance)}
+                                    {saved.itinerary.points?.length || 0} stations • 
+                                    {formatDistance(saved.itinerary.summary.distance)}
                                   </div>
                                 </div>
                                 <Button 
@@ -872,15 +869,16 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                     height="100%"
                     width="100%"
                     showUserLocation={true}
-                    routePolyline={routeItinerary?.routePolyline}
+                    routePolyline={routeItinerary?.segments?.flatMap(segment => segment.path) || []}
                     navigationMode={isNavigationMode}
-                    onMarkerClick={(index) => {
+                    onMarkerClick={(markerId: string | number) => {
                       // Handle marker click to navigate to that destination
-                      if (routeItinerary && index < routeItinerary.points.length) {
-                        setCurrentNavPointIndex(index);
+                      const targetIndex = routeItinerary?.points?.findIndex(p => p.id === markerId);
+                      if (routeItinerary && routeItinerary.points && targetIndex !== undefined && targetIndex !== -1) {
+                        setCurrentNavPointIndex(targetIndex);
                         toast({
                           title: "Destination changed",
-                          description: `Now navigating to ${routeItinerary.points[index].name}`
+                          description: `Now navigating to ${routeItinerary.points[targetIndex].name}`
                         });
                       }
                     }}
@@ -949,7 +947,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                         <div>
                           <span className="font-medium">Progress:</span> 
                           <span className="ml-1">
-                            {visitedPoints.length}/{routeItinerary.points.length} stations
+                            {visitedPoints.length}/{routeItinerary.points?.length || 0} stations
                           </span>
                         </div>
                       </div>
@@ -1033,7 +1031,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                         </Button>
                         
                         <div className="px-2 text-sm font-medium">
-                          {currentNavPointIndex + 1} of {routeItinerary.points.length}
+                          {currentNavPointIndex + 1} of {routeItinerary.points?.length || 0}
                           {visitedPoints.length > 0 && ` (${visitedPoints.length} visited)`}
                         </div>
                         
@@ -1042,9 +1040,9 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                           variant="ghost"
                           size="sm"
                           className="h-8 px-2"
-                          disabled={currentNavPointIndex >= routeItinerary.points.length - 1}
+                          disabled={!routeItinerary?.points || currentNavPointIndex >= routeItinerary.points.length - 1}
                           onClick={() => {
-                            if (currentNavPointIndex < routeItinerary.points.length - 1) {
+                            if (routeItinerary?.points && currentNavPointIndex < routeItinerary.points.length - 1) {
                               const newIndex = currentNavPointIndex + 1;
                               setCurrentNavPointIndex(newIndex);
                               const pointName = routeItinerary.points[newIndex].name;
@@ -1070,7 +1068,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                             setVisitedPoints(prev => prev.filter(i => i !== currentNavPointIndex));
                             toast({
                               title: "Mark as not visited",
-                              description: `Removed ${routeItinerary.points[currentNavPointIndex].name} from visited locations.`
+                              description: `Removed ${routeItinerary?.points?.[currentNavPointIndex]?.name || 'point'} from visited locations.`
                             });
                           } else {
                             // Mark as visited
@@ -1106,22 +1104,22 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                       <h2 className="text-xl font-semibold">Route Summary</h2>
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                         <div>
-                          <span className="font-medium">Total stations:</span> {routeItinerary.points.length}
+                          <span className="font-medium">Total stations:</span> {routeItinerary.points?.length || 0}
                         </div>
                         <div>
-                          <span className="font-medium">Total distance:</span> {formatDistance(routeItinerary.totalDistance)}
+                          <span className="font-medium">Total distance:</span> {formatDistance(routeItinerary.summary.distance)}
                         </div>
                         <div>
-                          <span className="font-medium">Total duration:</span> {formatDuration(routeItinerary.totalDuration)}
+                          <span className="font-medium">Total duration:</span> {formatDuration(routeItinerary.summary.duration)}
                         </div>
                         <div>
                           <span className="font-medium">Transport mode:</span> {routeOptions.transportMode}
                         </div>
                         <div>
-                          <span className="font-medium">Departure time:</span> {formatTime(routeItinerary.departureTime)}
+                          <span className="font-medium">Departure time:</span> {routeItinerary.waypoints[0]?.departureTime ? formatTime(new Date(routeItinerary.waypoints[0].departureTime)) : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium">Return time:</span> {formatTime(routeItinerary.returnTime)}
+                          <span className="font-medium">Return time:</span> {routeItinerary.waypoints[routeItinerary.waypoints.length - 1]?.arrivalTime ? formatTime(new Date(routeItinerary.waypoints[routeItinerary.waypoints.length -1].arrivalTime)) : 'N/A'}
                         </div>
                       </div>
                     </div>
@@ -1139,13 +1137,13 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {routeItinerary.points.map((point, index) => (
+                          {routeItinerary.points?.map((point: RoutePoint, index: number) => (
                             <tr key={`print-${index}`} className="border-b">
-                              <td className="py-2">{point.visitOrder}</td>
+                              <td className="py-2">{index + 1}</td>
                               <td className="py-2 font-medium">{point.name}</td>
                               <td className="py-2">{point.address}</td>
-                              <td className="py-2">{point.estimatedArrival ? formatTime(point.estimatedArrival) : '-'}</td>
-                              <td className="py-2">{point.estimatedDeparture ? formatTime(point.estimatedDeparture) : '-'}</td>
+                              <td className="py-2">{point.arrivalTime ? formatTime(new Date(point.arrivalTime)) : '-'}</td>
+                              <td className="py-2">{point.departureTime ? formatTime(new Date(point.departureTime)) : '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1173,7 +1171,7 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                   </div>
                   <div className="rounded-md border max-h-[200px] overflow-y-auto">
                     {routeItinerary.points
-                      .filter(point => 
+                      ?.filter(point => 
                         point.name.toLowerCase().includes(filterText.toLowerCase()) ||
                         (point.address && point.address.toLowerCase().includes(filterText.toLowerCase()))
                       )
@@ -1236,9 +1234,9 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                                   </>
                                 )}
                               </div>
-                              {point.estimatedArrival && (
+                              {point.arrivalTime && (
                                 <div className="text-xs text-muted-foreground">
-                                  Arrival: {formatTime(point.estimatedArrival)}
+                                  Arrival: {formatTime(new Date(point.arrivalTime))}
                                   {index === currentNavPointIndex && estimatedTimeToArrival !== null && (
                                     <span className="ml-2 font-medium text-primary">
                                       ETA: {Math.ceil(estimatedTimeToArrival / 60)} min
@@ -1285,9 +1283,9 @@ export function RoutePlanner({ pollingStations }: RoutePlannerProps) {
                           <div className="px-4 py-2 bg-accent/20">
                             <div className="text-sm">{point.address}</div>
                             <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
-                              <div>Stay duration: {point.visitDuration} min</div>
-                              {point.estimatedDeparture && (
-                                <div>Departure: {formatTime(point.estimatedDeparture)}</div>
+                              <div>Stay duration: {point.stayDuration ?? routeOptions.visitDuration ?? 0} min</div>
+                              {point.departureTime && (
+                                <div>Departure: {formatTime(new Date(point.departureTime))}</div>
                               )}
                             </div>
                           </div>

@@ -4,9 +4,10 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Event } from "@shared/schema";
 
 export default function UpcomingEvents() {
-  const { data: events, isLoading, error } = useQuery({
+  const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['/api/events/upcoming'],
   });
 
@@ -68,7 +69,8 @@ export default function UpcomingEvents() {
   }
 
   if (error) {
-    const errorMsg = error?.response?.data?.error || error?.data?.error || error?.message || "Please try again later.";
+    const axiosError = error as any;
+    const errorMsg = axiosError?.response?.data?.error || axiosError?.data?.error || axiosError?.message || "Please try again later.";
     return (
       <Card>
         <CardHeader>
@@ -101,7 +103,7 @@ export default function UpcomingEvents() {
         <CardTitle className="text-lg font-medium">Upcoming Events</CardTitle>
       </CardHeader>
       <CardContent className="p-0 divide-y divide-gray-200">
-        {events.map((event) => {
+        {Array.isArray(events) && events.map((event: Event) => {
           const { day, month } = formatEventDate(event.startTime);
           const timeRange = formatEventTime(event.startTime, event.endTime);
           const isTraining = event.eventType.toLowerCase() === "training";

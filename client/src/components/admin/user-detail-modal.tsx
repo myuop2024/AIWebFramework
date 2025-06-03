@@ -89,25 +89,25 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
   const [activeTab, setActiveTab] = useState("profile");
   
   // Fetch user details
-  const { data: user, isLoading: userLoading } = useQuery<UserDetail>({
+  const { data: user, isLoading: userLoading } = useQuery<UserDetail | undefined>({
     queryKey: userId ? [`/api/admin/users/${userId}`] : null,
     enabled: !!userId && isOpen,
   });
   
   // Fetch user profile
-  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
+  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile | undefined>({
     queryKey: userId ? [`/api/admin/users/${userId}/profile`] : null,
     enabled: !!userId && isOpen,
   });
   
   // Fetch user documents
-  const { data: documents = [], isLoading: documentsLoading } = useQuery<Document[]>({
+  const { data: documents = [], isLoading: documentsLoading } = useQuery<Document[] | undefined>({
     queryKey: userId ? [`/api/admin/users/${userId}/documents`] : null,
     enabled: !!userId && isOpen,
   });
   
   // Fetch user assignments
-  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<Assignment[]>({
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<Assignment[] | undefined>({
     queryKey: userId ? [`/api/admin/users/${userId}/assignments`] : null,
     enabled: !!userId && isOpen,
   });
@@ -315,11 +315,11 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="flex-1">
                   <FileText className="h-4 w-4 mr-2" />
-                  Documents ({documents.length})
+                  Documents ({documents?.length || 0})
                 </TabsTrigger>
                 <TabsTrigger value="assignments" className="flex-1">
                   <MapPin className="h-4 w-4 mr-2" />
-                  Assignments ({assignments.length})
+                  Assignments ({assignments?.length || 0})
                 </TabsTrigger>
               </TabsList>
               
@@ -428,7 +428,7 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                         <RefreshCw className="h-6 w-6 text-gray-400 animate-spin" />
                         <span className="ml-2 text-gray-500">Loading documents...</span>
                       </div>
-                    ) : documents.length === 0 ? (
+                    ) : (documents && documents.length === 0) ? (
                       <div className="text-center p-6 text-gray-500 bg-gray-50 rounded-md">
                         <FileText className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                         <h4 className="font-medium">No Documents</h4>
@@ -436,7 +436,7 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {documents.map((doc) => (
+                        {documents?.map((doc: Document) => (
                           <div key={doc.id} className="border rounded-md p-4">
                             <div className="flex items-start justify-between">
                               <div>
@@ -479,7 +479,7 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                         <RefreshCw className="h-6 w-6 text-gray-400 animate-spin" />
                         <span className="ml-2 text-gray-500">Loading assignments...</span>
                       </div>
-                    ) : assignments.length === 0 ? (
+                    ) : (assignments && assignments.length === 0) ? (
                       <div className="text-center p-6 text-gray-500 bg-gray-50 rounded-md">
                         <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                         <h4 className="font-medium">No Assignments</h4>
@@ -487,7 +487,7 @@ export function UserDetailModal({ isOpen, onClose, userId }: UserDetailModalProp
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {assignments.map((assignment) => (
+                        {assignments?.map((assignment: Assignment) => (
                           <div key={assignment.id} className="border rounded-md p-4">
                             <div className="flex items-start justify-between">
                               <div>

@@ -79,7 +79,7 @@ export default function GamificationPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const { data: userProfile } = useQuery({
+  const { data: userProfile } = useQuery<UserGameProfile>({
     queryKey: ['/api/gamification/user', user?.id, 'profile'],
     enabled: !!user?.id,
   });

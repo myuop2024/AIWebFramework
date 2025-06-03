@@ -57,12 +57,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   } = useCommunication(userId);
 
   // Get all users for site-wide search
-  const { data: allUsers, isLoading: allUsersLoading } = useQuery({
+  const { data: allUsers, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({
     queryKey: ['/api/communications/online-users'],
     queryFn: async () => {
       const response = await fetch('/api/communications/online-users');
       if (!response.ok) throw new Error('Failed to fetch users');
-      return response.json();
+      return response.json() as Promise<CommunicationUser[]>;
     },
     staleTime: 10000 // 10 seconds
   });
@@ -84,7 +84,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
   );
 
   // Filter all users based on search query
-  const filteredAllUsers = allUsers?.filter(user => 
+  const filteredAllUsers = allUsers?.filter((user: CommunicationUser) => 
     user.username.toLowerCase().includes(contactsSearchQuery.toLowerCase())
   );
 
@@ -284,7 +284,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   // Get user by ID
   const getUserById = (id: number): CommunicationUser | undefined => {
-    const onlineUser = onlineUsers.find(user => user.id === id);
+    const onlineUser = onlineUsers.find((user: CommunicationUser) => user.id === id);
     if (onlineUser) return onlineUser;
 
     // If not in online users, check conversations
@@ -294,17 +294,17 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
         id: conversation.userId,
         username: conversation.username,
         status: 'offline'
-      };
+      } as CommunicationUser;
     }
 
     // If not in conversations, check all users
-    const allUser = allUsers?.find(user => user.id === id);
+    const allUser = allUsers?.find((user: CommunicationUser) => user.id === id);
     if (allUser) {
       return {
         id: allUser.id,
         username: allUser.username,
         status: allUser.status
-      };
+      } as CommunicationUser;
     }
 
     return undefined;
@@ -506,7 +506,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
                       <p className="text-sm text-muted-foreground">Loading users...</p>
                     </div>
                   ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
-                    filteredAllUsers.map(user => (
+                    filteredAllUsers.map((user: CommunicationUser) => (
                       <div 
                         key={user.id} 
                         className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors mb-1 ${
@@ -880,7 +880,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
               </div>
             ) : filteredAllUsers && filteredAllUsers.length > 0 ? (
               <div className="space-y-2">
-                {filteredAllUsers.map(user => (
+                {filteredAllUsers.map((user: CommunicationUser) => (
                   <div 
                     key={user.id} 
                     className="flex items-center justify-between p-2 rounded-md hover:bg-secondary/50"
