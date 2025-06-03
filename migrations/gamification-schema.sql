@@ -51,8 +51,9 @@ CREATE TABLE IF NOT EXISTS leaderboard_overall (
 -- Add indexes for frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_user_points_user_id ON user_points(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_badges_user_id ON user_badges(user_id);
-CREATE INDEX IF NOT EXISTS idx_leaderboard_weekly_points ON leaderboard_weekly(total_points_this_week DESC);
-CREATE INDEX IF NOT EXISTS idx_leaderboard_overall_points ON leaderboard_overall(total_points_all_time DESC);
+-- Note: Cannot create indexes on views, only on tables
+-- CREATE INDEX IF NOT EXISTS idx_leaderboard_weekly_points ON leaderboard_weekly(total_points_this_week DESC);
+-- CREATE INDEX IF NOT EXISTS idx_leaderboard_overall_points ON leaderboard_overall(total_points_all_time DESC);
 
 -- Modify users table
 -- Ensure the users table and its id column exist before attempting to alter it or add foreign keys.
