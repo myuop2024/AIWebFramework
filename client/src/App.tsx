@@ -65,6 +65,7 @@ import AdminAccessibilityPage from '@/pages/advanced-features/accessibility';
 import AdminRolesPage from '@/pages/admin/roles';
 import AdminGroupsPage from '@/pages/admin/groups';
 import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
+import AdminRoleGroupManagementPage from '@/pages/admin/role-group-management';
 import { useMobileOptimizations } from './hooks/use-ios-optimizations';
 
 function Router() {
