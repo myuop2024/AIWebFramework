@@ -36,6 +36,10 @@ import {
   type InsertPhotoApproval,
   type Role,
   type InsertRole,
+  type Group,
+  type InsertGroup,
+  type GroupMembership,
+  type InsertGroupMembership,
   type IdCardTemplate,
   type InsertIdCardTemplate,
   type Achievement,
@@ -113,6 +117,22 @@ export interface IStorage {
   updateRole(id: number, data: Partial<Omit<Role, 'id' | 'createdAt' | 'updatedAt' | 'isSystem'>> & { permissions?: string[] }): Promise<Role | undefined>;
   deleteRole(id: number): Promise<boolean>;
   getPermissionsForRole(roleId: number): Promise<string[] | undefined>;
+
+  // Group operations
+  createGroup(groupData: InsertGroup): Promise<Group>;
+  getGroupById(id: number): Promise<Group & { members?: User[] } | undefined>;
+  getGroupByName(name: string): Promise<Group | undefined>;
+  getAllGroups(): Promise<(Group & { members?: User[] })[]>;
+  updateGroup(id: number, data: Partial<Omit<Group, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>>): Promise<Group | undefined>;
+  deleteGroup(id: number): Promise<boolean>;
+  
+  // Group membership operations
+  addGroupMember(groupId: number, userId: number, addedBy?: number): Promise<GroupMembership>;
+  addGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<GroupMembership[]>;
+  removeGroupMember(groupId: number, userId: number): Promise<boolean>;
+  setGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<void>;
+  getGroupMembers(groupId: number): Promise<User[]>;
+  getUserGroups(userId: number): Promise<Group[]>;
 
   // User import log operations
   getUserImportLog(importId: number): Promise<UserImportLog | undefined>;

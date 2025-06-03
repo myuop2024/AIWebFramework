@@ -196,6 +196,23 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     },
   ];
 
+  // --- ADVANCED ADMIN FEATURES ---
+  const advancedAdminNavLinks = [
+    {
+      path: "/admin/advanced-features",
+      label: "Advanced Features",
+      icon: <Sparkles className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/advanced-features/ai-assistant", label: "AI Assistant", icon: <Brain className="h-4 w-4" /> },
+        { path: "/advanced-features/smart-analytics", label: "Smart Analytics", icon: <BarChart className="h-4 w-4" /> },
+        { path: "/advanced-features/gamification", label: "Gamification", icon: <Trophy className="h-4 w-4" /> },
+        { path: "/advanced-features/smart-operations", label: "Smart Operations", icon: <Brain className="h-4 w-4" /> },
+        { path: "/advanced-features/accessibility", label: "Accessibility", icon: <Accessibility className="h-4 w-4" /> },
+      ]
+    },
+  ];
+
   // --- SUPERVISION ---
   const supervisionNavLinks = [
     { category: "Supervision", path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5" />, requiredPermission: "supervisor-tasks:view-team" },
@@ -215,6 +232,21 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5" /> },
   ];
 
+  // --- ROLE & GROUP MANAGEMENT (ADMIN) ---
+  const roleGroupNavLinks = [
+    {
+      path: "/admin/role-group-management",
+      label: "Role & Group Management",
+      icon: <Shield className="h-5 w-5" />,
+      dropdown: true,
+      dropdownItems: [
+        { path: "/admin/roles", label: "Roles", icon: <UserCheck className="h-4 w-4" /> },
+        { path: "/admin/groups", label: "Groups", icon: <Users className="h-4 w-4" /> },
+        { path: "/admin/group-permissions", label: "Group Permissions", icon: <ClipboardList className="h-4 w-4" /> },
+      ]
+    },
+  ];
+
   // Combine all groups for rendering
   const allNavLinks = [
     ...mainNavLinks,
@@ -225,9 +257,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     ...projectNavLinks,
     ...advancedNavLinks,
     ...adminNavLinks,
+    ...advancedAdminNavLinks,
     ...supervisionNavLinks,
     ...rovingNavLinks,
     ...supportNavLinks,
+    ...roleGroupNavLinks,
   ];
 
   const handleLogout = async () => {
@@ -412,6 +446,20 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
             {/* ADMINISTRATION */}
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Administration</p>
             {adminNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* ROLE & GROUP MANAGEMENT (ADMIN) */}
+            <p className="text-xs uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 mt-6 px-4">Role & Group Management</p>
+            {roleGroupNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* ADVANCED FEATURES (ADMIN) */}
+            <p className="text-xs uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-3 mt-6 px-4">Advanced Features</p>
+            {advancedAdminNavLinks.map(link => {
               const isActive = location === link.path || location.startsWith(link.path + '/');
               return renderNavLink(link, isActive);
             })}

@@ -23,6 +23,7 @@ import adminAnalyticsRoutes from './routes/admin-analytics';
 import adminUserRoutes from './routes/admin-users';
 import adminSystemRoutes from './routes/admin-system';
 import adminRolesRoutes from './routes/admin-roles';
+import adminGroupsRoutes from './routes/admin-groups';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
@@ -2338,6 +2339,9 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   
   // Admin role management routes
   app.use('/', adminRolesRoutes);
+  
+  // Admin group management routes
+  app.use('/', adminGroupsRoutes);
 
   // ID Card routes
   app.use('/api/id-cards', idCardRoutes);

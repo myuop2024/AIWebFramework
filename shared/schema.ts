@@ -377,6 +377,29 @@ export const roles = pgTable("roles", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// User groups table
+export const groups = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  permissions: jsonb("permissions").default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// User group memberships table
+export const groupMemberships = pgTable("group_memberships", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  groupId: integer("group_id").notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  addedBy: integer("added_by").references(() => users.id),
+},
+(table) => ({
+  userGroupUniqueIdx: index("group_memberships_user_id_group_id_idx").on(table.userId, table.groupId),
+}));
+
 // Gamification Tables
 
 export const userPoints = pgTable("user_points", {
@@ -442,6 +465,25 @@ export const insertRoleSchema = createInsertSchema(roles)
 
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof insertRoleSchema._type;
+
+// Define insert schema for groups
+export const insertGroupSchema = createInsertSchema(groups)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  });
+
+export const insertGroupMembershipSchema = createInsertSchema(groupMemberships)
+  .omit({
+    id: true,
+    joinedAt: true,
+  });
+
+export type Group = typeof groups.$inferSelect;
+export type InsertGroup = typeof insertGroupSchema._type;
+export type GroupMembership = typeof groupMemberships.$inferSelect;
+export type InsertGroupMembership = typeof insertGroupMembershipSchema._type;
 
 // Insert Schemas for Gamification
 export const insertUserPointSchema = createInsertSchema(userPoints).omit({ id: true, createdAt: true });

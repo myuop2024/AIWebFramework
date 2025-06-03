@@ -20,6 +20,8 @@ import {
   userImportLogs,
   photoApprovals,
   roles,
+  groups,
+  groupMemberships,
   idCardTemplates,
   type User,
   type UpsertUser,
@@ -58,6 +60,10 @@ import {
   type InsertPhotoApproval,
   type Role,
   type InsertRole,
+  type Group,
+  type InsertGroup,
+  type GroupMembership,
+  type InsertGroupMembership,
   type IdCardTemplate,
   type InsertIdCardTemplate,
   achievements,
@@ -990,6 +996,280 @@ export class DatabaseStorage implements IStorage {
       throw err;
     }
   }
+
+  // Group Operations
+  async createGroup(groupData: InsertGroup): Promise<Group> {
+    try {
+      const [newGroup] = await db
+        .insert(groups)
+        .values({
+          ...groupData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      if (!newGroup) {
+        throw new Error("Group creation failed, no data returned.");
+      }
+      logger.info(`Group created: ${newGroup.name} (ID: ${newGroup.id})`);
+      return newGroup;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating group: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getGroupById(id: number): Promise<Group & { members?: User[] } | undefined> {
+    try {
+      const [group] = await db.select().from(groups).where(eq(groups.id, id));
+      if (!group) return undefined;
+
+      // Get group members
+      const members = await this.getGroupMembers(id);
+      return { ...group, members };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting group by ID: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getGroupByName(name: string): Promise<Group | undefined> {
+    try {
+      const [group] = await db.select().from(groups).where(eq(groups.name, name));
+      return group;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting group by name: ${name} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getAllGroups(): Promise<(Group & { members?: User[] })[]> {
+    try {
+      const allGroups = await db.select().from(groups).orderBy(asc(groups.name));
+      
+      // Get members for each group
+      const groupsWithMembers = await Promise.all(
+        allGroups.map(async (group) => {
+          const members = await this.getGroupMembers(group.id);
+          return { ...group, members };
+        })
+      );
+      
+      return groupsWithMembers;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting all groups: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async updateGroup(id: number, data: Partial<Omit<Group, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>>): Promise<Group | undefined> {
+    try {
+      const groupToUpdate = await this.getGroupById(id);
+      if (!groupToUpdate) {
+        logger.warn(`Attempt to update non-existent group with ID: ${id}`);
+        return undefined;
+      }
+
+      const updateData: Partial<Group> = { ...data, updatedAt: new Date() };
+
+      if (data.permissions !== undefined) {
+        updateData.permissions = data.permissions;
+      }
+
+      const [updatedGroup] = await db
+        .update(groups)
+        .set(updateData)
+        .where(eq(groups.id, id))
+        .returning();
+      if (updatedGroup) {
+        logger.info(`Group updated: ${updatedGroup.name} (ID: ${updatedGroup.id})`);
+      }
+      return updatedGroup;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error updating group: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async deleteGroup(id: number): Promise<boolean> {
+    try {
+      const groupToDelete = await this.getGroupById(id);
+      if (!groupToDelete) {
+        logger.warn(`Attempted to delete non-existent group with ID: ${id}`);
+        return false;
+      }
+
+      // Remove all group memberships first
+      await db.delete(groupMemberships).where(eq(groupMemberships.groupId, id));
+
+      const result = await db.delete(groups).where(eq(groups.id, id)).returning();
+      const success = result.length > 0;
+      if (success) {
+        logger.info(`Group deleted: ${groupToDelete.name} (ID: ${id})`);
+      }
+      return success;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error deleting group: ${id} - ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  // Group membership operations
+  async addGroupMember(groupId: number, userId: number, addedBy?: number): Promise<GroupMembership> {
+    try {
+      // Check if membership already exists
+      const [existing] = await db
+        .select()
+        .from(groupMemberships)
+        .where(and(eq(groupMemberships.groupId, groupId), eq(groupMemberships.userId, userId)));
+      
+      if (existing) {
+        throw new Error(`User ${userId} is already a member of group ${groupId}`);
+      }
+
+      const [membership] = await db
+        .insert(groupMemberships)
+        .values({
+          groupId,
+          userId,
+          addedBy,
+          joinedAt: new Date(),
+        })
+        .returning();
+
+      if (!membership) {
+        throw new Error("Group membership creation failed, no data returned.");
+      }
+
+      logger.info(`User ${userId} added to group ${groupId}`);
+      return membership;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error adding user ${userId} to group ${groupId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async addGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<GroupMembership[]> {
+    try {
+      const memberships: GroupMembership[] = [];
+      
+      for (const userId of userIds) {
+        try {
+          const membership = await this.addGroupMember(groupId, userId, addedBy);
+          memberships.push(membership);
+        } catch (error) {
+          // Log error but continue with other users
+          logger.warn(`Failed to add user ${userId} to group ${groupId}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      }
+      
+      return memberships;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error adding multiple users to group ${groupId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async removeGroupMember(groupId: number, userId: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(groupMemberships)
+        .where(and(eq(groupMemberships.groupId, groupId), eq(groupMemberships.userId, userId)))
+        .returning();
+
+      const success = result.length > 0;
+      if (success) {
+        logger.info(`User ${userId} removed from group ${groupId}`);
+      }
+      return success;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error removing user ${userId} from group ${groupId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async setGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<void> {
+    try {
+      // Remove all existing memberships
+      await db.delete(groupMemberships).where(eq(groupMemberships.groupId, groupId));
+
+      // Add new memberships
+      if (userIds.length > 0) {
+        await this.addGroupMembers(groupId, userIds, addedBy);
+      }
+
+      logger.info(`Group ${groupId} members set to: [${userIds.join(', ')}]`);
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error setting members for group ${groupId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getGroupMembers(groupId: number): Promise<User[]> {
+    try {
+      const members = await db
+        .select({
+          id: usersTable.id,
+          username: usersTable.username,
+          email: usersTable.email,
+          firstName: usersTable.firstName,
+          lastName: usersTable.lastName,
+          role: usersTable.role,
+          observerId: usersTable.observerId,
+          phoneNumber: usersTable.phoneNumber,
+          verificationStatus: usersTable.verificationStatus,
+          createdAt: usersTable.createdAt,
+          profileImageUrl: usersTable.profileImageUrl,
+          updatedAt: usersTable.updatedAt,
+        })
+        .from(groupMemberships)
+        .innerJoin(usersTable, eq(groupMemberships.userId, usersTable.id))
+        .where(eq(groupMemberships.groupId, groupId))
+        .orderBy(asc(usersTable.firstName), asc(usersTable.lastName));
+
+      return members;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting members for group ${groupId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getUserGroups(userId: number): Promise<Group[]> {
+    try {
+      const userGroups = await db
+        .select({
+          id: groups.id,
+          name: groups.name,
+          description: groups.description,
+          permissions: groups.permissions,
+          createdAt: groups.createdAt,
+          updatedAt: groups.updatedAt,
+          createdBy: groups.createdBy,
+        })
+        .from(groupMemberships)
+        .innerJoin(groups, eq(groupMemberships.groupId, groups.id))
+        .where(eq(groupMemberships.userId, userId))
+        .orderBy(asc(groups.name));
+
+      return userGroups;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting groups for user ${userId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
   // Ensure all other existing methods in DatabaseStorage are maintained.
 
   // Form Template Methods

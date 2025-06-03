@@ -57,6 +57,14 @@ import ErrorBoundary from "@/components/error/error-boundary";
 import { initGlobalErrorHandlers } from "@/lib/error-logger";
 import AdvancedFeatures from "@/pages/advanced-features";
 import { Helmet } from 'react-helmet';
+import AdminAIAssistantPage from '@/pages/advanced-features/ai-assistant';
+import AdminSmartAnalyticsPage from '@/pages/advanced-features/smart-analytics';
+import AdminGamificationPage from '@/pages/advanced-features/gamification';
+import AdminSmartOperationsPage from '@/pages/advanced-features/smart-operations';
+import AdminAccessibilityPage from '@/pages/advanced-features/accessibility';
+import AdminRolesPage from '@/pages/admin/roles';
+import AdminGroupsPage from '@/pages/admin/groups';
+import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
 
 function Router() {
   return (
@@ -125,6 +133,9 @@ function Router() {
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/security" component={SecurityDashboard} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/crm" component={React.lazy(() => import("@/pages/admin/crm"))} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/roles" component={AdminRolesPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/groups" component={AdminGroupsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/group-permissions" component={AdminGroupPermissionsPage} allowedRoles={["admin", "director"]} />
 
       {/* Supervisor Routes */}
       <RoleProtectedRoute 
@@ -162,6 +173,13 @@ function Router() {
 
       {/* Advanced Features */}
       <Route path="/advanced-features" component={AdvancedFeatures} />
+
+      {/* Advanced Features (Admin Submenu) */}
+      <RoleProtectedRoute path="/advanced-features/ai-assistant" component={AdminAIAssistantPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/advanced-features/smart-analytics" component={AdminSmartAnalyticsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/advanced-features/gamification" component={AdminGamificationPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/advanced-features/smart-operations" component={AdminSmartOperationsPage} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/advanced-features/accessibility" component={AdminAccessibilityPage} allowedRoles={["admin", "director"]} />
 
       {/* Fallback to 404 */}
       <Route component={NotFound} />
