@@ -68,10 +68,16 @@ router.get('/initiate', ensureAuthenticated, async (req: Request, res: Response)
 // Mock verification route to prevent crashes during testing
 router.get('/mockverify', async (req: Request, res: Response) => {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).render('error', {
+        message: 'Mock verification is disabled in production'
+      });
+    }
+
     const email = req.query.email as string;
     if (!email) {
-      return res.status(400).render('error', { 
-        message: 'Email parameter is required' 
+      return res.status(400).render('error', {
+        message: 'Email parameter is required'
       });
     }
 
@@ -82,8 +88,8 @@ router.get('/mockverify', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error with mock verification:', error);
-    return res.status(500).render('error', { 
-      message: 'Failed during mock verification process' 
+    return res.status(500).render('error', {
+      message: 'Failed during mock verification process'
     });
   }
 });
