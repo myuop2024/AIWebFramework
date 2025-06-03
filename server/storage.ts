@@ -157,29 +157,13 @@ export interface IStorage {
   updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress>;
   getUserAchievementProgress(userId: number): Promise<AchievementProgress[]>;
 
-  async getAllNews(): Promise<any[]> {
-    // This would typically query a news table
-    // For now, return empty array
-    return [];
-  }
+  // News operations
+  getAllNews(): Promise<any[]>;
+  getLatestNews(limit?: number): Promise<any[]>;
 
-  async getLatestNews(limit: number = 5): Promise<any[]> {
-    // This would typically query a news table with limit and order by date
-    // For now, return empty array
-    return [];
-  }
-
-  async getAllEvents(): Promise<any[]> {
-    // This would typically query an events table
-    // For now, return empty array
-    return [];
-  }
-
-  async getUpcomingEvents(): Promise<any[]> {
-    // This would typically query events table with date filter
-    // For now, return empty array
-    return [];
-  }
+  // Event operations
+  getAllEvents(): Promise<any[]>;
+  getUpcomingEvents(): Promise<any[]>;
 }
 
 // Import database storage
