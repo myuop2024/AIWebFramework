@@ -68,7 +68,7 @@ import AdminGroupPermissionsPage from '@/pages/admin/group-permissions';
 import AdminRoleGroupManagementPage from '@/pages/admin/role-group-management';
 import AdminLogsPage from '@/pages/admin/logs';
 import { useMobileOptimizations } from './hooks/use-ios-optimizations';
-import { PermissionsProvider } from '@/hooks/usePermissions';
+import { PermissionsProvider } from '@/hooks/usePermissions.tsx';
 
 function Router() {
   return (

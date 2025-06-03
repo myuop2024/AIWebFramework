@@ -403,8 +403,8 @@ app.get('/api/logs', (req, res) => {
 
     if (communicationServiceInstance) {
       server.on('upgrade', (request, socket, head) => {
-        // Only handle upgrades to the specific WebSocket path
-        if (request.url === '/api/ws') {
+        // Only handle upgrades to the specific WebSocket path (including query parameters)
+        if (request.url?.startsWith('/api/ws') || request.url === '/api/ws') {
           logger.debug(`[WS Upgrade] Attempting upgrade for path: ${request.url}`);
           sessionMiddleware(request as any, {} as any, () => { // Apply session middleware
             const reqWithSession = request as any; // Cast to access session property
