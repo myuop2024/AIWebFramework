@@ -1,3 +1,9 @@
+import { Router } from 'express';
 import crmRoutes from './crm-routes';
 
-router.use('/crm', crmRoutes); 
+const router = Router();
+
+router.use('/crm', crmRoutes);
+
+export default router;
+

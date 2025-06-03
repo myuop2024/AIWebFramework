@@ -4,7 +4,7 @@ import CRMContactEditModal from './crm-contact-edit-modal';
 import CRMContactNotes from './crm-contact-notes';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../ui/ConfirmDialog';
-import Spinner from '../ui/Spinner';
+import { Spinner } from '../ui/spinner';
 
 const fetchContacts = async () => {
   const res = await fetch('/crm/contacts');
@@ -41,6 +41,8 @@ const CRMContactList: React.FC<CRMContactListProps> = ({ isAdmin }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [showNotesId, setShowNotesId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [sortField, setSortField] = useState<'name' | 'email' | 'phone'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selected, setSelected] = useState<number[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -75,6 +77,15 @@ const CRMContactList: React.FC<CRMContactListProps> = ({ isAdmin }) => {
     updateMutation.mutate(updated);
   };
 
+  const toggleSort = (field: 'name' | 'email' | 'phone') => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const handleSelect = (id: number) => {
     setSelected(selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id]);
   };
@@ -107,14 +118,22 @@ const CRMContactList: React.FC<CRMContactListProps> = ({ isAdmin }) => {
   };
 
   const filteredData = data && data.length > 0
-    ? data.filter((contact: any) => {
-        const q = search.toLowerCase();
-        return (
-          contact.name?.toLowerCase().includes(q) ||
-          contact.email?.toLowerCase().includes(q) ||
-          contact.phone?.toLowerCase().includes(q)
-        );
-      })
+    ? data
+        .filter((contact: any) => {
+          const q = search.toLowerCase();
+          return (
+            contact.name?.toLowerCase().includes(q) ||
+            contact.email?.toLowerCase().includes(q) ||
+            contact.phone?.toLowerCase().includes(q)
+          );
+        })
+        .sort((a: any, b: any) => {
+          const aVal = (a[sortField] || '').toLowerCase();
+          const bVal = (b[sortField] || '').toLowerCase();
+          if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+          if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+          return 0;
+        })
     : [];
 
   if (isLoading) return <div>Loading contacts...</div>;
@@ -144,9 +163,17 @@ const CRMContactList: React.FC<CRMContactListProps> = ({ isAdmin }) => {
         <thead>
           <tr>
             <th className="p-2"><input type="checkbox" checked={filteredData.length > 0 && selected.length === filteredData.length} onChange={handleSelectAll} /></th>
-            <th className="text-left p-2">Name</th>
-            {isAdmin && <th className="text-left p-2">Email</th>}
-            {isAdmin && <th className="text-left p-2">Phone</th>}
+            <th className="text-left p-2 cursor-pointer" onClick={() => toggleSort('name')}>Name {sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}</th>
+            {isAdmin && (
+              <th className="text-left p-2 cursor-pointer" onClick={() => toggleSort('email')}>
+                Email {sortField === 'email' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+            )}
+            {isAdmin && (
+              <th className="text-left p-2 cursor-pointer" onClick={() => toggleSort('phone')}>
+                Phone {sortField === 'phone' ? (sortOrder === 'asc' ? '▲' : '▼') : ''}
+              </th>
+            )}
             {isAdmin && <th className="text-left p-2">Address</th>}
             {!isAdmin && <th className="text-left p-2">Email</th>}
             {!isAdmin && <th className="text-left p-2">Phone</th>}

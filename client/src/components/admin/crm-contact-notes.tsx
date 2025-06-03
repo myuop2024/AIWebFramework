@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Spinner } from '../ui/spinner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface CRMContactNotesProps {
@@ -80,10 +81,10 @@ const CRMContactNotes: React.FC<CRMContactNotesProps> = ({ contactId, isAdmin })
         />
         <button
           type="submit"
-          className="bg-primary text-white px-3 py-2 rounded"
+          className="bg-primary text-white px-3 py-2 rounded flex items-center gap-2"
           disabled={mutation.isLoading || !note.trim()}
         >
-          {mutation.isLoading ? 'Adding...' : 'Add'}
+          {mutation.isLoading ? <Spinner className="w-4 h-4" /> : 'Add'}
         </button>
       </form>
     </div>
