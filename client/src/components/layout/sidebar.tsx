@@ -59,16 +59,17 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     }
   }, [location]);
 
-  // Navigation links
-  const allNavLinks = [
-    // Main Navigation (potentially for all authenticated users)
+  // --- MAIN NAVIGATION ---
+  const mainNavLinks = [
     { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> },
     { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> },
-    
-    // Analytics & Insights (with dropdown)
-    { 
-      path: "/analytics", 
-      label: "Analytics & Insights", 
+  ];
+
+  // --- ANALYTICS & INSIGHTS ---
+  const analyticsNavLinks = [
+    {
+      path: "/analytics",
+      label: "Analytics & Insights",
       icon: <Activity className="h-5 w-5" />,
       dropdown: true,
       dropdownItems: [
@@ -77,8 +78,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/smart-operations", label: "Smart Operations", icon: <Brain className="h-4 w-4" />, requiredPermission: "operations:view-smart" },
       ]
     },
-    
-    // Field Operations (with dropdown)
+  ];
+
+  // --- FIELD OPERATIONS ---
+  const fieldOpsNavLinks = [
     {
       path: "/polling-stations",
       label: "Field Operations",
@@ -94,14 +97,18 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/observer-route-planning", label: "Observer Routing", icon: <MapIcon className="h-4 w-4" />, requiredPermission: "routes:view-observer-geolocation" },
       ]
     },
-    
-    // Communication & Collaboration
+  ];
+
+  // --- COMMUNICATION ---
+  const communicationNavLinks = [
     { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> },
-    
-    // Learning & Development (with dropdown)
+  ];
+
+  // --- LEARNING & GAMIFICATION ---
+  const learningNavLinks = [
     {
       path: "/training",
-      label: "Learning & Development",
+      label: "Learning & Gamification",
       icon: <GraduationCap className="h-5 w-5" />,
       dropdown: true,
       dropdownItems: [
@@ -109,12 +116,14 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/gamification", label: "Achievements & Rewards", icon: <Trophy className="h-4 w-4" /> },
       ]
     },
-    
-    // Project Management (with existing dropdown)
-    { 
-      path: "/project-management", 
-      label: "Project Management", 
-      icon: <Kanban className="h-5 w-5" />, 
+  ];
+
+  // --- PROJECT MANAGEMENT ---
+  const projectNavLinks = [
+    {
+      path: "/project-management",
+      label: "Project Management",
+      icon: <Kanban className="h-5 w-5" />,
       requiredPermission: "projects:view",
       dropdown: true,
       dropdownItems: [
@@ -127,11 +136,13 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/project-management/milestones", label: "Milestones", requiredPermission: "projects:view-milestones" },
       ]
     },
-    
-    // Settings & Preferences (with dropdown)
+  ];
+
+  // --- ADVANCED & ACCESSIBILITY ---
+  const advancedNavLinks = [
     {
       path: "/settings",
-      label: "Settings",
+      label: "Settings & Advanced",
       icon: <Settings className="h-5 w-5" />,
       dropdown: true,
       dropdownItems: [
@@ -139,13 +150,15 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-4 w-4" />, requiredPermission: "system:access-advanced-features" },
       ]
     },
+  ];
 
-    // Admin Section Links
-    { 
-      category: "Administration", 
-      path: "/admin", 
-      label: "Admin Dashboard", 
-      icon: <PanelTop className="h-5 w-5" />, 
+  // --- ADMINISTRATION ---
+  const adminNavLinks = [
+    {
+      category: "Administration",
+      path: "/admin",
+      label: "Admin Dashboard",
+      icon: <PanelTop className="h-5 w-5" />,
       requiredPermission: "admin:access-panel",
       dropdown: true,
       dropdownItems: [
@@ -155,12 +168,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/admin/analytics", label: "Advanced Analytics", icon: <Zap className="h-4 w-4" /> },
       ]
     },
-    
-    { 
-      category: "Administration", 
-      path: "/admin/users", 
-      label: "User Management", 
-      icon: <Users className="h-5 w-5" />, 
+    {
+      category: "Administration",
+      path: "/admin/users",
+      label: "User Management",
+      icon: <Users className="h-5 w-5" />,
       requiredPermission: "users:view",
       dropdown: true,
       dropdownItems: [
@@ -169,12 +181,11 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/admin/permissions", label: "Permissions", icon: <Shield className="h-4 w-4" />, requiredPermission: "roles:view" },
       ]
     },
-    
-    { 
-      category: "Administration", 
-      path: "/admin/content", 
-      label: "Content Management", 
-      icon: <FileEdit className="h-5 w-5" />, 
+    {
+      category: "Administration",
+      path: "/admin/content",
+      label: "Content Management",
+      icon: <FileEdit className="h-5 w-5" />,
       requiredPermission: "content:manage",
       dropdown: true,
       dropdownItems: [
@@ -183,19 +194,40 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
         { path: "/admin/news", label: "News Management", icon: <FileText className="h-4 w-4" />, requiredPermission: "news:manage" },
       ]
     },
+  ];
 
-    // Supervisor Section Links
+  // --- SUPERVISION ---
+  const supervisionNavLinks = [
     { category: "Supervision", path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5" />, requiredPermission: "supervisor-tasks:view-team" },
     { category: "Supervision", path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5" />, requiredPermission: "supervisor-tasks:view-assignments" },
     { category: "Supervision", path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5" />, requiredPermission: "supervisor-tasks:approve-report" },
     { category: "Supervision", path: "/supervisor/schedule-meeting", label: "Schedule Meeting", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "supervisor-tasks:schedule-meetings" },
+  ];
 
-    // Roving Observer Section Links
+  // --- ROVING OBSERVER ---
+  const rovingNavLinks = [
     { category: "Roving Observer", path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "roving-observer:view-schedule" },
     { category: "Roving Observer", path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5" />, requiredPermission: "roving-observer:view-area-reports" },
+  ];
 
-    // Support Links (Common)
+  // --- SUPPORT ---
+  const supportNavLinks = [
     { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5" /> },
+  ];
+
+  // Combine all groups for rendering
+  const allNavLinks = [
+    ...mainNavLinks,
+    ...analyticsNavLinks,
+    ...fieldOpsNavLinks,
+    ...communicationNavLinks,
+    ...learningNavLinks,
+    ...projectNavLinks,
+    ...advancedNavLinks,
+    ...adminNavLinks,
+    ...supervisionNavLinks,
+    ...rovingNavLinks,
+    ...supportNavLinks,
   ];
 
   const handleLogout = async () => {
@@ -223,20 +255,20 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     
     // Regular link without dropdown
     return (
-      <Link 
-        key={link.path}
-        href={link.path}
-        className={cn(
-          "flex items-center py-3 px-4 mb-1 rounded-lg transition-all duration-200 touch-target",
-          isActive
-            ? 'bg-primary/10 text-primary border-r-2 border-primary' 
-            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-        )}
-      >
-        <span className="mr-3">{link.icon}</span>
-        <span className="font-medium">{link.label}</span>
-      </Link>
-    );
+    <Link 
+      key={link.path}
+      href={link.path}
+      className={cn(
+        "flex items-center py-3 px-4 mb-1 rounded-lg transition-all duration-200 touch-target",
+        isActive
+          ? 'bg-primary/10 text-primary border-r-2 border-primary' 
+          : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+      )}
+    >
+      <span className="mr-3">{link.icon}</span>
+      <span className="font-medium">{link.label}</span>
+    </Link>
+  );
   };
 
   const renderDropdownNavLink = (link: any, isActive: boolean, dropdownItems: any[]) => (
@@ -328,37 +360,83 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           
           {/* Navigation Links */}
           <nav className="space-y-1">
-            {/* Main Links */}
+            {/* MAIN */}
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-4">Main</p>
-            {allNavLinks.filter(link => !link.category && (!link.requiredPermission || hasPermission(link.requiredPermission))).map((link) => {
+            {mainNavLinks.map(link => {
               const isActive = location === link.path || location.startsWith(link.path + '/');
               return renderNavLink(link, isActive);
             })}
 
-            {/* Dynamically Rendered Sections based on Permissions */}
-            {['Administration', 'Supervision', 'Roving Observer'].map(categoryName => {
-              const categoryLinks = allNavLinks.filter(link => link.category === categoryName && (!link.requiredPermission || hasPermission(link.requiredPermission)));
-              if (!permissionsLoading && categoryLinks.length > 0) {
-                return (
-                  <div key={categoryName}>
-                    <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">{categoryName}</p>
-                    {categoryLinks.map((link) => {
-                      const isActive = location === link.path || location.startsWith(link.path + '/');
-                      return renderNavLink(link, isActive);
-                    })}
-                  </div>
-                );
-              }
-              return null;
-            })}
-            
-            {/* Support Section (Common) */}
-            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Support</p>
-            {allNavLinks.filter(link => link.path === "/faq").map((link) => {
+            {/* ANALYTICS & INSIGHTS */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Analytics & Insights</p>
+            {analyticsNavLinks.map(link => {
               const isActive = location === link.path || location.startsWith(link.path + '/');
               return renderNavLink(link, isActive);
             })}
-            
+
+            {/* FIELD OPERATIONS */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Field Operations</p>
+            {fieldOpsNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* COMMUNICATION */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Communication</p>
+            {communicationNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* LEARNING & GAMIFICATION */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Learning & Gamification</p>
+            {learningNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* PROJECT MANAGEMENT */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Project Management</p>
+            {projectNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* SETTINGS & ADVANCED */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Settings & Advanced</p>
+            {advancedNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* ADMINISTRATION */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Administration</p>
+            {adminNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* SUPERVISION */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Supervision</p>
+            {supervisionNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* ROVING OBSERVER */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Roving Observer</p>
+            {rovingNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
+            {/* SUPPORT */}
+            <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 mt-6 px-4">Support</p>
+            {supportNavLinks.map(link => {
+              const isActive = location === link.path || location.startsWith(link.path + '/');
+              return renderNavLink(link, isActive);
+            })}
+
             {/* Logout */}
             <button
               onClick={handleLogout}

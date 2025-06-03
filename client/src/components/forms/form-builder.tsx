@@ -240,9 +240,9 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
               <FormItem style={{ position: 'relative' }}>
                 <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={placeholder}
-                    {...field}
+                  <Input 
+                    placeholder={placeholder} 
+                    {...field} 
                     disabled={readOnly}
                     ref={el => inputRefs.current[fieldName] = el}
                     autoComplete="off"
@@ -306,10 +306,10 @@ export function FormBuilder({ template, onSubmit, readOnly = false }: FormBuilde
               <FormItem style={{ position: 'relative' }}>
                 <FormLabel>{label} {required && <span className="text-red-500">*</span>}</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    placeholder={placeholder}
-                    {...field}
+                  <Input 
+                    type="number" 
+                    placeholder={placeholder} 
+                    {...field} 
                     disabled={readOnly}
                     ref={el => inputRefs.current[fieldName] = el}
                     autoComplete="off"

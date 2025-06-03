@@ -674,38 +674,38 @@ export default function IncidentAnalysis() {
                   {filteredReports.slice(0, 10).map((report) => (
                     <React.Fragment key={report.id}>
                       <tr className="border-b">
-                        <td className="px-4 py-3 text-sm">{report.id}</td>
-                        <td className="px-4 py-3 text-sm">{report.stationName || `Station ${report.stationId}`}</td>
-                        <td className="px-4 py-3 text-sm">{report.category || 'Uncategorized'}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <Badge
-                            className="font-normal"
-                            variant={
-                              report.severity === 'critical' ? 'destructive' :
-                              report.severity === 'high' ? 'default' :
-                              report.severity === 'medium' ? 'secondary' :
-                              'outline'
-                            }
-                          >
-                            {report.severity || 'Unspecified'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <Badge 
-                            variant="outline" 
-                            className={
-                              report.status === 'resolved' ? 'text-green-600 border-green-300 bg-green-50' :
-                              report.status === 'in_progress' ? 'text-blue-600 border-blue-300 bg-blue-50' :
-                              'text-amber-600 border-amber-300 bg-amber-50'
-                            }
-                          >
-                            {report.status}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {new Date(report.submittedAt).toLocaleDateString()}
-                        </td>
-                      </tr>
+                      <td className="px-4 py-3 text-sm">{report.id}</td>
+                      <td className="px-4 py-3 text-sm">{report.stationName || `Station ${report.stationId}`}</td>
+                      <td className="px-4 py-3 text-sm">{report.category || 'Uncategorized'}</td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge
+                          className="font-normal"
+                          variant={
+                            report.severity === 'critical' ? 'destructive' :
+                            report.severity === 'high' ? 'default' :
+                            report.severity === 'medium' ? 'secondary' :
+                            'outline'
+                          }
+                        >
+                          {report.severity || 'Unspecified'}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <Badge 
+                          variant="outline" 
+                          className={
+                            report.status === 'resolved' ? 'text-green-600 border-green-300 bg-green-50' :
+                            report.status === 'in_progress' ? 'text-blue-600 border-blue-300 bg-blue-50' :
+                            'text-amber-600 border-amber-300 bg-amber-50'
+                          }
+                        >
+                          {report.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(report.submittedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
                       {/* Escalation Matrix Row */}
                       <tr className="border-b bg-gray-50">
                         <td colSpan={6} className="px-4 py-2">

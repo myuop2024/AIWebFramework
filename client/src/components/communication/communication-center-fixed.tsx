@@ -276,11 +276,11 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                             <div className="flex items-center justify-between">
                               <p className="font-medium truncate">{conversation.username}</p>
                               <div className="flex items-center gap-2">
-                                {conversation.unreadCount > 0 && (
-                                  <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                                    {conversation.unreadCount}
-                                  </Badge>
-                                )}
+                              {conversation.unreadCount > 0 && (
+                                <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                                  {conversation.unreadCount}
+                                </Badge>
+                              )}
                                 <Badge variant="outline" className="text-xs">
                                   {languageLabels[userLanguages[conversation.userId] || 'en']}
                                 </Badge>
