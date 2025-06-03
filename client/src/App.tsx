@@ -17,6 +17,7 @@ import Training from "@/pages/training";
 import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
 import Chat from "@/pages/chat";
+import NewsPage from "@/pages/news";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -46,6 +47,7 @@ import ProjectEdit from "@/pages/project-management/edit";
 import ProjectNew from "@/pages/project-management/new";
 import GamificationPage from "@/pages/gamification";
 import SecurityDashboard from "@/pages/security-dashboard";
+import AdminNewsPage from "@/pages/admin/news";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute, RoleProtectedRoute } from "@/lib/protected-route";
 import ErrorBoundary from "@/components/error/error-boundary";
@@ -83,6 +85,7 @@ function Router() {
       <ProtectedRoute path="/assignments" component={AssignmentsPage} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
       <ProtectedRoute path="/chat" component={Chat} />
+      <ProtectedRoute path="/news" component={NewsPage} />
       {/* Redirect communications route to /chat to avoid duplicate routes */}
       <Route path="/communications" component={() => <Redirect to="/chat" />} />
       <ProtectedRoute path="/gamification" component={GamificationPage} />
@@ -111,6 +114,7 @@ function Router() {
       <RoleProtectedRoute path="/admin/user-imports" component={UserImportsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/analytics" component={Analytics} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/settings" component={AdminSettings} allowedRoles={["admin", "director"]} />
+      <RoleProtectedRoute path="/admin/news" component={AdminNewsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/permissions" component={PermissionManagement} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/error-logs" component={ErrorLogsPage} allowedRoles={["admin", "director"]} />
       <RoleProtectedRoute path="/admin/security" component={SecurityDashboard} allowedRoles={["admin", "director"]} />
