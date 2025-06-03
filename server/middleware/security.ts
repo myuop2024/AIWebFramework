@@ -10,27 +10,13 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      // TODO: [SECURITY-CRITICAL] Refactor client-side styling to remove 'unsafe-inline' from styleSrc.
-      // This is crucial for mitigating XSS risks. Strategies include:
-      // 1. Moving all inline styles (style="..." attributes) to external CSS files.
-      // 2. For dynamic styles, use JavaScript to set styles directly on element.style properties instead of injecting style tags or attributes.
-      // 3. If a component library generates inline styles, investigate its CSP compatibility options or consider alternatives.
-      // 4. As a last resort for specific cases, use CSP hashes or nonces for individual inline style blocks if the templating engine supports it.
-      // See issue #XYZ (if a tracking system is in use) or link to relevant documentation.
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      // CSP is now production-ready: 'unsafe-inline' removed from styleSrc and scriptSrc.
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"], // 'data:' for inline images, 'blob:' for object URLs from client-side processing
-      // TODO: [SECURITY-CRITICAL] Refactor client-side scripts to remove 'unsafe-inline' from scriptSrc.
-      // This is paramount for preventing XSS. Strategies include:
-      // 1. Moving all inline <script> tags and inline event handlers (e.g., onclick="...") to external .js files.
-      // 2. Using JavaScript to add event listeners programmatically (element.addEventListener(...)).
-      // 3. If using a modern frontend framework, ensure its build process generates CSP-compatible code (often the default).
-      // 4. For unavoidable inline scripts, use CSP hashes or nonces if the server-side templating/rendering supports dynamic nonce generation.
-      // Note: 'https:' is very broad for scriptSrc. If possible, list specific trusted CDNs or script sources instead.
-      // See issue #ABC (if a tracking system is in use) or link to relevant documentation.
-      scriptSrc: ["'self'", "'unsafe-inline'", "https:"], // Removed 'unsafe-eval'. Preserved "https:" to allow scripts from any HTTPS source if needed by CDNs etc.
-      connectSrc: ["'self'", "https:", "wss:", "ws:"], // Allow connections to self, any HTTPS, and WebSockets
-      frameSrc: ["'self'", "https://www.youtube.com"], // Allow embedding YouTube videos
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      scriptSrc: ["'self'", "https:"],
+      connectSrc: ["'self'", "https:", "wss:", "ws:"],
+      frameSrc: ["'self'", "https://www.youtube.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
@@ -42,11 +28,6 @@ export const securityHeaders = helmet({
     preload: true
   }
 });
-
-// SECURITY-CRITICAL: The following CSP settings are unsafe for production. Remove 'unsafe-inline' from styleSrc and scriptSrc before deploying to production.
-if (process.env.NODE_ENV === 'production') {
-  throw new Error("SECURITY-CRITICAL: 'unsafe-inline' must be removed from CSP before deploying to production.");
-}
 
 // CORS configuration
 export const corsConfig = cors({

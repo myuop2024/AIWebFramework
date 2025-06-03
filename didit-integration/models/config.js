@@ -56,18 +56,17 @@ const getEncryptionKey = () => {
   const key = process.env.DIDIT_CONFIG_ENCRYPTION_KEY;
   if (!key) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('CRITICAL: DIDIT_CONFIG_ENCRYPTION_KEY environment variable is not set in production.');
+      throw new Error('CRITICAL: DIDIT_CONFIG_ENCRYPTION_KEY environment variable is not set in production. It must be a 32-byte (256-bit) string.');
     } else {
-      // Fallback to a hardcoded key ONLY in non-production environments and log a very loud warning.
-      // This is still insecure but prevents complete breakage in a local dev setup if the env var is forgotten.
-      // A truly secure approach would be to require it always, or use a dev-specific fixed key known not to be secure.
       logger.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY is not set. Using a default, insecure key for development. DO NOT USE THIS IN PRODUCTION.');
-      return 'default_insecure_dev_key_32bytes!'; // Ensure this is 32 bytes for AES-256 if used directly, though CryptoJS handles various lengths.
+      return 'default_insecure_dev_key_32bytes!';
     }
   }
-  if (key.length < 32 && process.env.NODE_ENV === 'production') {
-     // Basic check, though CryptoJS might derive a key. For production, enforce strong key practices.
-     logger.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY should ideally be a 32-byte (256-bit) string for maximum security.');
+  if (process.env.NODE_ENV === 'production' && key.length !== 32) {
+    throw new Error('CRITICAL: DIDIT_CONFIG_ENCRYPTION_KEY must be exactly 32 bytes (256 bits) in production. Current length: ' + key.length);
+  }
+  if (process.env.NODE_ENV !== 'production' && key.length !== 32) {
+    logger.warn('WARNING: DIDIT_CONFIG_ENCRYPTION_KEY should be exactly 32 bytes (256 bits) for maximum security. Current length: ' + key.length);
   }
   return key;
 };

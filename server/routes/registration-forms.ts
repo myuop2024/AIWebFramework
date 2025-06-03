@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -207,11 +208,30 @@ router.post('/:id/activate', async (req, res) => {
 // DELETE a registration form
 router.delete('/:id', async (req, res) => {
   try {
-    // In a real system, you might want to prevent deletion of forms that are currently active
-    // or have been used for registrations, and instead implement a soft-delete mechanism.
-    res.status(501).json({ message: 'Deletion not implemented' });
+    const formId = parseInt(req.params.id);
+    if (isNaN(formId)) {
+      return res.status(400).json({ message: 'Invalid form ID' });
+    }
+    // Get the form
+    const form = await storage.getRegistrationForm(formId);
+    if (!form) {
+      return res.status(404).json({ message: 'Registration form not found' });
+    }
+    if (form.isActive) {
+      return res.status(400).json({ message: 'Cannot delete an active registration form. Please deactivate it first.' });
+    }
+    // Optionally: check if form has been used for registrations and prevent deletion if so
+    // const used = await storage.hasRegistrationsForForm(formId);
+    // if (used) {
+    //   return res.status(400).json({ message: 'Cannot delete a form that has been used for registrations.' });
+    // }
+    const deleted = await storage.deleteRegistrationForm(formId);
+    if (!deleted) {
+      return res.status(500).json({ message: 'Failed to delete registration form' });
+    }
+    res.status(204).send();
   } catch (error) {
-    console.error('Error deleting registration form:', error);
+    logger.error('Error deleting registration form:', error);
     res.status(500).json({ message: 'Failed to delete registration form' });
   }
 });
