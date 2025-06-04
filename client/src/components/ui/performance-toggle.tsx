@@ -13,8 +13,8 @@ interface PerformanceSettings {
   prefetchDisabled: boolean;
 }
 
-export function PerformanceToggle() {
-  const [isOpen, setIsOpen] = useState(false);
+// Custom hook to manage performance settings
+export function usePerformanceSettings() {
   const [settings, setSettings] = useState<PerformanceSettings>({
     reducedAnimations: false,
     limitBackgroundTasks: false,
@@ -33,7 +33,7 @@ export function PerformanceToggle() {
         console.error('Failed to parse performance settings:', error);
       }
     }
-  }, []); // Empty dependency array - only run on mount
+  }, []);
 
   // Save settings to localStorage when they change
   useEffect(() => {
@@ -45,7 +45,7 @@ export function PerformanceToggle() {
     } else {
       document.documentElement.classList.remove('reduce-motion');
     }
-  }, [settings]); // Only depend on settings
+  }, [settings]);
 
   const updateSetting = (key: keyof PerformanceSettings, value: boolean) => {
     setSettings(prev => ({
@@ -53,6 +53,15 @@ export function PerformanceToggle() {
       [key]: value
     }));
   };
+
+  return { settings, updateSetting };
+}
+
+export function PerformanceToggle() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { settings, updateSetting } = usePerformanceSettings();
+
+  
 
   const isPerformanceModeActive = Object.values(settings).some(Boolean);
 
