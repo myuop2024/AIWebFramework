@@ -383,9 +383,7 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
                   filteredNotifications.length === 0 ? (
                     <DropdownMenuItem className="p-4 text-center text-gray-500">No notifications</DropdownMenuItem>
                   ) : (
-                    pagedNotifications = filteredNotifications.slice(0, notifPage * PAGE_SIZE),
-                    hasMore = filteredNotifications.length > pagedNotifications.length,
-                    pagedNotifications.map((notif) => {
+                    filteredNotifications.slice(0, notifPage * PAGE_SIZE).map((notif) => {
                       const icon = NOTIF_TYPE_ICON[notif.type] || NOTIF_TYPE_ICON.default;
                       return (
                         <DropdownMenuItem key={notif.id} className="p-4 flex flex-col space-y-1 group">
