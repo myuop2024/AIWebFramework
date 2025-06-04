@@ -67,6 +67,8 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("users");
   const [notifications, setNotifications] = useState<any[]>([]);
   const [broadcastAll, setBroadcastAll] = useState(true);
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -109,7 +111,7 @@ export default function Admin() {
   const queryClient = useQueryClient();
 
   // Fetch notifications for the current user
-  const { data: notifications = [], refetch } = useQuery({
+  const { data: userNotifications = [], refetch } = useQuery({
     queryKey: ["/api/notifications"],
     queryFn: async () => {
       const res = await fetch("/api/notifications");
@@ -870,11 +872,21 @@ export default function Admin() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="notification-title">Notification Title</Label>
-                  <Input id="notification-title" placeholder="Enter notification title" />
+                  <Input 
+                    id="notification-title" 
+                    placeholder="Enter notification title"
+                    value={notificationTitle}
+                    onChange={(e) => setNotificationTitle(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notification-message">Message</Label>
-                  <Input id="notification-message" placeholder="Enter message" />
+                  <Input 
+                    id="notification-message" 
+                    placeholder="Enter message"
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                  />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch id="urgent" />
@@ -1659,7 +1671,7 @@ export default function Admin() {
         content={modalContent}
       />
 
-      <TopNavigation toggleSidebar={toggleSidebar} notifications={notifications} />
+      <TopNavigation toggleSidebar={toggleSidebar} notifications={userNotifications} />
     </AdminLayout>
   );
 }
