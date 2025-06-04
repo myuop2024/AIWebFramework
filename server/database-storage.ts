@@ -798,19 +798,8 @@ export class DatabaseStorage implements IStorage {
       // 'success' array will be empty as transaction is rolled back.
       logger.error('Bulk user import transaction failed and was rolled back.', { errorMessage: transactionError.message, stack: transactionError.stack });
       // Ensure success array is empty on transaction failure, as all operations are rolled back.
-      // The failures array will contain the individual errors that led to the rollback.
-      // No need to clear success here as it's scoped outside the transaction block's modifications if tx fails.
-      // However, if the transaction fails, the 'success' array as seen by the caller should indeed be empty.
-      // The current structure might return partially filled success if other non-tx errors occur.
-      // For a full rollback, the success array should effectively be considered empty.
-      // To be absolutely clear, we can reset it, though Drizzle's transaction should ensure this.
+      // The failures array will contain the individual errors.
       if (failures.length > 0 && success.length > 0 && failures.length + success.length === users.length ) {
-         // This implies some succeeded before a failure that rolled back the transaction.
-         // The 'success' array should represent the final state.
-         // If transaction rolls back, all are failures effectively.
-         // However, the current logic collects successes then rolls back.
-         // The most straightforward is to ensure failures are accurate, and success is what committed.
-         // If tx.rollback() is called, success should be empty.
       }
        // If the transaction itself fails (e.g. connection error, or error rethrown from inner catch),
        // all operations within it are rolled back. The `failures` array will contain the errors
@@ -923,7 +912,8 @@ export class DatabaseStorage implements IStorage {
       // If data.permissions is explicitly null, it will be set to null.
       // If data.permissions is undefined, the field won't be updated unless it's part of the spread.
       // To be safe, explicitly handle permissions if it's part of `data`.
-      if (data.permissions !== undefined) {
+      if```python
+ (data.permissions !== undefined) {
         updateData.permissions = data.permissions;
       }
 
@@ -1049,7 +1039,7 @@ export class DatabaseStorage implements IStorage {
   async getAllGroups(): Promise<(Group & { members?: User[] })[]> {
     try {
       const allGroups = await db.select().from(groups).orderBy(asc(groups.name));
-      
+
       // Get members for each group
       const groupsWithMembers = await Promise.all(
         allGroups.map(async (group) => {
@@ -1057,7 +1047,7 @@ export class DatabaseStorage implements IStorage {
           return { ...group, members };
         })
       );
-      
+
       return groupsWithMembers;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1128,7 +1118,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(groupMemberships)
         .where(and(eq(groupMemberships.groupId, groupId), eq(groupMemberships.userId, userId)));
-      
+
       if (existing) {
         throw new Error(`User ${userId} is already a member of group ${groupId}`);
       }
@@ -1159,7 +1149,7 @@ export class DatabaseStorage implements IStorage {
   async addGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<GroupMembership[]> {
     try {
       const memberships: GroupMembership[] = [];
-      
+
       for (const userId of userIds) {
         try {
           const membership = await this.addGroupMember(groupId, userId, addedBy);
@@ -1169,7 +1159,7 @@ export class DatabaseStorage implements IStorage {
           logger.warn(`Failed to add user ${userId} to group ${groupId}: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
-      
+
       return memberships;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1566,13 +1556,13 @@ export class DatabaseStorage implements IStorage {
         userId,
         achievementId
       }).returning();
-      
+
       // Update user points
       const achievement = await this.getAchievement(achievementId);
       if (achievement) {
         await this.updateUserPoints(userId, achievement.points);
       }
-      
+
       logger.info(`Awarded achievement ${achievementId} to user ${userId}`);
       return awarded;
     } catch (error) {
@@ -1633,7 +1623,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserPoints(userId: number, points: number): Promise<UserGameProfile | undefined> {
     try {
       let profile = await this.getUserGameProfile(userId);
-      
+
       if (!profile) {
         // Create initial profile if it doesn't exist
         profile = await this.createUserGameProfile({ userId });
@@ -1641,17 +1631,17 @@ export class DatabaseStorage implements IStorage {
 
       const newTotalPoints = profile.totalPoints + points;
       const newCurrentLevelPoints = profile.currentLevelPoints + points;
-      
+
       // Calculate level progression (100 points per level)
       const pointsPerLevel = 100;
       let newLevel = profile.level;
       let remainingPoints = newCurrentLevelPoints;
-      
+
       while (remainingPoints >= pointsPerLevel) {
         remainingPoints -= pointsPerLevel;
         newLevel++;
       }
-      
+
       const pointsToNextLevel = pointsPerLevel - remainingPoints;
 
       const [updated] = await db.update(userGameProfile).set({
@@ -1677,21 +1667,21 @@ export class DatabaseStorage implements IStorage {
   async updateUserStreak(userId: number): Promise<UserGameProfile | undefined> {
     try {
       let profile = await this.getUserGameProfile(userId);
-      
+
       if (!profile) {
         profile = await this.createUserGameProfile({ userId });
       }
 
       const today = new Date().toISOString().split('T')[0];
       const lastActiveDate = profile.lastActiveDate?.toString();
-      
+
       let newStreak = profile.streak;
-      
+
       if (!lastActiveDate || lastActiveDate !== today) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
-        
+
         if (lastActiveDate === yesterdayStr) {
           // Consecutive day, increase streak
           newStreak++;
@@ -1699,9 +1689,9 @@ export class DatabaseStorage implements IStorage {
           // Streak broken, reset to 1
           newStreak = 1;
         }
-        
+
         const newLongestStreak = Math.max(profile.longestStreak, newStreak);
-        
+
         const [updated] = await db.update(userGameProfile).set({
           streak: newStreak,
           longestStreak: newLongestStreak,
@@ -1711,7 +1701,7 @@ export class DatabaseStorage implements IStorage {
 
         return updated;
       }
-      
+
       return profile;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1753,6 +1743,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLeaderboard(leaderboard: InsertLeaderboard): Promise<Leaderboard> {
+```python
     try {
       const [created] = await db.insert(leaderboards).values(leaderboard).returning();
       logger.info(`Created leaderboard: ${created.name}`);
@@ -1830,7 +1821,7 @@ export class DatabaseStorage implements IStorage {
   async updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress> {
     try {
       const existing = await this.getAchievementProgress(userId, achievementId);
-      
+
       if (existing) {
         const [updated] = await db.update(achievementProgress).set({
           currentProgress: progress,
@@ -1842,7 +1833,7 @@ export class DatabaseStorage implements IStorage {
         // Get achievement to set target progress
         const achievement = await this.getAchievement(achievementId);
         const targetProgress = achievement?.requirements?.target || 1;
-        
+
         const [created] = await db.insert(achievementProgress).values({
           userId,
           achievementId,
@@ -1866,6 +1857,44 @@ export class DatabaseStorage implements IStorage {
       const err = error instanceof Error ? error : new Error(String(error));
       logger.error(`Error getting achievement progress for user ${userId}: ${err.message}`, err);
       throw err;
+    }
+  }
+
+  async getAllNews(): Promise<any[]> {
+    try {
+      const result = await db.select().from(newsEntries).orderBy(desc(newsEntries.createdAt));
+      return result;
+    } catch (error) {
+      logger.error('Error fetching news:', error);
+      throw error;
+    }
+  }
+
+  async getLatestNews(limit: number = 5): Promise<any[]> {
+    try {
+      const result = await db
+        .select()
+        .from(newsEntries)
+        .orderBy(desc(newsEntries.createdAt))
+        .limit(limit);
+      return result;
+    } catch (error) {
+      logger.error('Error fetching latest news:', error);
+      throw error;
+    }
+  }
+
+  async getUpcomingEvents(): Promise<any[]> {
+    try {
+      const result = await db
+        .select()
+        .from(events)
+        .where(gte(events.eventDate, new Date()))
+        .orderBy(asc(events.eventDate));
+      return result;
+    } catch (error) {
+      logger.error('Error fetching upcoming events:', error);
+      throw error;
     }
   }
 }

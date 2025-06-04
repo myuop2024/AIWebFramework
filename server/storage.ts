@@ -125,7 +125,7 @@ export interface IStorage {
   getAllGroups(): Promise<(Group & { members?: User[] })[]>;
   updateGroup(id: number, data: Partial<Omit<Group, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>>): Promise<Group | undefined>;
   deleteGroup(id: number): Promise<boolean>;
-  
+
   // Group membership operations
   addGroupMember(groupId: number, userId: number, addedBy?: number): Promise<GroupMembership>;
   addGroupMembers(groupId: number, userIds: number[], addedBy?: number): Promise<GroupMembership[]>;

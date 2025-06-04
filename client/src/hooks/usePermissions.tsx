@@ -225,4 +225,4 @@ export const PERMISSIONS = {
   // Roving observer
   ROVING_SCHEDULE: 'roving-observer:view-schedule',
   ROVING_REPORTS: 'roving-observer:view-area-reports'
-} as const; 
+} as const;

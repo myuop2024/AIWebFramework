@@ -1415,8 +1415,13 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
 
   app.get('/api/events/upcoming', ensureAuthenticated, async (req, res) => {
     try {
-      const events = await storage.getUpcomingEvents();
-      res.status(200).json(events || []);
+      // Check if method exists before calling
+      if (typeof storage.getUpcomingEvents === 'function') {
+        const events = await storage.getUpcomingEvents();
+        res.status(200).json(events || []);
+      } else {
+        res.status(200).json([]);
+      }
     } catch (error) {
       logger.error('Error fetching upcoming events:', error instanceof Error ? error : new Error(String(error)));
       res.status(200).json([]); // Return empty array instead of error
@@ -1534,8 +1539,13 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   app.get('/api/news/latest', async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
-      const news = await storage.getLatestNews(limit);
-      res.status(200).json(news || []);
+      // Check if method exists before calling
+      if (typeof storage.getLatestNews === 'function') {
+        const news = await storage.getLatestNews(limit);
+        res.status(200).json(news || []);
+      } else {
+        res.status(200).json([]);
+      }
     } catch (error) {
       logger.error('Error fetching latest news:', error instanceof Error ? error : new Error(String(error)));
       res.status(200).json([]); // Return empty array instead of error

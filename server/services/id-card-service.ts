@@ -10,7 +10,7 @@ import type { User, UserProfile, IdCardTemplate } from '@shared/schema';
 import { Readable } from 'stream';
 import logger from '../utils/logger';
 
-  
+
 
 interface CardElement {
   type: 'text' | 'image' | 'qrcode' | 'barcode';
@@ -698,9 +698,10 @@ export class IdCardService {
   generateVerificationHash(data: string): string {
     return crypto.createHash('sha256').update(data).digest('hex');
   }
-  
+
   private async registerFonts() {
     try {
+      // Check if font files exist before registering
       const fontPath = path.join(process.cwd(), 'assets', 'fonts');
 
       // Check if font files exist before registering
