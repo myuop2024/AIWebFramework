@@ -3,45 +3,43 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Zap, ZapOff } from 'lucide-react';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { Switch } from './switch';
-import { Label } from './label';
-import { Separator } from './separator';
 
 interface PerformanceSettings {
   reducedAnimations: boolean;
-  limitBackgroundTasks: boolean;
-  optimizeImages: boolean;
-  prefetchDisabled: boolean;
+  reducedMotion: boolean;
+  highContrast: boolean;
+  reducedData: boolean;
+  enable3D: boolean;
 }
 
-// Custom hook to manage performance settings
-export function usePerformanceSettings() {
-  const [settings, setSettings] = useState<PerformanceSettings>({
-    reducedAnimations: false,
-    limitBackgroundTasks: false,
-    optimizeImages: true,
-    prefetchDisabled: false,
+const defaultSettings: PerformanceSettings = {
+  reducedAnimations: false,
+  reducedMotion: false,
+  highContrast: false,
+  reducedData: false,
+  enable3D: true,
+};
+
+function usePerformanceSettings() {
+  const [settings, setSettings] = useState<PerformanceSettings>(() => {
+    try {
+      const saved = localStorage.getItem('performanceSettings');
+      return saved ? JSON.parse(saved) : defaultSettings;
+    } catch {
+      return defaultSettings;
+    }
   });
 
-  // Load settings from localStorage on mount
+  // Save to localStorage whenever settings change
   useEffect(() => {
-    const savedSettings = localStorage.getItem('performanceSettings');
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        setSettings(parsed);
-      } catch (error) {
-        console.error('Failed to parse performance settings:', error);
-      }
+    try {
+      localStorage.setItem('performanceSettings', JSON.stringify(settings));
+    } catch (error) {
+      console.warn('Failed to save performance settings to localStorage:', error);
     }
-  }, []);
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('performanceSettings', JSON.stringify(settings));
   }, [settings]);
 
-  // Apply reduced animations setting
+  // Apply CSS class for reduced animations
   useEffect(() => {
     if (settings.reducedAnimations) {
       document.documentElement.classList.add('reduce-motion');
@@ -49,6 +47,15 @@ export function usePerformanceSettings() {
       document.documentElement.classList.remove('reduce-motion');
     }
   }, [settings.reducedAnimations]);
+
+  // Apply CSS class for high contrast
+  useEffect(() => {
+    if (settings.highContrast) {
+      document.documentElement.classList.add('high-contrast');
+    } else {
+      document.documentElement.classList.remove('high-contrast');
+    }
+  }, [settings.highContrast]);
 
   const updateSetting = useCallback((key: keyof PerformanceSettings, value: boolean) => {
     setSettings(prev => ({
@@ -59,6 +66,8 @@ export function usePerformanceSettings() {
 
   return { settings, updateSetting };
 }
+
+export { usePerformanceSettings };
 
 export function PerformanceToggle() {
   const [isOpen, setIsOpen] = useState(false);
@@ -71,76 +80,120 @@ export function PerformanceToggle() {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="h-8 w-8"
+          size="sm"
+          className={`relative ${isPerformanceModeActive ? 'text-yellow-600' : 'text-gray-600'}`}
           title="Performance Settings"
         >
           {isPerformanceModeActive ? (
-            <Zap className="h-4 w-4 text-yellow-500" />
+            <ZapOff className="h-4 w-4" />
           ) : (
-            <Settings className="h-4 w-4" />
+            <Zap className="h-4 w-4" />
+          )}
+          {isPerformanceModeActive && (
+            <span className="absolute -top-1 -right-1 h-2 w-2 bg-yellow-500 rounded-full" />
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <ZapOff className="h-4 w-4" />
-            <h3 className="font-medium">Performance Settings</h3>
+          <div className="space-y-2">
+            <h4 className="font-medium leading-none">Performance Settings</h4>
+            <p className="text-sm text-muted-foreground">
+              Adjust settings to optimize performance on your device
+            </p>
           </div>
-
-          <Separator />
-
+          
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="reducedAnimations" className="text-sm">
-                Reduce Animations
-              </Label>
-              <Switch
-                id="reducedAnimations"
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">Reduced Animations</label>
+                <p className="text-xs text-muted-foreground">
+                  Disable smooth transitions and animations
+                </p>
+              </div>
+              <input
+                type="checkbox"
                 checked={settings.reducedAnimations}
-                onCheckedChange={(checked) => updateSetting('reducedAnimations', checked)}
+                onChange={(e) => updateSetting('reducedAnimations', e.target.checked)}
+                className="h-4 w-4"
               />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="limitBackgroundTasks" className="text-sm">
-                Limit Background Tasks
-              </Label>
-              <Switch
-                id="limitBackgroundTasks"
-                checked={settings.limitBackgroundTasks}
-                onCheckedChange={(checked) => updateSetting('limitBackgroundTasks', checked)}
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">Reduced Motion</label>
+                <p className="text-xs text-muted-foreground">
+                  Minimize motion effects for accessibility
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.reducedMotion}
+                onChange={(e) => updateSetting('reducedMotion', e.target.checked)}
+                className="h-4 w-4"
               />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="optimizeImages" className="text-sm">
-                Optimize Images
-              </Label>
-              <Switch
-                id="optimizeImages"
-                checked={settings.optimizeImages}
-                onCheckedChange={(checked) => updateSetting('optimizeImages', checked)}
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">High Contrast</label>
+                <p className="text-xs text-muted-foreground">
+                  Increase contrast for better visibility
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.highContrast}
+                onChange={(e) => updateSetting('highContrast', e.target.checked)}
+                className="h-4 w-4"
               />
             </div>
 
             <div className="flex items-center justify-between">
-              <Label htmlFor="prefetchDisabled" className="text-sm">
-                Disable Prefetch
-              </Label>
-              <Switch
-                id="prefetchDisabled"
-                checked={settings.prefetchDisabled}
-                onCheckedChange={(checked) => updateSetting('prefetchDisabled', checked)}
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">Reduced Data Usage</label>
+                <p className="text-xs text-muted-foreground">
+                  Limit background data and image loading
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.reducedData}
+                onChange={(e) => updateSetting('reducedData', e.target.checked)}
+                className="h-4 w-4"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium">Enable 3D Graphics</label>
+                <p className="text-xs text-muted-foreground">
+                  Allow 3D charts and visualizations
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                checked={settings.enable3D}
+                onChange={(e) => updateSetting('enable3D', e.target.checked)}
+                className="h-4 w-4"
               />
             </div>
           </div>
 
-          <Separator />
-
-          <div className="text-xs text-muted-foreground">
-            These settings help improve performance on slower devices or connections.
+          <div className="pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                Object.keys(defaultSettings).forEach(key => {
+                  updateSetting(key as keyof PerformanceSettings, defaultSettings[key as keyof PerformanceSettings]);
+                });
+              }}
+              className="w-full"
+            >
+              <Settings className="h-3 w-3 mr-2" />
+              Reset to Defaults
+            </Button>
           </div>
         </div>
       </PopoverContent>
