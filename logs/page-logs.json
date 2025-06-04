@@ -2,390 +2,6 @@
   {
     "type": "page_load",
     "path": "/",
-    "timestamp": "2025-06-03T16:06:53.920Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar1qd%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:07:23.578Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/polling-stations",
-    "timestamp": "2025-06-03T16:07:46.108Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/route-planning",
-    "timestamp": "2025-06-03T16:07:51.910Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/chat",
-    "timestamp": "2025-06-03T16:07:54.792Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/training",
-    "timestamp": "2025-06-03T16:08:05.463Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/project-management/kanban",
-    "timestamp": "2025-06-03T16:08:12.764Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/crm",
-    "timestamp": "2025-06-03T16:08:22.801Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/content",
-    "timestamp": "2025-06-03T16:08:29.910Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/crm",
-    "timestamp": "2025-06-03T16:08:32.300Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:11:33.208Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar2pr%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:15:34.924Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/login",
-    "timestamp": "2025-06-03T16:15:34.996Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:15:50.118Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar3f5%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:15:56.309Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/login",
-    "timestamp": "2025-06-03T16:15:56.356Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:16:01.909Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar3ps%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/chat",
-    "timestamp": "2025-06-03T16:16:37.633Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar3ps%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/dashboard",
-    "timestamp": "2025-06-03T16:23:58.097Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/training",
-    "timestamp": "2025-06-03T16:24:07.103Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/gamification",
-    "timestamp": "2025-06-03T16:24:15.753Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/content",
-    "timestamp": "2025-06-03T16:24:33.728Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://replit.com/",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T16:50:42.709Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar44b%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:11:42.055Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/login",
-    "timestamp": "2025-06-03T17:11:42.100Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:11:49.149Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar424%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/analytics",
-    "timestamp": "2025-06-03T17:12:02.320Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar424%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/analytics",
-    "timestamp": "2025-06-03T17:12:11.325Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar424%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:13:17.252Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar4ci%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/role-group-management",
-    "timestamp": "2025-06-03T17:15:13.571Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar4ci%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:19:53.797Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar5mu%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:22:06.553Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/login",
-    "timestamp": "2025-06-03T17:22:06.603Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T17:22:23.501Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar6n2%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/role-group-management",
-    "timestamp": "2025-06-03T17:22:33.821Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar6n2%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/advanced-features",
-    "timestamp": "2025-06-03T17:24:16.606Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ar6n2%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T18:12:40.552Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/login",
-    "timestamp": "2025-06-03T18:12:40.646Z",
-    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
-    "referrer": "",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
-    "timestamp": "2025-06-03T18:13:05.587Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/news",
-    "timestamp": "2025-06-03T21:32:12.595Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin",
-    "timestamp": "2025-06-03T21:32:26.138Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/crm",
-    "timestamp": "2025-06-03T21:32:28.857Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/chat",
-    "timestamp": "2025-06-03T21:32:38.594Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin",
-    "timestamp": "2025-06-03T21:32:59.705Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/crm",
-    "timestamp": "2025-06-03T21:33:03.608Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin",
-    "timestamp": "2025-06-03T21:33:07.894Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin/crm",
-    "timestamp": "2025-06-03T21:35:26.536Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/admin",
-    "timestamp": "2025-06-03T21:35:27.798Z",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2Fadmin&id=%3Arabi%3A",
-    "userId": "unauthenticated"
-  },
-  {
-    "type": "page_load",
-    "path": "/",
     "timestamp": "2025-06-04T01:00:28.326Z",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
     "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arc3o%3A",
@@ -645,6 +261,46 @@
     "timestamp": "2025-06-04T07:17:58.287Z",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
     "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Ark2g%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-04T07:19:16.719Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/login",
+    "timestamp": "2025-06-04T07:19:16.770Z",
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/118.0.5993.88 Safari/537.36",
+    "referrer": "",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-04T07:19:34.677Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arkem%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-04T17:17:12.558Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arke%3A",
+    "userId": "unauthenticated"
+  },
+  {
+    "type": "page_load",
+    "path": "/",
+    "timestamp": "2025-06-04T23:26:55.052Z",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+    "referrer": "https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/workspace_iframe.html?initialPath=%2F&id=%3Arjg%3A",
     "userId": "unauthenticated"
   }
 ]
