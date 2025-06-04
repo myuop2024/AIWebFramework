@@ -1,0 +1,63 @@
+Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn&#x27;t have a dependency array, or one of the dependencies changes on every render.
+    at https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=89b5425a:1929:13
+    at https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=89b5425a:116:13
+    at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+    at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+    at Popper (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=89b5425a:1921:11)
+    at Popover (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=89b5425a:65:5)
+    at PerformanceToggle (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/ui/performance-toggle.tsx:77:38)
+    at div
+    at div
+    at div
+    at header
+    at TopNavigation (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/layout/top-navigation.tsx:70:41)
+    at div
+    at div
+    at MainLayout (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/layout/main-layout.tsx:24:38)
+    at Route (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=89b5425a:323:16)
+    at ProtectedRoute (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/lib/protected-route.tsx:24:3)
+    at Switch (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=89b5425a:379:17)
+    at Router
+    at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+    at TooltipProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=89b5425a:64:5)
+    at PermissionsProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/hooks/usePermissions.tsx:22:39)
+    at AuthProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/hooks/useAuth.tsx:26:32)
+    at ErrorBoundary (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/error/error-boundary.tsx:11:5)
+    at App (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/App.tsx?v=RE7T-96BShmeZ6fba78tH:560:3)
+    at ErrorBoundary (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/error/error-boundary.tsx?v=RE7T-96BShmeZ6fba78tH:11:5)
+    at V (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=89b5425a:44:25)
+    at J (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=89b5425a:42:18)
+    at QueryClientProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=89b5425a:2805:3)
+at https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=89b5425a:1929:13
+at https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=89b5425a:116:13
+at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+at Popper (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OFTJ5IS7.js?v=89b5425a:1921:11)
+at Popover (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-popover.js?v=89b5425a:65:5)
+at PerformanceToggle (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/ui/performance-toggle.tsx:77:38)
+at div
+at div
+at div
+at header
+at TopNavigation (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/layout/top-navigation.tsx:70:41)
+at div
+at div
+at MainLayout (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/layout/main-layout.tsx:24:38)
+at Route (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=89b5425a:323:16)
+at ProtectedRoute (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/lib/protected-route.tsx:24:3)
+at Switch (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=89b5425a:379:17)
+at Router
+at Provider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2M7HY3UG.js?v=89b5425a:38:15)
+at TooltipProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=89b5425a:64:5)
+at PermissionsProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/hooks/usePermissions.tsx:22:39)
+at AuthProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/hooks/useAuth.tsx:26:32)
+at ErrorBoundary (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/error/error-boundary.tsx:11:5)
+at App (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/App.tsx?v=RE7T-96BShmeZ6fba78tH:560:3)
+at ErrorBoundary (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/src/components/error/error-boundary.tsx?v=RE7T-96BShmeZ6fba78tH:11:5)
+at V (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=89b5425a:44:25)
+at J (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=89b5425a:42:18)
+at QueryClientProvider (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=89b5425a:2805:3)
+at t.value (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://db961ab9-a0ce-4cbb-9f9f-422fa35de378-00-1fsdlsz102rb5.picard.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
