@@ -43,7 +43,7 @@ export const insertSystemSettingSchema = createInsertSchema(systemSettings)
   .omit({
     id: true,
     updatedAt: true,
-  });
+  } as any);
 
 // ID Card templates table
 export const idCardTemplates = pgTable("id_card_templates", {
@@ -63,7 +63,7 @@ export const idCardTemplateSchema = createInsertSchema(idCardTemplates)
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 // Users table
 export const users = pgTable("users", {
@@ -472,7 +472,7 @@ export const insertRoleSchema = createInsertSchema(roles)
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof insertRoleSchema._type;
@@ -483,13 +483,13 @@ export const insertGroupSchema = createInsertSchema(groups)
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertGroupMembershipSchema = createInsertSchema(groupMemberships)
   .omit({
     id: true,
     joinedAt: true,
-  });
+  } as any);
 
 export type Group = typeof groups.$inferSelect;
 export type InsertGroup = typeof insertGroupSchema._type;
@@ -497,11 +497,11 @@ export type GroupMembership = typeof groupMemberships.$inferSelect;
 export type InsertGroupMembership = typeof insertGroupMembershipSchema._type;
 
 // Insert Schemas for Gamification
-export const insertUserPointSchema = createInsertSchema(userPoints).omit({ id: true, createdAt: true });
-export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true });
-export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true });
-export const insertLeaderboardWeeklySchema = createInsertSchema(leaderboardWeekly).omit({ updatedAt: true });
-export const insertLeaderboardOverallSchema = createInsertSchema(leaderboardOverall).omit({ updatedAt: true });
+export const insertUserPointSchema = createInsertSchema(userPoints).omit({ id: true, createdAt: true } as any);
+export const insertBadgeSchema = createInsertSchema(badges).omit({ id: true } as any);
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({ id: true, earnedAt: true } as any);
+export const insertLeaderboardWeeklySchema = createInsertSchema(leaderboardWeekly).omit({ updatedAt: true } as any);
+export const insertLeaderboardOverallSchema = createInsertSchema(leaderboardOverall).omit({ updatedAt: true } as any);
 
 // Verification settings schema for the application
 export const verificationSettingsSchema = z.object({
@@ -665,13 +665,13 @@ export const insertUserSchema = createInsertSchema(users)
     observerId: true,
     verificationStatus: true,
     trainingStatus: true,
-  });
+  } as any);
 
 export const upsertUserSchema = createInsertSchema(users)
   .omit({
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertUserProfileSchema = createInsertSchema(userProfiles)
   .omit({
@@ -679,7 +679,7 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles)
     verifiedAt: true,
     encryptionIv: true,
     isEncrypted: true,
-  });
+  } as any);
 
 export const insertDocumentSchema = createInsertSchema(documents)
   .omit({
@@ -687,18 +687,18 @@ export const insertDocumentSchema = createInsertSchema(documents)
     ocrText: true,
     verificationStatus: true,
     uploadedAt: true,
-  });
+  } as any);
 
 export const insertPollingStationSchema = createInsertSchema(pollingStations)
   .omit({
     id: true,
-  });
+  } as any);
 
 export const insertAssignmentSchema = createInsertSchema(assignments)
   .omit({
     id: true,
     assignedAt: true,
-  });
+  } as any);
 
 export const insertFormTemplateSchema = createInsertSchema(formTemplates)
   .omit({
@@ -706,7 +706,7 @@ export const insertFormTemplateSchema = createInsertSchema(formTemplates)
     isActive: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertReportSchema = createInsertSchema(reports)
   .omit({
@@ -717,7 +717,7 @@ export const insertReportSchema = createInsertSchema(reports)
     reviewedBy: true,
     contentHash: true,
     encryptedData: true,
-  });
+  } as any);
 
 export const insertReportAttachmentSchema = createInsertSchema(reportAttachments)
   .omit({
@@ -725,50 +725,50 @@ export const insertReportAttachmentSchema = createInsertSchema(reportAttachments
     uploadedAt: true,
     ocrProcessed: true,
     ocrText: true,
-  });
+  } as any);
 
 export const insertEventSchema = createInsertSchema(events)
   .omit({
     id: true,
-  });
+  } as any);
 
 export const insertEventParticipationSchema = createInsertSchema(eventParticipation)
   .omit({
     id: true,
-  });
+  } as any);
 
 export const insertFaqSchema = createInsertSchema(faqEntries)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertNewsSchema = createInsertSchema(newsEntries)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertMessageSchema = createInsertSchema(messages)
   .omit({
     id: true,
     sentAt: true,
-  });
+  } as any);
 
 export const insertRegistrationFormSchema = createInsertSchema(registrationForms)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertUserImportLogSchema = createInsertSchema(userImportLogs)
   .omit({
     id: true,
     importedAt: true,
-  });
+  } as any);
 
 // Bulk user import schema
 export const bulkUserImportSchema = z.object({
@@ -795,27 +795,27 @@ export const insertTrainingIntegrationSchema = createInsertSchema(trainingIntegr
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertTrainingProgressSchema = createInsertSchema(trainingProgress)
   .omit({
     id: true,
     lastAccessedAt: true,
-  });
+  } as any);
 
 export const insertExternalUserMappingSchema = createInsertSchema(externalUserMappings)
   .omit({
     id: true,
     createdAt: true,
     updatedAt: true,
-  });
+  } as any);
 
 export const insertPhotoApprovalSchema = createInsertSchema(photoApprovals)
   .omit({
     id: true,
     createdAt: true,
     processedAt: true,
-  });
+  } as any);
 
 // Login schema
 export const loginUserSchema = z.object({
@@ -1132,14 +1132,14 @@ export const photoApprovalRelations = relations(photoApprovals, ({ one }) => ({
 }));
 
 // Project management insert schemas
-export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertMilestoneSchema = createInsertSchema(milestones).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true });
-export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true });
+export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertMilestoneSchema = createInsertSchema(milestones).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertTaskCategorySchema = createInsertSchema(taskCategories).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertProjectMemberSchema = createInsertSchema(projectMembers).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertTaskCommentSchema = createInsertSchema(taskComments).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertTaskAttachmentSchema = createInsertSchema(taskAttachments).omit({ id: true, createdAt: true } as any);
+export const insertTaskHistorySchema = createInsertSchema(taskHistory).omit({ id: true, createdAt: true } as any);
 
 // Achievement system tables
 export const achievements = pgTable("achievements", {
@@ -1210,12 +1210,12 @@ export const achievementProgress = pgTable("achievement_progress", {
 });
 
 // Insert schemas for achievement system
-export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
-export const insertUserGameProfileSchema = createInsertSchema(userGameProfile).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertLeaderboardSchema = createInsertSchema(leaderboards).omit({ id: true, createdAt: true, updatedAt: true });
-export const insertLeaderboardEntrySchema = createInsertSchema(leaderboardEntries).omit({ id: true, calculatedAt: true });
-export const insertAchievementProgressSchema = createInsertSchema(achievementProgress).omit({ id: true, lastUpdated: true });
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true } as any);
+export const insertUserGameProfileSchema = createInsertSchema(userGameProfile).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertLeaderboardSchema = createInsertSchema(leaderboards).omit({ id: true, createdAt: true, updatedAt: true } as any);
+export const insertLeaderboardEntrySchema = createInsertSchema(leaderboardEntries).omit({ id: true, calculatedAt: true } as any);
+export const insertAchievementProgressSchema = createInsertSchema(achievementProgress).omit({ id: true, lastUpdated: true } as any);
 
 // Types for achievement system
 export type Achievement = typeof achievements.$inferSelect;

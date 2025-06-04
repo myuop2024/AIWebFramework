@@ -1,4 +1,11 @@
-import { createCanvas, loadImage, Canvas, registerFont, Image } from 'canvas';
+import {
+  createCanvas,
+  loadImage,
+  Canvas,
+  registerFont,
+  Image,
+  CanvasRenderingContext2D
+} from 'canvas';
 import QRCode from 'qrcode';
 import JsBarcode from 'jsbarcode';
 import PDFDocument from 'pdfkit';
@@ -93,7 +100,7 @@ export class IdCardService {
       name: 'CAFFE Professional Observer ID Card',
       description: 'Advanced observer ID card template with premium design and security features',
       isActive: true,
-      templateData: {
+      template: {
         dimensions: {
           width: 1024,
           height: 650
@@ -383,7 +390,7 @@ export class IdCardService {
       }
     };
 
-    return storage.createIdCardTemplate(defaultTemplate);
+    return storage.createIdCardTemplate(defaultTemplate as any);
   }
 
   /**
@@ -394,7 +401,7 @@ export class IdCardService {
     profile: UserProfile | undefined, 
     template: IdCardTemplate
   ): Promise<Buffer> {
-    const templateData = template.templateData as unknown as CardTemplate;
+    const templateData = template.template as unknown as CardTemplate;
     const securityFeatures = template.securityFeatures as unknown as SecurityFeatures;
 
     // Create canvas with template dimensions
@@ -642,7 +649,7 @@ export class IdCardService {
   private async generatePDF(cardImage: Buffer, template: IdCardTemplate): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
-        const templateData = template.templateData as unknown as CardTemplate;
+        const templateData = template.template as unknown as CardTemplate;
 
         // Create a PDF document
         const doc = new PDFDocument({

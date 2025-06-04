@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import AddressAutocomplete, { type AddressSuggestion } from "@/components/address/address-autocomplete";
+import AddressAutocomplete from "@/components/address/address-autocomplete";
+import type { AddressSuggestion } from "@/components/address/address-autocomplete";
 import { InteractiveMap } from "@/components/mapping/interactive-map";
 import { formatDecimalCoordinates } from "@/lib/here-maps";
 

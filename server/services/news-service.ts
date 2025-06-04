@@ -125,8 +125,8 @@ export async function fetchJamaicanPoliticalNews(days: number = 7): Promise<Proc
     return processedArticles.sort((a, b) => b.relevanceScore - a.relevanceScore);
     
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    logger.error('Error fetching Jamaican political news:', errorMessage);
+    const errObj = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error fetching Jamaican political news:', errObj);
     return [];
   }
 }
