@@ -65,7 +65,7 @@ interface AddressAutocompleteProps {
   disabled?: boolean;
 }
 
-type AddressSuggestion = {
+export type AddressSuggestion = {
   title: string;
   address: {
     label: string;
@@ -76,6 +76,7 @@ type AddressSuggestion = {
     city: string;
     district: string;
     street: string;
+    houseNumber?: string;
     postalCode: string;
   };
   position: {
@@ -184,6 +185,7 @@ export default function AddressAutocomplete({
                   city: '',
                   district: '',
                   street: '',
+                  houseNumber: '',
                   postalCode: '',
                 },
                 position: item.position || { lat: 0, lng: 0 },
@@ -309,23 +311,30 @@ export default function AddressAutocomplete({
         parish = "Kingston";
       }
       
-      // Format the address object for our application
-      const formattedAddress = {
-        fullAddress: streetWithNumber ? streetWithNumber : suggestion.title,
-        street: streetWithNumber || streetName,
-        houseNumber: houseNumber,
-        city: addressDetails.address?.city || '',
-        state: parish || addressDetails.address?.state || addressDetails.address?.county || '',
-        country: addressDetails.address?.countryName || '',
-        postalCode: addressDetails.address?.postalCode || '',
+      // Build AddressSuggestion structure with detailed info
+      const enhancedSuggestion: AddressSuggestion = {
+        title: addressDetails.title || suggestion.title,
+        address: {
+          label: addressDetails.address?.label || suggestion.address.label,
+          countryCode: addressDetails.address?.countryCode || suggestion.address.countryCode,
+          countryName: addressDetails.address?.countryName || suggestion.address.countryName,
+          state: parish || addressDetails.address?.state || suggestion.address.state,
+          county: addressDetails.address?.county || suggestion.address.county,
+          city: addressDetails.address?.city || suggestion.address.city,
+          district: addressDetails.address?.district || suggestion.address.district,
+          street: streetWithNumber || suggestion.address.street,
+          houseNumber: addressDetails.address?.houseNumber || suggestion.address.houseNumber,
+          postalCode: addressDetails.address?.postalCode || suggestion.address.postalCode,
+        },
         position: {
           lat: addressDetails.position?.lat || suggestion.position.lat,
-          lng: addressDetails.position?.lng || suggestion.position.lng
-        }
+          lng: addressDetails.position?.lng || suggestion.position.lng,
+        },
+        id: addressDetails.id || suggestion.id,
       };
-      
+
       // Call callback with the address data
-      onAddressSelect(formattedAddress);
+      onAddressSelect(enhancedSuggestion);
     } catch (error) {
     }
   };

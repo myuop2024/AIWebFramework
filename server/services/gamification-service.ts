@@ -38,7 +38,7 @@ export class GamificationService {
         pointsEarned: pointsToAward,
         actionType: action,
         actionDetailsId,
-      });
+      } as any);
 
       // Update total points on the users table
       await this.dbInstance.update(users)

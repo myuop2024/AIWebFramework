@@ -22,7 +22,8 @@ import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, MapPin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import AddressAutocomplete, { type AddressSuggestion } from "@/components/address/address-autocomplete";
+import AddressAutocomplete from "@/components/address/address-autocomplete";
+import type { AddressSuggestion } from "@/components/address/address-autocomplete";
 
 // Types for form field configuration from registration form schema
 export interface FormField {

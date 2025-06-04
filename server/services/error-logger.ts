@@ -94,9 +94,9 @@ export class ErrorLogger {
           path: requestInfo.path || null,
           method: requestInfo.method || null,
           context: sanitizedContext || null // Use sanitized context
-        };
+        } as any;
 
-        await db.insert(errorLogs).values(errorData);
+        await db.insert(errorLogs).values(errorData as any);
       } catch (dbError) {
         // Don't let database errors prevent application operation
         console.error('[ERROR LOGGER] Failed to save error to database:', dbError);
