@@ -1,162 +1,136 @@
-import { useState, useEffect } from 'react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Settings, Zap, ZapOff } from 'lucide-react';
+import { Button } from './button';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Switch } from './switch';
+import { Label } from './label';
+import { Separator } from './separator';
 
-// Create a performance context that can be accessed throughout the app
-export type PerformanceSettings = {
-  enable3D: boolean;
-  enableAnimations: boolean;
-  enableShadows: boolean;
-  lowPerformanceMode: boolean;
-};
-
-// Default settings
-const defaultSettings: PerformanceSettings = {
-  enable3D: false, // Disable 3D by default
-  enableAnimations: true,
-  enableShadows: false,
-  lowPerformanceMode: false,
-};
-
-// Use localStorage to persist settings
-const STORAGE_KEY = 'caffe-performance-settings';
-
-export function usePerformanceSettings(): [PerformanceSettings, (settings: Partial<PerformanceSettings>) => void] {
-  const [settings, setSettings] = useState<PerformanceSettings>(defaultSettings);
-
-  // Load settings from localStorage on initial render
-  useEffect(() => {
-    try {
-      const storedSettings = localStorage.getItem(STORAGE_KEY);
-      if (storedSettings) {
-        setSettings(JSON.parse(storedSettings));
-      } else {
-        // Auto-detect performance capabilities
-        const isLowPerfDevice = window.navigator.hardwareConcurrency <= 4 || 
-                               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        setSettings({
-          ...defaultSettings,
-          lowPerformanceMode: isLowPerfDevice,
-          enable3D: !isLowPerfDevice,
-          enableShadows: !isLowPerfDevice
-        });
-        
-        // Save the auto-detected settings
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          ...defaultSettings,
-          lowPerformanceMode: isLowPerfDevice,
-          enable3D: !isLowPerfDevice,
-          enableShadows: !isLowPerfDevice
-        }));
-      }
-    } catch (error) {
-      console.error('Error loading performance settings:', error);
-    }
-  }, []);
-
-  // Update settings
-  const updateSettings = (newSettings: Partial<PerformanceSettings>) => {
-    const updatedSettings = { ...settings, ...newSettings };
-    setSettings(updatedSettings);
-    
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
-    } catch (error) {
-      console.error('Error saving performance settings:', error);
-    }
-  };
-
-  return [settings, updateSettings];
+interface PerformanceSettings {
+  reducedAnimations: boolean;
+  limitBackgroundTasks: boolean;
+  optimizeImages: boolean;
+  prefetchDisabled: boolean;
 }
 
 export function PerformanceToggle() {
-  const [settings, updateSettings] = usePerformanceSettings();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [settings, setSettings] = useState<PerformanceSettings>({
+    reducedAnimations: false,
+    limitBackgroundTasks: false,
+    optimizeImages: true,
+    prefetchDisabled: false,
+  });
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('performanceSettings');
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        setSettings(parsed);
+      } catch (error) {
+        console.error('Failed to parse performance settings:', error);
+      }
+    }
+  }, []); // Empty dependency array - only run on mount
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('performanceSettings', JSON.stringify(settings));
+
+    // Apply settings to document
+    if (settings.reducedAnimations) {
+      document.documentElement.classList.add('reduce-motion');
+    } else {
+      document.documentElement.classList.remove('reduce-motion');
+    }
+  }, [settings]); // Only depend on settings
+
+  const updateSetting = (key: keyof PerformanceSettings, value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const isPerformanceModeActive = Object.values(settings).some(Boolean);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 gap-1">
-          <Settings className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Performance</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          title="Performance Settings"
+        >
+          {isPerformanceModeActive ? (
+            <Zap className="h-4 w-4 text-yellow-500" />
+          ) : (
+            <Settings className="h-4 w-4" />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
-          <h4 className="font-medium leading-none mb-2">Performance Settings</h4>
-          <p className="text-sm text-muted-foreground">
-            Adjust these settings to improve performance on your device.
-          </p>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="enable-3d">Enable 3D Visualizations</Label>
-              <p className="text-xs text-muted-foreground">
-                Disable for better performance on low-end devices
-              </p>
-            </div>
-            <Switch
-              id="enable-3d"
-              checked={settings.enable3D}
-              onCheckedChange={(checked) => updateSettings({ enable3D: checked })}
-            />
+          <div className="flex items-center gap-2">
+            <ZapOff className="h-4 w-4" />
+            <h3 className="font-medium">Performance Settings</h3>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="enable-animations">Enable Animations</Label>
-              <p className="text-xs text-muted-foreground">
-                Controls UI animations and transitions
-              </p>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reducedAnimations" className="text-sm">
+                Reduce Animations
+              </Label>
+              <Switch
+                id="reducedAnimations"
+                checked={settings.reducedAnimations}
+                onCheckedChange={(checked) => updateSetting('reducedAnimations', checked)}
+              />
             </div>
-            <Switch
-              id="enable-animations"
-              checked={settings.enableAnimations}
-              onCheckedChange={(checked) => updateSettings({ enableAnimations: checked })}
-            />
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="limitBackgroundTasks" className="text-sm">
+                Limit Background Tasks
+              </Label>
+              <Switch
+                id="limitBackgroundTasks"
+                checked={settings.limitBackgroundTasks}
+                onCheckedChange={(checked) => updateSetting('limitBackgroundTasks', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="optimizeImages" className="text-sm">
+                Optimize Images
+              </Label>
+              <Switch
+                id="optimizeImages"
+                checked={settings.optimizeImages}
+                onCheckedChange={(checked) => updateSetting('optimizeImages', checked)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="prefetchDisabled" className="text-sm">
+                Disable Prefetch
+              </Label>
+              <Switch
+                id="prefetchDisabled"
+                checked={settings.prefetchDisabled}
+                onCheckedChange={(checked) => updateSetting('prefetchDisabled', checked)}
+              />
+            </div>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="enable-shadows">Enable Shadows</Label>
-              <p className="text-xs text-muted-foreground">
-                Shadows and advanced lighting effects
-              </p>
-            </div>
-            <Switch
-              id="enable-shadows"
-              checked={settings.enableShadows}
-              onCheckedChange={(checked) => updateSettings({ enableShadows: checked })}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="low-perf-mode">Low Performance Mode</Label>
-              <p className="text-xs text-muted-foreground">
-                Optimizes all settings for maximum performance
-              </p>
-            </div>
-            <Switch
-              id="low-perf-mode"
-              checked={settings.lowPerformanceMode}
-              onCheckedChange={(checked) => 
-                updateSettings({ 
-                  lowPerformanceMode: checked,
-                  enable3D: !checked,
-                  enableShadows: !checked,
-                  enableAnimations: !checked 
-                })
-              }
-            />
+
+          <Separator />
+
+          <div className="text-xs text-muted-foreground">
+            These settings help improve performance on slower devices or connections.
           </div>
         </div>
       </PopoverContent>
