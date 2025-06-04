@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Zap, ZapOff } from 'lucide-react';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
@@ -38,21 +39,23 @@ export function usePerformanceSettings() {
   // Save settings to localStorage when they change
   useEffect(() => {
     localStorage.setItem('performanceSettings', JSON.stringify(settings));
+  }, [settings]);
 
-    // Apply settings to document
+  // Apply reduced animations setting
+  useEffect(() => {
     if (settings.reducedAnimations) {
       document.documentElement.classList.add('reduce-motion');
     } else {
       document.documentElement.classList.remove('reduce-motion');
     }
-  }, [settings]);
+  }, [settings.reducedAnimations]);
 
-  const updateSetting = (key: keyof PerformanceSettings, value: boolean) => {
+  const updateSetting = useCallback((key: keyof PerformanceSettings, value: boolean) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
     }));
-  };
+  }, []);
 
   return { settings, updateSetting };
 }
@@ -60,8 +63,6 @@ export function usePerformanceSettings() {
 export function PerformanceToggle() {
   const [isOpen, setIsOpen] = useState(false);
   const { settings, updateSetting } = usePerformanceSettings();
-
-  
 
   const isPerformanceModeActive = Object.values(settings).some(Boolean);
 
