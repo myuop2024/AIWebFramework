@@ -76,6 +76,7 @@ type AddressSuggestion = {
     city: string;
     district: string;
     street: string;
+    houseNumber?: string;
     postalCode: string;
   };
   position: {

@@ -65,9 +65,16 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   
   // Fetch system statistics
-  const { data: systemStats, isLoading, error } = useQuery({
+  const { data: systemStats, isLoading, error } = useQuery<SystemStats>({
     queryKey: ['/api/admin/system-stats'],
     enabled: !!user && user.role === 'admin',
+    queryFn: async () => {
+      const res = await fetch('/api/admin/system-stats');
+      if (!res.ok) {
+        throw new Error('Failed to fetch system statistics');
+      }
+      return res.json() as Promise<SystemStats>;
+    },
   });
   
   if (isLoading) {
