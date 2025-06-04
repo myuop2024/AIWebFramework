@@ -912,8 +912,7 @@ export class DatabaseStorage implements IStorage {
       // If data.permissions is explicitly null, it will be set to null.
       // If data.permissions is undefined, the field won't be updated unless it's part of the spread.
       // To be safe, explicitly handle permissions if it's part of `data`.
-      if```python
- (data.permissions !== undefined) {
+      if (data.permissions !== undefined) {
         updateData.permissions = data.permissions;
       }
 
@@ -1743,7 +1742,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLeaderboard(leaderboard: InsertLeaderboard): Promise<Leaderboard> {
-```python
     try {
       const [created] = await db.insert(leaderboards).values(leaderboard).returning();
       logger.info(`Created leaderboard: ${created.name}`);
