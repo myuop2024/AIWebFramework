@@ -48,7 +48,8 @@ export const db = drizzle(pool, {
   schema,
   logger: process.env.NODE_ENV === 'development' ? {
     logQuery: (query: string, params?: unknown[]) => {
-      logger.info('[DB Query]', query, params ? `Params: ${JSON.stringify(params)}` : '');
+      // Only log query without the params to avoid character-by-character JSON streaming
+      logger.debug('[DB Query]', { query: query.substring(0, 200) + (query.length > 200 ? '...' : '') });
     }
   } : false 
 });

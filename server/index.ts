@@ -398,9 +398,15 @@ app.get('/api/logs', (req, res) => {
             });
           });
         } else {
-          // For other paths, you might want to destroy the socket or let other handlers (if any) take over
-          logger.debug(`[WS Upgrade] Path ${request.url} not handled by this upgrade handler. Destroying socket.`);
-          socket.destroy();
+          // Ignore Vite HMR WebSocket connections and other non-API paths silently
+          // Don't log debug messages for these as they're expected in development
+          if (request.url?.includes('token=') && process.env.NODE_ENV === 'development') {
+            // This is likely a Vite HMR connection, ignore silently
+            socket.destroy();
+          } else {
+            logger.debug(`[WS Upgrade] Path ${request.url} not handled by this upgrade handler. Destroying socket.`);
+            socket.destroy();
+          }
         }
       });
       logger.info('WebSocket upgrade handler configured with session authentication for /api/ws');
