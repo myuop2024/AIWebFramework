@@ -332,10 +332,10 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <span className="font-medium">{link.label}</span>
         </Link>
         <DropdownMenu>
-          <DropdownMenuTrigger className="focus:outline-none p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
-            <ChevronDown className="h-4 w-4" />
+          <DropdownMenuTrigger className="flex items-center w-full justify-between focus:outline-none p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
+            <ChevronDown className="h-4 w-4 ml-2" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="start" sideOffset={0} className="w-full min-w-[10rem] max-w-[16rem] ml-0">
             {dropdownItems.map((item, index) => (
               <DropdownMenuItem key={index} asChild>
                 <Link href={item.path} className="w-full">

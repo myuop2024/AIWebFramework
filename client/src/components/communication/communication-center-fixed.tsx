@@ -144,12 +144,24 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
 
   // Load memos from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('voiceMemos');
-    if (saved) setVoiceMemos(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('voiceMemos');
+      if (saved) setVoiceMemos(JSON.parse(saved));
+    } catch (e) {
+      console.error('Error loading voice memos from localStorage:', e);
+      // Optionally show a toast here if you have a toast system
+      // toast({ title: 'Storage Error', description: 'Could not load voice memos from storage.', variant: 'destructive' });
+    }
   }, []);
   // Save memos to localStorage on change
   useEffect(() => {
-    localStorage.setItem('voiceMemos', JSON.stringify(voiceMemos));
+    try {
+      localStorage.setItem('voiceMemos', JSON.stringify(voiceMemos));
+    } catch (e) {
+      console.error('Error saving voice memos to localStorage:', e);
+      // Optionally show a toast here if you have a toast system
+      // toast({ title: 'Storage Error', description: 'Could not save voice memos to storage.', variant: 'destructive' });
+    }
   }, [voiceMemos]);
 
   const startRecording = async () => {

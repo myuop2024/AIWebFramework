@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { newsEntries, type News, type InsertNews } from '@shared/schema';
+import { newsEntries, type News, type InsertNews, notifications, type Notification, type InsertNotification, users } from '@shared/schema';
 import { ensureAuthenticated, hasPermission } from '../middleware/auth';
 import { eq, desc, and, like, sql } from 'drizzle-orm';
 import { getLatestJamaicanPoliticalNews } from '../services/news-service';
@@ -292,6 +292,127 @@ router.post('/:id/publish', ensureAuthenticated, hasPermission('news:publish'), 
   } catch (error) {
     logger.error('Error toggling news publish status:', error);
     res.status(500).json({ error: 'Failed to toggle publish status' });
+  }
+});
+
+// Notifications API
+router.post('/notifications', ensureAuthenticated, async (req, res) => {
+  try {
+    const { title, message, userId, type } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ error: 'Title and message are required' });
+    }
+    if (!userId) {
+      // Broadcast: insert for all users
+      const allUsers = await db.select({ id: users.id }).from(users);
+      const notifs = allUsers.map(u => ({
+        title,
+        message,
+        userId: u.id,
+        type: type || null,
+        createdAt: new Date(),
+      }));
+      const result = await db.insert(notifications).values(notifs).returning();
+      return res.status(201).json({ success: true, count: result.length });
+    } else {
+      // Single user
+      const newNotif: InsertNotification = {
+        title,
+        message,
+        userId,
+        type: type || null,
+        createdAt: new Date(),
+      };
+      const result = await db.insert(notifications).values(newNotif).returning();
+      return res.status(201).json(result[0]);
+    }
+  } catch (error) {
+    logger.error('Error creating notification:', error);
+    res.status(500).json({ error: 'Failed to create notification' });
+  }
+});
+
+router.get('/notifications', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const where = isAdmin ? undefined : (n: typeof notifications) => n.userId.eq(userId).or(n.userId.isNull());
+    const notifs = await db
+      .select()
+      .from(notifications)
+      .where(where)
+      .orderBy(notifications.createdAt.desc());
+    res.json(notifs);
+  } catch (error) {
+    logger.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+router.patch('/notifications/:id/read', ensureAuthenticated, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid notification ID' });
+    const userId = req.user.id;
+    // Only allow marking as read if the user owns the notification or it's broadcast
+    const notif = await db.select().from(notifications).where(notifications.id.eq(id)).limit(1);
+    if (!notif.length || (notif[0].userId && notif[0].userId !== userId)) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+    await db.update(notifications).set({ read: true }).where(notifications.id.eq(id));
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error marking notification as read:', error);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+router.patch('/notifications/read-all', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Mark all notifications for this user (including broadcasts) as read
+    const result = await db.update(notifications)
+      .set({ read: true })
+      .where(
+        notifications.userId.eq(userId).or(notifications.userId.isNull())
+      );
+    res.json({ success: true, count: result.rowCount || 0 });
+  } catch (error) {
+    logger.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: 'Failed to mark all as read' });
+  }
+});
+
+router.delete('/notifications/:id', ensureAuthenticated, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid notification ID' });
+    const userId = req.user.id;
+    // Only allow deleting if the user owns the notification or it's broadcast
+    const notif = await db.select().from(notifications).where(notifications.id.eq(id)).limit(1);
+    if (!notif.length || (notif[0].userId && notif[0].userId !== userId)) {
+      return res.status(403).json({ error: 'Not allowed' });
+    }
+    await db.delete(notifications).where(notifications.id.eq(id));
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting notification:', error);
+    res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+router.delete('/notifications', ensureAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Delete all notifications for this user (including broadcasts)
+    const result = await db.delete(notifications)
+      .where(
+        notifications.userId.eq(userId).or(notifications.userId.isNull())
+      );
+    res.json({ success: true, count: result.rowCount || 0 });
+  } catch (error) {
+    logger.error('Error deleting all notifications:', error);
+    res.status(500).json({ error: 'Failed to delete all notifications' });
   }
 });
 

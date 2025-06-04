@@ -16,8 +16,9 @@ import {
   Users, Settings, Lock, Database, AlertTriangle, BarChart, 
   FileText, CalendarClock, MapPin, Bell, Mail, Shield, Server, BookOpen
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import TopNavigation from "@/components/layout/top-navigation";
 
 // Define structure for system stats for this page, similar to AdminDashboard
 interface AdminPageSystemStats {
@@ -64,6 +65,8 @@ export default function Admin() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [broadcastAll, setBroadcastAll] = useState(true);
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -102,6 +105,35 @@ export default function Admin() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState<React.ReactNode | string>('');
   const [modalTitle, setModalTitle] = useState<string>('');
+
+  const queryClient = useQueryClient();
+
+  // Fetch notifications for the current user
+  const { data: notifications = [], refetch } = useQuery({
+    queryKey: ["/api/notifications"],
+    queryFn: async () => {
+      const res = await fetch("/api/notifications");
+      if (!res.ok) throw new Error("Failed to fetch notifications");
+      return res.json();
+    },
+  });
+
+  // Mutation to send notification
+  const sendNotificationMutation = useMutation({
+    mutationFn: async (payload: { title: string; message: string; userId?: string }) => {
+      const res = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload }),
+      });
+      if (!res.ok) throw new Error("Failed to send notification");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/notifications"]);
+      refetch();
+    },
+  });
 
   // Function to open a modal with specific content
   const openModal = (title: string, content: React.ReactNode | string) => {
@@ -376,16 +408,23 @@ export default function Admin() {
   // Handler for sending notification
   const handleSendNotification = () => {
     setIsActionLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsActionLoading(false);
-      toast({
-        title: "Notification Sent",
-        description: "Your notification has been sent to all relevant users.",
-        variant: "default",
-      });
-    }, 800);
+    sendNotificationMutation.mutate(
+      {
+        title: notificationTitle || "Notification",
+        message: notificationMessage || "You have a new notification.",
+        ...(broadcastAll ? {} : { userId: user?.id }),
+      },
+      {
+        onSettled: () => {
+          setIsActionLoading(false);
+          toast({
+            title: "Notification Sent",
+            description: broadcastAll ? "Your notification has been sent to all users." : "Your notification has been sent.",
+            variant: "default",
+          });
+        },
+      }
+    );
   };
   
   // Let's restart from a clean function definition
@@ -841,6 +880,10 @@ export default function Admin() {
                   <Switch id="urgent" />
                   <Label htmlFor="urgent">Mark as urgent</Label>
                 </div>
+                <label className="flex items-center gap-2 mt-2">
+                  <input type="checkbox" checked={broadcastAll} onChange={e => setBroadcastAll(e.target.checked)} />
+                  Send to all users
+                </label>
               </CardContent>
               <CardFooter>
                 <Button 
@@ -1615,6 +1658,8 @@ export default function Admin() {
         title={modalTitle}
         content={modalContent}
       />
+
+      <TopNavigation toggleSidebar={toggleSidebar} notifications={notifications} />
     </AdminLayout>
   );
 }

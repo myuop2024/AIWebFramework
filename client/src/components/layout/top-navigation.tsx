@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { User as SharedUserType } from "@shared/schema";
-import { Menu, Search, Bell, MessageSquare, User, Sun, Moon, LogOut, FileText, Home } from "lucide-react";
+import { Menu, Search, Bell, MessageSquare, User, Sun, Moon, LogOut, FileText, Home, Trash2, Info, CheckCircle, AlertTriangle, XCircle, BellRing, Settings } from "lucide-react";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -15,19 +15,126 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PerformanceToggle } from "@/components/ui/performance-toggle";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface TopNavigationProps {
   toggleSidebar: () => void;
+  notifications?: { id: number; title: string; message: string; createdAt: string; read?: boolean }[];
 }
 
-export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
+const NOTIF_TYPE_ICON = {
+  info: <Info className="h-4 w-4 text-blue-500" />,
+  success: <CheckCircle className="h-4 w-4 text-green-500" />,
+  warning: <AlertTriangle className="h-4 w-4 text-yellow-500" />,
+  error: <XCircle className="h-4 w-4 text-red-500" />,
+  urgent: <BellRing className="h-4 w-4 text-pink-600 animate-pulse" />,
+  default: <Bell className="h-4 w-4 text-gray-400" />,
+};
+
+const PAGE_SIZE = 10;
+
+const NOTIF_TYPES = ["info", "success", "warning", "error", "urgent"];
+
+export default function TopNavigation({ toggleSidebar, notifications: propNotifications = [] }: TopNavigationProps) {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const notifications = propNotifications;
+  const unreadCount = notifications.filter(n => !n.read).length;
   
   // Create a safe user object that's properly typed
   const userData = user as SharedUserType | null;
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  // Pagination state
+  const [notifPage, setNotifPage] = useState(1);
+  const pagedNotifications = notifications.slice(0, notifPage * PAGE_SIZE);
+  const hasMore = notifications.length > pagedNotifications.length;
+  // Settings modal state
+  const [showSettings, setShowSettings] = useState(false);
+  // Confirmation dialog state
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number|null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  // Notification settings state
+  const [mute, setMute] = useState(false);
+  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
+  const [filterTypes, setFilterTypes] = useState<string[]>([]);
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Failed to mark as read');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/notifications"]);
+      toast({ title: "Marked as read", variant: "success" });
+    },
+    onError: () => toast({ title: "Failed to mark as read", variant: "destructive" }),
+  });
+
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
+      if (!res.ok) throw new Error('Failed to mark all as read');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/notifications"]);
+      toast({ title: "All notifications marked as read", variant: "success" });
+    },
+    onError: () => toast({ title: "Failed to mark all as read", variant: "destructive" }),
+  });
+
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete notification');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/notifications"]);
+      toast({ title: "Notification deleted", variant: "success" });
+    },
+    onError: () => toast({ title: "Failed to delete notification", variant: "destructive" }),
+  });
+
+  const deleteAllNotificationsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch('/api/notifications', { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete all notifications');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/notifications"]);
+      toast({ title: "All notifications deleted", variant: "success" });
+    },
+    onError: () => toast({ title: "Failed to delete all notifications", variant: "destructive" }),
+  });
+
+  // Load/save settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('notifSettings');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMute(!!parsed.mute);
+        setShowOnlyUnread(!!parsed.showOnlyUnread);
+        setFilterTypes(Array.isArray(parsed.filterTypes) ? parsed.filterTypes : []);
+      } catch {}
+    }
+  }, []);
+  useEffect(() => {
+    localStorage.setItem('notifSettings', JSON.stringify({ mute, showOnlyUnread, filterTypes }));
+  }, [mute, showOnlyUnread, filterTypes]);
+
+  // Apply settings to notifications
+  let filteredNotifications = notifications;
+  if (showOnlyUnread) filteredNotifications = filteredNotifications.filter(n => !n.read);
+  if (filterTypes.length > 0) filteredNotifications = filteredNotifications.filter(n => filterTypes.includes(n.type));
 
   // Check for dark mode preference
   useEffect(() => {
@@ -201,37 +308,88 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="relative touch-target">
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs"></span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs"></span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 sm:w-96">
-              <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                <span className="text-xs text-gray-500">2 new</span>
-              </DropdownMenuLabel>
+              <div className="flex items-center justify-between px-4 pt-2 pb-1">
+                <span className="font-semibold">Notifications</span>
+                <button onClick={() => setShowSettings(true)} className="text-gray-500 hover:text-primary">
+                  <Settings className="h-4 w-4" />
+                </button>
+              </div>
+              {unreadCount > 0 && (
+                <button
+                  className="block w-full text-xs text-blue-600 hover:underline text-left px-4 py-1 bg-transparent border-0"
+                  onClick={() => markAllAsReadMutation.mutate()}
+                  disabled={markAllAsReadMutation.isLoading}
+                >
+                  {markAllAsReadMutation.isLoading ? 'Marking all...' : 'Mark all as read'}
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  className="block w-full text-xs text-red-600 hover:underline text-left px-4 py-1 bg-transparent border-0"
+                  onClick={() => setConfirmDeleteAll(true)}
+                  disabled={deleteAllNotificationsMutation.isLoading}
+                >
+                  {deleteAllNotificationsMutation.isLoading ? 'Deleting all...' : 'Delete all'}
+                </button>
+              )}
               <DropdownMenuSeparator />
               <div className="max-h-[300px] overflow-auto">
-                <DropdownMenuItem className="p-4">
-                  <div className="flex flex-col space-y-1">
-                    <span className="font-medium text-sm">New Task Assigned</span>
-                    <span className="text-sm text-gray-500">You have been assigned to Kingston Central #24</span>
-                    <span className="text-xs text-gray-400">5 minutes ago</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="p-4">
-                  <div className="flex flex-col space-y-1">
-                    <span className="font-medium text-sm">Training Reminder</span>
-                    <span className="text-sm text-gray-500">Observer Training Session starts in 2 hours</span>
-                    <span className="text-xs text-gray-400">2 hours ago</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="p-4">
-                  <div className="flex flex-col space-y-1">
-                    <span className="font-medium text-sm">Report Approved</span>
-                    <span className="text-sm text-gray-500">Your report for Station #15 has been approved</span>
-                    <span className="text-xs text-gray-400">1 hour ago</span>
-                  </div>
-                </DropdownMenuItem>
+                {mute ? (
+                  <DropdownMenuItem className="p-4 text-center text-gray-400 italic">Notifications are muted</DropdownMenuItem>
+                ) : (
+                  filteredNotifications.length === 0 ? (
+                    <DropdownMenuItem className="p-4 text-center text-gray-500">No notifications</DropdownMenuItem>
+                  ) : (
+                    pagedNotifications = filteredNotifications.slice(0, notifPage * PAGE_SIZE),
+                    hasMore = filteredNotifications.length > pagedNotifications.length,
+                    pagedNotifications.map((notif) => {
+                      const icon = NOTIF_TYPE_ICON[notif.type] || NOTIF_TYPE_ICON.default;
+                      return (
+                        <DropdownMenuItem key={notif.id} className="p-4 flex flex-col space-y-1 group">
+                          <div className="flex items-start justify-between w-full">
+                            <div className="flex items-center gap-2">
+                              {icon}
+                              <div>
+                                <span className="font-medium text-sm">{notif.title}</span>
+                                <span className="block text-sm text-gray-500">{notif.message}</span>
+                                <span className="block text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
+                              </div>
+                            </div>
+                            <button
+                              className="ml-2 text-red-500 opacity-60 hover:opacity-100 group-hover:opacity-100"
+                              title="Delete notification"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setConfirmDeleteId(notif.id);
+                              }}
+                              disabled={deleteNotificationMutation.isLoading}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                          {!notif.read && (
+                            <button
+                              className="mt-2 text-xs text-blue-600 hover:underline self-start"
+                              onClick={e => {
+                                e.stopPropagation();
+                                markAsReadMutation.mutate(notif.id);
+                              }}
+                              disabled={markAsReadMutation.isLoading}
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )
+                )}
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-center text-primary font-medium cursor-pointer p-3">
@@ -301,6 +459,91 @@ export default function TopNavigation({ toggleSidebar }: TopNavigationProps) {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Confirmation dialogs */}
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-900 rounded shadow-lg p-6 w-80">
+            <p className="mb-4">Are you sure you want to delete this notification?</p>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => setConfirmDeleteId(null)}>Cancel</button>
+              <button
+                className="px-3 py-1 rounded bg-red-600 text-white"
+                onClick={() => {
+                  deleteNotificationMutation.mutate(confirmDeleteId!);
+                  setConfirmDeleteId(null);
+                }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmDeleteAll && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-900 rounded shadow-lg p-6 w-80">
+            <p className="mb-4">Are you sure you want to delete all notifications?</p>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => setConfirmDeleteAll(false)}>Cancel</button>
+              <button
+                className="px-3 py-1 rounded bg-red-600 text-white"
+                onClick={() => {
+                  deleteAllNotificationsMutation.mutate();
+                  setConfirmDeleteAll(false);
+                }}
+              >Delete All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings modal (placeholder) */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white dark:bg-gray-900 rounded shadow-lg p-6 w-96">
+            <h3 className="text-lg font-bold mb-4">Notification Settings</h3>
+            <div className="mb-4">
+              <label className="flex items-center gap-2 mb-2">
+                <input type="checkbox" checked={mute} onChange={e => setMute(e.target.checked)} />
+                Mute all notifications
+              </label>
+              <label className="flex items-center gap-2 mb-2">
+                <input type="checkbox" checked={showOnlyUnread} onChange={e => setShowOnlyUnread(e.target.checked)} />
+                Show only unread
+              </label>
+              <div className="mb-2">
+                <span className="block mb-1">Filter by type:</span>
+                {NOTIF_TYPES.map(type => (
+                  <label key={type} className="inline-flex items-center gap-1 mr-3">
+                    <input
+                      type="checkbox"
+                      checked={filterTypes.includes(type)}
+                      onChange={e => {
+                        if (e.target.checked) setFilterTypes([...filterTypes, type]);
+                        else setFilterTypes(filterTypes.filter(t => t !== type));
+                      }}
+                    />
+                    {NOTIF_TYPE_ICON[type]}
+                    <span className="capitalize text-xs">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700" onClick={() => setShowSettings(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load more button */}
+      {hasMore && (
+        <button
+          className="block w-full text-xs text-primary hover:underline text-center px-4 py-2 bg-transparent border-0"
+          onClick={() => setNotifPage(p => p + 1)}
+        >
+          Load more
+        </button>
+      )}
     </header>
   );
 }

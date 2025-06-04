@@ -16,9 +16,15 @@ function formatDate(dateInput: Date | string | undefined) {
 }
 
 export default function NewsList() {
-  const { data: news, isLoading, error } = useQuery<News[]>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['/api/news'],
+    queryFn: async () => {
+      const res = await fetch('/api/news');
+      if (!res.ok) throw new Error('Failed to fetch news');
+      return res.json();
+    },
   });
+  const news = data?.news || [];
 
   const getCategoryBadge = (category: string) => {
     const categoryLower = category.toLowerCase();
@@ -90,7 +96,7 @@ export default function NewsList() {
         <CardTitle className="text-lg font-medium">News</CardTitle>
       </CardHeader>
       <CardContent className="p-0 divide-y divide-gray-200">
-        {news.map(item => (
+        {news.map((item: any) => (
           <div key={item.id} className="p-6">
             {item.category && getCategoryBadge(item.category)}
             <h4 className="font-medium text-gray-900 mt-2">{item.title || 'Untitled'}</h4>

@@ -282,6 +282,17 @@ export const messages = pgTable("messages", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Add after messages table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id), // null for broadcast
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type"),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define a type for Message type
 export const messageTypeEnum = ["text", "file", "image", "system"] as const;
 
@@ -1219,3 +1230,7 @@ export type LeaderboardEntry = typeof leaderboardEntries.$inferSelect;
 export type InsertLeaderboardEntry = typeof insertLeaderboardEntrySchema._type;
 export type AchievementProgress = typeof achievementProgress.$inferSelect;
 export type InsertAchievementProgress = typeof insertAchievementProgressSchema._type;
+
+// Add types at the bottom:
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
