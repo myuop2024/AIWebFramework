@@ -35,6 +35,7 @@ const NOTIF_TYPE_ICON = {
 const PAGE_SIZE = 10;
 
 const NOTIF_TYPES = ["info", "success", "warning", "error", "urgent"];
+const NOTIF_SOUND_URL = "/assets/sounds/notification.mp3";
 
 export default function TopNavigation({ toggleSidebar, notifications: propNotifications = [] }: TopNavigationProps) {
   const [location] = useLocation();
@@ -62,6 +63,10 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
   const [mute, setMute] = useState(false);
   const [showOnlyUnread, setShowOnlyUnread] = useState(false);
   const [filterTypes, setFilterTypes] = useState<string[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  // Track previous notification IDs to detect new ones
+  const [prevNotifIds, setPrevNotifIds] = useState<number[]>([]);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -124,12 +129,44 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
         setMute(!!parsed.mute);
         setShowOnlyUnread(!!parsed.showOnlyUnread);
         setFilterTypes(Array.isArray(parsed.filterTypes) ? parsed.filterTypes : []);
+        setSoundEnabled(parsed.soundEnabled !== false); // default true
+        setPushEnabled(!!parsed.pushEnabled);
       } catch {}
     }
   }, []);
   useEffect(() => {
-    localStorage.setItem('notifSettings', JSON.stringify({ mute, showOnlyUnread, filterTypes }));
-  }, [mute, showOnlyUnread, filterTypes]);
+    localStorage.setItem('notifSettings', JSON.stringify({ mute, showOnlyUnread, filterTypes, soundEnabled, pushEnabled }));
+  }, [mute, showOnlyUnread, filterTypes, soundEnabled, pushEnabled]);
+
+  // Track previous notification IDs to detect new ones
+  useEffect(() => {
+    const ids = notifications.map(n => n.id);
+    // Find new notifications
+    const newNotifs = notifications.filter(n => !prevNotifIds.includes(n.id));
+    if (!mute && newNotifs.length > 0) {
+      if (soundEnabled) {
+        const audio = new Audio(NOTIF_SOUND_URL);
+        audio.play();
+      }
+      if (pushEnabled && 'Notification' in window && Notification.permission === 'granted') {
+        newNotifs.forEach(n => {
+          new Notification(n.title, {
+            body: n.message,
+            icon: '/assets/icon.png',
+            tag: `notif-${n.id}`,
+          });
+        });
+      }
+    }
+    setPrevNotifIds(ids);
+  }, [notifications, mute, soundEnabled, pushEnabled]);
+
+  // Request push permission if enabled
+  useEffect(() => {
+    if (pushEnabled && 'Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  }, [pushEnabled]);
 
   // Apply settings to notifications
   let filteredNotifications = notifications;
@@ -359,6 +396,17 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
                                 <span className="font-medium text-sm">{notif.title}</span>
                                 <span className="block text-sm text-gray-500">{notif.message}</span>
                                 <span className="block text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
+                                {notif.action && notif.action.label && notif.action.url && (
+                                  <button
+                                    className="mt-2 text-xs text-primary underline hover:no-underline"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      window.open(notif.action.url, '_blank');
+                                    }}
+                                  >
+                                    {notif.action.label}
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <button
@@ -505,6 +553,14 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
               <label className="flex items-center gap-2 mb-2">
                 <input type="checkbox" checked={mute} onChange={e => setMute(e.target.checked)} />
                 Mute all notifications
+              </label>
+              <label className="flex items-center gap-2 mb-2">
+                <input type="checkbox" checked={soundEnabled} onChange={e => setSoundEnabled(e.target.checked)} />
+                Play sound on new notification
+              </label>
+              <label className="flex items-center gap-2 mb-2">
+                <input type="checkbox" checked={pushEnabled} onChange={e => setPushEnabled(e.target.checked)} />
+                Show browser push notifications
               </label>
               <label className="flex items-center gap-2 mb-2">
                 <input type="checkbox" checked={showOnlyUnread} onChange={e => setShowOnlyUnread(e.target.checked)} />
