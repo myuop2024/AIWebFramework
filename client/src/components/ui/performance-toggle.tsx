@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: PerformanceSettings = {
   disableBackgroundEffects: false,
 };
 
-function usePerformanceSettings() {
+export function usePerformanceSettings() {
   const [settings, setSettings] = useState<PerformanceSettings>(DEFAULT_SETTINGS);
   const [isInitialized, setIsInitialized] = useState(false);
 
