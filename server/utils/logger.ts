@@ -38,13 +38,6 @@ const ERROR_LOG_PATH = 'logs/error.log';
 const ACCESS_LOG_PATH = 'logs/access.log';
 const SYSTEM_LOG_PATH = 'logs/system.log';
 
-// Ensure log directory exists
-if (!isProduction) {
-  logger.add(new transports.Console({
-    format: format.combine(format.colorize(), format.simple())
-  }));
-}
-
 // Log severity levels
 export enum LogLevel {
   DEBUG = 'DEBUG',
@@ -54,25 +47,7 @@ export enum LogLevel {
   CRITICAL = 'CRITICAL'
 }
 
-/**
- * Format a log entry with timestamp and metadata
- */
-function formatLogEntry(level: LogLevel, message: string, metadata: Record<string, any> = {}): string {
-  const timestamp = new Date().toISOString();
-  return `[${timestamp}] [${level}] ${message} ${JSON.stringify(metadata)}\n`;
-}
 
-/**
- * Log to file with appropriate formatting
- */
-function logToFile(filePath: string, level: LogLevel, message: string, metadata: Record<string, any> = {}): void {
-  try {
-    const logEntry = formatLogEntry(level, message, metadata);
-    logger.info(logEntry);
-  } catch (err) {
-    console.error('Failed to write to log file:', err);
-  }
-}
 
 /**
  * Extract useful information from request object for logging
@@ -92,26 +67,21 @@ export function getRequestInfo(req: Request): Record<string, any> {
  * Log debug message
  */
 export function debug(message: string, metadata: Record<string, any> = {}): void {
-  if (!isProduction) {
-    console.debug(`[DEBUG] ${message}`, metadata);
-  }
-  logToFile(SYSTEM_LOG_PATH, LogLevel.DEBUG, message, metadata);
+  logger.debug(message, metadata);
 }
 
 /**
  * Log informational message
  */
 export function info(message: string, metadata: Record<string, any> = {}): void {
-  console.info(`[INFO] ${message}`, metadata);
-  logToFile(SYSTEM_LOG_PATH, LogLevel.INFO, message, metadata);
+  logger.info(message, metadata);
 }
 
 /**
  * Log warning message
  */
 export function warn(message: string, metadata: Record<string, any> = {}): void {
-  console.warn(`[WARN] ${message}`, metadata);
-  logToFile(SYSTEM_LOG_PATH, LogLevel.WARN, message, metadata);
+  logger.warn(message, metadata);
 }
 
 /**
@@ -126,8 +96,7 @@ export function error(message: string, err?: Error, metadata: Record<string, any
     name: err.name
   } : metadata;
 
-  console.error(`[ERROR] ${message}`, errorData);
-  logToFile(ERROR_LOG_PATH, LogLevel.ERROR, message, errorData);
+  logger.error(message, errorData);
 }
 
 /**
@@ -142,11 +111,7 @@ export function critical(message: string, err?: Error, metadata: Record<string, 
     name: err.name
   } : metadata;
 
-  console.error(`[CRITICAL] ${message}`, errorData);
-  logToFile(ERROR_LOG_PATH, LogLevel.CRITICAL, message, errorData);
-  
-  // Also log to system log for easier correlation
-  logToFile(SYSTEM_LOG_PATH, LogLevel.CRITICAL, message, { errorRef: new Date().getTime() });
+  logger.error(`[CRITICAL] ${message}`, errorData);
 }
 
 /**
@@ -155,7 +120,7 @@ export function critical(message: string, err?: Error, metadata: Record<string, 
 export function logApiRequest(req: Request, statusCode: number, responseTime: number): void {
   const info = getRequestInfo(req);
   
-  logToFile(ACCESS_LOG_PATH, LogLevel.INFO, 'API Request', {
+  logger.info('API Request', {
     ...info,
     statusCode,
     responseTime: `${responseTime}ms`

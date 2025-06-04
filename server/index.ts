@@ -108,9 +108,6 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'public/uploads')));
 // Make storage available to all routes via app.locals
 app.locals.storage = storage;
 
-// Apply main request logger from error-handler.ts
-app.use(mainRequestLogger);
-
 // Add session debug middleware
 app.use((req, res, next) => {
   // Log session data on each request
@@ -124,31 +121,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Consolidated request logging middleware
-app.use((req, res, next) => {
-  // Skip non-API requests for performance
-  if (!req.originalUrl.startsWith('/api')) {
-    return next();
-  }
-
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-
-    // Only log if duration is significant or status indicates error
-    if (duration > 100 || res.statusCode >= 400) {
-      logger.info('HTTP Request', {
-        method: req.method,
-        url: req.originalUrl,
-        status: res.statusCode,
-        duration,
-        ip: req.ip,
-        userId: req.session?.userId || 'unauthenticated'
-      });
-    }
-  });
-  next();
-});
+// Apply main request logger from error-handler.ts (single logging middleware)
+app.use(mainRequestLogger);
 
 // Global error handlers for all uncaught exceptions and unhandled promise rejections
 process.on('uncaughtException', async (error: Error, origin: string) => {

@@ -174,7 +174,7 @@ class DiditConnector {
           DIDIT_API_KEY: this.config.apiKey || '',
           DIDIT_API_SECRET: this.config.apiSecret || '',
           DIDIT_BASE_URL: this.config.baseUrl || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
-          PORT: '5000',
+          PORT: process.env.DIDIT_INTEGRATION_PORT || '5001',
           HOST: '0.0.0.0'
         },
         detached: false,
