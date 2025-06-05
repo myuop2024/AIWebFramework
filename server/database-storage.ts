@@ -1461,43 +1461,59 @@ export class DatabaseStorage implements IStorage {
   // Communication operations
   async getRecentConversations(userId: number): Promise<any[]> {
     try {
-      // Get recent conversations for the user
-      const conversations = await db
-        .select({
-          id: messages.id,
-          otherUserId: sql<number>`CASE 
-            WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId}
-            ELSE ${messages.senderId}
-          END`,
-          username: sql<string>`CASE 
-            WHEN ${messages.senderId} = ${userId} THEN receiver.username
-            ELSE sender.username
-          END`,
-          lastMessage: messages.content,
-          lastMessageAt: messages.sentAt,
-          unreadCount: sql<number>`COUNT(CASE WHEN ${messages.receiverId} = ${userId} AND ${messages.read} = false THEN 1 END)`
-        })
-        .from(messages)
-        .leftJoin(users, eq(users.id, messages.senderId))
-        .leftJoin(sql`${users} AS receiver`, sql`receiver.id = ${messages.receiverId}`)
-        .leftJoin(sql`${users} AS sender`, sql`sender.id = ${messages.senderId}`)
-        .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
-        .groupBy(
-          sql`CASE 
-            WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId}
-            ELSE ${messages.senderId}
-          END`,
-          sql`CASE 
-            WHEN ${messages.senderId} = ${userId} THEN receiver.username
-            ELSE sender.username
-          END`,
-          messages.content,
-          messages.sentAt
+      // Using sql tagged template for a more complex query involving CTE and window functions.
+      // This correctly fetches the latest message for each conversation.
+      const query = sql`
+        WITH user_conversations AS (
+            SELECT
+                m.id as message_id,
+                m.content as last_message_content,
+                m.sent_at as last_message_sent_at,
+                m.type as last_message_type,
+                m.sender_id as last_message_sender_id,
+                CASE
+                    WHEN m.sender_id = ${userId} THEN m.receiver_id
+                    ELSE m.sender_id
+                END as other_user_id,
+                ROW_NUMBER() OVER (PARTITION BY
+                    CASE
+                        WHEN m.sender_id = ${userId} THEN m.receiver_id
+                        ELSE m.sender_id
+                    END
+                    ORDER BY m.sent_at DESC
+                ) as rn
+            FROM ${messages} m
+            WHERE m.sender_id = ${userId} OR m.receiver_id = ${userId}
         )
-        .orderBy(desc(messages.sentAt))
-        .limit(50);
-
-      return conversations;
+        SELECT
+            uc.message_id as "id", -- ID of the latest message in conversation
+            uc.other_user_id as "otherUserId",
+            other_user.username as "username",
+            other_user.first_name as "firstName", -- For richer UI if needed
+            other_user.last_name as "lastName",   -- For richer UI if needed
+            other_user.profile_image as "profileImage", -- For richer UI if needed
+            uc.last_message_content as "lastMessage",
+            uc.last_message_sent_at as "lastMessageAt",
+            uc.last_message_type as "lastMessageType",
+            uc.last_message_sender_id as "lastMessageSenderId", 
+            (
+                SELECT COUNT(*)::int
+                FROM ${messages} unread_msgs
+                WHERE unread_msgs.receiver_id = ${userId}
+                  AND unread_msgs.sender_id = uc.other_user_id
+                  AND unread_msgs.read = FALSE
+            ) as "unreadCount"
+        FROM user_conversations uc
+        JOIN ${users} other_user ON other_user.id = uc.other_user_id
+        WHERE uc.rn = 1
+        ORDER BY uc.last_message_sent_at DESC
+        LIMIT 50;
+      `;
+      
+      // Execute the raw query. Adjust if your db driver returns rows differently (e.g., result.rows)
+      // For Drizzle with Neon serverless or similar pg-based drivers, direct result is often the array of rows.
+      const result = await db.execute(query);
+      return result as any[]; // Cast to any[] as the return type is broad. Frontend will map.
     } catch (error) {
       logger.error('Error getting recent conversations:', error);
       throw error;
