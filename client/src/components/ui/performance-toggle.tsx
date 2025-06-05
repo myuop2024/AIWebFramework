@@ -1,58 +1,69 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Zap, ZapOff } from 'lucide-react';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Switch } from './switch';
+import { Label } from './label';
 
 interface PerformanceSettings {
-  reducedAnimations: boolean;
+  animations: boolean;
   reducedMotion: boolean;
-  lowDataMode: boolean;
-  optimizedImages: boolean;
-  disableBackgroundEffects: boolean;
+  highContrast: boolean;
+  largeText: boolean;
 }
 
-const DEFAULT_SETTINGS: PerformanceSettings = {
-  reducedAnimations: false,
+const defaultSettings: PerformanceSettings = {
+  animations: true,
   reducedMotion: false,
-  lowDataMode: false,
-  optimizedImages: false,
-  disableBackgroundEffects: false,
+  highContrast: false,
+  largeText: false,
 };
 
-export function usePerformanceSettings() {
-  const [settings, setSettings] = useState<PerformanceSettings>(DEFAULT_SETTINGS);
-  const [isInitialized, setIsInitialized] = useState(false);
+export function PerformanceToggle() {
+  const [settings, setSettings] = useState<PerformanceSettings>(defaultSettings);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Load settings from localStorage only once on mount
+  // Load settings from localStorage on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem('performanceSettings');
+    const savedSettings = localStorage.getItem('performance-settings');
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
         setSettings(prev => ({ ...prev, ...parsed }));
       } catch (error) {
-        console.warn('Failed to parse saved performance settings:', error);
+        console.warn('Failed to parse performance settings:', error);
       }
     }
-    setIsInitialized(true);
-  }, []);
+  }, []); // Empty dependency array - only run on mount
 
-  // Save settings to localStorage when they change (but only after initialization)
+  // Save settings to localStorage when settings change
   useEffect(() => {
-    if (isInitialized) {
-      localStorage.setItem('performanceSettings', JSON.stringify(settings));
-    }
-  }, [settings, isInitialized]);
-
-  // Apply reduced animations setting to document
-  useEffect(() => {
-    if (settings.reducedAnimations) {
-      document.documentElement.classList.add('reduce-motion');
+    localStorage.setItem('performance-settings', JSON.stringify(settings));
+    
+    // Apply settings to document
+    const root = document.documentElement;
+    
+    if (settings.reducedMotion) {
+      root.style.setProperty('--animation-duration', '0ms');
+      root.style.setProperty('--transition-duration', '0ms');
     } else {
-      document.documentElement.classList.remove('reduce-motion');
+      root.style.removeProperty('--animation-duration');
+      root.style.removeProperty('--transition-duration');
     }
-  }, [settings.reducedAnimations]);
+    
+    if (settings.highContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+    
+    if (settings.largeText) {
+      root.classList.add('large-text');
+    } else {
+      root.classList.remove('large-text');
+    }
+  }, [settings]); // Only depend on settings
 
   const updateSetting = useCallback((key: keyof PerformanceSettings, value: boolean) => {
     setSettings(prev => ({
@@ -61,37 +72,25 @@ export function usePerformanceSettings() {
     }));
   }, []);
 
-  return { settings, updateSetting };
-}
+  const resetSettings = useCallback(() => {
+    setSettings(defaultSettings);
+  }, []);
 
-export function PerformanceToggle() {
-  const [isOpen, setIsOpen] = useState(false);
-  const { settings, updateSetting } = usePerformanceSettings();
-
-  const isPerformanceModeActive = useMemo(() => 
-    Object.values(settings).some(Boolean), 
-    [settings]
-  );
-
-  const handleSettingChange = useCallback((key: keyof PerformanceSettings) => {
-    return (checked: boolean) => {
-      updateSetting(key, checked);
-    };
-  }, [updateSetting]);
+  const isHighPerformance = settings.animations && !settings.reducedMotion;
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className={`h-8 w-8 ${isPerformanceModeActive ? 'text-green-600' : 'text-gray-600'}`}
-          title="Performance Settings"
+          size="sm"
+          className="h-8 w-8 p-0"
+          title={isHighPerformance ? "High Performance Mode" : "Accessibility Mode"}
         >
-          {isPerformanceModeActive ? (
-            <Zap className="h-4 w-4" />
+          {isHighPerformance ? (
+            <Zap className="h-4 w-4 text-green-600" />
           ) : (
-            <ZapOff className="h-4 w-4" />
+            <ZapOff className="h-4 w-4 text-orange-600" />
           )}
         </Button>
       </PopoverTrigger>
@@ -99,84 +98,70 @@ export function PerformanceToggle() {
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
-            <h3 className="font-medium">Performance Settings</h3>
+            <h3 className="font-medium">Performance & Accessibility</h3>
           </div>
           
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Reduced Animations</label>
-                <p className="text-xs text-gray-500">Minimize UI animations for better performance</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.reducedAnimations}
-                onChange={(e) => handleSettingChange('reducedAnimations')(e.target.checked)}
-                className="h-4 w-4"
+              <Label htmlFor="animations" className="text-sm">
+                Enable Animations
+              </Label>
+              <Switch
+                id="animations"
+                checked={settings.animations}
+                onCheckedChange={(checked) => updateSetting('animations', checked)}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Reduced Motion</label>
-                <p className="text-xs text-gray-500">Respect system motion preferences</p>
-              </div>
-              <input
-                type="checkbox"
+              <Label htmlFor="reduced-motion" className="text-sm">
+                Reduce Motion
+              </Label>
+              <Switch
+                id="reduced-motion"
                 checked={settings.reducedMotion}
-                onChange={(e) => handleSettingChange('reducedMotion')(e.target.checked)}
-                className="h-4 w-4"
+                onCheckedChange={(checked) => updateSetting('reducedMotion', checked)}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Low Data Mode</label>
-                <p className="text-xs text-gray-500">Reduce data usage for mobile connections</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.lowDataMode}
-                onChange={(e) => handleSettingChange('lowDataMode')(e.target.checked)}
-                className="h-4 w-4"
+              <Label htmlFor="high-contrast" className="text-sm">
+                High Contrast
+              </Label>
+              <Switch
+                id="high-contrast"
+                checked={settings.highContrast}
+                onCheckedChange={(checked) => updateSetting('highContrast', checked)}
               />
             </div>
             
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Optimized Images</label>
-                <p className="text-xs text-gray-500">Load compressed images for faster loading</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.optimizedImages}
-                onChange={(e) => handleSettingChange('optimizedImages')(e.target.checked)}
-                className="h-4 w-4"
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Disable Background Effects</label>
-                <p className="text-xs text-gray-500">Turn off visual effects and gradients</p>
-              </div>
-              <input
-                type="checkbox"
-                checked={settings.disableBackgroundEffects}
-                onChange={(e) => handleSettingChange('disableBackgroundEffects')(e.target.checked)}
-                className="h-4 w-4"
+              <Label htmlFor="large-text" className="text-sm">
+                Large Text
+              </Label>
+              <Switch
+                id="large-text"
+                checked={settings.largeText}
+                onCheckedChange={(checked) => updateSetting('largeText', checked)}
               />
             </div>
           </div>
           
-          {isPerformanceModeActive && (
-            <div className="pt-2 border-t">
-              <p className="text-xs text-green-600 flex items-center">
-                <Zap className="h-3 w-3 mr-1" />
-                Performance mode is active
-              </p>
-            </div>
-          )}
+          <div className="flex justify-between pt-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetSettings}
+            >
+              Reset
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setIsOpen(false)}
+            >
+              Done
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
