@@ -2,19 +2,19 @@ import { db } from "./db";
 import { IStorage } from "./storage";
 import crypto from "crypto";
 import { 
-  users, users as usersTable, 
+  users, 
+  userProfiles, 
   systemSettings, 
-  pollingStations,
-  assignments,
-  documents,
-  userProfiles,
-  reports,
+  pollingStations, 
+  assignments, 
+  documents, 
+  reports, 
   reportAttachments,
   formTemplates,
   events,
   eventParticipation,
-  faqEntries,
-  newsEntries,
+  faqs,
+  news,
   messages,
   registrationForms,
   userImportLogs,
@@ -911,7 +911,7 @@ export class DatabaseStorage implements IStorage {
       // Ensure permissions are stored as JSONB, Drizzle should handle JS array to JSONB conversion.
       // If data.permissions is explicitly null, it will be set to null.
       // If data.permissions is undefined, the field won't be updated unless it's part of the spread.
-      // To be safe, explicitly handle permissions if it's part of `data`.
+      // To be safe, explicitly handle permissions if the part of `data`.
       if (data.permissions !== undefined) {
         updateData.permissions = data.permissions;
       }
@@ -1461,14 +1461,66 @@ export class DatabaseStorage implements IStorage {
   // Communication operations
   async getRecentConversations(userId: number): Promise<any[]> {
     try {
-      // For now, return an empty array since conversations aren't fully implemented
-      // This can be expanded when the full messaging system is implemented
-      logger.info(`Getting recent conversations for user: ${userId}`);
-      return [];
+      // Get recent conversations for the user
+      const conversations = await db
+        .select({
+          id: messages.id,
+          otherUserId: sql<number>`CASE 
+            WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId}
+            ELSE ${messages.senderId}
+          END`,
+          username: sql<string>`CASE 
+            WHEN ${messages.senderId} = ${userId} THEN receiver.username
+            ELSE sender.username
+          END`,
+          lastMessage: messages.content,
+          lastMessageAt: messages.sentAt,
+          unreadCount: sql<number>`COUNT(CASE WHEN ${messages.receiverId} = ${userId} AND ${messages.read} = false THEN 1 END)`
+        })
+        .from(messages)
+        .leftJoin(users, eq(users.id, messages.senderId))
+        .leftJoin(sql`${users} AS receiver`, sql`receiver.id = ${messages.receiverId}`)
+        .leftJoin(sql`${users} AS sender`, sql`sender.id = ${messages.senderId}`)
+        .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)))
+        .groupBy(
+          sql`CASE 
+            WHEN ${messages.senderId} = ${userId} THEN ${messages.receiverId}
+            ELSE ${messages.senderId}
+          END`,
+          sql`CASE 
+            WHEN ${messages.senderId} = ${userId} THEN receiver.username
+            ELSE sender.username
+          END`,
+          messages.content,
+          messages.sentAt
+        )
+        .orderBy(desc(messages.sentAt))
+        .limit(50);
+
+      return conversations;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.error(`Error getting recent conversations for user ${userId}: ${err.message}`, err);
-      throw err;
+      logger.error('Error getting recent conversations:', error);
+      throw error;
+    }
+  }
+
+  async getMessagesBetweenUsers(userId: number, otherUserId: number): Promise<Message[]> {
+    try {
+      const result = await db
+        .select()
+        .from(messages)
+        .where(
+          or(
+            and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
+            and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
+          )
+        )
+        .orderBy(asc(messages.sentAt));
+
+      return result;
+    } catch (error) {
+      logger.error('Error getting messages between users:', error);
+      throw error;
     }
   }
 
@@ -1493,23 +1545,6 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       logger.error(`Error getting message ${id}: ${err.message}`, err);
-      throw err;
-    }
-  }
-
-  async getMessagesBetweenUsers(userId: number, otherUserId: number): Promise<Message[]> {
-    try {
-      return await db
-        .select()
-        .from(messages)
-        .where(or(
-          and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
-          and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
-        ))
-        .orderBy(asc(messages.sentAt));
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.error(`Error getting messages between ${userId} and ${otherUserId}: ${err.message}`, err);
       throw err;
     }
   }
