@@ -200,9 +200,9 @@ router.post('/messages', ensureAuthenticated, async (req, res, next) => {
     const { receiverId, content, type } = validationResult.data;
 
     // Prevent sending message to oneself
-    if (receiverId === req.userId) {
-        return res.status(400).json({ error: 'Cannot send messages to yourself.' });
-    }
+    // if (receiverId === req.userId) {
+    //     return res.status(400).json({ error: 'Cannot send messages to yourself.' });
+    // }
 
     const receiver = await storage.getUser(receiverId);
     if (!receiver) {
