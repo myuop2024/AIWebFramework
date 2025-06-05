@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 // Ensure the upload directory exists
 // Adjusted path to be relative to the project root assuming 'server/routes' is the current file's dir.
 // The 'public' folder should be at the project root, alongside 'server'.
-const uploadDir = path.join(__dirname, '../../../public/uploads/communication_files');
+const uploadDir = path.join(__dirname, '../../public/uploads/communication_files');
 if (!fs.existsSync(uploadDir)) {
     try {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -55,6 +55,10 @@ const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.
         'image/png',
         'image/gif',
         'application/pdf',
+        'audio/webm', // For recordings from MediaRecorder
+        'audio/ogg',  // Common for voice recordings
+        'audio/mpeg', // MP3
+        'audio/mp4',  // Can contain audio (m4a)
         // Add more types as needed:
         // 'application/msword', // .doc
         // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
@@ -64,7 +68,7 @@ const fileFilter = (req: express.Request, file: Express.Multer.File, cb: multer.
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type. Only JPEG, PNG, GIF, PDF are allowed.'));
+        cb(new Error('Invalid file type. Only JPEG, PNG, GIF, PDF, and common audio formats are allowed.'));
     }
 };
 
@@ -88,7 +92,7 @@ export function setCommunicationService(service: CommunicationService) {
 const messageSchema = z.object({
   receiverId: z.number().int().positive(),
   content: z.string().min(1), // Ensure content is not empty
-  type: z.enum(['text', 'file', 'image', 'system']).optional().default('text'),
+  type: z.enum(['text', 'file', 'image', 'system', 'audio']).optional().default('text'),
 });
 
 const userIdParamSchema = z.object({

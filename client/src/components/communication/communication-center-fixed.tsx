@@ -12,13 +12,14 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   MessageSquare, Phone, Video, Send, Paperclip, Image, Mic,
   User, UserPlus, Users, X, Volume2, VolumeX, Camera, CameraOff, Search,
-  Download, Clock, ArrowLeft, Play, Trash2, StopCircle, Share2
+  Download, Clock, ArrowLeft, Play, Trash2, StopCircle, Share2, FileText as FileIconLucide // Added FileIconLucide as an example, replace if a different icon is preferred or use Download
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useCommunication, type Message, type User as CommunicationUser } from '@/hooks/use-communication';
 import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '@/components/ui/spinner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast'; // Added useToast
 
 interface CommunicationCenterProps {
   userId: number;
@@ -37,6 +38,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
   const [showUserSearch, setShowUserSearch] = useState(false);
   const messageEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast(); // Initialized useToast
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcastChannels, setBroadcastChannels] = useState<{ sms: boolean; whatsapp: boolean; telegram: boolean }>({ sms: true, whatsapp: false, telegram: false });
@@ -128,6 +130,52 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
     }
   };
 
+  const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    toast({ title: 'Uploading file...', description: file.name });
+
+    try {
+      const response = await fetch('/api/communications/upload-file', {
+        method: 'POST',
+        body: formData,
+        // Add authorization header if your API requires it for uploads
+        // headers: { 'Authorization': `Bearer ${your_auth_token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Upload failed with status: ' + response.status }));
+        throw new Error(errorData.message || 'File upload failed');
+      }
+
+      const result = await response.json();
+      const filePath = result.filePath; // e.g., /uploads/communication_files/filename.ext
+      const fileName = result.fileName || file.name; // Use original filename as fallback
+
+      // Determine message type based on file MIME type
+      let messageType: 'file' | 'image' = 'file';
+      if (file.type.startsWith('image/')) {
+        messageType = 'image';
+      }
+
+      if (activeChatUserId) {
+        await sendMessage(activeChatUserId, filePath, messageType);
+      }
+      toast({ title: 'File sent!', description: fileName, variant: 'success' });
+    } catch (error) {
+      console.error('File upload or message send error:', error);
+      toast({ title: 'Error sending file', description: (error as Error).message, variant: 'destructive' });
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   // Handle starting a new conversation
   const handleStartConversation = (user: CommunicationUser) => {
     setActiveChatUserId(user.id);
@@ -136,33 +184,33 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
   };
 
   // Voice Memo State
-  const [voiceMemos, setVoiceMemos] = useState<{ id: string, url: string, created: number }[]>([]);
+  // const [voiceMemos, setVoiceMemos] = useState<{ id: string, url: string, created: number }[]>([]); // Removed
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
-  // Load memos from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('voiceMemos');
-      if (saved) setVoiceMemos(JSON.parse(saved));
-    } catch (e) {
-      console.error('Error loading voice memos from localStorage:', e);
-      // Optionally show a toast here if you have a toast system
-      // toast({ title: 'Storage Error', description: 'Could not load voice memos from storage.', variant: 'destructive' });
-    }
-  }, []);
-  // Save memos to localStorage on change
-  useEffect(() => {
-    try {
-      localStorage.setItem('voiceMemos', JSON.stringify(voiceMemos));
-    } catch (e) {
-      console.error('Error saving voice memos to localStorage:', e);
-      // Optionally show a toast here if you have a toast system
-      // toast({ title: 'Storage Error', description: 'Could not save voice memos to storage.', variant: 'destructive' });
-    }
-  }, [voiceMemos]);
+  // Load memos from localStorage on mount - Removed
+  // useEffect(() => {
+  //   try {
+  //     const saved = localStorage.getItem('voiceMemos');
+  //     if (saved) setVoiceMemos(JSON.parse(saved));
+  //   } catch (e) {
+  //     console.error('Error loading voice memos from localStorage:', e);
+  //     // Optionally show a toast here if you have a toast system
+  //     // toast({ title: 'Storage Error', description: 'Could not load voice memos from storage.', variant: 'destructive' });
+  //   }
+  // }, []);
+  // Save memos to localStorage on change - Removed
+  // useEffect(() => {
+  //   try {
+  //     localStorage.setItem('voiceMemos', JSON.stringify(voiceMemos));
+  //   } catch (e) {
+  //     console.error('Error saving voice memos to localStorage:', e);
+  //     // Optionally show a toast here if you have a toast system
+  //     // toast({ title: 'Storage Error', description: 'Could not save voice memos to storage.', variant: 'destructive' });
+  //   }
+  // }, [voiceMemos]);
 
   const startRecording = async () => {
     if (!navigator.mediaDevices?.getUserMedia) return alert('Audio recording not supported');
@@ -186,12 +234,53 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
     setIsRecording(true);
   };
   const stopRecording = () => {
-    mediaRecorder?.stop();
+    if (mediaRecorder) {
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' }); // Or 'audio/ogg'
+        setRecordedChunks([]);
+
+        if (!activeChatUserId) {
+          toast({ title: 'Error', description: 'No active chat to send voice memo to.', variant: 'destructive'});
+          return;
+        }
+
+        const formData = new FormData();
+        const fileName = `voice-memo-${Date.now()}.webm`;
+        formData.append('file', audioBlob, fileName);
+
+        toast({ title: 'Uploading voice memo...', description: fileName });
+        try {
+          const response = await fetch('/api/communications/upload-file', {
+            method: 'POST',
+            body: formData,
+            // Add auth headers if needed
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Upload failed with status: ' + response.status }));
+            throw new Error(errorData.message || 'Voice memo upload failed');
+          }
+
+          const result = await response.json();
+          const filePath = result.filePath;
+
+          await sendMessage(activeChatUserId, filePath, 'audio');
+          toast({ title: 'Voice memo sent!', variant: 'success' });
+
+        } catch (error) {
+          console.error('Voice memo upload or send error:', error);
+          toast({ title: 'Error sending voice memo', description: (error as Error).message, variant: 'destructive' });
+        }
+      };
+      mediaRecorder.stop();
+    }
     setIsRecording(false);
   };
-  const deleteMemo = (id: string) => {
-    setVoiceMemos((prev) => prev.filter((m) => m.id !== id));
-  };
+
+  // deleteMemo function - Removed
+  // const deleteMemo = (id: string) => {
+  //   setVoiceMemos((prev) => prev.filter((m) => m.id !== id));
+  // };
 
   const handleBroadcast = async () => {
     setBroadcastStatus({});
@@ -222,7 +311,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
           {!hideHeader && (
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 rounded-none border-b bg-transparent">
+                <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-transparent"> {/* Grid cols changed from 4 to 3 */}
                   <TabsTrigger value="chats" className="data-[state=active]:bg-background">
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Chats
@@ -235,10 +324,10 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                     <Users className="h-4 w-4 mr-2" />
                     Contacts
                   </TabsTrigger>
-                  <TabsTrigger value="voice-memos" className="data-[state=active]:bg-background">
+                  {/* <TabsTrigger value="voice-memos" className="data-[state=active]:bg-background">
                     <Mic className="h-4 w-4 mr-2" />
                     Voice Memos
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                 </TabsList>
               </Tabs>
             </div>
@@ -406,7 +495,20 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                                   : 'bg-muted'
                               }`}
                             >
-                              <p className="text-sm">{message.content}</p>
+                              {message.type === 'image' ? (
+                                <img src={message.content} alt="Sent image" className="max-w-xs max-h-xs rounded" />
+                              ) : message.type === 'file' ? (
+                                <a href={message.content} target="_blank" rel="noopener noreferrer" className="underline flex items-center">
+                                  <Download className="h-4 w-4 mr-2" />
+                                  {message.content.split('/').pop()} {/* Basic way to get filename from path */}
+                                </a>
+                              ) : message.type === 'audio' ? (
+                                <audio controls src={message.content} className="w-full max-w-xs">
+                                  Your browser does not support the audio element.
+                                </audio>
+                              ) : (
+                                <p className="text-sm">{message.content}</p>
+                              )}
                               <p className="text-xs opacity-70 mt-1">
                                 {formatDistanceToNow(new Date(message.sentAt))} ago
                               </p>
@@ -431,6 +533,16 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                         value={messageInput}
                         onChange={(e) => setMessageInput(e.target.value)}
                         className="flex-1"
+                      />
+                      {/* File attachment button */}
+                      <Button type="button" variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+                        <Paperclip className="h-4 w-4" />
+                      </Button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileSelected} // This function will be added in the next step
+                        style={{ display: 'none' }}
                       />
                       <Button type="submit" size="sm" disabled={!messageInput.trim()}>
                         <Send className="h-4 w-4" />
@@ -528,39 +640,8 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
         </DialogContent>
       </Dialog>
 
-      {/* Voice Memos Tab */}
-      {activeTab === 'voice-memos' && (
-        <div className="flex flex-col h-full p-4">
-          <div className="mb-4 flex items-center gap-2">
-            <Button
-              onClick={isRecording ? stopRecording : startRecording}
-              variant={isRecording ? 'destructive' : 'default'}
-              className="gap-2"
-            >
-              {isRecording ? <StopCircle className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-              {isRecording ? 'Stop Recording' : 'Record Voice Memo'}
-            </Button>
-            {isRecording && <span className="text-red-500 animate-pulse ml-2">Recording...</span>}
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {voiceMemos.length === 0 ? (
-              <div className="text-center text-muted-foreground mt-8">No voice memos yet.</div>
-            ) : (
-              <ul className="space-y-4">
-                {voiceMemos.map((memo) => (
-                  <li key={memo.id} className="flex items-center gap-3 border-b pb-2">
-                    <audio ref={audioPlayerRef} src={memo.url} controls className="w-64" />
-                    <span className="text-xs text-gray-500">{new Date(memo.created).toLocaleString()}</span>
-                    <Button variant="ghost" size="icon" onClick={() => deleteMemo(memo.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Voice Memos Tab - Content Removed */}
+      {/* {activeTab === 'voice-memos' && ( ...old UI... )} */}
 
       {/* Broadcast Modal */}
       <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
