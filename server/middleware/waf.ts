@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import logger from '../utils/logger';
 
 // WAF Configuration
-export interface WAFConfig {
+interface WAFConfig {
   enableRateLimit: boolean;
   enableSQLInjectionProtection: boolean;
   enableXSSProtection: boolean;
@@ -385,4 +385,4 @@ class WAFEngine {
   }
 }
 
-export { WAFEngine };
+export { WAFEngine, type WAFConfig };
