@@ -63,7 +63,7 @@ const pathTraversalPatterns = [
 
 // Check for command injection patterns (excluding development patterns)
 const commandInjectionPatterns = [
-  /[;&|`$(){}[\]]/,  // Command separators and substitution
+  /[;|`$(){}[\]]/,  // Command separators and substitution (removed & to allow query params)
   /\b(exec|eval|system|shell_exec|passthru|wget|curl|nc|netcat|bash|sh|cmd|powershell)\b/i,
 ];
 
@@ -76,11 +76,14 @@ const WHITELIST_PATTERNS = [
   /^\/assets\//,
   /^\/uploads\//,
   /^\/public\//,
-  /^\/src\/components\//,
-  /^\/src\/.*\.tsx?$/,
-  /^\/src\/.*\.jsx?$/,
+  /^\/src\//,
   /^\/node_modules\//,
-  /\.map$/
+  /\.map$/,
+  /@vite\/client/,
+  /@fs\/home\/runner\/workspace/,
+  /\.(js|ts|jsx|tsx|css|scss|sass|less|vue|html)(\?.*)?$/,
+  /\/__vite/,
+  /\/vite\//
 ];
 
 class WAFEngine {
@@ -116,11 +119,11 @@ class WAFEngine {
     // Clean up suspicious activity map every hour
     setInterval(() => {
       const now = Date.now();
-      for (const [ip, activity] of this.suspiciousActivity.entries()) {
+      this.suspiciousActivity.forEach((activity, ip) => {
         if (now - activity.lastSeen > 3600000) { // 1 hour
           this.suspiciousActivity.delete(ip);
         }
-      }
+      });
     }, 3600000);
   }
 
@@ -199,21 +202,25 @@ class WAFEngine {
   }
 
   private checkCommandInjection(input: string): boolean {
-    // Skip command injection checks for development-related URLs
+    // Skip command injection checks for development-related URLs and query params
     const devPatterns = [
       /@vite\/client/,
-      /\.tsx?$/,
-      /\.jsx?$/,
+      /\.tsx?(\?.*)?$/,
+      /\.jsx?(\?.*)?$/,
+      /\.css(\?.*)?$/,
       /src\/pages/,
       /node_modules/,
-      /__vite/
+      /__vite/,
+      /@fs\/home\/runner\/workspace/,
+      /\?[tv]=[\w-]+/  // Vite query parameters like ?t=timestamp&v=hash
     ];
 
-    // If this looks like a development file, skip command injection check
+    // If this looks like a development file or has dev query params, skip command injection check
     if (devPatterns.some(pattern => pattern.test(input))) {
       return false;
     }
 
+    // Only check for actual command injection patterns in non-dev contexts
     return commandInjectionPatterns.some(pattern => pattern.test(input));
   }
 
@@ -378,4 +385,4 @@ class WAFEngine {
   }
 }
 
-export { WAFEngine, WAFConfig };
+export { WAFEngine };
