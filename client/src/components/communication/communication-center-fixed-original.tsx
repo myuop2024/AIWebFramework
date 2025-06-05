@@ -493,10 +493,7 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
           <div className="flex h-full overflow-hidden"> {/* Main flex container for sidebars and chat area */}
             {/* Sidebar Container - visible if not mobile OR if mobile and no active chat */}
-            <div className={`
-              ${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col'}
-              w-full md:w-72 h-full md:border-r {/* Border only on md+ to avoid double border on mobile when chat is hidden */}
-            `}>
+            <div className={`${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col w-full md:w-72 h-full md:border-r'}`}> {/* Border only on md+ to avoid double border on mobile when chat is hidden */}
               {/* Chats Tab Content (Left Sidebar) */}
               <TabsContent value="chats" className="mt-0 flex-grow flex flex-col data-[state=inactive]:hidden"> {/* Removed w-full, h-full, border-r from here */}
                 <div className="p-3">
