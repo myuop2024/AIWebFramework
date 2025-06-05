@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import PageHeader from '@/components/layout/page-header';
-import { CommunicationCenter } from '@/components/communication/communication-center-fixed';
+import { EnhancedChat } from '@/components/communication/enhanced-chat';
 import { Loader2 } from 'lucide-react';
 
 export default function Chat() {
@@ -40,7 +40,7 @@ export default function Chat() {
         description="Chat with other observers and staff members in real-time"
       />
       <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)] min-h-0 overflow-hidden">
-        <CommunicationCenter userId={user.id} hideHeader={true} />
+        <EnhancedChat userId={user.id} hideHeader={true} />
       </div>
     </>
   );

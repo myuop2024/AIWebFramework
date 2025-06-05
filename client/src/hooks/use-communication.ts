@@ -44,6 +44,7 @@ export interface User {
 export interface CallData {
   callerId: number;
   receiverId: number;
+  type?: 'audio' | 'video';
   callMediaType: 'audio' | 'video';
   offer?: RTCSessionDescriptionInit;
   answer?: RTCSessionDescriptionInit;
