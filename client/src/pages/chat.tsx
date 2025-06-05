@@ -39,7 +39,7 @@ export default function Chat() {
         title="Communications Center"
         description="Chat with other observers and staff members in real-time"
       />
-      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)]">
+      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)] min-h-0 overflow-hidden">
         <CommunicationCenter userId={user.id} hideHeader={true} />
       </div>
     </>

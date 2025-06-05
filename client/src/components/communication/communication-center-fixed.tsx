@@ -217,8 +217,8 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
 
   return (
     <Card className="h-full border-none shadow-none">
-      <CardContent className="p-0 h-full">
-        <div className="h-full flex flex-col">
+      <CardContent className="p-0 h-full min-h-0 overflow-hidden">
+        <div className="h-full min-h-0 flex flex-col overflow-hidden">
           {!hideHeader && (
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
