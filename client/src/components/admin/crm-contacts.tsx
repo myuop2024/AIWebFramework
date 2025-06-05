@@ -70,7 +70,7 @@ const CRMContacts: React.FC<CRMContactsProps> = ({ isAdmin }) => {
   const { data: contacts, isLoading, error } = useQuery({
     queryKey: ['crm-contacts'],
     queryFn: async () => {
-      const res = await fetch('/crm/contacts');
+      const res = await fetch('/api/crm/contacts'); // Updated path
       if (!res.ok) throw new Error('Failed to fetch contacts');
       return res.json();
     },
@@ -79,7 +79,7 @@ const CRMContacts: React.FC<CRMContactsProps> = ({ isAdmin }) => {
   // Delete contact mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/crm/contacts/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/crm/contacts/${id}`, { method: 'DELETE' }); // Updated path
       if (!res.ok) throw new Error('Failed to delete contact');
     },
     onSuccess: () => {
@@ -92,7 +92,7 @@ const CRMContacts: React.FC<CRMContactsProps> = ({ isAdmin }) => {
   // Update contact mutation
   const updateMutation = useMutation({
     mutationFn: async (contact: Partial<Contact>) => {
-      const res = await fetch(`/crm/contacts/${contact.id}`, {
+      const res = await fetch(`/api/crm/contacts/${contact.id}`, { // Updated path
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contact),
@@ -112,7 +112,7 @@ const CRMContacts: React.FC<CRMContactsProps> = ({ isAdmin }) => {
   // Create contact mutation
   const createMutation = useMutation({
     mutationFn: async (contact: Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const res = await fetch('/crm/contacts', {
+      const res = await fetch('/api/crm/contacts', { // Updated path
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(contact),
