@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { Settings, Zap, ZapOff } from 'lucide-react';
 import { Button } from './button';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
@@ -35,7 +35,7 @@ export function usePerformanceSettings() {
   return { isHighPerformance, togglePerformance };
 }
 
-export function PerformanceToggle() {
+const PerformanceToggleComponent = () => {
   const [settings, setSettings] = useState<PerformanceSettings>(defaultSettings);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -93,94 +93,99 @@ export function PerformanceToggle() {
 
   const isHighPerformance = settings.animations && !settings.reducedMotion;
 
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          title={isHighPerformance ? "High Performance Mode" : "Accessibility Mode"}
-        >
-          {isHighPerformance ? (
-            <Zap className="h-4 w-4 text-green-600" />
-          ) : (
-            <ZapOff className="h-4 w-4 text-orange-600" />
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <h3 className="font-medium">Performance & Accessibility</h3>
+  // Memoize the trigger button to avoid unnecessary re-renders
+  const MemoizedTrigger = useMemo(() => (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 w-8 p-0"
+      title={isHighPerformance ? "High Performance Mode" : "Accessibility Mode"}
+    >
+      {isHighPerformance ? (
+        <Zap className="h-4 w-4 text-green-600" />
+      ) : (
+        <ZapOff className="h-4 w-4 text-orange-600" />
+      )}
+    </Button>
+  ), [isHighPerformance]);
+
+  // Memoize the popover content
+  const MemoizedPopoverContent = useMemo(() => (
+    <PopoverContent className="w-80" align="end">
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Settings className="h-4 w-4" />
+          <h3 className="font-medium">Performance & Accessibility</h3>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="animations" className="text-sm">
+              Enable Animations
+            </Label>
+            <Switch
+              id="animations"
+              checked={settings.animations}
+              onCheckedChange={(checked) => updateSetting('animations', checked)}
+            />
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="animations" className="text-sm">
-                Enable Animations
-              </Label>
-              <Switch
-                id="animations"
-                checked={settings.animations}
-                onCheckedChange={(checked) => updateSetting('animations', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="reduced-motion" className="text-sm">
-                Reduce Motion
-              </Label>
-              <Switch
-                id="reduced-motion"
-                checked={settings.reducedMotion}
-                onCheckedChange={(checked) => updateSetting('reducedMotion', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="high-contrast" className="text-sm">
-                High Contrast
-              </Label>
-              <Switch
-                id="high-contrast"
-                checked={settings.highContrast}
-                onCheckedChange={(checked) => updateSetting('highContrast', checked)}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <Label htmlFor="large-text" className="text-sm">
-                Large Text
-              </Label>
-              <Switch
-                id="large-text"
-                checked={settings.largeText}
-                onCheckedChange={(checked) => updateSetting('largeText', checked)}
-              />
-            </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="reduced-motion" className="text-sm">
+              Reduce Motion
+            </Label>
+            <Switch
+              id="reduced-motion"
+              checked={settings.reducedMotion}
+              onCheckedChange={(checked) => updateSetting('reducedMotion', checked)}
+            />
           </div>
-
-          <div className="flex justify-between pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={resetSettings}
-            >
-              Reset
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setIsOpen(false)}
-            >
-              Done
-            </Button>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="high-contrast" className="text-sm">
+              High Contrast
+            </Label>
+            <Switch
+              id="high-contrast"
+              checked={settings.highContrast}
+              onCheckedChange={(checked) => updateSetting('highContrast', checked)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="large-text" className="text-sm">
+              Large Text
+            </Label>
+            <Switch
+              id="large-text"
+              checked={settings.largeText}
+              onCheckedChange={(checked) => updateSetting('largeText', checked)}
+            />
           </div>
         </div>
-      </PopoverContent>
+        <div className="flex justify-between pt-2 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetSettings}
+          >
+            Reset
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setIsOpen(false)}
+          >
+            Done
+          </Button>
+        </div>
+      </div>
+    </PopoverContent>
+  ), [settings, updateSetting, resetSettings]);
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>{MemoizedTrigger}</PopoverTrigger>
+      {MemoizedPopoverContent}
     </Popover>
   );
-}
+};
+
+export const PerformanceToggle = memo(PerformanceToggleComponent);
 
 export default PerformanceToggle;

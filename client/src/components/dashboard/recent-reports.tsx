@@ -22,6 +22,17 @@ import { Report } from "@shared/schema";
 export default function RecentReports() {
   const { data: reports, isLoading, error } = useQuery<Report[]>({
     queryKey: ['/api/reports'],
+    queryFn: async () => {
+      // It's good practice to fetch a limited number of reports for the dashboard view.
+      // The API should support a limit, e.g., /api/reports?limit=5&sortBy=submittedAt&order=desc
+      // For now, assuming the API returns all reports and we slice later, or it defaults to recent ones.
+      const response = await fetch('/api/reports?limit=3&sortBy=submittedAt&order=desc'); // Added limit and sorting
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching recent reports');
+      }
+      return response.json();
+    },
+    // Optional: Add staleTime, e.g., staleTime: 5 * 60 * 1000 (5 minutes)
   });
 
   // Format date

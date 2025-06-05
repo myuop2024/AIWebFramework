@@ -9,6 +9,14 @@ import { Event } from "@shared/schema";
 export default function UpcomingEvents() {
   const { data: events, isLoading, error } = useQuery<Event[]>({
     queryKey: ['/api/events/upcoming'],
+    queryFn: async () => {
+      const response = await fetch('/api/events/upcoming');
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching upcoming events');
+      }
+      return response.json();
+    },
+    // Optional: Add staleTime or cacheTime if needed, e.g., staleTime: 5 * 60 * 1000 (5 minutes)
   });
 
   // Format date for display

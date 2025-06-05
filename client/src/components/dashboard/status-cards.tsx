@@ -46,18 +46,39 @@ export default function StatusCards() {
   const { user: authUser } = useAuth();
   
   // Fetch user profile data
-  const { data: profileData, isLoading: isProfileLoading } = useQuery<DashboardProfileData>({
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } = useQuery<DashboardProfileData>({
     queryKey: ['/api/users/profile'],
+    queryFn: async () => {
+      const response = await fetch('/api/users/profile');
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching user profile');
+      }
+      return response.json();
+    },
   });
 
   // Fetch reports data
-  const { data: reportsData, isLoading: isReportsLoading } = useQuery<Report[]>({
-    queryKey: ['/api/reports'],
+  const { data: reportsData, isLoading: isReportsLoading, error: reportsError } = useQuery<Report[]>({
+    queryKey: ['/api/reports'], // This key is also used in RecentReports.tsx
+    queryFn: async () => {
+      const response = await fetch('/api/reports'); // No limit here, consider API efficiency
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching reports for status cards');
+      }
+      return response.json();
+    },
   });
 
   // Fetch assignments data
-  const { data: assignmentsData, isLoading: isAssignmentsLoading } = useQuery<Assignment[]>({
+  const { data: assignmentsData, isLoading: isAssignmentsLoading, error: assignmentsError } = useQuery<Assignment[]>({
     queryKey: ['/api/users/assignments'],
+    queryFn: async () => {
+      const response = await fetch('/api/users/assignments');
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching user assignments');
+      }
+      return response.json();
+    },
   });
 
   // Calculate verification status

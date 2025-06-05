@@ -9,6 +9,15 @@ import { type News } from '@shared/schema';
 export default function LatestNews() {
   const { data: news, isLoading, error } = useQuery<News[]>({
     queryKey: ['/api/news/latest'],
+    queryFn: async () => {
+      // Fetch a limited number of news items for the dashboard
+      const response = await fetch('/api/news/latest?limit=3'); 
+      if (!response.ok) {
+        throw new Error('Network response was not ok when fetching latest news');
+      }
+      return response.json();
+    },
+    // Optional: Add staleTime, e.g., staleTime: 10 * 60 * 1000 (10 minutes)
   });
 
   const formatDate = (dateInput: Date | string | undefined) => {

@@ -422,7 +422,6 @@ export function useCommunication(userId: number) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // senderId: userId, // Backend determines senderId from authenticated user
           receiverId: data.receiverId,
           content: data.content,
           type: data.type || 'text',
@@ -434,15 +433,58 @@ export function useCommunication(userId: number) {
       }
       return response.json();
     },
-    onSuccess: (newMessage, variables) => {
-      // Invalidate relevant queries.
-      // The backend POST handler should send a WS message to the recipient.
-      // The sender's UI updates via these invalidations.
-      queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, variables.receiverId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, userId] }); // Also invalidate sender's message list with receiver for consistency
+    onMutate: async (newMessageData) => {
+      const queryKey = ['/api/communications/messages', newMessageData.receiverId];
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData<Message[]>(queryKey);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData<Message[]>(queryKey, (old = []) => [
+        ...old,
+        {
+          id: Math.random(), // Temporary ID, will be replaced by server ID
+          senderId: userId, // Current user is the sender
+          receiverId: newMessageData.receiverId,
+          content: newMessageData.content,
+          type: newMessageData.type || 'text',
+          sentAt: new Date(), // Use current date for optimistic update
+          read: false,
+          // Add a temporary flag if you want to style optimistic messages differently
+          // isOptimistic: true, 
+        },
+      ]);
+
+      // Return a context object with the snapshotted value
+      return { previousMessages, queryKey };
+    },
+    onError: (err, newMessageData, context) => {
+      // Rollback to the previous value if mutation fails
+      if (context?.previousMessages) {
+        queryClient.setQueryData<Message[]>(context.queryKey, context.previousMessages);
+      }
+      // The toast error is handled in the sendMessage wrapper
+    },
+    onSuccess: (returnedMessage, variables) => {
+      // The message was successfully saved to the backend.
+      // Invalidate queries to refetch the "real" message and update conversations.
+      // This will replace the optimistic message with the one from the server.
+      queryClient.invalidateQueries({ queryKey: ['/api/communications/messages', variables.receiverId] });
+      // The queryKey below was likely an attempt to update other views, but for the sender's current chat,
+      // the one above is the most direct. This might be for updating a list of "chats with me".
+      // If it's not strictly needed for the immediate send operation, it could be removed or re-evaluated.
+      // queryClient.invalidateQueries({ queryKey: [`/api/communications/messages`, userId] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
     },
-    // onError handled by the caller (sendMessage function)
+    onSettled: (data, error, variables) => {
+      // This is called after onSuccess or onError.
+      // Could also do invalidation here to ensure it always happens.
+      // However, onSuccess is fine for this case.
+      // queryClient.invalidateQueries({ queryKey: ['/api/communications/messages', variables.receiverId] });
+      // queryClient.invalidateQueries({ queryKey: ['/api/communications/conversations', userId] });
+    }
   });
 
   // Mark a message as read (individual)
