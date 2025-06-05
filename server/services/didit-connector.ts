@@ -46,10 +46,10 @@ class DiditConnector {
       const enabledSetting = await storage.getSystemSetting('didit_enabled');
       
       this.config = {
-        apiKey: apiKeySetting?.settingValue,
-        apiSecret: apiSecretSetting?.settingValue,
-        baseUrl: baseUrlSetting?.settingValue || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
-        enabled: enabledSetting?.settingValue || false
+        apiKey: apiKeySetting?.settingValue as string,
+        apiSecret: apiSecretSetting?.settingValue as string,
+        baseUrl: (baseUrlSetting?.settingValue as string) || process.env.DIDIT_API_URL || 'https://api.didit.me/v1',
+        enabled: (enabledSetting?.settingValue as boolean) || false
       };
       
       this.initialized = true;

@@ -199,12 +199,12 @@ export class AIAnalyticsService {
       // Get reports grouped by polling station
       const reportsByStationQuery = await db
         .select({
-          stationId: reports.pollingStationId,
+          stationId: reports.stationId,
           count: sql<number>`count(*)`,
         })
         .from(reports)
         .where(dateFilter || sql`1=1`)
-        .groupBy(reports.pollingStationId)
+        .groupBy(reports.stationId)
         .orderBy(sql`count(*) desc`)
         .limit(10);
       
@@ -655,10 +655,10 @@ export class AIAnalyticsService {
             severity: reports.severity,
             status: reports.status,
             createdAt: reports.createdAt,
-            pollingStationId: reports.pollingStationId,
+            stationId: reports.stationId,
           })
           .from(reports)
-          .where(sql`${reports.pollingStationId} = ${stationId}`)
+          .where(sql`${reports.stationId} = ${stationId}`)
           .orderBy(desc(reports.createdAt));
           
         // Get station name for better context
@@ -690,7 +690,7 @@ export class AIAnalyticsService {
             severity: reports.severity,
             status: reports.status,
             createdAt: reports.createdAt,
-            pollingStationId: reports.pollingStationId,
+            stationId: reports.stationId,
           })
           .from(reports)
           .orderBy(desc(reports.createdAt))
@@ -698,7 +698,7 @@ export class AIAnalyticsService {
           
         // Enrich with station names
         const stationIds = [...new Set(stationReports
-          .map(r => r.pollingStationId)
+          .map(r => r.stationId)
           .filter(id => id !== null && id !== undefined))];
           
         if (stationIds.length > 0) {
@@ -720,8 +720,8 @@ export class AIAnalyticsService {
           
           stationReports = stationReports.map(report => ({
             ...report,
-            stationName: report.pollingStationId ? 
-              stationMap.get(report.pollingStationId) || `Station ${report.pollingStationId}` : 
+            stationName: report.stationId ?
+              stationMap.get(report.stationId) || `Station ${report.stationId}` :
               'Unknown station'
           }));
         }

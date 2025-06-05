@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { storage } from '../storage';
 import { bulkUserImportSchema } from '@shared/schema';
+import logger from '../utils/logger';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { ensureAuthenticated, ensureAdmin } from '../middleware/auth';
@@ -140,10 +141,10 @@ router.post('/bulk', ensureAuthenticated, ensureAdmin, async (req, res) => {
       status: 'completed',
       errors: importResult.failures.map(f => ({
         data: {
-          username: f.data.username,
-          email: f.data.email,
-          firstName: f.data.firstName,
-          lastName: f.data.lastName
+          username: (f.data as any).username,
+          email: (f.data as any).email,
+          firstName: (f.data as any).firstName,
+          lastName: (f.data as any).lastName
         },
         error: f.error
       }))

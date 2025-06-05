@@ -2,10 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { ensureAuthenticated } from '../middleware/auth';
-import { 
-  projects, 
-  tasks, 
-  milestones, 
+import {
+  projects,
+  tasks as tasksRaw,
+  milestones,
   projectMembers, 
   taskCategories,
   taskComments,
@@ -24,6 +24,8 @@ import {
   taskPriorityEnum
 } from '@shared/schema';
 import { eq, and, isNull, or, not, desc, asc, sql, inArray } from 'drizzle-orm';
+
+const tasks: any = tasksRaw;
 
 // Simple in-memory cache for user data to reduce database calls
 const userCache = new Map<number, any>();
@@ -86,7 +88,7 @@ projectManagementRouter.get('/projects', ensureAuthenticated, async (req: Reques
     let query = db.select().from(projects).where(eq(projects.deleted, false));
     
     // Apply filters
-    if (status && Object.values(projectStatusEnum.enumValues).includes(status as any)) {
+    if (status && (projectStatusEnum as readonly string[]).includes(status as any)) {
       query = query.where(eq(projects.status, status as any));
     }
     
@@ -430,7 +432,7 @@ projectManagementRouter.get('/projects/:id/tasks', ensureAuthenticated, async (r
     .where(eq(tasks.projectId, projectId));
     
     // Apply status filter if provided
-    if (status && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+    if (status && (taskStatusEnum as readonly string[]).includes(status as any)) {
       query = query.where(eq(tasks.status, status as any));
     }
     
@@ -721,12 +723,12 @@ projectManagementRouter.get('/tasks', ensureAuthenticated, async (req: Request, 
     }
     
     // Apply status filter
-    if (status && status !== 'all' && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+    if (status && status !== 'all' && (taskStatusEnum as readonly string[]).includes(status as any)) {
       query = query.where(eq(tasks.status, status as any));
     }
     
     // Apply priority filter
-    if (priority && priority !== 'all' && Object.values(taskPriorityEnum.enumValues).includes(priority as any)) {
+    if (priority && priority !== 'all' && (taskPriorityEnum as readonly string[]).includes(priority as any)) {
       query = query.where(eq(tasks.priority, priority as any));
     }
     
@@ -754,11 +756,11 @@ projectManagementRouter.get('/tasks', ensureAuthenticated, async (req: Request, 
       countQuery.where(eq(tasks.reporterId, userId));
     }
     
-    if (status && status !== 'all' && Object.values(taskStatusEnum.enumValues).includes(status as any)) {
+    if (status && status !== 'all' && (taskStatusEnum as readonly string[]).includes(status as any)) {
       countQuery.where(eq(tasks.status, status as any));
     }
     
-    if (priority && priority !== 'all' && Object.values(taskPriorityEnum.enumValues).includes(priority as any)) {
+    if (priority && priority !== 'all' && (taskPriorityEnum as readonly string[]).includes(priority as any)) {
       countQuery.where(eq(tasks.priority, priority as any));
     }
     

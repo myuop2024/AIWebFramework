@@ -18,7 +18,7 @@ const getKey = (): Buffer => {
 
   if (keyBase === defaultKey && process.env.NODE_ENV === 'production') {
     const errorMessage = 'CRITICAL: Default ENCRYPTION_KEY is being used in a production environment. This is insecure. Please set a strong, unique ENCRYPTION_KEY environment variable.';
-    logger.critical(errorMessage);
+    logger.error(errorMessage);
     // For critical security, it's often best to prevent the application from running with such a configuration.
     // Consider whether to throw an error here to halt startup, or if logging is sufficient (not recommended for this).
     throw new Error(errorMessage);

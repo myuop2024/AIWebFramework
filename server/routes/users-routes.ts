@@ -13,12 +13,12 @@ const router = Router();
 router.get('/profile', async (req, res) => {
   try {
     // Get user ID from session or passport user
-    let userId: string | null = null;
+    let userId: number | null = null;
 
     if (req.session && req.session.userId) {
-      userId = req.session.userId.toString();
+      userId = req.session.userId;
     } else if (req.user && (req.user as any).id) {
-      userId = (req.user as any).id.toString();
+      userId = (req.user as any).id;
     } else {
       logger.warn('No user ID in session for /api/users/profile');
       return res.status(401).json({ error: 'Not authenticated' });
@@ -46,7 +46,7 @@ router.get('/profile', async (req, res) => {
       })
       .from(users)
       .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
-      .where(eq(users.id, parseInt(userId)))
+      .where(eq(users.id, userId))
       .limit(1);
     
     if (userProfile.length === 0) {
@@ -312,7 +312,7 @@ router.put('/:id', ensureAuthenticated, hasPermission('users:edit'), async (req,
       return res.status(404).json({ error: 'User not found' });
     }
     
-    const updateData: Partial<InsertUser> = {
+    const updateData: any = {
       updatedAt: new Date()
     };
     
@@ -350,7 +350,7 @@ router.get('/:id/assignments', ensureAuthenticated, hasPermission('users:view-as
     }
     
     // Build where conditions
-    const conditions = [eq(assignments.userId, userId.toString())];
+    const conditions = [eq(assignments.userId, userId)];
     
     if (status) {
       conditions.push(eq(assignments.status, status));
@@ -396,7 +396,7 @@ router.get('/:id/reports', ensureAuthenticated, hasPermission('users:view-report
     }
     
     // Build where conditions
-    const conditions = [eq(reports.userId, userId.toString())];
+    const conditions = [eq(reports.userId, userId)];
     
     if (status) {
       conditions.push(eq(reports.status, status));
@@ -469,7 +469,7 @@ router.post('/:id/verify', ensureAuthenticated, hasPermission('users:verify'), a
         .set({
           verificationStatus: 'verified',
           verifiedAt: new Date()
-        })
+        } as any)
         .where(eq(userProfiles.userId, id));
     }
     
