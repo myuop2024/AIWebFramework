@@ -495,7 +495,7 @@ export function EnhancedChat({ userId, hideHeader = false }: EnhancedChatProps) 
               <div>
                 <p className="font-medium">{getUserById(incomingCall.callerId)?.username}</p>
                 <p className="text-sm text-muted-foreground">
-                  {incomingCall.type === 'video' ? 'Video' : 'Audio'} call
+                  {incomingCall.callMediaType === 'video' ? 'Video' : 'Audio'} call
                 </p>
               </div>
               <div className="flex gap-4 justify-center">
