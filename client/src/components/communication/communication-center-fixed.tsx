@@ -246,7 +246,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
           
           <div className="flex-1 flex">
             {/* Sidebar */}
-            <div className={`border-r bg-background/50 ${isMobile && activeChatUserId ? 'hidden' : 'w-80'} flex flex-col`}>
+            <div className={`${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col w-80'} border-r bg-background/50`}>
               {/* Search */}
               <div className="p-4 border-b flex justify-between items-center">
                 <div className="relative">
