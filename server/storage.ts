@@ -182,6 +182,12 @@ export interface IStorage {
   updateAchievementProgress(userId: number, achievementId: number, progress: number, progressData?: any): Promise<AchievementProgress>;
   getUserAchievementProgress(userId: number): Promise<AchievementProgress[]>;
 
+  // Report attachment operations
+  createReportAttachment(attachment: InsertReportAttachment): Promise<ReportAttachment>;
+  getReportAttachment(id: number): Promise<ReportAttachment | undefined>;
+  deleteReportAttachment(id: number): Promise<boolean>;
+  generateContentHash(content: any): string;
+
   // News operations
   getAllNews(): Promise<any[]>;
   getLatestNews(limit?: number): Promise<any[]>;
