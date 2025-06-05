@@ -389,11 +389,17 @@ export default function AddressAutocomplete({
               isLoaded ? "border-gray-300 hover:border-gray-400" : "border-gray-200 bg-gray-50", 
               className
             )}
-            placeholder={isLoaded ? placeholder : "Loading map service..."}
+            placeholder={
+              loadError
+                ? "Map service unavailable. Enter address manually..."
+                : isLoaded
+                  ? placeholder
+                  : "Loading map service..."
+            }
             value={inputValue}
             onChange={handleInputChange}
             onFocus={handleInputFocus}
-            disabled={disabled || !isLoaded || !!loadError}
+            disabled={disabled}
           />
           {isSearching ? (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
