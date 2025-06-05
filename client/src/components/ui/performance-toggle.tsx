@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, Zap, ZapOff } from 'lucide-react';
 import { Button } from './button';
@@ -20,7 +19,23 @@ const defaultSettings: PerformanceSettings = {
   largeText: false,
 };
 
-export function PerformanceToggle() {
+// Custom hook for performance settings
+export function usePerformanceSettings() {
+  const [isHighPerformance, setIsHighPerformance] = useState(() => {
+    const saved = localStorage.getItem('highPerformanceMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  const togglePerformance = () => {
+    const newValue = !isHighPerformance;
+    setIsHighPerformance(newValue);
+    localStorage.setItem('highPerformanceMode', JSON.stringify(newValue));
+  };
+
+  return { isHighPerformance, togglePerformance };
+}
+
+export default function PerformanceToggle() {
   const [settings, setSettings] = useState<PerformanceSettings>(defaultSettings);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -40,10 +55,10 @@ export function PerformanceToggle() {
   // Save settings to localStorage when settings change
   useEffect(() => {
     localStorage.setItem('performance-settings', JSON.stringify(settings));
-    
+
     // Apply settings to document
     const root = document.documentElement;
-    
+
     if (settings.reducedMotion) {
       root.style.setProperty('--animation-duration', '0ms');
       root.style.setProperty('--transition-duration', '0ms');
@@ -51,13 +66,13 @@ export function PerformanceToggle() {
       root.style.removeProperty('--animation-duration');
       root.style.removeProperty('--transition-duration');
     }
-    
+
     if (settings.highContrast) {
       root.classList.add('high-contrast');
     } else {
       root.classList.remove('high-contrast');
     }
-    
+
     if (settings.largeText) {
       root.classList.add('large-text');
     } else {
@@ -100,7 +115,7 @@ export function PerformanceToggle() {
             <Settings className="h-4 w-4" />
             <h3 className="font-medium">Performance & Accessibility</h3>
           </div>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="animations" className="text-sm">
@@ -112,7 +127,7 @@ export function PerformanceToggle() {
                 onCheckedChange={(checked) => updateSetting('animations', checked)}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <Label htmlFor="reduced-motion" className="text-sm">
                 Reduce Motion
@@ -123,7 +138,7 @@ export function PerformanceToggle() {
                 onCheckedChange={(checked) => updateSetting('reducedMotion', checked)}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <Label htmlFor="high-contrast" className="text-sm">
                 High Contrast
@@ -134,7 +149,7 @@ export function PerformanceToggle() {
                 onCheckedChange={(checked) => updateSetting('highContrast', checked)}
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <Label htmlFor="large-text" className="text-sm">
                 Large Text
@@ -146,7 +161,7 @@ export function PerformanceToggle() {
               />
             </div>
           </div>
-          
+
           <div className="flex justify-between pt-2 border-t">
             <Button
               variant="outline"
