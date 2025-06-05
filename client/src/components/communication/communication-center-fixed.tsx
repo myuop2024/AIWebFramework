@@ -77,7 +77,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
   const { data: messages, isLoading: messagesLoading } = useGetMessages(activeChatUserId);
 
   // Filter conversations based on search query
-  const filteredConversations = conversations?.filter(conversation => {
+  const filteredConversations = (Array.isArray(conversations) ? conversations : [])?.filter(conversation => {
     if (!conversation || typeof conversation.username !== 'string') return false;
     const query = searchQuery?.toLowerCase() || '';
     return conversation.username.toLowerCase().includes(query);

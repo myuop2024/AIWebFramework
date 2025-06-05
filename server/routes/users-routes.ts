@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db';
-import { users, userProfiles, assignments, reports, pollingStations, type User, type InsertUser } from '@shared/schema';
+import { users, userProfiles, assignments, reports, pollingStations, roles, type User, type InsertUser } from '@shared/schema';
 import { ensureAuthenticated, hasPermission } from '../middleware/auth';
 import { eq, desc, and, sql, like } from 'drizzle-orm';
 import * as logger from '../utils/logger';
@@ -478,6 +478,87 @@ router.post('/:id/verify', ensureAuthenticated, hasPermission('users:verify'), a
   } catch (error) {
     logger.error('Error updating user verification:', error);
     res.status(500).json({ error: 'Failed to update user verification' });
+  }
+});
+
+// GET /api/users/permissions - Get current user's permissions
+router.get('/permissions', ensureAuthenticated, async (req, res) => {
+  try {
+    // Get user ID from session or passport user
+    let userId: number | null = null;
+
+    if (req.session && req.session.userId) {
+      userId = parseInt(req.session.userId.toString());
+    } else if (req.user && (req.user as any).id) {
+      userId = parseInt((req.user as any).id.toString());
+    } else {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Get user with role
+    const user = await db
+      .select({
+        id: users.id,
+        role: users.role,
+        roleId: users.roleId
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const userData = user[0];
+    let rolePermissions: string[] = [];
+
+    // Get permissions from role if user has a role
+    if (userData.role) {
+      try {
+        const roleData = await db
+          .select({
+            permissions: roles.permissions
+          })
+          .from(roles)
+          .where(eq(roles.name, userData.role))
+          .limit(1);
+
+        if (roleData && roleData.length > 0 && roleData[0].permissions) {
+          rolePermissions = Array.isArray(roleData[0].permissions) 
+            ? roleData[0].permissions.filter(p => typeof p === 'string') as string[]
+            : [];
+        }
+      } catch (roleError) {
+        logger.warn(`Could not fetch role permissions for user ${userId}:`, roleError);
+      }
+    }
+
+    // Admin users get all permissions
+    if (userData.role === 'admin') {
+      // Get all available permissions from all roles
+      const allRoles = await db.select({ permissions: roles.permissions }).from(roles);
+      const uniquePermissions = new Set<string>();
+      
+      allRoles.forEach(role => {
+        if (role.permissions && Array.isArray(role.permissions)) {
+          role.permissions.forEach(permission => {
+            if (typeof permission === 'string') {
+              uniquePermissions.add(permission);
+            }
+          });
+        }
+      });
+      
+      rolePermissions = Array.from(uniquePermissions);
+    }
+
+    res.json({
+      permissions: rolePermissions.sort()
+    });
+  } catch (error) {
+    logger.error('Error fetching user permissions:', error);
+    res.status(500).json({ error: 'Failed to fetch user permissions' });
   }
 });
 
