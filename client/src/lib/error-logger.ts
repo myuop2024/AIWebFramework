@@ -235,7 +235,7 @@ export const logError = async (error: string | Error, context: ErrorContext = {}
     console.log('[Error logged]', errorData);
 
     // Send to server
-    await fetch('/api/error-logs', {
+    await fetch('/api/log-error', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

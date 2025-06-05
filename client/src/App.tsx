@@ -69,6 +69,7 @@ import AdminRoleGroupManagementPage from '@/pages/admin/role-group-management';
 import AdminLogsPage from '@/pages/admin/logs';
 import { useMobileOptimizations } from './hooks/use-ios-optimizations';
 import { PermissionsProvider } from '@/hooks/usePermissions';
+import { PerformanceProvider } from '@/components/ui/performance-toggle';
 
 function Router() {
   return (
@@ -241,9 +242,11 @@ function App() {
       <ErrorBoundary captureContext={{ location: window.location.href }}>
         <AuthProvider>
           <PermissionsProvider>
-            <TooltipProvider>
-              <Router />
-            </TooltipProvider>
+            <PerformanceProvider>
+              <TooltipProvider>
+                <Router />
+              </TooltipProvider>
+            </PerformanceProvider>
           </PermissionsProvider>
         </AuthProvider>
       </ErrorBoundary>
