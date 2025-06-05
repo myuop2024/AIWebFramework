@@ -27,12 +27,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const [location, navigate] = useLocation();
-<<<<<<< jules_wip_10098645700886988381
-  const { user, logoutMutation } = useAuth(); // user object should contain permissions
-=======
   const { user, logoutMutation } = useAuth();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
->>>>>>> main
   
   // Close sidebar when clicking outside on mobile
   useEffect(() => {
@@ -63,55 +59,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   }, [location]);
 
   // Navigation links
-<<<<<<< jules_wip_10098645700886988381
-  const navLinks = [
-    { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> },
-    { path: "/profile", label: "My Profile", icon: <User className="h-5 w-5" /> },
-    { path: "/polling-stations", label: "Polling Stations", icon: <MapPin className="h-5 w-5" /> },
-    { path: "/route-planning", label: "Route Planning", icon: <Navigation className="h-5 w-5" /> },
-    { path: "/observer-route-planning", label: "Geolocation Routing", icon: <MapIcon className="h-5 w-5" /> },
-    { path: "/reports", label: "Reports", icon: <FileText className="h-5 w-5" /> },
-    { path: "/chat", label: "Communications", icon: <Headphones className="h-5 w-5" /> },
-    { path: "/training", label: "Training Portal", icon: <GraduationCap className="h-5 w-5" /> },
-    { path: "/project-management", label: "Project Management", icon: <Kanban className="h-5 w-5" /> },
-    // CRM Link - conceptually needs 'crm_view_user_list' or 'crm_view_dashboard'
-    // We will use 'crm_view_user_list' as an example permission for now.
-    // Visibility will be controlled where it's rendered.
-    { path: "/crm", label: "CRM", icon: <Briefcase className="h-5 w-5" />, permission: "crm_view_user_list" },
-    { path: "/advanced-features", label: "Advanced Features", icon: <Sparkles className="h-5 w-5" /> },
-  ];
-  
-  // Define role-based permissions
-  const isAdmin = ['admin', 'director'].includes(user?.role || '');
-  const isSupervisor = ['supervisor', 'admin', 'director'].includes(user?.role || '');
-  const isRovingObserver = ['roving_observer', 'supervisor', 'admin', 'director'].includes(user?.role || '');
-  
-  // Admin links (only shown to users with admin or director role)
-  const adminLinks = isAdmin ? [
-    { path: "/admin", label: "Admin Panel", icon: <PanelTop className="h-5 w-5" /> },
-    { path: "/admin-dashboard", label: "Statistics Dashboard", icon: <BarChart className="h-5 w-5" /> },
-    { path: "/form-templates", label: "Form Templates", icon: <ClipboardList className="h-5 w-5" /> },
-    { path: "/admin/verification", label: "Observer Verification", icon: <UserCheck className="h-5 w-5" /> },
-    { path: "/admin/training-integrations", label: "Training Integrations", icon: <BookOpen className="h-5 w-5" /> },
-    { path: "/admin/permissions", label: "Permission Management", icon: <Shield className="h-5 w-5" /> },
-    { path: "/admin/user-imports", label: "User Import", icon: <Upload className="h-5 w-5" /> },
-    { path: "/admin/settings/google-sync", label: "Google Sheets Sync", icon: <CloudCog className="h-5 w-5" /> }, // Added Google Sync link
-  ] : [];
-  
-  // Supervisor links (only shown to supervisor, admin, or director)
-  const supervisorLinks = isSupervisor ? [
-    { path: "/supervisor/team-management", label: "Team Management", icon: <Users className="h-5 w-5" /> },
-    { path: "/supervisor/assignments", label: "Observer Assignments", icon: <ClipboardList className="h-5 w-5" /> },
-    { path: "/supervisor/reports-approval", label: "Report Approvals", icon: <FileEdit className="h-5 w-5" /> },
-    { path: "/supervisor/schedule-meeting", label: "Schedule Team Meeting", icon: <CalendarRange className="h-5 w-5" /> },
-  ] : [];
-  
-  // Roving observer links
-  const rovingObserverLinks = isRovingObserver ? [
-    { path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5" /> },
-    { path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5" /> },
-  ] : [];
-=======
   const allNavLinks = [
     // Main Navigation (potentially for all authenticated users)
     { path: "/dashboard", label: "Dashboard", icon: <Home className="h-5 w-5" /> }, // Common, no specific permission
@@ -143,7 +90,6 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
     // Roving Observer Section Links (Example - these permissions might need to be created)
     { category: "Roving Observer", path: "/roving/station-schedule", label: "Station Schedule", icon: <CalendarRange className="h-5 w-5" />, requiredPermission: "roving-observer:view-schedule" },
     { category: "Roving Observer", path: "/roving/area-reports", label: "Area Reports", icon: <FileText className="h-5 w-5" />, requiredPermission: "roving-observer:view-area-reports" },
->>>>>>> main
 
     // Support Links (Common)
     { path: "/faq", label: "FAQ & Help", icon: <HelpCircle className="h-5 w-5" /> },
@@ -265,17 +211,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           <nav className="space-y-1">
             {/* Main Links */}
             <p className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3 px-4">Main</p>
-<<<<<<< jules_wip_10098645700886988381
-            
-            {navLinks.map((link) => {
-              // Check for permission if defined for the link
-              if (link.permission && !user?.permissions?.includes(link.permission)) {
-                return null; // Don't render if user doesn't have permission
-              }
-
-=======
             {allNavLinks.filter(link => !link.category && (!link.requiredPermission || hasPermission(link.requiredPermission))).map((link) => {
->>>>>>> main
               const isActive = location === link.path || location.startsWith(link.path + '/');
               // Placeholder for dropdown logic - adapt as needed or simplify for non-dropdown links
               if (link.path === "/polling-stations") { // Example dropdown
