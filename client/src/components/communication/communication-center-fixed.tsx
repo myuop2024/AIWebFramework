@@ -244,7 +244,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
             </div>
           )}
           
-          <div className="flex-1 flex">
+          <div className="flex-1 flex min-h-0 overflow-hidden">
             {/* Sidebar */}
             <div className={`${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col w-80'} border-r bg-background/50`}>
               {/* Search */}
@@ -328,7 +328,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {activeChatUserId ? (
                 <>
                   {/* Chat Header */}
@@ -424,7 +424,7 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
                   </ScrollArea>
 
                   {/* Message Input */}
-                  <form onSubmit={handleSendMessage} className="p-4 border-t">
+                  <form onSubmit={handleSendMessage} className="p-4 border-t bg-background">
                     <div className="flex items-center gap-2">
                       <Input
                         placeholder="Type a message..."
