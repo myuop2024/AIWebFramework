@@ -1,0 +1,35 @@
+
+> rest-express@1.0.0 dev
+warn: Could not register custom fonts, using system defaults. {"error":"Could not parse font file","timestamp":"2025-06-05T02:42:15.992Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:16.880Z"}
+info: Database connection successful {"timestamp":"2025-06-05T02:42:16.942Z"}
+info: PostgreSQL version: {"0":"P","1":"o","10":" ","11":"1","12":"6","13":".","14":"9","15":" ","16":"o","17":"n","18":" ","19":"x","2":"s","20":"8","21":"6","22":"_","23":"6","24":"4","25":"-","26":"p","27":"c","28":"-","29":"l","3":"t","30":"i","31":"n","32":"u","33":"x","34":"-","35":"g","36":"n","37":"u","38":",","39":" ","4":"g","40":"c","41":"o","42":"m","43":"p","44":"i","45":"l","46":"e","47":"d","48":" ","49":"b","5":"r","50":"y","51":" ","52":"g","53":"c","54":"c","55":" ","56":"(","57":"D","58":"e","59":"b","6":"e","60":"i","61":"a","62":"n","63":" ","64":"1","65":"0","66":".","67":"2","68":".","69":"1","7":"S","70":"-","71":"6","72":")","73":" ","74":"1","75":"0","76":".","77":"2","78":".","79":"1","8":"Q","80":" ","81":"2","82":"0","83":"2","84":"1","85":"0","86":"1","87":"1","88":"0","89":",","9":"L","90":" ","91":"6","92":"4","93":"-","94":"b","95":"i","96":"t","timestamp":"2025-06-05T02:42:16.942Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:42:16.943Z"}
+info: Database connection successful {"timestamp":"2025-06-05T02:42:16.943Z"}
+warn: Could not register custom fonts, using system defaults. {"error":"Could not parse font file","timestamp":"2025-06-05T02:42:16.943Z"}
+debug: [DB Query] {"query":"select \"id\", \"name\", \"description\", \"template_data\", \"is_active\", \"security_features\", \"created_at\", \"updated_at\" from \"id_card_templates\"","timestamp":"2025-06-05T02:42:16.946Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:17.079Z"}
+info: Found 1 existing ID card templates {"timestamp":"2025-06-05T02:42:17.135Z"}
+info: Traditional authentication system configured successfully {"timestamp":"2025-06-05T02:42:17.136Z"}
+info: Serving static files from /uploads mapped to /home/runner/workspace/public/uploads {"timestamp":"2025-06-05T02:42:17.136Z"}
+info: Serving static files from: /home/runner/workspace/uploads {"timestamp":"2025-06-05T02:42:17.138Z"}
+info: CommunicationService: WebSocketServer configured with noServer: true. Waiting for external upgrade handling. {"timestamp":"2025-06-05T02:42:17.139Z"}
+info: Communication service initialized with WebSocket support {"timestamp":"2025-06-05T02:42:17.139Z"}
+info: Project management routes registered at /api/project-management {"timestamp":"2025-06-05T02:42:17.140Z"}
+info: WAF management routes registered at /api/waf {"timestamp":"2025-06-05T02:42:17.140Z"}
+info: RLS management routes registered at /api/admin/rls {"timestamp":"2025-06-05T02:42:17.140Z"}
+info: Gamification routes registered at /api/gamification {"timestamp":"2025-06-05T02:42:17.140Z"}
+info: WAF engine connected to management routes {"timestamp":"2025-06-05T02:42:17.141Z"}
+info: WebSocket upgrade handler configured with session authentication for /api/ws {"timestamp":"2025-06-05T02:42:17.141Z"}
+info: Server is running on port 5000 {"timestamp":"2025-06-05T02:42:17.179Z"}
+info: Fetching user from database by ID: 2 {"timestamp":"2025-06-05T02:42:17.822Z"}
+debug: [DB Query] {"query":"select \"users\".\"id\", \"users\".\"username\", \"users\".\"email\", \"users\".\"password\", \"users\".\"first_name\", \"users\".\"last_name\", \"users\".\"observer_id\", \"users\".\"role\", \"users\".\"role_id\", \"users\".\"verification...","timestamp":"2025-06-05T02:42:17.824Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:19.452Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:24.945Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:25.668Z"}
+info: New client connected to database {"timestamp":"2025-06-05T02:42:25.731Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:43:01.364Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:43:01.527Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:43:01.549Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:43:01.576Z"}
+info: Client removed from pool {"timestamp":"2025-06-05T02:43:01.614Z"}
