@@ -198,31 +198,31 @@ export class DatabaseStorage implements IStorage {
       logger.info(`Fetching user from database by ID: ${id}`);
       const result = await db
         .select({
-          id: usersTable.id,
-          username: usersTable.username,
-          email: usersTable.email,
-          password: usersTable.password,
-          firstName: usersTable.firstName,
-          lastName: usersTable.lastName,
-          observerId: usersTable.observerId,
-          role: usersTable.role,
-          roleId: usersTable.roleId,
-          verificationStatus: usersTable.verificationStatus,
-          deviceId: usersTable.deviceId,
-          createdAt: usersTable.createdAt,
-          updatedAt: usersTable.updatedAt,
-          trainingStatus: usersTable.trainingStatus,
-          phoneNumber: usersTable.phoneNumber,
-          twoFactorEnabled: usersTable.twoFactorEnabled,
-          twoFactorVerified: usersTable.twoFactorVerified,
-          profileImageUrl: usersTable.profileImageUrl,
-          twoFactorSecret: usersTable.twoFactorSecret,
-          recoveryCodes: usersTable.recoveryCodes,
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          observerId: users.observerId,
+          role: users.role,
+          roleId: users.roleId,
+          verificationStatus: users.verificationStatus,
+          deviceId: users.deviceId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          trainingStatus: users.trainingStatus,
+          phoneNumber: users.phoneNumber,
+          twoFactorEnabled: users.twoFactorEnabled,
+          twoFactorVerified: users.twoFactorVerified,
+          profileImageUrl: users.profileImageUrl,
+          twoFactorSecret: users.twoFactorSecret,
+          recoveryCodes: users.recoveryCodes,
           rolePermissions: roles.permissions,
         })
-        .from(usersTable)
-        .leftJoin(roles, eq(usersTable.roleId, roles.id))
-        .where(eq(usersTable.id, id));
+        .from(users)
+        .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(eq(users.id, id));
 
       const [userWithRole] = result;
       if (!userWithRole) return undefined;
@@ -253,31 +253,31 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .select({
-          id: usersTable.id,
-          username: usersTable.username,
-          email: usersTable.email,
-          password: usersTable.password,
-          firstName: usersTable.firstName,
-          lastName: usersTable.lastName,
-          observerId: usersTable.observerId,
-          role: usersTable.role,
-          roleId: usersTable.roleId,
-          verificationStatus: usersTable.verificationStatus,
-          deviceId: usersTable.deviceId,
-          createdAt: usersTable.createdAt,
-          updatedAt: usersTable.updatedAt,
-          trainingStatus: usersTable.trainingStatus,
-          phoneNumber: usersTable.phoneNumber,
-          twoFactorEnabled: usersTable.twoFactorEnabled,
-          twoFactorVerified: usersTable.twoFactorVerified,
-          profileImageUrl: usersTable.profileImageUrl,
-          twoFactorSecret: usersTable.twoFactorSecret,
-          recoveryCodes: usersTable.recoveryCodes,
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          observerId: users.observerId,
+          role: users.role,
+          roleId: users.roleId,
+          verificationStatus: users.verificationStatus,
+          deviceId: users.deviceId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          trainingStatus: users.trainingStatus,
+          phoneNumber: users.phoneNumber,
+          twoFactorEnabled: users.twoFactorEnabled,
+          twoFactorVerified: users.twoFactorVerified,
+          profileImageUrl: users.profileImageUrl,
+          twoFactorSecret: users.twoFactorSecret,
+          recoveryCodes: users.recoveryCodes,
           rolePermissions: roles.permissions,
         })
-        .from(usersTable)
-        .leftJoin(roles, eq(usersTable.roleId, roles.id))
-        .where(eq(usersTable.username, username));
+        .from(users)
+        .leftJoin(roles, eq(users.roleId, roles.id))
+        .where(eq(users.username, username));
 
       const [userWithRole] = result;
       if (!userWithRole) return undefined;
@@ -302,23 +302,23 @@ export class DatabaseStorage implements IStorage {
     try {
       const [user] = await db
         .select({
-          id: usersTable.id,
-          username: usersTable.username,
-          email: usersTable.email,
-          password: usersTable.password,
-          firstName: usersTable.firstName,
-          lastName: usersTable.lastName,
-          observerId: usersTable.observerId,
-          role: usersTable.role,
-          verificationStatus: usersTable.verificationStatus,
-          deviceId: usersTable.deviceId,
-          createdAt: usersTable.createdAt,
-          updatedAt: usersTable.updatedAt,
-          trainingStatus: usersTable.trainingStatus,
-          phoneNumber: usersTable.phoneNumber
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          password: users.password,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          observerId: users.observerId,
+          role: users.role,
+          verificationStatus: users.verificationStatus,
+          deviceId: users.deviceId,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+          trainingStatus: users.trainingStatus,
+          phoneNumber: users.phoneNumber
         })
-        .from(usersTable)
-        .where(eq(usersTable.email, email));
+        .from(users)
+        .where(eq(users.email, email));
 
       return user;
     } catch (error) {
@@ -331,8 +331,8 @@ export class DatabaseStorage implements IStorage {
     try {
       const [user] = await db
         .select()
-        .from(usersTable)
-        .where(eq(usersTable.observerId, observerId));
+        .from(users)
+        .where(eq(users.observerId, observerId));
 
       return user;
     } catch (error) {
@@ -343,7 +343,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      return await db.select().from(usersTable);
+      return await db.select().from(users);
     } catch (error) {
       logger.error("Error getting all users", error);
       throw error;
@@ -356,7 +356,7 @@ export class DatabaseStorage implements IStorage {
       const observerId = generateObserverId();
 
       const [newUser] = await db
-        .insert(usersTable)
+        .insert(users)
         .values({
           ...user,
           observerId,
@@ -384,12 +384,12 @@ export class DatabaseStorage implements IStorage {
         if (existingUser) {
           // Update existing user
           const [updatedUser] = await db
-            .update(usersTable)
+            .update(users)
             .set({
               ...userData,
               updatedAt: new Date()
             })
-            .where(eq(usersTable.id, userData.id))
+            .where(eq(users.id, userData.id))
             .returning();
 
           logger.info(`Updated existing user: ${userData.id}`);
@@ -404,7 +404,7 @@ export class DatabaseStorage implements IStorage {
       const { id, ...userDataWithoutId } = userData;
 
       const [newUser] = await db
-        .insert(usersTable)
+        .insert(users)
         .values({
           ...userDataWithoutId,
           observerId,
@@ -424,12 +424,12 @@ export class DatabaseStorage implements IStorage {
   async updateUser(id: number, data: Partial<User>): Promise<User | undefined> {
     try {
       const [updatedUser] = await db
-        .update(usersTable)
+        .update(users)
         .set({
           ...data,
           updatedAt: new Date()
         })
-        .where(eq(usersTable.id, id))
+        .where(eq(users.id, id))
         .returning();
 
       return updatedUser;
@@ -770,7 +770,7 @@ export class DatabaseStorage implements IStorage {
             const observerId = (userData as any).observerId || generateObserverId();
 
             const [createdUser] = await tx
-              .insert(usersTable)
+              .insert(users)
               .values({
                 ...userData,
                 observerId,
@@ -945,7 +945,7 @@ export class DatabaseStorage implements IStorage {
         throw new Error("System roles cannot be deleted.");
       }
 
-      const usersWithRole = await db.select({ count: sql<number>`count(*)::int` }).from(usersTable).where(eq(usersTable.role, roleToDelete.name));
+      const usersWithRole = await db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.role, roleToDelete.name));
       if (usersWithRole[0].count > 0) {
          logger.warn(`Attempted to delete role '${roleToDelete.name}' (ID: ${id}) that is still assigned to ${usersWithRole[0].count} users.`);
          throw new Error(`Cannot delete role '${roleToDelete.name}' as it is still assigned to ${usersWithRole[0].count} users. Please reassign users before deleting this role.`);
@@ -1208,23 +1208,23 @@ export class DatabaseStorage implements IStorage {
     try {
       const members = await db
         .select({
-          id: usersTable.id,
-          username: usersTable.username,
-          email: usersTable.email,
-          firstName: usersTable.firstName,
-          lastName: usersTable.lastName,
-          role: usersTable.role,
-          observerId: usersTable.observerId,
-          phoneNumber: usersTable.phoneNumber,
-          verificationStatus: usersTable.verificationStatus,
-          createdAt: usersTable.createdAt,
-          profileImageUrl: usersTable.profileImageUrl,
-          updatedAt: usersTable.updatedAt,
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          observerId: users.observerId,
+          phoneNumber: users.phoneNumber,
+          verificationStatus: users.verificationStatus,
+          createdAt: users.createdAt,
+          profileImageUrl: users.profileImageUrl,
+          updatedAt: users.updatedAt,
         })
         .from(groupMemberships)
-        .innerJoin(usersTable, eq(groupMemberships.userId, usersTable.id))
+        .innerJoin(users, eq(groupMemberships.userId, users.id))
         .where(eq(groupMemberships.groupId, groupId))
-        .orderBy(asc(usersTable.firstName), asc(usersTable.lastName));
+        .orderBy(asc(users.firstName), asc(users.lastName));
 
       return members;
     } catch (error) {
