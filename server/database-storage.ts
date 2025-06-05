@@ -1472,6 +1472,82 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createMessage(message: InsertMessage): Promise<Message> {
+    try {
+      const [created] = await db.insert(messages).values({
+        ...message,
+        sentAt: message.sentAt || new Date()
+      }).returning();
+      return created;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error creating message from ${message.senderId} to ${message.receiverId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getMessage(id: number): Promise<Message | undefined> {
+    try {
+      const [msg] = await db.select().from(messages).where(eq(messages.id, id));
+      return msg;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting message ${id}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async getMessagesBetweenUsers(userId: number, otherUserId: number): Promise<Message[]> {
+    try {
+      return await db
+        .select()
+        .from(messages)
+        .where(or(
+          and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
+          and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
+        ))
+        .orderBy(asc(messages.sentAt));
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error getting messages between ${userId} and ${otherUserId}: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async markMessageAsRead(id: number): Promise<Message | undefined> {
+    try {
+      const [updated] = await db
+        .update(messages)
+        .set({ read: true })
+        .where(eq(messages.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error marking message ${id} as read: ${err.message}`, err);
+      throw err;
+    }
+  }
+
+  async markAllMessagesAsRead(senderId: number, receiverId: number): Promise<number> {
+    try {
+      const updated = await db
+        .update(messages)
+        .set({ read: true })
+        .where(and(
+          eq(messages.senderId, senderId),
+          eq(messages.receiverId, receiverId),
+          eq(messages.read, false)
+        ))
+        .returning({ id: messages.id });
+      return updated.length;
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      logger.error(`Error marking all messages from ${senderId} to ${receiverId} as read: ${err.message}`, err);
+      throw err;
+    }
+  }
+
   // Achievement system operations
   async getAllAchievements(): Promise<Achievement[]> {
     try {
