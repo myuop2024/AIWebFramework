@@ -26,16 +26,16 @@ export function usePerformanceSettings() {
     return saved ? JSON.parse(saved) : false;
   });
 
-  const togglePerformance = () => {
+  const togglePerformance = useCallback(() => {
     const newValue = !isHighPerformance;
     setIsHighPerformance(newValue);
     localStorage.setItem('highPerformanceMode', JSON.stringify(newValue));
-  };
+  }, [isHighPerformance]);
 
   return { isHighPerformance, togglePerformance };
 }
 
-export default function PerformanceToggle() {
+export function PerformanceToggle() {
   const [settings, setSettings] = useState<PerformanceSettings>(defaultSettings);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -45,7 +45,7 @@ export default function PerformanceToggle() {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        setSettings(prev => ({ ...prev, ...parsed }));
+        setSettings(parsed);
       } catch (error) {
         console.warn('Failed to parse performance settings:', error);
       }
@@ -182,3 +182,5 @@ export default function PerformanceToggle() {
     </Popover>
   );
 }
+
+export default PerformanceToggle;
