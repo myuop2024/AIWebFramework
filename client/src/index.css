@@ -102,21 +102,21 @@
 
 :root {
   /* Ultra-modern UI color scheme with sophisticated gradients */
-  --background: 0 0% 100%;
-  --foreground: 222 84% 4.9%;
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
   --muted: 210 40% 98%;
   --muted-foreground: 215.4 16.3% 46.9%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 84% 4.9%;
   --card: 0 0% 100%;
   --card-foreground: 222 84% 4.9%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --primary: 262.1 83.3% 57.8%;
+  --border: 215 28% 87%;
+  --input: 215 28% 87%;
+  --primary: 265 83% 62%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 220 14.3% 95.9%;
+  --secondary: 193 95% 45%;
   --secondary-foreground: 220.9 39.3% 11%;
-  --accent: 220 14.3% 95.9%;
+  --accent: 28 94% 55%;
   --accent-foreground: 220.9 39.3% 11%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
@@ -140,7 +140,7 @@
 
 .dark {
   /* Ultra-modern dark theme with sophisticated depth and contrast */
-  --background: 222.2 84% 4.9%;
+  --background: 222 47% 6%;
   --foreground: 210 40% 98%;
   --muted: 217.2 32.6% 17.5%;
   --muted-foreground: 215 20.2% 65.1%;
@@ -148,13 +148,13 @@
   --popover-foreground: 210 40% 98%;
   --card: 222.2 84% 4.9%;
   --card-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --primary: 263.4 70% 50.4%;
+  --border: 217 19% 24%;
+  --input: 217 19% 24%;
+  --primary: 268 95% 70%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 217.2 32.6% 17.5%;
+  --secondary: 189 85% 60%;
   --secondary-foreground: 210 40% 98%;
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 28 95% 64%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
