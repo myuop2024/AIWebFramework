@@ -38,6 +38,7 @@ import eventsRoutes from './routes/events-routes';
 import reportsRoutes from './routes/reports-routes';
 import assignmentsRoutes from './routes/assignments-routes';
 import usersRoutes from './routes/users-routes';
+import crmRoutes from './routes/crm-routes'; // Added CRM routes import
 import { encryptSensitiveFields, decryptProfileFields } from './services/encryption-service';
 import permissionRoutes from './routes/permission-routes';
 import supervisorRoutes from './routes/supervisor-routes';
@@ -2392,6 +2393,10 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   // Add RLS (Row-Level Security) management routes
   app.use('/api/admin/rls', adminRlsRoutes);
   logger.info('RLS management routes registered at /api/admin/rls');
+
+  // Mount CRM routes
+  app.use('/api/crm', crmRoutes);
+  logger.info('CRM routes registered at /api/crm');
 
   // We'll initialize the Didit.me integration on demand instead of on startup
   // This prevents redirect issues and allows more control over when verification is used
