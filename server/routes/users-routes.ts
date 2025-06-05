@@ -350,7 +350,7 @@ router.get('/:id/assignments', ensureAuthenticated, hasPermission('users:view-as
     }
     
     // Build where conditions
-    const conditions = [eq(assignments.userId, userId.toString())];
+    const conditions = [eq(assignments.userId, userId)];
     
     if (status) {
       conditions.push(eq(assignments.status, status));
@@ -396,7 +396,7 @@ router.get('/:id/reports', ensureAuthenticated, hasPermission('users:view-report
     }
     
     // Build where conditions
-    const conditions = [eq(reports.userId, userId.toString())];
+    const conditions = [eq(reports.userId, userId)];
     
     if (status) {
       conditions.push(eq(reports.status, status));

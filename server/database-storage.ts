@@ -1739,7 +1739,6 @@ export class DatabaseStorage implements IStorage {
         profile = await this.createUserGameProfile({ userId });
       }
 
-      ```python
       const newTotalPoints = profile.totalPoints + points;
       const newCurrentLevelPoints = profile.currentLevelPoints + points;
 
