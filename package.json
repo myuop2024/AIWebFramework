@@ -85,7 +85,7 @@
     "express-session": "^1.18.1",
     "express-validator": "^7.2.1",
     "file-saver": "^2.0.5",
-    "fix": "^0.0.6",
+    "fix": "^0.0.3",
     "framer-motion": "^11.13.1",
     "fs-extra": "^11.3.0",
     "helmet": "^8.1.0",
@@ -153,13 +153,13 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
-    "drizzle-kit": "^0.31.1",
+    "drizzle-kit": "^0.18.1",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
-    "vite": "^5.4.14"
+    "vite": "^6.3.5"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
