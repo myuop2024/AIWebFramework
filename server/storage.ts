@@ -143,6 +143,11 @@ export interface IStorage {
 
   // Communication operations
   getRecentConversations(userId: number): Promise<any[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  getMessage(id: number): Promise<Message | undefined>;
+  getMessagesBetweenUsers(userId: number, otherUserId: number): Promise<Message[]>;
+  markMessageAsRead(id: number): Promise<Message | undefined>;
+  markAllMessagesAsRead(senderId: number, receiverId: number): Promise<number>;
 
   // Achievement system operations
   getAllAchievements(): Promise<Achievement[]>;
