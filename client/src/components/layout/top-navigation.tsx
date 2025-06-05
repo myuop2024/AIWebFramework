@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { User as SharedUserType } from "@shared/schema";
@@ -35,9 +35,9 @@ const NOTIF_TYPE_ICON = {
 const PAGE_SIZE = 10;
 
 const NOTIF_TYPES = ["info", "success", "warning", "error", "urgent"];
-const NOTIF_SOUND_URL = "/assets/sounds/notification.mp3";
+const NOTIF_SOUND_URL = "/sounds/notification.mp3";
 
-export default function TopNavigation({ toggleSidebar, notifications: propNotifications = [] }: TopNavigationProps) {
+const TopNavigationComponent = ({ toggleSidebar, notifications: propNotifications = [] }: TopNavigationProps) => {
   const [location] = useLocation();
   const { user, logoutMutation } = useAuth();
   const [pageTitle, setPageTitle] = useState("Dashboard");
@@ -600,4 +600,6 @@ export default function TopNavigation({ toggleSidebar, notifications: propNotifi
       )}
     </header>
   );
-}
+};
+
+export default memo(TopNavigationComponent);
