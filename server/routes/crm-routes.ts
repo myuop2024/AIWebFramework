@@ -7,7 +7,8 @@ import axios from 'axios'; // For Hugging Face API calls
 import { google } from 'googleapis'; // For Google Sheets API
 // import User from '../models/user'; // If you have a User model
 import { hasRoleMiddleware } from '../middleware/auth'; // Use the generic role middleware
-import { Parser as Json2csvParser } from 'json2csv'; // For CSV export
+import json2csv from 'json2csv'; // For CSV export
+const { Parser: Json2csvParser } = json2csv;
 import { apiRateLimit } from '../middleware/security'; // Import rate limiting middleware
 
 const router = express.Router();
