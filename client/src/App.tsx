@@ -16,7 +16,7 @@ import AssignmentsPage from "@/pages/assignments";
 import Training from "@/pages/training";
 import IntegratedTraining from "@/pages/integrated-training";
 import Faq from "@/pages/faq";
-import Chat from "@/pages/chat";
+import ChatPage from "@/pages/chat";
 import NewsPage from "@/pages/news";
 import FormTemplates from "@/pages/form-templates";
 import Admin from "@/pages/admin";
@@ -101,7 +101,7 @@ function Router() {
       <ProtectedRoute path="/reports/:id" component={ReportDetail} />
       <ProtectedRoute path="/assignments" component={AssignmentsPage} />
       <ProtectedRoute path="/training" component={IntegratedTraining} />
-      <ProtectedRoute path="/chat" component={Chat} />
+      <ProtectedRoute path="/chat" component={ChatPage} />
       <ProtectedRoute path="/news" component={NewsPage} />
       {/* Redirect communications route to /chat to avoid duplicate routes */}
       <Route path="/communications" component={() => <Redirect to="/chat" />} />

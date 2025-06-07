@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { storage, IStorage } from "./storage";
 import { randomBytes } from "crypto";
 import { CommunicationService } from "./services/communication-service";
+import { ChatService } from "./services/chat-service";
 import { 
   loginUserSchema, 
   insertUserSchema, 
@@ -27,7 +28,6 @@ import adminGroupsRoutes from './routes/admin-groups';
 import idCardRoutes from './routes/id-cards';
 import imageProcessingRoutes from './routes/image-processing';
 import diditVerificationRoutes from './routes/didit-verification';
-import communicationRoutes, { setCommunicationService } from './routes/communication-routes';
 import pollingStationsRoutes from './routes/polling-stations';
 import reportAttachmentsRoutes from './routes/report-attachments';
 import quickReportsRoutes from './routes/quick-reports';
@@ -84,6 +84,7 @@ function generateObserverId(): string {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  new ChatService(httpServer);
   
   // API endpoint to get authenticated user data
   // Traditional authentication routes
@@ -2412,8 +2413,19 @@ app.post('/api/users/profile', ensureAuthenticated, async (req, res) => {
   app.use('/api/events', eventsRoutes);
   app.use('/api/reports', reportsRoutes);
   app.use('/api/assignments', assignmentsRoutes);
-  app.use('/api/users', usersRoutes);
-  
+  app.use('/api/users', ensureAuthenticated, usersRoutes);
+  app.use('/api/crm', ensureAuthenticated, crmRoutes);
+  app.use('/api/permissions', ensureAuthenticated, permissionRoutes);
+  app.use('/api/supervisor', ensureAuthenticated, supervisorRoutes);
+  app.use('/api/error-logs', ensureAuthenticated, errorLogRoutes);
+  app.use('/api/admin/error-logs', ensureAdmin, adminErrorLogRoutes);
+  app.use('/api/project-management', ensureAuthenticated, projectManagementRoutes);
+  app.use('/api/regions', ensureAuthenticated, regionsRoutes);
+  app.use('/api/achievements', ensureAuthenticated, achievementRoutes);
+  app.use('/api/gamification', ensureAuthenticated, gamificationRoutes);
+  app.use('/api/waf', ensureAdmin, wafRoutes);
+  app.use('/api/admin/rls', ensureAdmin, adminRlsRoutes);
+
   // Add error logging middleware as the last middleware before error handlers
   app.use(ErrorLogger.createErrorMiddleware());
 

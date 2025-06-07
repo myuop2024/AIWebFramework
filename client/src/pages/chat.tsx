@@ -1,47 +1,15 @@
-import { useEffect } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/useAuth";
-import PageHeader from '@/components/layout/page-header';
-import { EnhancedChat } from '@/components/communication/enhanced-chat';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
+import Chat from '@/components/Chat';
+import AuthGuard from '@/components/auth/auth-guard';
 
-export default function Chat() {
-  const { user, isLoading } = useAuth();
-  const [, navigate] = useLocation();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!user && !isLoading) {
-      navigate("/login");
-    }
-  }, [user, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-        <p>Please log in to access the communications center.</p>
-      </div>
-    );
-  }
-
+const ChatPage = () => {
   return (
-    <>
-      <PageHeader
-        title="Communications Center"
-        description="Chat with other observers and staff members in real-time"
-      />
-      <div className="h-[calc(100vh-12rem)] md:h-[calc(100vh-14rem)] min-h-0 overflow-hidden">
-        <EnhancedChat userId={user.id} hideHeader={true} />
+    <AuthGuard>
+      <div className="container mx-auto p-4">
+        <Chat />
       </div>
-    </>
+    </AuthGuard>
   );
-}
+};
+
+export default ChatPage;

@@ -343,147 +343,20 @@ app.get('/api/logs', (req, res) => {
     app.use('/uploads', express.static(publicUploadsDir));
     logger.info(`Serving static files from /uploads mapped to ${publicUploadsDir}`);
 
-    // Setup routes
+    // Start server
+    const PORT = process.env.PORT || 3000;
     server = await registerRoutes(app); // This initializes communicationService
+    
+    // Set up WebSocket server for real-time communication
+    // The previous implementation of communication service is being removed.
+    // A new implementation using Socket.IO will be added later.
 
-    // Connect WAF engine to management routes
-    const { setWAFEngine } = await import('./routes/waf-routes');
-    setWAFEngine(wafEngine);
-    logger.info('WAF engine connected to management routes');
-
-    // --- WebSocket Upgrade Handling with Session Authentication ---
-    // Retrieve the session middleware. It's configured above with app.use(session(...))
-    // For clarity and direct use, we define it here again with the same config.
-    // NOTE: Ensure this configuration is identical to the one used by app.use(session(...))
-    const sessionMiddleware = session({
-      store: new (connectPg(session))({ // Re-create store for this usage if not easily accessible
-        pool: pool,
-        createTableIfMissing: true,
-        tableName: 'session'
-      }),
-      secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production-' + Math.random().toString(36),
-      resave: false,
-      saveUninitialized: false,
-      name: 'sessionId',
-      cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000, // Must match main session config
-        sameSite: 'strict'
-      }
+    server.listen(PORT, '0.0.0.0', () => {
+      logger.info(`Server is listening on port ${PORT}`);
     });
-
-    const communicationServiceInstance = app.locals.communicationService; // Assuming it's stored in app.locals by registerRoutes
-
-    if (communicationServiceInstance) {
-      server.on('upgrade', (request, socket, head) => {
-        // Only handle upgrades to the specific WebSocket path (including query parameters)
-        if (request.url?.startsWith('/api/ws') || request.url === '/api/ws') {
-          logger.debug(`[WS Upgrade] Attempting upgrade for path: ${request.url}`);
-          sessionMiddleware(request as any, {} as any, () => { // Apply session middleware
-            const reqWithSession = request as any; // Cast to access session property
-            if (!reqWithSession.session || !reqWithSession.session.passport || !reqWithSession.session.passport.user) {
-              logger.warn('[WS Upgrade] Unauthorized: No session or user found. Destroying socket.');
-              socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-              socket.destroy();
-              return;
-            }
-
-            const userId = reqWithSession.session.passport.user;
-            logger.debug(`[WS Upgrade] Authorized for userId: ${userId}. Proceeding with WSS handleUpgrade.`);
-
-            communicationServiceInstance.getWss().handleUpgrade(request, socket, head, (ws: any) => {
-              ws.authenticatedUserId = userId; // Attach authenticated user ID
-              communicationServiceInstance.getWss().emit('connection', ws, request);
-            });
-          });
-        } else {
-          // Ignore Vite HMR WebSocket connections and other non-API paths silently
-          // Don't log debug messages for these as they're expected in development
-          if (request.url?.includes('token=') && process.env.NODE_ENV === 'development') {
-            // This is likely a Vite HMR connection, ignore silently
-            socket.destroy();
-          } else {
-            logger.debug(`[WS Upgrade] Path ${request.url} not handled by this upgrade handler. Destroying socket.`);
-            socket.destroy();
-          }
-        }
-      });
-      logger.info('WebSocket upgrade handler configured with session authentication for /api/ws');
-    } else {
-      logger.error('CommunicationService instance not found. WebSocket upgrade handling will not work.');
-    }
-
-    // --- Error Handling Pipeline (MUST be registered after all routes) ---
-
-    // 1. Log errors to database
-    // This middleware should call next(err) to pass the error to the next handler.
-    app.use(ErrorLogger.createErrorMiddleware());
-
-    // 2. Log to console/file and send response to client (final step)
-    app.use(finalErrorHandler);
-
-    // Setup Vite for development or static files for production
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
-
-    // Start the server with port fallback mechanism
-    // Use port 5000 as recommended for Replit web applications
-    const startPort = parseInt(process.env.PORT || "5000");
-    const maxPortAttempts = 15;
-    let port = startPort;
-    let serverStarted = false;
-
-    // Try multiple ports in sequence
-    for (let attempt = 0; attempt < maxPortAttempts && !serverStarted; attempt++) {
-      const portToTry = startPort + attempt;
-      try {
-        await new Promise<void>((resolve, reject) => {
-          // Set up error and listening event handlers
-          const errorHandler = (err: any) => {
-            server.removeListener('listening', listeningHandler);
-            if (err.code === 'EADDRINUSE') {
-              logger.info(`Port ${portToTry} is in use, trying next port...`);
-              resolve(); // Continue to next port
-            } else {
-              reject(err); // Propagate other errors
-            }
-          };
-
-          const listeningHandler = () => {
-            server.removeListener('error', errorHandler);
-            port = portToTry;
-            serverStarted = true;
-            resolve();
-          };
-
-          server.once('error', errorHandler);
-          server.once('listening', listeningHandler);
-
-          // Try binding to the port
-          server.listen({
-            port: portToTry,
-            host: "0.0.0.0",
-          });
-        });
-
-        if (serverStarted) break;
-      } catch (err) {
-        logger.error(`Error starting server on port ${portToTry}:`, err);
-      }
-    }
-
-    if (serverStarted) {
-      logger.info(`Server is running on port ${port}`);
-    } else {
-      logger.error(`Failed to start server after ${maxPortAttempts} attempts. Please restart the application.`);
-      process.exit(1); // Exit with error code
-    }
+    
   } catch (error) {
-    logger.error('Fatal server error:', error);
+    logger.error('Failed to start the server:', error);
     process.exit(1);
   }
 })();
