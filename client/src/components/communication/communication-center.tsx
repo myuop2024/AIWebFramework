@@ -53,7 +53,8 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     activeCall,
     incomingCall,
     localStream,
-    remoteStream
+    remoteStream,
+    isConnected
   } = useCommunication(userId);
 
   // Get all users for site-wide search
@@ -326,6 +327,16 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
   return (
     <Card className="h-full border-none shadow-none">
+      {!hideHeader && (
+        <div className="flex items-center p-4 border-b">
+          <h1 className="text-xl font-bold">Communications</h1>
+          {!isConnected && (
+            <Badge variant="destructive" className="ml-auto">
+              Disconnected
+            </Badge>
+          )}
+        </div>
+      )}
       <CardContent className="p-0 h-full">
         <Tabs defaultValue="chats" className="h-full flex flex-col">
           {!hideHeader && (

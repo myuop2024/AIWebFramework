@@ -48,7 +48,8 @@ export function EnhancedChat({ userId, hideHeader = false }: EnhancedChatProps) 
     activeCall,
     incomingCall,
     localStream,
-    remoteStream
+    remoteStream,
+    isConnected
   } = useCommunication(userId);
 
   // Get all users for site-wide search
@@ -170,6 +171,11 @@ export function EnhancedChat({ userId, hideHeader = false }: EnhancedChatProps) 
             <MessageSquare className="h-5 w-5" />
             Communications Center
           </CardTitle>
+          {!isConnected && (
+            <Badge variant="destructive" className="ml-auto">
+              Disconnected
+            </Badge>
+          )}
         </CardHeader>
       )}
       

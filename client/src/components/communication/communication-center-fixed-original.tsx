@@ -59,11 +59,12 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
     activeCall,
     incomingCall,
     localStream,
-    remoteStream
+    remoteStream,
+    isConnected
   } = useCommunication(userId);
 
   // Get all users for site-wide search
-  const { data: allUsers, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({ // Added type for clarity
+  const { data: allUsers, isLoading: allUsersLoading } = useQuery<CommunicationUser[]>({
     queryKey: ['/api/communications/online-users'],
     queryFn: async () => {
       const response = await fetch('/api/communications/online-users');
@@ -472,7 +473,39 @@ export function CommunicationCenter({ userId, hideHeader = false }: Communicatio
 
 
   return (
-    <Card className="h-full border-none shadow-none">
+    <Card className="flex flex-col h-[700px] w-full max-w-5xl mx-auto shadow-2xl rounded-2xl overflow-hidden">
+      {!hideHeader && (
+        <div className="flex items-center justify-between p-4 bg-background/95 backdrop-blur-sm border-b">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10 text-primary">
+              <MessageSquare size={22} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Communication Hub</h1>
+            {!isConnected && (
+              <Badge variant="destructive" className="ml-auto">
+                Disconnected
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {}}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Search</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
       <CardContent className="p-0 h-full">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           {/* TabsList (Header) - Hidden on mobile if a chat is active */}

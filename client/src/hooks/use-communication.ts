@@ -142,6 +142,7 @@ export function useCommunication(userId: number) {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [activeCall, setActiveCall] = useState<CallData | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Use state for streams to trigger re-renders in consuming components
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -207,13 +208,14 @@ export function useCommunication(userId: number) {
       try {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // Corrected WebSocket URL to match backend service path
-        const wsUrl = `${protocol}//${window.location.host}/api/ws`;
+        const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}//${window.location.host}/api/ws`;
         console.log(`Connecting to WebSocket at ${wsUrl}... (User ID: ${userId})`);
         wsInstance = new WebSocket(wsUrl);
         setSocket(wsInstance); // Set socket state early for other parts of the hook
 
         wsInstance.onopen = () => {
           console.log('WebSocket connected successfully');
+          setIsConnected(true);
           if (wsInstance?.readyState === WebSocket.OPEN) {
             try {
               wsInstance.send(JSON.stringify({ type: WS_MSG_TYPES.REGISTER, userId }));
@@ -228,6 +230,7 @@ export function useCommunication(userId: number) {
         wsInstance.onclose = (event) => {
           console.log(`WebSocket disconnected with code: ${event.code}, reason: ${event.reason}`);
           setSocket(null); // Clear socket state
+          setIsConnected(false);
 
           // Always try to reconnect unless unmounting
           if (!isUnmounting) {
@@ -252,8 +255,10 @@ export function useCommunication(userId: number) {
         };
 
         wsInstance.onerror = (error) => {
-          console.error('WebSocket error:', error);
-          // wsInstance.onclose will likely be called after this, triggering reconnection logic
+          console.error("WebSocket Error:", error);
+          setIsConnected(false);
+          // The onclose event will usually fire after an error, which handles reconnection.
+          // You could add more specific error handling here if needed.
         };
 
         wsInstance.onmessage = (event) => {
@@ -788,9 +793,11 @@ export function useCommunication(userId: number) {
 
 
   return {
+    socket,
+    onlineUsers,
     conversations,
     conversationsLoading,
-    onlineUsers,
+    isConnected,
     useGetMessages,
     sendMessage,
     markAsRead: markAsReadMutation.mutate,
@@ -801,8 +808,7 @@ export function useCommunication(userId: number) {
     endCall,
     activeCall,
     incomingCall,
-    localStream, // Now a state variable
-    remoteStream, // Now a state variable
-    isSocketConnected: socket?.readyState === WebSocket.OPEN,
+    localStream,
+    remoteStream,
   };
 }

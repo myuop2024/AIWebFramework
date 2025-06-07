@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -59,7 +59,8 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
     activeCall,
     incomingCall,
     localStream,
-    remoteStream
+    remoteStream,
+    isConnected
   } = useCommunication(userId);
 
   // Get all users for site-wide search
@@ -306,34 +307,34 @@ export function CommunicationCenterFixed({ userId, hideHeader = false }: Communi
 
   return (
     <Card className="h-full border-none shadow-none">
-      <CardContent className="p-0 h-full min-h-0 overflow-hidden">
+       <CardContent className="p-0 h-full min-h-0 overflow-hidden">
         <div className="h-full min-h-0 flex flex-col overflow-hidden">
           {!hideHeader && (
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="flex items-center p-2 justify-between">
+                <h1 className="text-lg font-semibold px-2">Inbox</h1>
+                {!isConnected && (
+                  <Badge variant="destructive">
+                    Disconnected
+                  </Badge>
+                )}
+              </div>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 rounded-none border-b bg-transparent"> {/* Grid cols changed from 4 to 3 */}
                   <TabsTrigger value="chats" className="data-[state=active]:bg-background">
-                    <MessageSquare className="h-4 w-4 mr-2" />
                     Chats
                   </TabsTrigger>
-                  <TabsTrigger value="calls" className="data-[state=active]:bg-background">
-                    <Phone className="h-4 w-4 mr-2" />
-                    Calls
-                  </TabsTrigger>
-                  <TabsTrigger value="contacts" className="data-[state=active]:bg-background">
-                    <Users className="h-4 w-4 mr-2" />
-                    Contacts
-                  </TabsTrigger>
-                  {/* <TabsTrigger value="voice-memos" className="data-[state=active]:bg-background">
-                    <Mic className="h-4 w-4 mr-2" />
+                  <TabsTrigger value="voice-memos" className="data-[state=active]:bg-background">
                     Voice Memos
-                  </TabsTrigger> */}
+                  </TabsTrigger>
+                  <TabsTrigger value="broadcast" className="data-[state=active]:bg-background">
+                    Broadcast
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
           )}
-          
-          <div className="flex-1 flex min-h-0 overflow-hidden">
+          <div className="flex w-full h-full">
             {/* Sidebar */}
             <div className={`${isMobile && activeChatUserId ? 'hidden' : 'flex flex-col w-80'} border-r bg-background/50`}>
               {/* Search */}
